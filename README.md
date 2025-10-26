@@ -2,7 +2,8 @@
 A modern take on XBase
 <BR>
 <BR>
-The JAXBase Project is an attempt to create a modern version of the venerable XBase language. It is highly object oriented and most legacy/MS-DOS commands and last-century paradigms have been removed.  It is expected to become open-source no later th Version 0.8 release and be under the GNU General Public License version 2 (GPL-2.0).
+The JAXBase Project is an attempt to create a modern version of the venerable XBase language. It is highly object oriented and most legacy/MS-DOS commands and last-century paradigms have been removed.  The code will become open-source no later than Version 0.8 release and be under the GNU General Public License version 2 (GPL-2.0).  The PDF documentation will be 100% copyrighted.  If you want to publish the documentation, you need to contact the author.  Exceptions for educational institutes which can reproduce the documentation for students, and individuals can print copies, any time, for there own use.
+<BR>
 <BR>
 ## Differences from Most XBase Dialects
 •	Data sessions are addressable in many commands.  ***USE table IN 0 SESSION 2*** opens the table in the lowest open work area of data session 2.<br><br>
@@ -35,14 +36,26 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 <BR>
 <BR>
 
-## Current Status - 10/22/2025
-*	Documentation is taking more effort than expected and its development is now tied in with the exe.  The final draft will appear no sooner than Version 0.8.<br><br>
-* More than 50% of the runtime code is now written, with about half of the completed commands passing initial testing.<br><br>
-*	I hope to have Version 0.4 done by the end of the year and will post the JAXCode that is executed in the video demonstation.<br><br>
-*	The test form displays correctly, and method calls are executing the underlying JAXCode.<br><br>
-*	Speed is still surprisingly good.<br><br>
-*	After Version 4.0 is done, I will be happy to talk to anyone wishing to join the effort.<br><br>
-*	A few new features have made the cut.<br>
+## Current Status - 10/26/2025
+* This is Version 0.4 - A hard weekend of work and some decent planning some months back made it possible to get the test form working.<br>
+* Please read the comments in the FormTest1.prg for more info on V0.4 status<br>
+* V0.5 will finish up the control structures (for/endfor, try/catch, do while, etc)<br>
+ -Most of these structures are already written but not tested.<br>
+ -V0.5 will also get a jump on some V0.6 classes and functions.<br>
+ -No more github updates for the holiday season.  Expect an update on V0.5 in early January.<br>
+* **I will gladly answer questions at jlwalker.dev (gmail)**.<br>
+* *Have a good holiday season, everyone!*<br>
+<br>
+
+
+### Status -10/22/2025
+*	Documentation is taking more effort than expected and its development is now tied in with the exe.  The final draft will appear no sooner than Version 0.8.<br>
+* More than 50% of the runtime code is now written, with about half of the completed commands passing initial testing.<br>
+*	I hope to have Version 0.4 done by the end of the year and will post the JAXCode that is executed in the video demonstation.<br>
+*	The test form displays correctly, and method calls are executing the underlying JAXCode.<br>
+*	Speed is still surprisingly good.<br>
+*	After Version 4.0 is done, I will be happy to talk to anyone wishing to join the effort.<br>
+*	A few new features have made the cut.
  Functions CRC32(), MD5(), MD5REC()<br>
  Registering IDX files to auto open when you USE a table.<br>
 <BR>
