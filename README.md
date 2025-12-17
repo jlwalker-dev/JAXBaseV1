@@ -2,7 +2,7 @@
 A modern take on XBase
 <BR>
 <BR>
-The JAXBase Project is an attempt to create a modern version of the venerable XBase language. It is highly object oriented and most legacy/MS-DOS commands and last-century paradigms have been removed.  The code will become open-source no later than Version 0.8 release and be under the GNU General Public License version 2 (GPL-2.0).  The PDF documentation will be 100% copyrighted.  If you want to publish the documentation, you need to contact the author.  Exceptions for educational institutes which can reproduce the documentation for students, and individuals can print copies, any time, for there own use.
+The JAXBase Project is an attempt to create a modern version of the venerable XBase language. It is highly object oriented and most legacy/MS-DOS commands and last-century paradigms have been removed.  The code will become open-source no later than Version 0.8 release and be under the GNU General Public License version 2 (GPL-2.0).
 <BR>
 <BR>
 ## Differences from Most XBase Dialects
