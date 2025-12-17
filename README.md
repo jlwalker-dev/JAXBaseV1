@@ -27,7 +27,7 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 
 ### Goals
 - To create and encourage the use and development of secure, open-source software.<br>
-- To create an ecosystem that encourages the development of multilingual support.<br>
+- To create an ecosystem that encourages the development of multilingual applications.<br>
 - To create a cross-platform language that frees the developer and user from hardware/OS concerns, licensing fees, and use restrictions. <br>
 - To allow users to create responsive applications that can run on something as small as the amazing Raspberry PI and have no limits on the hardware to which it can be scaled.<br>
 - To encourage further development of the XBase ecosystem, supporting the use of popular back-end SQL database engines, including ones that are not open-source.<br>
