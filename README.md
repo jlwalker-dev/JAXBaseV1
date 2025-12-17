@@ -36,7 +36,17 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 <BR>
 <BR>
 
-## Current Status - 10/26/2025
+## Current Status - 12/16/2025 - Happy Holidays!
+* This is Version 0.5 moving quickly towards Version 0.6
+* Error handling is shaping up with Try/Catch passing initial unit tests
+* Several more visual classes are working
+* The bootstrap form editor is being developed and new functions/properites are being created and documented to make it easier to develop tools.
+* The WIKI has surpassed PDF documentation and is now the main document source
+* A sub $100 SMS card has been ordered for SMS class development
+* Most of the web classes have been designed and more effor will be put into them in the first quarter of 2026
+<br>
+
+### Status - 10/26/2025
 * This is Version 0.4 - A hard weekend of work and some decent planning some months back made it possible to get the test form working.<br>
 * Please read the comments in the FormTest1.prg for more info on V0.4 status<br>
 * V0.5 will finish up the control structures (for/endfor, try/catch, do while, etc)<br>
