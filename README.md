@@ -58,5 +58,5 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 * Most of the web classes have been designed and more effor will be put into them in the first quarter of 2026
 <br>
 
-Check Project Updates for more information
+Check the WIKI (Project Updates) for more information
 
