@@ -36,7 +36,19 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 <BR>
 <BR>
 
-## Current Status - 12/16/2025 - Happy Holidays!
+## Current Status - December 28
+- Debugger form shows and shows the current line being executed
+  * Visual issues appear to be fixed
+  * F6 (Step) and F8 (Step into) simply call the next line of code
+  * Variables are not yet being displayed
+  * Watch variables are not yet being displayed
+- Pass by reference has been figured out and moving forward with implementation
+- Have started the bootstrap form editor which will make SCX files and compile them
+  * Formset, pageframe, container, sound, video, and several other classes have to wait for the official form editor
+  * Cannot put non-visual classes on the form until the official form editor is released
+- Strong typing has been added (e.g. _PUBLIC gFormNumber as Integer_)
+- 
+### Current Status - 12/16/2025 - Happy Holidays!
 * This is Version 0.5 moving quickly towards Version 0.6
 * Error handling is shaping up with Try/Catch passing initial unit tests
 * Several more visual classes are working
@@ -46,41 +58,5 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 * Most of the web classes have been designed and more effor will be put into them in the first quarter of 2026
 <br>
 
-### Status - 10/26/2025
-* This is Version 0.4 - A hard weekend of work and some decent planning some months back made it possible to get the test form working.<br>
-* Please read the comments in the FormTest1.prg for more info on V0.4 status<br>
-* V0.5 will finish up the control structures (for/endfor, try/catch, do while, etc)<br>
- -Most of these structures are already written but not tested.<br>
- -V0.5 will also get a jump on some V0.6 classes and functions.<br>
- -No more github updates for the holiday season.  Expect an update on V0.5 in early January.<br>
-* **I will gladly answer questions at jlwalker.dev (gmail)**.<br>
-* *Have a good holiday season, everyone!*<br>
-<br>
-
-
-### Status -10/22/2025
-*	Documentation is taking more effort than expected and its development is now tied in with the exe.  The final draft will appear no sooner than Version 0.8.<br>
-* More than 50% of the runtime code is now written, with about half of the completed commands passing initial testing.<br>
-*	I hope to have Version 0.4 done by the end of the year and will post the JAXCode that is executed in the video demonstation.<br>
-*	The test form displays correctly, and method calls are executing the underlying JAXCode.<br>
-*	Speed is still surprisingly good.<br>
-*	After Version 4.0 is done, I will be happy to talk to anyone wishing to join the effort.<br>
-*	A few new features have made the cut.
- Functions CRC32(), MD5(), MD5REC()<br>
- Registering IDX files to auto open when you USE a table.<br>
-<BR>
-
-### Status - 9/20/2025
-•	The project includes table and index manipulation, the compiler tokenizes most commands, and enough of the runtime exists to do basic testing.<br>
-•	Development was halted 8/1/2025 to focus attention on the language manual. Development will restart in October.<br>
-•	The project is currently written in C# and will remain that way through Version 1.<br>
-•	Version 1 will be considered an educational tool as no serious effort is being put into security concerns.  Version 2 will address those concerns.<br>
-•	This is Version 0.1 and is an unfinished document release to GitHub which can be considered being a "Request for Comment" period.  Version 0.2 will be a proposed Final Draft, and Version 0.3 will be the Final Draft of Version 1.0 of JAXBase.<br>
-•	If you see a Status header on a page, then that feature is not expected to be in the version 0.4 release.<br>
-•	The first public binary release will be Version 0.4 for Windows.  At present, JAXBase is written in C# and is expected to remain in C# through Version 1.<br>
-•	Form, TextBox, Label, and CommandButton are the only visual classes slated for Version 0.4 of JAXBase.  Most visual classes will be available in Version 0.6, while the rest are expected to show up by the Version 1.0 release.<br>
-•	The Version 0.4 binary will be released as a demo video with a simple form containing labels, text boxes, and buttons can be correctly displayed, and a user can interact with the form and save data to a table.<br>
-•	The code for table and index handling is written, though it is still in testing.  Tables are currently set for exclusive access only.  Version 0.8 will introduce table/record locking and sharing.<br>
-•	The compiler correctly tokenizes over 80% of the commands while about 20% of the runtime code is written.  GitHub will be updated periodically with progress notes and documentation updates. <br>
-
+Check Project Updates for more information
 
