@@ -36,27 +36,5 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 <BR>
 <BR>
 
-## Current Status - December 28
-- Debugger form shows and shows the current line being executed
-  * Visual issues appear to be fixed
-  * F6 (Step) and F8 (Step into) simply call the next line of code
-  * Variables are not yet being displayed
-  * Watch variables are not yet being displayed
-- Pass by reference has been figured out and moving forward with implementation
-- Have started the bootstrap form editor which will make SCX files and compile them
-  * Formset, pageframe, container, sound, video, and several other classes have to wait for the official form editor
-  * Cannot put non-visual classes on the form until the official form editor is released
-- Strong typing has been added (e.g. _PUBLIC gFormNumber as Integer_)
-- 
-### Current Status - 12/16/2025 - Happy Holidays!
-* This is Version 0.5 moving quickly towards Version 0.6
-* Error handling is shaping up with Try/Catch passing initial unit tests
-* Several more visual classes are working
-* The bootstrap form editor is being developed and new functions/properites are being created and documented to make it easier to develop tools.
-* The WIKI has surpassed PDF documentation and is now the main document source
-* A sub $100 SMS card has been ordered for SMS class development
-* Most of the web classes have been designed and more effor will be put into them in the first quarter of 2026
-<br>
-
-Check the WIKI (Project Updates) for more information
-
+## Current Status 
+Please go to [Project]|(https://github.com/jlwalker-dev/JAXBaseV1/wiki/Project) updates
