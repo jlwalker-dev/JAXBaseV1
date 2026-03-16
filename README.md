@@ -37,4 +37,4 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 <BR>
 
 ## Current Status 
-Please go to [Project](https://github.com/jlwalker-dev/JAXBaseV1/wiki/Project) updates
+Please go to [Project](https://github.com/jlwalker-dev/JAXBaseV1/wiki/Project) updates are posted about once a week.
