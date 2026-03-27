@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:Class="JAXBase.MainWindow"
+		Title="JAXBase IDE"
+		Width="800" Height="600"
+		WindowStartupLocation="Manual"
+		CanResize="True"
+		MinWidth="100" MinHeight="100">
+
+	<Panel x:Name="pnlScreen" Margin="4">
+		<TextBox x:Name="txtBox"
+         AcceptsReturn="False"
+         AcceptsTab="True"
+         TextWrapping="NoWrap"
+         FontFamily="Consolas, monospace"
+         FontSize="16"
+         Padding="10,8,8,8"
+         BorderThickness="0"
+         Background="Black"
+         Foreground="LimeGreen"
+         CaretBrush="#FFFF00"
+         SelectionBrush="#444444"
+         SelectionForegroundBrush="White"
+         HorizontalAlignment="Stretch"
+         VerticalAlignment="Stretch" />
+	</Panel>
+</Window>
