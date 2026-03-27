@@ -1,0 +1,1201 @@
+﻿using JAXBase.Core;
+using JAXBase.Data;
+using JAXBase.XBase;
+using JAXBase.Utilities.Utilities;
+using static JAXBase.Core.AppClass;
+
+namespace JAXBase.Executer
+{
+    public class JAXBase_Executer_C
+    {
+        /* TODO NOW?
+         * 
+         * CALCULATE eExpressionList [Scope] [FOR lExpression1] [WHILE lExpression2] [TO VarList | TO ARRAY ArrayName] [NOOPTIMIZE] [IN nWorkArea | cTableAlias]
+         * 
+         * expList/scopeExpr/forExp/whileExpr/V|A/varInfo/wrkareaExpr/flags
+         * 
+         *      Code    ExpList Functions                           Description
+         *      A       AVG(expression)                             Average
+         *      C       CNT() or COUNT()                            Count
+         *      X       MAX(expression)                             Find Max value
+         *      M       MIN(expression)                             Find Min value
+         *      N       NPV(expression1,expression2[,expression3])  Net present value
+         *      D       STD(expression)                             Standard deviation
+         *      S       SUM(expression)                             Sums the values
+         *      V       VAR(expression)                             Variance (STD ^ 2)
+         *      
+         *      ExprList Construction
+         *      <literalStart>Code1<literalEnd><expStart>expressionList1<expEnd>[<exprDelimiter><literalStart>Code2<literalEnd><expStart>expressionList2<expEnd>]...
+         *      
+         */
+        public static async Task<string> Calculate(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+            string editor = string.Empty;
+
+            try
+            {
+                // Break out the calculation expression type
+                for (int i = 0; i < eCodes.Expressions.Count; i++)
+                {
+                    string[] exp = eCodes.Expressions[i].RNPExpr.Split(AppClass.expEnd);
+                    eCodes.Expressions[i].Type = (await jbe.App.SolveFromRPNString(exp[0])).AsString(); // Get the calculation type
+                    eCodes.Expressions[i].RNPExpr = exp[1];                                 // Get the calculation expression
+                }
+
+                // Go to the desired workarea
+                int wa = jbe.App.CurrentDS.CurrentWorkArea();
+                JAXObjects.Token workarea = new();
+                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : jbe.App.SolveFromRPNString(eCodes.InExpr);
+                if (workarea.Element.Type.Equals("N"))
+                    jbe.App.CurrentDS.SelectWorkArea(workarea.AsInt());
+                else if (workarea.Element.Type.Equals("C"))
+                    jbe.App.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
+                else
+                    throw new Exception("11|");
+
+                if (jbe.App.CurrentDS.CurrentWA is null || jbe.App.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
+                    throw new Exception(string.Format("52|{0}", jbe.App.CurrentDS.CurrentWorkArea()));
+
+                bool NoOptimize = eCodes.Flags.Length > 0 && Array.IndexOf(eCodes.Flags, "nooptimize") >= 0;
+
+                // Now process the table as requested
+                if (eCodes.Expressions.Count > eCodes.To.Count)
+                    throw new Exception("1230|");                                               // Too many arguments
+
+                if (eCodes.Expressions.Count < eCodes.To.Count)
+                    throw new Exception("94|");                                                 // Must specify additional parameters
+
+                // Create the sums list
+                List<JAXObjects.Token> sums = [];
+                for (int i = 0; i < eCodes.Expressions.Count; i++)
+                {
+                    JAXObjects.Token t = new();
+                    t.Element.Value = 0;
+                    sums.Add(t);
+                }
+
+                // first record is already in the buffer and continue working on records until
+                // we reach EOF.  We use goto top/bottom and skip because we want to play nice
+                // with indexes
+                JAXDirectDBF Table = jbe.App.CurrentDS.CurrentWA;
+                JAXScope jaxScope = new();
+                await jaxScope.Setup(eCodes.Scope, Table, true);
+
+                while (Table.DbfInfo.DBFEOF == false && Table.DbfInfo.RecCount > 0)
+                {
+                    JAXObjects.Token temp = await jbe.App.SolveFromRPNString(eCodes.ForExpr);
+                    if (string.IsNullOrWhiteSpace(eCodes.ForExpr) || temp.Element.ValueAsBool)
+                    {
+                        temp = await jbe.App.SolveFromRPNString(eCodes.WhileExpr);
+                        if (string.IsNullOrWhiteSpace(eCodes.WhileExpr) || temp.Element.ValueAsBool)
+                        {
+                            //recsRead++;
+
+                            for (int j = 0; j < eCodes.Expressions.Count; j++)
+                            {
+                                JAXObjects.Token tk = await jbe.App.SolveFromRPNString(eCodes.Expressions[j].RNPExpr);
+
+                                if (tk.Element.Type.Equals("N"))
+                                {
+                                    switch (eCodes.Expressions[j].Type)
+                                    {
+                                        case "A":       // Average
+                                            sums[j].Element.Value = sums[j].Element.ValueAsDouble + tk.Element.ValueAsDouble;
+                                            break;
+
+                                        case "C":       // Count
+                                            sums[j].Element.Value = sums[j].Element.ValueAsDouble + 1;
+                                            break;
+
+                                        case "X":       // Max
+                                            // If this the first record or the new value is larger
+                                            if (jaxScope.RecordsRead == 0 || sums[j].Element.ValueAsDouble < tk.Element.ValueAsDouble)
+                                                sums[j].Element.Value = tk.Element.ValueAsDouble;
+                                            break;
+
+                                        case "M":       // Min
+                                            // If this the first record or the new value is smaller
+                                            if (jaxScope.RecordsRead == 0 || sums[j].Element.ValueAsDouble > tk.Element.ValueAsDouble)
+                                                sums[j].Element.Value = tk.Element.ValueAsDouble;
+                                            break;
+
+                                        case "N":       // Net Present Value - https://learn.microsoft.com/en-us/dotnet/api/microsoft.visualbasic.financial.npv?view=net-9.0
+                                            break;
+
+                                        case "D":       // Standard Deviation - https://blog.danstockham.com/calculate-standard-deviation-with-c-cl2h05zjt02evz0nv609z8m5t
+                                            break;
+
+                                        case "S":       // Sum
+                                            sums[j].Element.Value = sums[j].Element.ValueAsDouble + tk.Element.ValueAsDouble;
+                                            break;
+
+                                        case "V":       // Variance - https://www.coderslexicon.com/variance-and-standard-deviation-of-an-array-in-c/
+                                            break;
+
+                                        default:
+                                            throw new Exception("10||Unknown expression type");
+                                    }
+                                }
+                                else
+                                    throw new Exception("Invalid expression type");
+                            }
+
+                            // Have we reached the end of the until flag scope?
+                            if (jaxScope.IsDone()) break;
+                        }
+                        else
+                        {
+                            // break out of the loop because the
+                            // while statement is false
+                            break;
+                        }
+
+                    }
+
+                    // Have we reached the end of the until flag scope?
+                    //if (recsRead > 0 && (untilFlag == 0 || untilFlag == recsRead)) break;
+
+                    // Otherwise try to read in the next record
+                    await Table.DBFSkipRecord(1);
+                }
+
+                // Now finalize the results and place them into the requested vars
+                for (int j = 0; j < eCodes.Expressions.Count; j++)
+                {
+                    switch (eCodes.Expressions[j].Type)
+                    {
+                        case "A":       // Average
+                            sums[j].Element.Value = sums[j].Element.ValueAsDouble / jaxScope.RecordsRead;
+                            break;
+
+                        case "N":       // Net Present Value - https://learn.microsoft.com/en-us/dotnet/api/microsoft.visualbasic.financial.npv?view=net-9.0
+                            break;
+
+                        case "D":       // Standard Deviation - https://blog.danstockham.com/calculate-standard-deviation-with-c-cl2h05zjt02evz0nv609z8m5t
+                            break;
+
+                        case "V":       // Variance - https://www.coderslexicon.com/variance-and-standard-deviation-of-an-array-in-c/
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+
+                // if going to an array
+                if (eCodes.To[0].Type.Equals("A"))
+                    jbe.App.SetVarOrMakePrivate(eCodes.To[0].Name, 1, eCodes.Expressions.Count, false);
+
+                for (int i = 0; i < eCodes.Expressions.Count; i++)
+                {
+                    // Get toVar name
+                    string vName = eCodes.To[0].Type.Equals("A") ? eCodes.To[0].Name : eCodes.To[i].Name;
+
+                    // Get the value
+                    double dval = sums[i].Element.ValueAsDouble;
+
+                    // Does the var exist?                    
+                    //jbe.App.GetVar(vName, out JAXObjects.Token v);
+                    JAXObjects.Token v = await jbe.App.GetVarFromExpression(vName, null);
+
+                    if (v.TType.Equals("U"))
+                    {
+                        if (eCodes.To[0].Type.Equals("A"))         // If user wants an array, make sure you accomodate
+                            jbe.App.SetVarOrMakePrivate(vName, 1, eCodes.Expressions.Count, true);
+                        else
+                            jbe.App.SetVarOrMakePrivate(vName, 1, 1, true);
+                    }
+
+                    // Put the value into the var
+                    //jbe.App.GetVar(vName, out v);
+                    v = await jbe.App.GetVarFromExpression(vName, null);
+
+                    if (v.TType.Equals("A"))
+                        jbe.App.SetVar(vName, dval, 1, i);
+                    else
+                        jbe.App.SetVar(vName, dval, 1, 1);
+                }
+
+                // Make sure we get back to starting workarea
+                jbe.App.CurrentDS.SelectWorkArea(wa);
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+
+        /* 
+         *  CANCEL
+         */
+        public static async Task<string> Cancel(JAXBase_Executer jbe, ExecuterCodes? eCodes)
+        {
+            // If in runtime mode, then quit the application
+            if (jbe.App.RuntimeFlag) await JAXBase_Executer_Q.Quit(jbe.App, null);
+
+            // We're in the IDE, so just stop execution
+            for (int i = jbe.App.AppLevels.Count; i > 1; i--)
+                jbe.App.AppLevels.RemoveAt(i - 1);
+
+            return "!";
+        }
+
+
+        /* 
+         * CASE lExpression
+         * 
+         * If we stumble onto this, we will look for an endcase because we should only be loading 
+         * this command in a DO CASE statement. The DO CASE statement jumps through the related 
+         * case statements until if finds a case expression that is true, otherwise, or endcase.
+         * 
+         * When an expression is true, it starts with the next command record and continues until
+         * it finds another case statement, otherwise or an end case.
+         * 
+         */
+        public static string Case(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                string cEndCase = AppClass.cmdByte.ToString() + jbe.App.MiscInfo["endcasecmd"] + eCodes.SUBCMD;
+
+                // Find the endcase
+                int pos = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx].IndexOf(cEndCase);
+
+                if (pos < 0)
+                    throw new Exception("1211|");   // If/Else/Endif stmt is missing
+                else
+                {
+                    jbe.App.utl.Conv64(pos, 3, out string pos2);
+                    result = "Y" + pos2; // Return the position of the endcase
+                }
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+
+        /* 
+         * 
+         * CATCH [TO VarName] [WHEN lExpression]
+         */
+        public static async Task<string> Catch(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                // Decide if we execute or bypass
+                if (jbe.App.AppLevels[^1].LoopStack.Count > 0)
+                {
+                    string lastFlag = jbe.App.AppLevels[^1].LoopStack[^1];
+
+                    if (lastFlag.Length > 1)
+                    {
+                        string flagType = lastFlag[..1];
+                        string flagCode = lastFlag[1..];
+
+                        if ("CT".Contains(flagType) == false)
+                            throw new Exception("2058|");
+
+                        // As long as the last flag type is not C
+                        if (jbe.App.ErrorCount() > 0)
+                        {
+                            string loopstack = jbe.App.AppLevels[^1].LoopStack[^1];
+                            loopstack = loopstack.Length > 0 ? loopstack[0].ToString() : "x";
+
+                            if ("CT".Contains(loopstack))
+                            {
+                                // We are looking for a catch!
+                                if (lastFlag.Equals(eCodes.SUBCMD))
+                                {
+                                    // We're dealing with the correct structure
+                                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.WhenExpr);
+                                    answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.WhenExpr) ? true : answer.Element.Value;
+
+                                    if (answer.Element.Type.Equals("L"))
+                                    {
+                                        if (answer.AsBool())
+                                        {
+                                            // If found the right catch, set it up and 
+                                            // clear the error.
+                                            if (eCodes.To.Count > 0)
+                                            {
+                                                List<ParameterClass> pList = [];
+                                                JAXErrors le = jbe.App.GetLastError();
+                                                ParameterClass p = new() { PName = "errorno" };
+                                                p.token.Element.Value = le.ErrorNo;
+
+                                                p = new() { PName = "lineno" };
+                                                p.token.Element.Value = le.ErrorLine;
+
+                                                p = new() { PName = "procedure" };
+                                                p.token.Element.Value = le.ErrorProcedure;
+
+                                                p = new() { PName = "message" };
+                                                p.token.Element.Value = le.ErrorMessage;
+
+                                                JAXObjectWrapper c = new(jbe.App, "empty", string.Empty, pList);
+                                                string to = (await jbe.App.SolveFromRPNString(eCodes.To[0].Name)).AsString();
+                                                answer.Element.Value = c;
+                                                jbe.App.SetVarOrMakePrivate(to, answer);
+                                                jbe.App.AppLevels[^1].LoopStack[^1] = "C," + lastFlag;
+                                                jbe.App.ClearErrors();
+                                            }
+                                        }
+                                    }
+                                    else
+                                        throw new Exception("11|");
+                                }
+                                else
+                                    throw new Exception("2058|");
+                            }
+                            else
+                                throw new Exception("2058|");
+                        }
+                        else
+                        {
+                            // not looking to catch, so look for FINALLY
+                            string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+                            int f = jbe.App.utl.FindByteSequence(PrgCode, AppClass.cmdByte.ToString() + jbe.App.MiscInfo["finallycmd"], jbe.App.AppLevels[^1].PrgPos);
+
+                            if (f < 0)
+                            {
+                                // no FINALLY, so look for ENDRY
+                                f = jbe.App.utl.FindByteSequence(PrgCode, AppClass.cmdByte.ToString() + jbe.App.MiscInfo["endtrycmd"], jbe.App.AppLevels[^1].PrgPos);
+
+                                // TODO - make sure it's the right one!
+
+                                if (f < 0)
+                                    throw new Exception("2058||Missing ENDTRY");
+                                else
+                                {
+                                    // found the ENDTRY
+                                    jbe.App.utl.Conv64(f, 3, out string lp2);
+                                    result = "Y" + lp2;
+                                }
+                            }
+                            else
+                            {
+                                // Found the FINALLY
+                                jbe.App.utl.Conv64(f, 3, out string lp2);
+                                result = "Y" + lp2;
+                            }
+                        }
+                    }
+                    else
+                        throw new Exception($"9996|Invalid loop token|Empty loop token");
+                }
+                else
+                    throw new Exception("2058||Empty loop stack");
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+
+        /*  
+         * CD Path
+         */
+        public static async Task<string> CD(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                if (eCodes.Expressions.Count > 0)
+                {
+                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+
+                    if (answer.Element.Type.Equals("C") == false)
+                        throw new Exception("10|");
+
+                    string path = JAXLib.Addbs(answer.AsString().Trim());
+
+                    // Was something sent?
+                    if (string.IsNullOrWhiteSpace(path) == false)
+                    {
+                        if (jbe.App.OS == OSType.Windows)
+                        {
+                            // If not an absolute path, then put the default path in first
+                            if ((path.Length > 2 && (path[..2].Equals(@"\\") || path[1] == ':')) == false)
+                                path = jbe.App.CurrentDS.JaxSettings.Default + (path.Length > 1 && path[0] == '\\' ? path[1..] : path);
+                        }
+                        else
+                        {
+                            // Assuming Linux - add to default path if
+                            // the provided path doesn't start with backslash
+                            if (path[0] != '\\')
+                                path = jbe.App.CurrentDS.JaxSettings.Default + path;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        // Nothing to do, so just return the default
+                        result = "Current directory is " + jbe.App.CurrentDS.JaxSettings.Default;
+                    }
+                    else if (Directory.Exists(path))
+                    {
+                        jbe.App.CurrentDS.JaxSettings.Default = path;
+                        result = "Default directory is " + path;
+                    }
+                    else
+                        throw new Exception("202|" + path);
+                }
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+
+        /* TODO
+         * 
+         * EDIT
+         * CHANGE [FIELDS FieldList] [Scope] 
+         *      [FOR lExpression1] [WHILE lExpression2]
+         *      [NAME ObjectName] [NOAPPEND] [NOCAPTION] [NOCLEAR] [NODELETE] 
+         *      [NOEDIT | NOMODIFY] [NOLINK] [NOMENU] [NOOPTIMIZE] [NORMAL] [NOWAIT] 
+         *      [REST] [SAVE] [TIMEOUT nSeconds] [TITLE cTitleText] 
+         */
+        public static string Change(AppClass app, string cmdRest)
+        {
+            string result = string.Empty;
+
+            try
+            {
+            }
+            catch (Exception ex)
+            {
+                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+
+        /*
+         * 
+         * CLEAR [ALL | CLASS ClassName | CLASSLIB ClassLibraryName | CONSOLE [ConsoleName]
+         *      | DEBUG | EVENTS | ERROR |FIELDS | GETS | MACROS | MEMORY 
+         *      | PROGRAM [Name]| PROMPT | RESOURCES [FileName] | TYPEAHEAD]
+         *      
+         */
+        public static async Task<string> Clear(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                string clearCode = eCodes.SUBCMD;
+                JAXObjects.Token clearName = new(string.Empty, "C");    // Set to empty string
+
+                if (eCodes.Expressions.Count > 0)
+                    clearName = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+
+                string name = clearName.Element.Type.Equals("C") ? clearName.AsString() : throw new Exception("11|");
+
+                // Clear named console
+                if (clearCode.Equals("N") || string.IsNullOrEmpty(clearCode))
+                {
+                    //jbe.App.JAXConsoles[string.IsNullOrEmpty(name) ? jbe.App.ActiveConsole : name.ToLower().Trim()].Clear();
+                }
+                else if ("P*".Contains(clearCode))
+                {
+                    // Clear program(s)
+                    if (name.Length == 0)
+                    {
+                        // Clear all code from cache
+                        jbe.App.CodeCache = [];
+                    }
+                    else
+                    {
+                        // Look for any matches
+                        string stem = JAXLib.JustStem(name);
+
+                        for (int i = jbe.App.CodeCache.Count - 1; i >= 0; i--)
+                        {
+                            if (jbe.App.CodeCache[i].FileStem.Equals(stem, StringComparison.OrdinalIgnoreCase))
+                                jbe.App.CodeCache.RemoveAt(i);
+                        }
+                    }
+                }
+                else if ("L*".Contains(clearCode))
+                {
+                    // Clear ClassLib
+                    if (name.Length == 0)
+                    {
+                        // Clear all code from cache
+                        jbe.App.ClassLibs = [];
+                    }
+                    else
+                    {
+                        // Find and clear this program
+                        foreach (KeyValuePair<string, CCodeCache> c in jbe.App.ClassLibs)
+                        {
+                            if (c.Value.Name.Equals(name, StringComparison.OrdinalIgnoreCase) || c.Value.FQFN.Equals(name, StringComparison.OrdinalIgnoreCase))
+                                jbe.App.ClassLibs.Remove(c.Key);
+                        }
+                    }
+                }
+                else if (clearCode.Equals("C"))
+                {
+                    // TODO - think this through
+                }
+                else if ("Y*".Contains(clearCode))
+                {
+                    // Clear Memory
+                    for (int i = 0; i < jbe.App.AppLevels.Count; i++)
+                    {
+                        jbe.App.AppLevels[i].PrivateVars = new();
+                        jbe.App.AppLevels[i].LocalVars = new();
+                    }
+                }
+                else if ("B*".Contains(clearCode))
+                {
+                    // Clear debug
+                    //JAXSysObj.SetValue("debug", "OFF");
+
+                    // Delete all debug files
+                }
+                else if ("R*".Contains(clearCode))
+                {
+                    // Clear errors
+                    jbe.App.ClearErrors();
+                }
+                else if (clearCode.Equals("EVENTS"))
+                {
+                    // Look for first read events flag and kill it
+                    for (int i = jbe.App.AppLevels.Count - 1; i > 0; i--)
+                    {
+                        if (jbe.App.AppLevels[^1].InReadEvents)
+                        {
+                            jbe.App.AppLevels[^1].InReadEvents = false;
+
+                            // If no flag, just do the one, for now
+                            if (eCodes.Flags.Length == 0)
+                                break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+
+
+        /* TODO 
+         * 
+         * CLOSE [ALL | ALTERNATE | DATABASES [ALL] | DEBUGGER | FORMAT | INDEXES | PROCEDURE | TABLES [ALL]]
+         */
+        public static async Task<string> Close(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                string clearType = eCodes.SUBCMD;
+                JAXObjects.Token clearName = new(string.Empty, "C");    // Set to empty string
+
+                switch (clearType)
+                {
+                    case "all":    //All
+                        break;
+
+                    case "alternate":   // Alternate
+                        // SET ALTERNATE OFF
+                        // SET ALTERNATE TO
+                        break;
+
+                    case "databases":   // Databases <ALL>
+                        break;
+
+                    case "debugger":   // Debugger
+                        break;
+
+                    case "format":   // Format
+                        break;
+
+                    case "indexes":   // Indexes
+                        await CloseIDX(jbe, eCodes);
+                        break;
+
+                    case "procedure":   // Procedure
+                        break;
+
+                    case "":
+                    case "tables":   // Tables <ALL>
+
+                        // If all flag is there, then all datasessions are affected.
+                        int closeDS = Array.IndexOf(eCodes.Flags, "all") < 0 ? 0 : jbe.App.CurrentDataSession;
+
+                        foreach (KeyValuePair<int, JAXDataSession> ds in jbe.App.jaxDataSession)
+                        {
+                            if (ds.Key > 0) // Skip the system datasession
+                            {
+                                if (closeDS == 0 || ds.Key == closeDS)
+                                {
+                                    foreach (KeyValuePair<int, JAXDirectDBF> wa in ds.Value.WorkAreas)
+                                    {
+                                        if (wa.Value is not null)
+                                            await wa.Value.DBFClose();
+                                    }
+                                }
+                            }
+
+                            // Now release all datasessions > 1  if closeDS is zero
+                            if (closeDS == 0)
+                            {
+                                // Go to datasession 1
+                                jbe.App.SetDataSession(1);
+
+                                // Remove all datasessions > 1
+                                foreach (KeyValuePair<int, JAXDataSession> cds in jbe.App.jaxDataSession)
+                                    if (cds.Key > 1) jbe.App.jaxDataSession.Remove(cds.Key);
+                            }
+                        }
+                        break;
+
+                    default:
+                        throw new Exception(string.Format("Unknown clear comand {0}", clearType));
+                }
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+
+
+            return result;
+        }
+
+
+        // Close one or more indexes
+        public static async Task CloseIDX(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            try
+            {
+                for (int i = 0; i < eCodes.Expressions.Count; i++)
+                {
+                    JAXObjects.Token iName = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+
+                    if (iName.Element.Type.Equals("C"))
+                    {
+                        string stem = JAXLib.JustStem(iName.AsString());
+
+                        if (string.IsNullOrWhiteSpace(stem) == false)
+                        {
+                            // We have an idx name.  See if it's open.
+                            for (int j = 0; j < jbe.App.CurrentDS.WorkAreas.Count; j++)
+                            {
+                                JAXDirectDBF.DBFInfo dbf = jbe.App.CurrentDS.WorkAreas[j].DbfInfo;
+                                if (dbf is not null && dbf.DBFStream != null)
+                                {
+                                    for (int k = 0; k < dbf.IDX.Count; k++)
+                                    {
+                                        if (dbf.IDX[k].Name.Equals(stem, StringComparison.OrdinalIgnoreCase) && dbf.IDX[k].IsRegistered == false)
+                                        {
+                                            // Close it
+                                            await jbe.App.CurrentDS.WorkAreas[j].IDXClose(k);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+        /*
+         * Compile one or more files
+         * 
+         * COMPILE [FORM | CLASSLIB | LABEL | REPORT] cFileName | cFileSkeleton | ? [ALL]
+         * 
+         */
+        public static async Task<string> Compile(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            jbe.App.ClearErrors();
+            string result = string.Empty;
+            int errcount = 0;
+
+            try
+            {
+                jbe.App.InCompile = true;
+
+                string cType = string.IsNullOrWhiteSpace(eCodes.SUBCMD) ? "program" : eCodes.SUBCMD;
+
+                JAXObjects.Token answer = eCodes.Expressions.Count > 0 ? await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr) : throw new Exception("1|");
+                if (answer.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                string fName = answer.AsString();
+                string fStem = JAXLib.JustStem(fName);
+                string fExt = JAXLib.JustExt(fName);
+                string fPath = JAXLib.JustFullPath(fName);
+                string cCode = string.Empty;
+                bool doAll = Array.IndexOf(eCodes.Flags, "all") >= 0;
+
+                if (string.IsNullOrWhiteSpace(fExt))
+                {
+                    fExt = cType switch
+                    {
+                        "form" => "scx",
+                        "classlib" => "vcx",
+                        "program" => "prg",
+                        "label" => "lbx",
+                        "report" => "frx",
+                        _ => throw new Exception("1999|" + cType)
+                    };
+                }
+
+                if (string.IsNullOrWhiteSpace(fPath))
+                    fPath = jbe.App.CurrentDS.JaxSettings.Default;
+
+                string FQFN = fPath + fStem + "." + fExt;
+
+                // TODO NOW - handle wildcards
+                FilerLib.GetDirectory(FQFN, out string[] fileArray);
+
+                for (int i = 0; i < fileArray.Length; i++)
+                {
+                    jbe.App.ClearErrors();
+
+                    FilerLib.GetFileInfo(fileArray[i], out string[] fileInfo);
+
+                    // Does the file exists?
+                    if (File.Exists(fPath + fileInfo[0]))
+                    {
+                        // Compile and return compiled filename to cCode
+                        cCode = AppHelper.CompileModule(jbe.App, fPath + fileInfo[0], "P");
+
+                        jbe.App.lists.Decompile(jbe.App, fileInfo[0].Replace(".", "_"), JAXLib.FileToStr(cCode));
+
+                        if (jbe.App.ErrorCount() == 0)
+                            result = Environment.NewLine + "Compiled " + fileInfo[0].ToUpper() + " with no errors";
+                        else
+                        {
+                            errcount += jbe.App.ErrorCount();
+                            result = Environment.NewLine + fileInfo[0].ToUpper() + $" has {jbe.App.ErrorCount()} errors";
+                        }
+                    }
+                    else
+                        throw new Exception("1|" + fName);
+                }
+            }
+            catch (Exception ex)
+            {
+                jbe.App.InCompile = false;
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            jbe.App.ClearErrors();
+            jbe.App.InCompile = false;
+
+            return result;
+        }
+
+
+        public static string CompileIt(AppClass app, string FQFN, string cType)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                if (File.Exists(FQFN))
+                {
+                    if ("FPMCDRL".Contains(cType))
+                        AppHelper.CompileModule(app, FQFN, "P");
+                    else
+                        throw new Exception("1999|" + cType);
+
+                    if (app.ErrorCount() == 0)
+                        result = "Compiled " + FQFN + " with no errors";
+                    else
+                        throw new Exception("9997|" + FQFN);
+                }
+                else
+                    throw new Exception("1|" + FQFN);
+            }
+            catch (Exception ex)
+            {
+                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+            finally
+            {
+                app.InCompile = false;
+            }
+
+            return result;
+        }
+
+
+        /* 
+         * CONTINUE 
+         */
+        public static string Continue(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+            string loopType = jbe.App.GetLoopStack();
+
+            string cFindMe = loopType[0] switch
+            {
+                'W' => jbe.App.MiscInfo["enddocmd"] + loopType,
+                'U' => jbe.App.MiscInfo["enduntilcmd"] + loopType,
+                'C' => jbe.App.MiscInfo["endcasecmd"] + loopType,
+                'F' => jbe.App.MiscInfo["endforcmd"] + loopType,
+                _ => throw new Exception("9999|CONTINUE|Unsupported loop type " + loopType[0].ToString())
+            };
+
+
+            // Find the endcase
+            int pos = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx].IndexOf(cFindMe);
+
+            if (pos < 0)
+            {
+                // Missing the end statement
+                throw new Exception(loopType[0] switch
+                {
+                    'W' => "1209|",
+                    'U' => "1210|",
+                    'C' => "1213|",
+                    'F' => "1207|",
+                    _ => throw new Exception("9999|CONTINUE|Unsupported loop type " + loopType[0].ToString())
+                });
+            }
+            else
+            {
+                jbe.App.utl.Conv64(pos, 3, out string pos2);
+                result = "Y" + pos2; // Return the position of the endcase
+            }
+
+            return result;
+        }
+
+
+        /* TODO 
+         * 
+         * COPY TO FileName [DATABASE DatabaseName]
+         *      [FIELDS FieldList | FIELDS LIKE Skeleton | FIELDS EXCEPT Skeleton]
+         *      [Scope] [FOR lExpression1] [WHILE lExpression2] 
+         *      [ [TYPE] [ FOXPLUS | FOX2X | DIF | MOD | SDF | CSV | XLS | XLSX | 
+         *      DELIMITED [ WITH Delimiter | WITH BLANK  | WITH TAB | WITH CHARACTER <delimiter> ] ] ] 
+         *      [AS nCodePage]
+         */
+        public static string Copy(AppClass app, string cmdRest)
+        {
+            string result = string.Empty;
+
+            try
+            {
+            }
+            catch (Exception ex)
+            {
+                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+        /* TODO 
+         * 
+         * COUNT   [Scope] [FOR lExpression1] [WHILE lExpression2] [TO VarName] [NOOPTIMIZE]
+         * 
+         */
+        public static string Count(AppClass app, string cmdRest)
+        {
+            string result = string.Empty;
+
+            try
+            {
+            }
+            catch (Exception ex)
+            {
+                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
+        /* 
+         * 
+         * CREATE
+         * 
+         */
+        public static async Task<string> Create(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            switch (eCodes.SUBCMD.ToLower())
+            {
+                case "t":
+                case "tab":
+                case "table":   // Table
+                    eCodes.SUBCMD = "T";
+                    result = await CreateTable(jbe, eCodes);
+                    break;
+
+                case "c":
+                case "cur":
+                case "cursor":   // Cursor
+                    eCodes.SUBCMD = "C";
+                    result = await CreateTable(jbe, eCodes);
+                    break;
+
+                default:
+                    throw new Exception("1999|Create " + eCodes.SUBCMD.ToUpper());
+            }
+
+            return result;
+        }
+
+        /* TODO PARTIAL - FROM ARRAY
+         *      
+         * CREATE TABLE cFile (cField cType [(nWidth [,nPrecision])] [, cField cType [(nWidth [,nPrecision])] [, cField...]) 
+         *      
+         * The create table command will strictly set up the table and fields
+         * with no special settings allowed during the creation.
+         * 
+         * Use the ALTER, INDEX, and other table related commands to set the table
+         * up the way you would with the CREATE command.
+         * 
+         */
+        public static async Task<string> CreateTable(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                JAXObjects.Token answer = new();
+
+                if (eCodes.Expressions.Count != 1) throw new Exception("10");
+                answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                string TableName = answer.Element.Type.Equals("C") ? answer.AsString() : throw new Exception("11|");
+
+                bool isArray = string.IsNullOrWhiteSpace(eCodes.From.Name) == false;
+                List<JAXTables.FieldInfo> FieldInfo = [];
+
+                if (isArray)
+                {
+                    jbe.App.DebugLog($"Creating table {TableName} from array");
+
+                    // Go through the array and collect the information
+                    string arrayName;
+                    answer = await jbe.App.SolveFromRPNString(eCodes.From.Name);
+                    if (answer.Element.Type.Equals("C"))
+                        arrayName = answer.AsString();
+                    else
+                        throw new Exception("10|");
+
+                    JAXObjects.Token fa = await jbe.App.GetVarToken(arrayName);
+
+                    if ((fa.Col == 4 || fa.Col > 17) == false)
+                        throw new Exception("CREATE FROM ARRAY requires a two dimensional array with 4 or 18 columns");
+
+                    for (int r = 0; r < fa.Row; r++)
+                    {
+                        JAXTables.FieldInfo f = new();
+                        fa.ElementNumber = r * fa.Col;
+                        f.FieldName = fa.Element.ValueAsString;
+
+                        fa.ElementNumber = r * fa.Col + 1;
+                        f.FieldType = fa.Element.ValueAsString;
+
+                        fa.ElementNumber = r * fa.Col + 2;
+                        f.FieldLen = fa.Element.ValueAsInt;
+
+                        fa.ElementNumber = r * fa.Col + 3;
+                        f.FieldDec = fa.Element.ValueAsInt;
+
+                        if (fa.Col > 17)
+                        {
+                            // TODO - fill in the rest of the information
+                            fa.ElementNumber = r * fa.Col + 4;
+                            f.NullOK = fa.Element.ValueAsBool;          // Null values allowed
+
+                            fa.ElementNumber = r * fa.Col + 5;
+                            f.BinaryData = fa.Element.ValueAsBool;      // Code page not allowed
+
+                            fa.ElementNumber = r * fa.Col + 6;
+                            f.Valid = fa.Element.ValueAsString;         // Validation clause
+
+                            fa.ElementNumber = r * fa.Col + 7;
+                            f.ValidMessage = fa.Element.ValueAsString;  // Validation message
+
+                            fa.ElementNumber = r * fa.Col + 8;
+                            f.DefaultValue = fa.Element.ValueAsString;  // Default value - TODO!!!
+
+                            fa.ElementNumber = r * fa.Col + 9;
+                            // Table validation expression
+
+                            fa.ElementNumber = r * fa.Col + 10;
+                            // Table validation message
+
+                            fa.ElementNumber = r * fa.Col + 11;
+                            f.TableName = fa.Element.ValueAsString;     // Long table name
+
+                            fa.ElementNumber = r * fa.Col + 12;
+                            // insert trigger
+
+                            fa.ElementNumber = r * fa.Col + 13;
+                            // Update trigger
+
+                            fa.ElementNumber = r * fa.Col + 14;
+                            // Delete trigger
+
+                            fa.ElementNumber = r * fa.Col + 15;
+                            f.Comment = fa.Element.ValueAsString;        // Comment
+
+                            fa.ElementNumber = r * fa.Col + 16;
+                            f.AutoIncNext = fa.Element.ValueAsInt;      // Next auto inc value
+
+                            fa.ElementNumber = r * fa.Col + 17;
+                            f.AutoIncStep = fa.Element.ValueAsInt;      // Next auto inc step
+                        }
+
+                        FieldInfo.Add(f);
+                    }
+                }
+                else
+                {
+                    jbe.App.DebugLog($"Creating table {TableName} from expression list", jbe.App.CurrentDS.JaxSettings.Talk == false);
+                    string[] expr = eCodes.TABLE.Split(AppClass.expDelimiter);
+
+                    for (int i = 0; i < expr.Length; i++)
+                    {
+                        jbe.App.DebugLog($"Processing field {i + 1} expression {expr[i]}", jbe.App.CurrentDS.JaxSettings.Talk == false);
+
+                        string[] fld = expr[i].Split(AppClass.expParam);
+
+                        if (string.IsNullOrWhiteSpace(fld[0]) == false)
+                        {
+                            answer = await jbe.App.SolveFromRPNString(fld[0]);
+                            if (answer.Element.Type.Equals("C")) fld[0] = answer.AsString(); else throw new Exception("11|");
+
+                            answer = await jbe.App.SolveFromRPNString(fld[1]);
+                            if (answer.Element.Type.Equals("C")) fld[1] = answer.AsString(); else throw new Exception("11|");
+
+                            int width = 0;
+                            int dec = 0;
+
+                            if (fld.Length > 2 && string.IsNullOrWhiteSpace(fld[2]) == false)
+                            {
+                                answer = await jbe.App.SolveFromRPNString(fld[2]);
+                                if (answer.Element.Type.Equals("N")) width = answer.AsInt(); else throw new Exception("11|");
+                            }
+
+                            if (fld.Length > 3 && string.IsNullOrWhiteSpace(fld[3]) == false)
+                            {
+                                answer = await jbe.App.SolveFromRPNString(fld[3]);
+                                if (answer.Element.Type.Equals("N")) dec = answer.AsInt(); else throw new Exception("11|");
+                            }
+
+                            JAXTables.FieldInfo f = new()
+                            {
+                                FieldName = fld[0],
+                                FieldType = fld[1].ToUpper().Trim(),
+                                FieldLen = width,
+                                FieldDec = dec
+                            };
+
+                            FieldInfo.Add(f);
+                        }
+                    }
+                }
+
+                string name = JAXLib.JustStem(TableName);
+                string ext = JAXLib.JustExt(TableName);
+                string path = JAXLib.JustFullPath(TableName);
+                string fqfn = string.Empty;
+
+                ext = string.IsNullOrWhiteSpace(ext) ? "dbf" : ext;
+
+                fqfn = name + "." + ext;
+                fqfn = AppHelper.FixFileCase(string.Empty, fqfn, jbe.App.CurrentDS.JaxSettings.Naming, jbe.App.CurrentDS.JaxSettings.NamingAll);
+
+                // Ensure we have a path
+                if (string.IsNullOrWhiteSpace(path))
+                    path = AppHelper.FindPathForFile(jbe.App, name + "." + ext);
+
+                path = string.IsNullOrWhiteSpace(path) ? jbe.App.CurrentDS.JaxSettings.Default : path;
+                fqfn = AppHelper.FixFileCase(path, fqfn, jbe.App.CurrentDS.JaxSettings.Naming, jbe.App.CurrentDS.JaxSettings.NamingAll);
+
+                // if no FQFN info, add the default
+                if (path.Contains('\\') == false && path.Contains(':') == false)
+                    fqfn = jbe.App.CurrentDS.JaxSettings.Default + fqfn + ".dbf";
+                else
+                {
+                    if (fqfn.Length > 2)
+                    {
+                        if (fqfn[..2].Equals("\\\\") == false && fqfn[1] != ':' && fqfn[0] != '.')
+                            fqfn = jbe.App.CurrentDS.JaxSettings.Default + fqfn + ".dbf";
+                    }
+                }
+
+                // Default is to overwrite
+                bool overwrite = true;
+
+                // If safety is on, check for and ask if it exists
+                if (File.Exists(fqfn) && jbe.App.CurrentDS.JaxSettings.Safety)
+                {
+                    // Ask if ok to overwrite
+                    DialogResult dr = MessageBox.Show(string.Format("Overwrite table {0}", fqfn), "WARNING", MessageBoxButtons.YesNo);
+                    overwrite = dr == DialogResult.Yes;
+                }
+
+                // Call the Creation routine
+                JAXDirectDBF.DBFInfo dbfInfo = new()
+                {
+                    Fields = FieldInfo,
+                    TableName = TableName,
+                    FQFN = fqfn,
+                };
+
+                await jbe.App.CurrentDS.CurrentWA.DBFCreateDBF(dbfInfo, overwrite);
+            }
+            catch (Exception ex)
+            {
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+    }
+}
