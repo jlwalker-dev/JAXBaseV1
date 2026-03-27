@@ -5,11 +5,16 @@ A modern take on XBase
 The JAXBase Project is an attempt to create a modern version of the venerable XBase language. It is highly object oriented and most legacy/MS-DOS commands and last-century paradigms have been removed.  The code will become open-source no later than Version 0.8 release and be under the GNU General Public License version 2 (GPL-2.0).
 <BR>
 <BR>
+### Current Status
+This is JAXBase V0.5 and has been moved to this repository early so that the code can be reviewed and suggestions on direction can be made.  I'm not a seasoned C# developer, and you'll likely see a progression of sophistication in the code base.<br>
+<br>
+Please go to [Project](https://github.com/jlwalker-dev/JAXBaseV1/wiki/Project) for more information.
+<br>
+<br>
 ## Differences from Most XBase Dialects
 •	Data sessions are addressable in many commands.  ***USE table IN 0 SESSION 2*** opens the table in the lowest open work area of data session 2.<br><br>
 •	The @ commands, color pairs, and color schemes no longer exist.<br><br>
-•	GUI Form objects will have basic text-only auto-conversion in Version 1.0.<br><br>
-•	ON ERROR is gone.  Use TRY/CATCH/FINALLY or the Error method in classes.<br><br>
+•	GUI Form objects will have basic text-only auto-conversion in Version 1 for Linux.<br><br>
 •	Menus and related components are now a class.<br><br>
 •	You can use most JAXBase table commands to interact with a SQL database and its tables.  Additionally, the SQL class provides you with rich features, allowing you to use the specific syntax for your preferred SQL engine.<br><br>
 •	JAXBase is designed to be a true cross platform language.  Windows will be the first targeted operating system with Linux support coming in Version 1.  Operating system specific features are not part of the language, but there will be ways to communicate with the operating system using external add-ons that communicate through one or more JAXBase communication classes.<br><br>
@@ -35,6 +40,3 @@ The mission of the JAXBase Project is to encourage use of open-source software a
 <BR>
 <BR>
 <BR>
-
-## Current Status 
-Please go to [Project](https://github.com/jlwalker-dev/JAXBaseV1/wiki/Project) updates are posted about once a week.
