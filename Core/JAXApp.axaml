@@ -1,0 +1,65 @@
+<Application xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:local="using:JAXBase"
+			 x:Class="JAXBase.Core.JAXApp"
+			 RequestedThemeVariant="Light">  <!-- or "Light" if preferred -->
+
+			 <Application.Styles>
+				 <!-- Your base theme -->
+				 <FluentTheme />
+
+				 <!-- Force consistent dark console look for TextBoxes (active or inactive) -->
+				 <Style Selector="TextBox">
+					 <Setter Property="Background" Value="White" />	<!-- Black -->
+					 <Setter Property="Foreground" Value="Black" /> <!-- LimeGreen -->
+					 <Setter Property="CaretBrush" Value="#000000" />  <!-- #FFFF00 -->
+					 <Setter Property="SelectionBrush" Value="#444444" /> <!-- #444444 -->
+					 <Setter Property="SelectionForegroundBrush" Value="#8888FF" /> <!-- White -->
+					 <Setter Property="BorderBrush" Value="Transparent" />
+					 <Setter Property="BorderThickness" Value="0" />
+					 <Setter Property="Padding" Value="10,8,8,8" />
+					 <Setter Property="FontFamily" Value="Consolas, monospace" />
+					 <Setter Property="FontSize" Value="16" />
+				 </Style>
+
+				 <!-- Optional: Prevent overall window dimming when inactive -->
+				 <Style Selector="Window">
+					 <Setter Property="TransparencyLevelHint" Value="None" />
+					 <Setter Property="Background" Value="Black" />
+				 </Style>
+
+				 <!-- Optional: Prevent focus/pointer changes from altering background -->
+				 <Style Selector="TextBox:focus /template/ Border#PART_Border">
+					 <Setter Property="Background" Value="Black" />
+					 <Setter Property="BorderBrush" Value="Transparent" />
+				 </Style>
+				 <Style Selector="TextBox:pointerover /template/ Border#PART_Border">
+					 <Setter Property="Background" Value="Black" />
+				 </Style>
+
+				 <Style Selector="local|JAXLabel">
+					 <Setter Property="Template">
+						 <ControlTemplate>
+							 <Border BorderBrush="{TemplateBinding BorderBrush}"
+									 BorderThickness="{TemplateBinding BorderThickness}"
+									 Background="{TemplateBinding Background}"
+									 Padding="{TemplateBinding Padding}">
+
+								 <TextBlock Text="{TemplateBinding Text}"
+											TextWrapping="{TemplateBinding TextWrapping}"
+											Foreground="{TemplateBinding Foreground}"
+											FontSize="{TemplateBinding FontSize}"
+											FontFamily="{TemplateBinding FontFamily}"
+											FontWeight="{TemplateBinding FontWeight}"
+											FontStyle="{TemplateBinding FontStyle}"
+											HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+											VerticalAlignment="{TemplateBinding VerticalAlignment}"/>
+							 </Border>
+						 </ControlTemplate>
+					 </Setter>
+				 </Style>
+
+				 <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+			 </Application.Styles>
+
+</Application>
