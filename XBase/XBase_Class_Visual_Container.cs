@@ -55,6 +55,7 @@ namespace JAXBase.XBase
                         {
                             // It's a control
                             InnerCanvas.Children.Add(value.avaloniaObject);
+
                             UserProperties["objects"].Add(value);
                             UserProperties["controlcount"].Element.Value = UserProperties["controlcount"].AsInt() + 1;
                             value.SetParent(me);

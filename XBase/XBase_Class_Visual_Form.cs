@@ -60,15 +60,6 @@ namespace JAXBase.XBase
         {
             int err = 0;
 
-            // Use the real/live canvas from FakeWindow
-            //var targetCanvas = InnerCanvas;
-
-            // Optional diagnostic: warn if adding before shown (content may not appear until show)
-            //if (!fakeWindow.IsShown)  // ← assumes you add public bool IsShown => _isShown; to FakeWindow
-            //{
-            //    App.DebugLog($"Warning: AddObject called before form is shown. Controls added to canvas but may not be visible until VFPShow().");
-            //}
-
             if (value.avaloniaObject is not null)
             {
                 InnerCanvas.Children.Add(value.avaloniaObject!);
@@ -399,6 +390,20 @@ namespace JAXBase.XBase
                     }
 
                     fakeWindow.VFPShow();
+
+                    // TODO - we may need to make a recursive call so that 
+                    //        containers and pages are updated
+                    // This ensures inline CREATEOBJECT left/top values survive the final move to InnerCanvas
+                    if (this is XBase_Class_Avalonia visualBase)
+                    {
+                        // Re-apply on the form's own children (the label and any other visual objects)
+                        foreach (var obj in UserProperties["objects"]._avalue)
+                        {
+                            JAXObjectWrapper childWrapper = (JAXObjectWrapper)obj.Value;
+                            if (childWrapper.thisObject is XBase_Class_Avalonia childVisual)
+                                await childVisual.ReapplyPosition(childWrapper);
+                        }
+                    }
 
                     InnerCanvas.IsVisible = true;
                     App.DebugLog($"Form {UserProperties["name"].AsString()} shown via FakeWindow");
