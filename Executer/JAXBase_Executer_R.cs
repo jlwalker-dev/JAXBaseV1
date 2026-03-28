@@ -197,7 +197,7 @@ namespace JAXBase.Executer
                 err = 10;
 
             if (err > 0)
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, $"{err}|");
 
             return string.Empty;
         }

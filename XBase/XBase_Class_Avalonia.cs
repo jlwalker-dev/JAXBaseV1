@@ -492,5 +492,26 @@ namespace JAXBase.XBase
 
             return resultToken;
         }
+
+        /// <summary>
+        /// Re-applies Left and Top attached properties to the Avalonia control after it has been
+        /// added to a Canvas (or after child-moving in FakeWindow). 
+        /// Call this from AddObject (and any child transfer logic) to make inline 
+        /// CREATEOBJECT([left=...; top=...]) work reliably.
+        /// </summary>
+        public async Task ReapplyPosition(JAXObjectWrapper jow)
+        {
+            if (jow.thisObject is null || jow.avaloniaObject is null)
+                return;
+
+            App.DebugLog($">>>>>Reapplying {jow.JOWName} left and top values");
+
+            // Use the same pattern as SetProperty for consistency
+            if (jow.thisObject.UserProperties.TryGetValue("left", out JAXObjects.Token? valueLeft))
+                Avalonia.Controls.Canvas.SetLeft(jow.avaloniaObject, valueLeft.AsDouble());
+
+            if (jow.thisObject.UserProperties.TryGetValue("top", out JAXObjects.Token? valueTop))
+                Avalonia.Controls.Canvas.SetTop(jow.avaloniaObject, valueTop.AsDouble());
+        }
     }
 }

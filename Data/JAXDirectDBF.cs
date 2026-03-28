@@ -6928,7 +6928,8 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8026, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name)            }
+                App.SetError(8026, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+            }
 
             return outBuffer;
         }
