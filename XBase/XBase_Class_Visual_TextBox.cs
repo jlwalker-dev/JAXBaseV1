@@ -6,6 +6,7 @@
  *      
  *------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
+using JAXBase.UI.Controls;
 using JAXBase.Utilities.Utilities;
 
 namespace JAXBase.XBase
@@ -14,11 +15,11 @@ namespace JAXBase.XBase
     {
         public int MaxLength = 0;
 
-        public Avalonia.Controls.TextBox txt => (Avalonia.Controls.TextBox)me.avaloniaObject!;
+        public JAXMaskedTextBox txt => (JAXMaskedTextBox)me.avaloniaObject!;
 
         public XBase_Class_Visual_TextBox(JAXObjectWrapper jow, string name) : base(jow, name)
         {
-            SetVisualObject(new Avalonia.Controls.TextBox(), "TextBox", "text", true, UserObject.urw);
+            SetVisualObject(new JAXMaskedTextBox(), "TextBox", "text", true, UserObject.urw);
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -125,6 +126,20 @@ namespace JAXBase.XBase
                                 result = 11;
                             break;
 
+                        case "format":
+                            if (tk.Element.Type.Equals("C"))
+                                txt.JAXFormat = tk.AsString();
+                            else
+                                result = 11;
+                            break;
+
+                        case "inputmask":
+                            if (tk.Element.Type.Equals("C"))
+                                txt.JAXMask = tk.AsString();
+                            else
+                                result = 11;
+                            break;
+
                         case "maxlength":
                             if (tk.Element.Type.Equals("N") == false)
                                 throw new Exception("11|");
@@ -139,6 +154,13 @@ namespace JAXBase.XBase
                             }
                             break;
 
+                        case "nulldisplay":
+                            if (tk.Element.Type.Equals("C"))
+                                txt.NullDisplay = tk.AsString();
+                            else
+                                result = 11;
+                            break;
+
                         case "readonly":
                             if (tk.Element.Type.Equals("L") == false)
                                 throw new Exception("11|");
@@ -147,19 +169,12 @@ namespace JAXBase.XBase
                             break;
 
                         case "value":
-                            if (tk.Element.Type.Equals("C") == false)
-                                throw new Exception("11|");
-
                             isProgrammaticChange = true;
-                            txt.Text = tk.AsString();
+                            txt.SetValue(tk.Element.Value);
                             isProgrammaticChange = false;
                             break;
 
                         default:
-                            if (JAXLib.InListC(propertyName,"left","width"))
-                            {
-                                int iii = 0;
-                            }
                             result = await base.SetProperty(propertyName, objValue, objIdx);
                             result = result == 0 ? 9 : result;
                             break;
@@ -209,22 +224,27 @@ namespace JAXBase.XBase
 
             if (UserProperties.ContainsKey(propertyName))
             {
-                    result = 0;
+                result = 0;
 
-                    // Post handling of getproperty
-                    switch (propertyName)
-                    {
-                        case "maxlength":
-                            returnToken.Element.Value = txt.MaxLength;
-                            break;
+                // Post handling of getproperty
+                switch (propertyName)
+                {
+                    case "maxlength":
+                        returnToken.Element.Value = txt.MaxLength;
+                        break;
 
-                        case "readonly":
-                            returnToken.Element.Value = txt.IsReadOnly;
-                            break;
+                    case "readonly":
+                        returnToken.Element.Value = txt.IsReadOnly;
+                        break;
 
-                        case "value":
-                            returnToken.Element.Value = txt.Text ?? string.Empty;
-                            break;
+                    case "text":
+                        returnToken.Element.Value = txt.Text ?? string.Empty;
+                        break;
+
+                    case "value":
+                        returnToken= txt.GetValue();
+                        break;
+
                     default:
                         // Process standard properties
                         returnToken = await base.GetProperty(propertyName, idx);

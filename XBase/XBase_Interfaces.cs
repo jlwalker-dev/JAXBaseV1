@@ -84,7 +84,7 @@ namespace JAXBase.XBase
         public string DefaultName();
         public Task<int> _CallMethod(string methodName);
         public Task<int> DoDefault(string methodName);
-        public int _SetMethod(string methodName, string sourceCode, string CompiledCode, string Type);
+        public int _SetMethod(string methodName, string sourceCode, bool createOK, string Type);
         public void _AddError(int errorNo, int lineNo, string message, string procedure);
         public void SetAllOfClass(string className, string property, JAXObjects.Token objtk);
         public void SetAllOfBaseClass(string baseClassName, string property, JAXObjects.Token objtk);

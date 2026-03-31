@@ -684,7 +684,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","dblclick","destroy","error","init","interactivechagnge","keypress","load","lostfocus",
+                "click","dblclick","destroy","error","gotfocus","interactivechagnge","init","keypress","load","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "programmaticchange","resize","rightclick","valid","visiblechanged","when"
                 ];
@@ -707,10 +707,9 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "anchor,n,0","alignment,n,2","autosize,l,true",
-                "backcolor,R,15790320","backstyle,n,1","BaseClass,C!,commandgroup","bordercolor,R,100|100|100",
-                "borderstyle,n,1","borderwidth,n,1","buttoncount,n,1","buttonlayout,n,0","buttonpictures,c,","buttontooltips,c,",
-                "buttoncaptions,c,","buttonnames,c,",
+                "anchor,n,0",
+                "backcolor,R,15790320","backstyle,n,1","BaseClass,C!,commandgroup","bordercolor,R,100|100|100","borderstyle,n,1","borderwidth,n,0",
+                "buttoncaptions,c,","buttoncount,n,1","buttonlayout,n,0","buttonnames,c,","buttonpictures,c,","buttontooltips,c,",
                 "Class,C!,commandgroup","ClassLibrary,C!,","Comment,C,","controlcount,n,0",
                 "Enabled,L,true",
                 "Height,N,40",
@@ -718,10 +717,10 @@ namespace JAXBase.XBase
                 "name,c,",
                 "objects,*,",
                 "parent,o!,","parentclass,C!,",
-                "righttoleft,L,false",
-                "setoriginalwhen,n,0","spacing,n,6",
-                "tabstop,L,true","tabindex,n,1","tag,C,","tooltiptext,c,","top,n,0",
-                "value,n,1","visible,l,true","width,N,150"
+                "spacing,n,6",
+                "tabindex,n,1","tabstop,L,true","tag,C,","tooltiptext,c,","top,n,0",
+                "value,n,1","visible,l,true",
+                "width,N,150"
                 ];
         }
     }

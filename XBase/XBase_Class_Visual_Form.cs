@@ -442,21 +442,18 @@ namespace JAXBase.XBase
 
         public override string[] JAXMethods()
         {
-            return ["addobject", "addproperty", "box", "circle", "cls", "dock", "draw", "getdockstate", "hide", "line",
-                    "move", "newobject", "pset", "point", "print", "readexpression", "readmethod", "refresh", "release",
+            return ["addobject", "addproperty", "move", "readexpression", "readmethod", "refresh", "release",
                     "removeobject", "resettodefault", "saveas", "saveasclass", "setall", "setfocus", "setmousepointer",
-                    "setviewport", "show", "showwhatsthis", "textheight", "textwidth", "whatsthismode", "writeexpression",
-                    "writemethod", "zorder"];
+                    "show", "writeexpression", "writemethod", "zorder"];
         }
 
         public override string[] JAXEvents()
         {
             return
             [
-                "activate","afterdock","beforedock","click","dblclick","dblrightclick","deactivate","destroy","dragdrop","dragover","error",
-                "gotfocus","init","keypress","load","lostfocus",
+                "activate","click","dblclick","deactivate","destroy","error","gotfocus","init","keypress","load","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
-                "moved","paint","queryunload","resize","rightclick","scrolled","undock","unload","visiblechanged"
+                "moved","queryunload","resize","rightclick","scrolled","unload","visiblechanged"
             ];
         }
 
@@ -464,27 +461,23 @@ namespace JAXBase.XBase
         {
             return
             [
-                "activecontrol,N!,0","alwaysontop,L,false",
-                "autocenter,L,false",
-                "backcolor,R,255|255|255","bindcontrols,L,true","bordercolor,R,0","borderstyle,N,3","borderwidth,n,0","baseclass,C!,form",
-                "class,C!,Form","caption,C,Form","classlibrary,C!$,","closable,L,true","comment,C,","controlbox,L,true","controlcount,N!,0",
+                "activecontrol,N!,0","alwaysontop,L,false", "autocenter,L,false",
+                "backcolor,R,255|255|255","baseclass,C!,form","bindcontrols,L,true","borderstyle,N,3",
+                "caption,C,Form","class,C!,Form","classlibrary,C!,","closable,L,true","comment,C,","controlbox,L,true","controlcount,N!,0",
                 "datasession,N,1","datasessionid,N!,1",
                 "Enabled,L,true",
-                "FontBold,L,false",
-                "FontItalic,L,false","FontName,C,Arial","FontSize,N,9",
-                "FontStrikeThrough,L,false","FontUnderline,L,false","forecolor,R,0",
+                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,9","forecolor,R,0",
                 "Height,N,300",
                 "icon,C,",
                 "keypreview,L,false",
                 "left,N,0","lockscreen,L,false",
-                "maxbutton,L,true","maxheight,N,-1","maxwidth,N,-1","minbutton,L,true",
-                "minheight,N,-1","minwidth,N,-1","mousepointer,n,0","moveable,L,true",
+                "maxbutton,L,true","maxheight,N,-1","maxwidth,N,-1","minbutton,L,true","minheight,N,-1","minwidth,N,-1","mousepointer,n,0","moveable,L,true",
                 "name,C,form",
                 "objects,*,",
                 "parent,o!$,","parentclass,C!$,","picture,C,",
                 "righttoleft,L,false",
-                "shownintaskbar,L,true","showwindow,N,0",
-                "tag,C,","tabindex,N,1","tabstop,L,true","top,N,0","tooltiptext,c,",
+                "scalefactor,N,0","scrollbars,n,0","showintaskbar,L,.T.","showwindow,N,0",
+                "tabindex,N,1","tabstop,L,true","tag,C,","top,N,0","tooltiptext,c,",
                 "visible,L,true",
                 "width,N,300","windowstate,N,0","windowtype,N,0"
             ];

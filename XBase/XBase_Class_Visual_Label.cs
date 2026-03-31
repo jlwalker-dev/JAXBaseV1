@@ -268,18 +268,16 @@ namespace JAXBase.XBase
         public override string[] JAXMethods()
         {
             return [
-                "addproperty", "drag", "move", "readexpression", "readmethod", "refresh",
-                "resettodefault", "saveasclass", "setfocus", "showwhatsthis", "writeexpression", "writemethod", "zorder"
+                "addproperty","move","readexpression","readmethod","refresh","resettodefault","saveasclass","setfocus","writeexpression","writemethod","zorder"
                 ];
         }
 
         public override string[] JAXEvents()
         {
             return [
-                "click","dblclick","destroy","dragdrop","dragover","error","gotfocus",
-                "init","interactivechagnge","keypress","load","lostfocus",
+                "click","dblclick","destroy","error","gotfocus","init","load","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
-                "programmaticchange","rangehigh","rangelow","rightclick","uienable","valid","visiblechanged","when"
+                "rightclick","visiblechanged","when"
             ];
         }
 
@@ -291,8 +289,7 @@ namespace JAXBase.XBase
                 "caption,c,","Class,C!,label","ClassLibrary,C!,","Comment,C,",
                 "disabledbackcolor,R,220|220|220","disabledforecolor,R,128|128|128",
                 "Enabled,L,true",
-                "FontBold,L,false","FontItalic,L,false",
-                "FontName,C,Arial","FontSize,N,9","FontStrikeThrough,L,false","FontUnderline,L,false",
+                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,9",
                 "forecolor,R,0|0|0",
                 "height,n,21",
                 "left,N,0",
@@ -300,7 +297,8 @@ namespace JAXBase.XBase
                 "parent,o!,","parentclass,C!,",
                 "righttoleft,L,false",
                 "tabindex,n,1","tabstop,l,false","tag,C,","top,N,0","tooltiptext,c,",
-                "visible,l,true","width,N,100","wordwrap,l,false"
+                "visible,l,true",
+                "width,N,100","wordwrap,l,false"
                 ];
         }
 

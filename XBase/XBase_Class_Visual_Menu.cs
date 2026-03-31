@@ -254,7 +254,7 @@ namespace JAXBase.XBase
                 "left,n,0",
                 "name,c,",
                 "objects,*,",
-                "parent,o!,","parentclass,c!,","picture,c,",
+                "parent,o!,","parentclass,c!,",
                 "righttoleft,L,false",
                 "tag,c,","tooltiptext,c,","top,n,0",
                 "visible,l,.t.",

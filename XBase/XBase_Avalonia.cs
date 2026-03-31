@@ -283,7 +283,7 @@ namespace JAXBase.XBase
                 if (err == 0)
                 {
                     UserProperties["objects"].Add(value);
-                    UserProperties["controlcount"].Element.Value = UserProperties["controlcount"].AsInt() + 1;
+                    UserProperties["controlcount"].Element.Value = UserProperties["objects"].Col;
 
                     if (value.thisObject is not null)
                         await value.thisObject.PostInit(me, []);
@@ -327,8 +327,6 @@ namespace JAXBase.XBase
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
                     App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                result = -1;
             }
 
             return result;
@@ -346,20 +344,24 @@ namespace JAXBase.XBase
             else if (CanWriteObjects)
             {
                 if (idx >= UserProperties["objects"].Col)
-                    throw new Exception("3003|");
-
-                JAXObjectWrapper jow = (JAXObjectWrapper)UserProperties["objects"].Element.Value;
-
-                if (jow is not null && jow.thisObject is not null)
-                {
-                    if (jow.Protected == JAXObjectWrapper.Protection.URD)
-                        UserProperties["objects"].RemoveAt(idx);
-                    else
-                        throw new Exception($"3042|{jow.JOWName}");
-                }
+                    result = 3003;
                 else
-                    UserProperties["objects"].RemoveAt(idx);  // Remove nulled obejct
+                {
+                    JAXObjectWrapper jow = (JAXObjectWrapper)UserProperties["objects"].Element.Value;
 
+                    if (jow is not null && jow.thisObject is not null)
+                    {
+                        if (jow.Protected == JAXObjectWrapper.Protection.URD)
+                            UserProperties["objects"].RemoveAt(idx);
+                        else
+                            result = 3042;
+                    }
+                    else
+                        UserProperties["objects"].RemoveAt(idx);  // Remove nulled obejct
+
+                    if (result == 0)
+                        UserProperties["controlcount"].Element.Value = UserProperties["objects"].Col;
+                }
             }
             else
                 result = 3019;
@@ -369,9 +371,7 @@ namespace JAXBase.XBase
                 _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                result = -1;
+                    App.SetError(result, $"{result}|{me.JOWName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -581,7 +581,7 @@ namespace JAXBase.XBase
 
             if (CanWriteObjects)
             {
-
+                // TODO - set the object property
             }
             else
             {
@@ -597,8 +597,6 @@ namespace JAXBase.XBase
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
                     App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                result = -1;
             }
 
             return result;
@@ -638,15 +636,21 @@ namespace JAXBase.XBase
                             if (string.IsNullOrWhiteSpace(UserProperties[propertyName].Element._setAsType) || UserProperties[propertyName].Element._setAsType.Equals(objtk.Element.Type))
                                 UserProperties[propertyName].Element.Value = objValue;
                             else
-                            {
-                                int iii = 0;
-                            }
+                                result = 9;
                             break;
                     }
                 }
             }
             else
                 result = 1559;
+
+            if (result > 0)
+            {
+                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+
+                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
+                    App.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+            }
 
             return result;
         }
@@ -691,8 +695,6 @@ namespace JAXBase.XBase
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
                     App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                result = -1;
             }
 
             return result;
@@ -707,10 +709,13 @@ namespace JAXBase.XBase
          * First time through?  Need to set the type to (M)ethod, (E)vent, or (U)ser
          * defined method.
          *------------------------------------------------------------------------------------------*/
-        public virtual int _SetMethod(string methodName, string SourceCode, string CompCode, string Type)
+        public virtual int _SetMethod(string methodName, string SourceCode, bool createOK, string methodType)
         {
+
             MethodClass? mc = null;
             methodName = methodName.ToLower();
+
+            string CompCode="";
             int result = 0;
 
             if (methodName.Equals("writemethod"))
@@ -734,22 +739,27 @@ namespace JAXBase.XBase
                 }
                 else
                 {
-                    // Create a new method definition
-                    mc = GetMethod(methodName);
-                    mc.PrgCall = SourceCode;
-
-                    if (string.IsNullOrWhiteSpace(Type) == false)
+                    if (createOK)
                     {
-                        mc.Type = Type[..1].ToUpper();
-                        //mc.Tag = Type.Contains('!') ? "N" : "U";    // Finding a ! means it's a native method
-                        mc.Inherited = Type.Contains("#"); // Inherited 
-                        if ("MEU".Contains(mc.Type) == false) throw new Exception("Invalid method type: " + mc.Type);
+                        // Create a new method definition
+                        mc = GetMethod(methodName);
+                        mc.PrgCall = SourceCode;
+
+                        if (string.IsNullOrWhiteSpace(methodType) == false)
+                        {
+                            mc.Type = methodType[..1].ToUpper();
+                            //mc.Tag = Type.Contains('!') ? "N" : "U";    // Finding a ! means it's a native method
+                            mc.Inherited = methodType.Contains("#"); // Inherited 
+                            if ("MEU".Contains(mc.Type) == false) throw new Exception("Invalid method type: " + mc.Type);
+                        }
                     }
+                    else
+                        result = 6501;
                 }
             }
 
             // Is there some source code to compile?
-            if (result == 0 && CompCode.Length == 0 && SourceCode.Length > 0)
+            if (result == 0 && SourceCode.Length > 0)
             {
                 CompCode = App.JaxCompiler.CompileBlock(SourceCode, true, out int errorCount);
 
@@ -772,9 +782,7 @@ namespace JAXBase.XBase
                 _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                result = -1;
+                    App.SetError(result, $"{result}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -949,9 +957,9 @@ namespace JAXBase.XBase
                         // Only some classes allow method code to be written at runtime
                         string cMethodName = (App.ParameterClassList.Count > 0) ? App.ParameterClassList[0].token.AsString() : string.Empty;
                         string cSourceCode = (App.ParameterClassList.Count > 1) ? App.ParameterClassList[1].token.AsString() : string.Empty;
-                        string cCompCode = (App.ParameterClassList.Count > 2) ? App.ParameterClassList[2].token.AsString() : string.Empty;
+                        bool lWriteNew= (App.ParameterClassList.Count > 2) ? App.ParameterClassList[2].token.AsBool() : false;
 
-                        result = me.SetMethod(cMethodName, cSourceCode, cCompCode);
+                        result = me.SetMethod(cMethodName, cSourceCode, lWriteNew);
                         break;
 
                     default:
@@ -964,8 +972,6 @@ namespace JAXBase.XBase
 
                     if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
                         App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                    result = -1;
                 }
             }
 

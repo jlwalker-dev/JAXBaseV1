@@ -313,8 +313,8 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addproperty","readexpression","readmethod","refresh","resettodefault",
-                "saveasclass","saveaudio","settooriginalvalue","writeexpression","writemethod"
+                "addproperty","readexpression","readmethod","resettodefault",
+                "saveasclass","saveaudio","writeexpression","writemethod"
                 ];
         }
 
@@ -325,7 +325,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "destroy","error","init","load","paused","playing","stopped","when"
+                "destroy","error","init","load","statuschanged"
                 ];
         }
 
@@ -348,9 +348,11 @@ namespace JAXBase.XBase
                 [
                 "BaseClass,C!,image","bitrate,n,0",
                 "Class,C!,Grid","ClassLibrary,C!,","Comment,C,",
+                "duration,n,0",
+                "location,n,0","loop,L,.f.",
                 "name,c,command",
                 "parent,o!,","parentclass,C!,",
-                "sound,c,",
+                "sound,c,","soundlevel,n,50","status,n,0",
                 "tag,C,"
                 ];
         }

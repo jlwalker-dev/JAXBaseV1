@@ -413,8 +413,8 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addproperty","move","readexpression","readmethod","refresh","resettodefault",
-                "saveasclass","settooriginalvalue","setfocus","writeexpression","writemethod","zorder"
+                "addproperty","move","readexpression","readmethod","refresh",
+                "saveasclass","setfocus","writeexpression","writemethod","zorder"
                 ];
         }
 
@@ -425,8 +425,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","destroy","error","gotfocus",
-                "init","keypress","load","lostfocus",
+                "click","doubleclick","destroy","error","gotfocus","init","keypress","load","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "rightclick","valid","visiblechanged","when"
                 ];
@@ -450,22 +449,17 @@ namespace JAXBase.XBase
             return
                 [
                 "alignment,n,2","anchor,n,0","autosize,l,false",
-                "backcolor,R,16777215","BaseClass,C!,commandbutton","bordercolor,R,0","borderwidth,n,2",
-                "caption,c,Option1","Class,C!,commandbutton","ClassLibrary,C!,",
-                "Comment,C,",
+                "backcolor,R,16777215","BaseClass,C!,commandbutton","bordercolor,R,0","borderstyle,n,0","borderwidth,n,2",
+                "caption,c,Option1","Class,C!,commandbutton","ClassLibrary,C!,","Comment,C,","controlsource,c,",
                 "disabledpicture,c,","downpicture,c,",
                 "Enabled,L,true",
-                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial",
-                "FontSize,N,9","FontStrikeThrough,L,false","FontUnderline,L,false","forcolor,R,0",
+                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,9","forcolor,R,0",
                 "Height,N,40",
                 "left,N,0",
                 "name,c,command",
-                "originalvalue,N,",
                 "parent,o!,","parentclass,C!,","picture,c,","picturemargin,n,0","pictureposition,n,13","picturespacing,n,0",
                 "righttoleft,L,false",
-                "setoriginalwhen,n,0",
-                "tabindex,n,1","tabstop,l,true","tag,C,","tooltiptext,c,",
-                "top,N,0",
+                "tabindex,n,1","tabstop,l,true","tag,C,","tooltiptext,c,","top,N,0",
                 "value,N,1","visible,l,true",
                 "width,N,100","wordwrap,l,false"
                 ];

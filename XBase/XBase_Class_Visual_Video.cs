@@ -411,14 +411,15 @@ namespace JAXBase.XBase
             return
                 [
                 "anchor,n,0","autosize,l,false",
-                "BaseClass,C!,image","bitrate,n,0","bordercolor,R,0","borderwidth,N,0",
+                "BaseClass,C!,image","bitrate,n!,0","bordercolor,R,0","borderstyle,n,0","borderwidth,N,0",
                 "Class,C!,Grid","ClassLibrary,C!,","Comment,C,",
-                "framerate,n,0",
+                "duration,n,0",
+                "framerate,n!,0",
                 "Height,N,0",
-                "left,N,0",
+                "left,N,0","location,n,0",
                 "name,c,command",
                 "parent,o!,","parentclass,C!,","picture,c,","playrate,n,1",
-                "status,n,0",
+                "soundlevel,n,50","status,n,0",
                 "tabstop,L!,false","tag,C,","top,N,0","tooltiptext,c,",
                 "video,c,","visible,l,true",
                 "width,N,10"
