@@ -6,12 +6,14 @@ namespace JAXBase.XBase
     public class XBase_Class_Visual_ComboBox : XBase_Class_Avalonia
     {
         // This list holds the row source array followed by important related values
-        private List<ListObjectCollection> ListItemArray = new List<ListObjectCollection>();
+        private List<ListObjectCollection> ListItemArray = [];
+        private readonly List<string> ItemList = [];
         private int ListCounter = 0;
         private int ListColumns = 1;
         private int BoundColumn = 1;
-        private List<string> ItemList = new List<string>();
+
         public Avalonia.Controls.ComboBox CboBox => (Avalonia.Controls.ComboBox)me.avaloniaObject!;
+
         public XBase_Class_Visual_ComboBox(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             SetVisualObject(new Avalonia.Controls.ComboBox(), "Combobox", "combobox", true, UserObject.urw);
@@ -264,7 +266,7 @@ namespace JAXBase.XBase
                 if (JAXLib.Between(result, 1, 10))
                 {
                     result = 0;
-                    returnToken.CopyFrom(UserProperties[propertyName]); 
+                    returnToken.CopyFrom(UserProperties[propertyName]);
                 }
             }
             else
@@ -431,12 +433,12 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXMethods()
         {
-            return new string[]
-                {
+            return 
+                [
                 "additem","addlistitem","addproperty","clear", "indextoitemid","itemidtoindex","move", "readexpression", "readmethod",
-                "refresh", "resettodefault","removeitem","removelistitem","requery","resettodefault","saveasclass", "settooriginalvalue",
+                "refresh", "removeitem","removelistitem","requery","resettodefault","saveasclass", 
                 "setfocus", "setviewport", "writeexpression", "writemethod", "zorder"
-                };
+                ];
         }
 
         /*------------------------------------------------------------------------------------------*
@@ -444,13 +446,13 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXEvents()
         {
-            return new string[]
-                {
-                "click","dblclick","destroy","downclick","dropdown","error","gotfocus",
+            return
+                [
+                "click","dblclick","destroy","downclick","error","gotfocus",
                 "init","interactivechange","keypress","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
-                "programmaticchange","rangehigh","rangelow","rightclick","upclick","valid","when"
-                };
+                "programmaticchange","rangehigh","rangelow","rightclick","upclick","valid","visiblechanged","when"
+                ];
         }
 
         /*------------------------------------------------------------------------------------------*
@@ -468,28 +470,31 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXProperties()
         {
-            return new string[]
-                {
+            return 
+                [
                 "alignment,N,0","anchor,N,0",
-                "backcolor,R,255|255|255","BaseClass,C!,Combobox","borderwidth,n,0","bordercolor,R,0",
+                "backcolor,R,255|255|255","BaseClass,C!,Combobox","bordercolor,R,0","borderstyle,n,0","borderwidth,n,0",
+                "boundcolumn,n,0","boundto,l,.F.",
                 "Class,C!,ComboBox","ClassLibrary,C!,","ColumnCount,N,0","columnlines,l,true","columnwidths,c,","Comment,C,","controlsource,c,",
+                "disabledbackcolor,R,128|128|128","disabledforecolor,R,64|64|64","disableditembackcolor,R,128|128|128","disableditemforcolor,R,64|64|64",
                 "displaycount,n,0","displayvalue,c,Combo1",
                 "Enabled,L,true",
-                "firstelement,n,1","FontBold,L,false","FontItalic,L,false",
-                "FontName,C,Arial","FontSize,N,9","FontStrikeThrough,L,false","FontUnderline,L,false",
+                "firstelement,n,1","FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,9",
                 "forecolor,R,0","format,c,",
-                "Height,N,0",
-                "incrementsearch,l,true","inputmask,c,","itemdata,n,0","itemforecolor,R,0",
+                "Height,N,0","hideselection,L,.F.",
+                "incrementsearch,l,true","inputmask,c,","itembackcolor,R,255|255|255","itemdata,n,0","itemforecolor,R,0",
                 "itemiddata,n,0",
-                "left,N,0","list,#,","listcount,n!,0","listindex,n,0","listitemid,n,0",
-                "margin,n,2","maxheight,n,200",
-                "name,c,","newindex,n,0","newitemid,n,0","numberofelements,n,0",
+                "left,N,0","list,C,","listcount,n!,0","listindex,n,0","listitem,c,","listitemid,n,0",
+                "margin,n,2","maxlength,n,200",
+                "name,c,","newindex,n,0","newitemid,n,0","nulldisplay,c,","numberofelements,n,0",
                 "parent,o!,","parentclass,C!,","picture,c,","pictureselectiondisplay,n,0",
                 "readonly,l,false","righttoleft,L,false","rowsource,c,","rowsourcetype,n,0",
-                "selected,l,false","selectedid,l,false","sorted,l,false","style,n,0",
+                "selected,l,false","selectedbackcolor,R,0|0|255","selectedforecolor,R,255|255|255","selecteditemforcolor,R,0|255|0","selecteditembackcolor,R,255|255|255",
+                "selectedid,l,false","sellength,n,0","selstart,n,0","seltext,c,","sorted,l,false","style,n,0",
                 "tabindex,n,0","tabstop,l,true","tag,c,","text,c,","top,N,0","topindex,n,1","topitemid,n,-1","tooltiptext,c,",
-                "value,,","visible,l,true","width,N,100"
-                };
+                "value,,","visible,l,true",
+                "width,N,100"
+                ];
         }
     }
 }

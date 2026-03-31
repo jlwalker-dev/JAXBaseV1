@@ -315,9 +315,7 @@ namespace JAXBase.XBase
                 _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
+                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
             }
 
             return result;
@@ -365,7 +363,7 @@ namespace JAXBase.XBase
                 _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -383,8 +381,8 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addproperty", "drag", "move", "readexpression", "readmethod", "refresh", "resettodefault",
-                "saveasclass", "settooriginalvalue", "setfocus", "showwhatsthis", "writeexpression", "writemethod", "zorder"
+                "addproperty", "move", "readexpression", "readmethod", "refresh", "resettodefault",
+                "saveasclass", "setfocus", "writeexpression", "writemethod", "zorder"
                 ];
         }
 
@@ -395,10 +393,10 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","dblclick","destroy","dragdrop","dragover","error","gotfocus","init",
+                "click","dblclick","destroy","error","gotfocus","init",
                 "interactivechagnge","keypress","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
-                "programmaticchange","rangehigh","rangelow","rightclick","uienable","valid","visiblechanged","when"
+                "programmaticchange","rightclick","valid","visiblechanged","when"
                 ];
         }
 
@@ -420,20 +418,17 @@ namespace JAXBase.XBase
             return
                 [
                 "alignment,n,3","anchor,n,0","autosize,L,",
-                "backcolor,R,16777215","backstyle,n,1","BaseClass,C,checkbox","bordercolor,R,0","borderwidth,n,0",
-                "caption,c,","centered,L,.F.","Class,C,checkboxbox","ClassLibrary,C,","Comment,C,","controlsource,c,","checkedpicture,c,",
-                "disabledbackcolor,R!,15790320","disabledforecolor,R!,7171437","disabledpicture,c,","downpicture,c,",
+                "backcolor,R,16777215","backstyle,n,1","BaseClass,C!,checkbox","bordercolor,R,0","borderwidth,n,0",
+                "caption,c,","centered,L,.F.","Class,C!,checkboxbox","ClassLibrary,C,","Comment,C,","controlsource,c,","checkedpicture,c,",
+                "disabledbackcolor,R,15790320","disabledforecolor,R,7171437","disabledpicture,c,","downpicture,c,",
                 "Enabled,L,true",
-                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial",
-                "fontsize,N,9","FontStrikeThrough,L,false","FontUnderline,L,false",
+                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","fontsize,N,9",
                 "height,n,21",
                 "left,N,0",
-                "name,c,text1",
-                "originalvalue,,",
-                "parent,o,","parentclass,C,","picture,c,","pictureposition,n,13",
+                "name,c,checkbox",
+                "parent,o!,","parentclass,C!,","picture,c,","pictureposition,n,13",
                 "readonly,l,false","righttoleft,L,false",
                 "selectonentry,l,f","selectedbackcolor,R,14120960","selectedforecolor,R,16777215",
-                "setoriginalwhen,n,0",
                 "tabindex,n,1","tabstop,l,true","tag,C,","top,N,0","tooltiptext,c,",
                 "uncheckedpicture,c,",
                 "value,l,.F.","visible,l,true",
@@ -482,20 +477,6 @@ namespace JAXBase.XBase
             else
                 await _CallMethod("interactivechange");
         }
-
-        //public override void MyObj_MouseDown(object? sender, MouseEventArgs e)
-        //{
-        //    // Change image when mouse button is pressed
-        //    _CallMethod("mousedown");
-        //    ChkBox.Image = App.JaxImages.GetSDImage(UserProperties["downpicture"].AsString(), out _);
-        //}
-
-        //public override void MyObj_MouseUp(object? sender, MouseEventArgs e)
-        //{
-        //    // Revert image when mouse button is released
-        //    _CallMethod("mouseup");
-        //    ChkBox.Image = App.JaxImages.GetSDImage(UserProperties["picture"].AsString(), out _);
-        //}
     }
 }
 

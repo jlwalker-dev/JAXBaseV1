@@ -21,7 +21,7 @@
 
         public override string[] JAXMethods()
         {
-            return ["addobject", "addproperty", "removeobject", "writeexpression", "writemethod", "zorder"];
+            return ["addobject", "addproperty", "readexpression","readmethod","removeobject","resettodefault","saveasclass","writeexpression", "writemethod"];
         }
 
         public override string[] JAXEvents()
@@ -44,13 +44,14 @@
         public override string[] JAXProperties()
         {
             return [
+                "application,c,",
                 "baseclass,C!,Custom",
                 "class,C!,Custom","classlibrary,C$,","comment,C,","controlcount,N,0",
                 "Height,N,0",
                 "left,N,0",
                 "name,C,custom",
                 "objects,*,",
-                "parent,o$,","parentclass,C$,",
+                "parent,o$,","parentclass,C$,","picture,c,",
                 "tag,C,","top,N,0",
                 "width,N,0"
                 ];

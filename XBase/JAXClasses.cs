@@ -584,7 +584,7 @@ namespace JAXBase.XBase
         public string Coverage_Name = string.Empty;
 
         public bool CP_Dialog = true;
-
+        
         public string Currency = "LEFT";
         public string Currency_Symbol = "$";
 

@@ -364,7 +364,7 @@ namespace JAXBase.XBase
                         for (int i = 0; i < JAXMethods.Length; i++)
                         {
                             App.DebugLog($"Adding method {JAXMethods[i]}");
-                            thisObject._SetMethod(JAXMethods[i], string.Empty, string.Empty, "M!");
+                            thisObject._SetMethod(JAXMethods[i], string.Empty, true, "M!");
                             thisObject.Methods[JAXMethods[i]].Tag = "N";
                         }
 
@@ -373,7 +373,7 @@ namespace JAXBase.XBase
                         for (int i = 0; i < JAXEvents.Length; i++)
                         {
                             App.DebugLog($"Adding event {JAXEvents[i]}");
-                            thisObject._SetMethod(JAXEvents[i], string.Empty, string.Empty, "E!");
+                            thisObject._SetMethod(JAXEvents[i], string.Empty, true, "E!");
                             thisObject.Methods[JAXEvents[i]].Tag = "N";
                         }
 
@@ -585,7 +585,7 @@ namespace JAXBase.XBase
 
 
         // Add a user defined method or update an existing method/event
-        public int SetMethod(string methodName, string sourceCode, string compCode)
+        public int SetMethod(string methodName, string sourceCode, bool createOK)
         {
             int result = 0;
             string msg = string.Empty;
@@ -600,7 +600,7 @@ namespace JAXBase.XBase
                     App.SetError(1901, "1901|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
                 else
-                    result = thisObject._SetMethod(methodName, sourceCode, compCode, "U");
+                    result = thisObject._SetMethod(methodName, sourceCode, createOK, "U");
             }
             catch (Exception ex)
             {
