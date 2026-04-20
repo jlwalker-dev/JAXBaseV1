@@ -6,9 +6,7 @@ The JAXBase Project is an attempt to create a modern version of the venerable XB
 <BR>
 <BR>
 ### Current Status
-This is JAXBase V0.5 and has been moved to this repository early so that the code can be reviewed and suggestions on direction can be made.  I'm not a seasoned C# developer, and you'll likely see a progression of sophistication in the code base.<br>
-<br>
-Please go to [Project](https://github.com/jlwalker-dev/JAXBaseV1/wiki/Project) for more information.
+Please go to [**Project**](https://github.com/jlwalker-dev/JAXBaseV1/wiki/Project) for more information.
 <br>
 <br>
 ## Differences from Most XBase Dialects
