@@ -33,9 +33,7 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
 using JAXBase.XBase;
-using System.Windows.Interop;
 
 namespace JAXBase.Utilities
 {
@@ -52,6 +50,28 @@ namespace JAXBase.Utilities
             Avalonia.Media.Imaging.Bitmap shape = CreateBitmapFromPath("M0 0 H100 V100 H0 Z M0 0 L100 100 M100 0 L0 100");
             MediaEntry m = new MediaEntry() { Media = shape };
             MediaLibrary.Add("*nog*", m);
+            
+            shape = CreateBitmapFromPath("M 0,0 L 300,0 L 300,300 L 0,300 Z M 150,150 m -100,0 a 100,100 0 1,0 200,0 a 100,100 0 1,0 -200,0");
+            m = new MediaEntry() { Media = shape };
+            MediaLibrary.Add("*win*", m);
+
+            shape = CreateBitmapFromPath("M 0,0 L 300,0 L 300,300 L 0,300 Z " +     // Outer box
+                    "M 150,80 " +                                                   // Skull (no lower jaw)
+                    "C 80,80 50,120 60,170 " +
+                    "C 60,200 80,220 100,225 " +
+                    "C 110,240 130,245 150,230 " +
+                    "C 170,245 190,240 200,225 " +
+                    "C 220,200 240,170 240,120 " +
+                    "C 250,100 220,70 150,60 Z " +
+                    "M 115,140 C 115,155 125,165 140,165 C 155,165 165,155 165,140 C 165,125 155,115 140,115 C 125,115 115,125 115,140 " +  // Eye sockets
+                    "M 185,140 C 185,155 195,165 210,165 C 225,165 235,155 235,140 C 235,125 225,115 210,115 C 195,115 185,125 185,140 " +
+                    "M 150,170 L 140,195 L 160,195 Z " +                            // Nasal cavity
+                    "M 87.5,235 L 212.5,285 M 87.5,285 L 212.5,235");               // Crossbones (X)
+            m = new MediaEntry() { Media = shape };
+            MediaLibrary.Add("*rgr*", m);
+
+            // TODO - make this an asset
+            RegisterImage(@"C:\ProgramData\JAXBase\JAX.ico", "*jax*", out _);
         }
 
         /*
@@ -211,7 +231,7 @@ namespace JAXBase.Utilities
 
             if (string.IsNullOrWhiteSpace(msg) == false)
             {
-                App.DebugLog($"RegisterImage tossed an error {result} with exception: {msg}");
+                AppIO.DebugLog($"RegisterImage tossed an error {result} with exception: {msg}");
             }
 
             return result;
@@ -265,7 +285,7 @@ namespace JAXBase.Utilities
 
                 if (string.IsNullOrWhiteSpace(msg) == false)
                 {
-                    App.DebugLog($"RegisterImage raised an error {result} with message: {msg}");
+                    AppIO.DebugLog($"RegisterImage raised an error {result} with message: {msg}");
                 }
             }
 
@@ -297,7 +317,7 @@ namespace JAXBase.Utilities
             catch (Exception ex)
             {
                 result = 599;
-                App.SetError(599, $"599|{ex.Message}", "UnRegisterImage");
+                AppErrorHandling.SetError(599, $"599|{ex.Message}", "UnRegisterImage");
             }
             return result;
         }
@@ -340,37 +360,76 @@ namespace JAXBase.Utilities
         /// </summary>
         /// <param name="imagename"></param>
         /// <returns></returns>
+        //public Avalonia.Media.Imaging.Bitmap Resize(IImage? source, int maxWidth, int maxHeight)
+        //{
+        //    if (source == null || maxWidth <= 0 || maxHeight <= 0)
+        //        return null!;
+
+        //    var original = source.Size;
+        //    if (original.Width <= 0 || original.Height <= 0)
+        //        return null!;
+
+        //    double ratioX = (double)maxWidth / original.Width;
+        //    double ratioY = (double)maxHeight / original.Height;
+        //    double ratio = System.Math.Min(ratioX, ratioY);
+
+        //    double newWidth = (int)(original.Width * ratio);
+        //    double newHeight = (int)(original.Height * ratio);
+
+        //    var resizedBitmap = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize((int)newWidth, (int)newHeight));
+
+        //    using (var context = resizedBitmap.CreateDrawingContext())
+        //    {
+        //        // Clear background if needed (optional, for transparency)
+        //        context.FillRectangle(Avalonia.Media.Brushes.Transparent, new Rect(0, 0, newWidth, newHeight));
+
+        //        // Draw scaled
+        //        context.DrawImage(source, new Rect(0, 0, original.Width, original.Height), new Rect(0, 0, newWidth, newHeight));
+        //    }
+
+        //    return resizedBitmap;
+        //}
+
         public Avalonia.Media.Imaging.Bitmap Resize(IImage? source, int maxWidth, int maxHeight)
         {
             if (source == null || maxWidth <= 0 || maxHeight <= 0)
                 return null!;
 
-            var original = source.Size;
-            if (original.Width <= 0 || original.Height <= 0)
-                return null!;
-
-            double ratioX = (double)maxWidth / original.Width;
-            double ratioY = (double)maxHeight / original.Height;
-            double ratio = System.Math.Min(ratioX, ratioY);
-
-            double newWidth = (int)(original.Width * ratio);
-            double newHeight = (int)(original.Height * ratio);
-
-            var resizedBitmap = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize((int)newWidth, (int)newHeight));
-
-            using (var context = resizedBitmap.CreateDrawingContext())
+            // If source is already a Bitmap, use the built-in high-quality scaler
+            if (source is Avalonia.Media.Imaging.Bitmap bmp)
             {
-                // Clear background if needed (optional, for transparency)
-                context.FillRectangle(Avalonia.Media.Brushes.Transparent, new Rect(0, 0, newWidth, newHeight));
+                var ratioX = (double)maxWidth / bmp.Size.Width;
+                var ratioY = (double)maxHeight / bmp.Size.Height;
+                var ratio = System.Math.Min(ratioX, ratioY);
 
-                // Draw scaled
-                context.DrawImage(source, new Rect(0, 0, original.Width, original.Height), new Rect(0, 0, newWidth, newHeight));
+                int newWidth = (int)(bmp.Size.Width * ratio);
+                int newHeight = (int)(bmp.Size.Height * ratio);
+
+                return bmp.CreateScaledBitmap(
+                    new PixelSize(newWidth, newHeight),
+                    BitmapInterpolationMode.HighQuality);
             }
 
-            return resizedBitmap;
+            // Fallback for other IImage types (RenderTargetBitmap approach)
+            var original = source.Size;
+            double ratioX2 = (double)maxWidth / original.Width;
+            double ratioY2 = (double)maxHeight / original.Height;
+            double ratio2 = System.Math.Min(ratioX2, ratioY2);
+
+            int newW = (int)(original.Width * ratio2);
+            int newH = (int)(original.Height * ratio2);
+
+            var resized = new RenderTargetBitmap(new PixelSize(newW, newH));
+
+            using (var ctx = resized.CreateDrawingContext())
+            {
+                ctx.DrawImage(source,
+                    new Rect(0, 0, original.Width, original.Height),   // source rect
+                    new Rect(0, 0, newW, newH));                       // destination rect
+            }
+
+            return resized;
         }
-
-
 
 
 
@@ -448,7 +507,7 @@ namespace JAXBase.Utilities
                 }
                 catch (Exception ex)
                 {
-                    App.DebugLog($"GetImage tossed an exception: {ex.Message}");
+                    AppIO.DebugLog($"GetImage tossed an exception: {ex.Message}");
                     temp = null;
                 }
             }
@@ -503,7 +562,7 @@ namespace JAXBase.Utilities
                 catch (Exception ex) { result = 599; msg = ex.Message; }
 
                 if (string.IsNullOrWhiteSpace(msg) == false)
-                    App.DebugLog($"Failed to save image with error {result}: {msg}");
+                    AppIO.DebugLog($"Failed to save image with error {result}: {msg}");
             }
             else
                 result = 502;

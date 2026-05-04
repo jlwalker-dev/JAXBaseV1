@@ -1,11 +1,15 @@
 ﻿// TODO - this class needs work!
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Collection : XBase_Avalonia
     {
+
+        public new string MyBaseClass = "Collection";
+        public new string MyDefaultName = "collection";
+
         public XBase_Class_Collection(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             name = string.IsNullOrEmpty(name) ? "collection" : name;
@@ -54,10 +58,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 returnToken.Element.IsNull();
             }
@@ -83,7 +87,7 @@ namespace JAXBase.XBase
 
             JAXObjects.Token objtk = new();
             objtk.Element.Value = objValue;
-            App.DebugLog($"MyObj={me.JOWName} BASE.{propertyName}={objtk.AsString()}");
+            AppIO.DebugLog($"MyObj={me.JOWName} BASE.{propertyName}={objtk.AsString()}");
 
             propertyName = propertyName.ToLower();
 
@@ -113,10 +117,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
             }
 
             return result;

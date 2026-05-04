@@ -11,6 +11,10 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Shape : XBase_Class_Visual_ShapeBase
     {
+        public new string MyBaseClass { get; } = "Shape";
+        public new string MyDefaultName { get; } = "shape";
+
+
         public XBase_Class_Visual_Shape(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             SetVisualObject(null, "Shape", "shape", true, UserObject.urw);

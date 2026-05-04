@@ -1,6 +1,5 @@
 ﻿using JAXBase.Core;
-using static JAXBase.Core.AppClass;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
@@ -40,7 +39,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return string.Empty;
@@ -58,27 +57,27 @@ namespace JAXBase.Executer
             {
                 // Is this the first executed command of the program?
                 if (jbe.App.AppLevels.Count == 0) throw new Exception("2|");
-                if (JAXLib.InList(jbe.App.AppLevels[^1].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+                if (JAXLib.InList(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
 
                 // Break out the var expressions
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
                     JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
 
-                    VarRef var = await jbe.App.SolveVariableReference(answer.AsString());
-                    jbe.App.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
+                    VarRef var = await AppVars.SolveVariableReference(answer.AsString());
+                    AppVars.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
 
                     string type = eCodes.As[i];
 
                     // Set the var as this type
                     if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
-                        await jbe.App.SetAsType(var.varName, type);
+                        await AppVars.SetAsType(var.varName, type);
 
                     if (jbe.App.ParameterClassList.Count > 0)
                     {
-                        JAXObjects.Token tk = await jbe.App.GetParameterToken(null);
+                        JAXObjects.Token tk = await AppHelper.GetParameterToken(null);
                         if (string.IsNullOrWhiteSpace(type) || tk.Element.Type.Equals(type))
-                            jbe.App.SetVar(var.varName, tk);
+                            AppVars.SetVar(var.varName, tk);
                         else
                             throw new Exception("1732|");
                     }
@@ -86,7 +85,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             jbe.App.ParameterClassList.Clear();
@@ -106,7 +105,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return string.Empty;
@@ -131,20 +130,20 @@ namespace JAXBase.Executer
 
                     if (answer.Element.Type.Equals("C"))
                     {
-                        VarRef var = await jbe.App.SolveVariableReference(answer.AsString());
-                        jbe.App.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
+                        VarRef var = await AppVars.SolveVariableReference(answer.AsString());
+                        AppVars.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
 
                         string type = eCodes.As[i];
 
                         // Set the var as this type
                         if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false) 
-                            await jbe.App.SetAsType(var.varName, type);
+                            await AppVars.SetAsType(var.varName, type);
                     }
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -171,18 +170,18 @@ namespace JAXBase.Executer
 
                     if (answer.Element.Type.Equals("C"))
                     {
-                        VarRef var = await jbe.App.SolveVariableReference(answer.AsString());
-                        await jbe.App.MakePublicVar(var.varName, var.row, var.col, true);
+                        VarRef var = await AppVars.SolveVariableReference(answer.AsString());
+                        await AppVars.MakePublicVar(var.varName, var.row, var.col, true);
 
                         string type = eCodes.As[i];
 
                         // Set the var as this type
                         if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
-                            await jbe.App.SetAsType(var.varName, type);
+                            await AppVars.SetAsType(var.varName, type);
 
                         // Set the var as this type
                         if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
-                            await jbe.App.SetAsType(var.varName, type);
+                            await AppVars.SetAsType(var.varName, type);
                     }
                     else
                         throw new Exception("11|");
@@ -190,7 +189,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

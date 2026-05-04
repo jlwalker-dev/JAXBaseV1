@@ -1,5 +1,5 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Math
 {
@@ -41,7 +41,7 @@ namespace JAXBase.Math
             {
                 case "`GETAUTOINCVALUE":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETDATE":
@@ -54,13 +54,13 @@ namespace JAXBase.Math
                     else if (string.IsNullOrWhiteSpace(stype1))
                         tAnswer.Element.Value = JAXLib.GetDate(DateTime.Now, false);
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
                 case "`GETCP":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETDIR":
@@ -82,14 +82,14 @@ namespace JAXBase.Math
                     else if (string.IsNullOrWhiteSpace(stype1))
                         tAnswer.Element.Value = JAXLib.GetDir(string.Empty, string.Empty, string.Empty, 0, false);
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETENV":
                     if (stype1.Equals("C"))
                         tAnswer.Element.Value = Environment.GetEnvironmentVariable(string1) ?? string.Empty;
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETFILE":
@@ -118,22 +118,22 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = App.ReturnValue.AsString();
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETFLDSTATE":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETFONT":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETNEXTMODIFIED":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETJSON": // TODO
@@ -142,17 +142,17 @@ namespace JAXBase.Math
 
                 case "`GETOBJ":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETPICT": //  TODO NOW
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETPRINTER":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GETWORDCOUNT":
@@ -173,7 +173,7 @@ namespace JAXBase.Math
 
                 case "`GETCURSORADAPTER":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`GOMONTH":                    // Returns the day of month x number of months away respecting end of month
@@ -185,7 +185,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.AddMonths(intval2);
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "GUID":

@@ -33,7 +33,7 @@ using JAXBase.XBase;
 using System.Data;
 using System.Text;
 using static JAXBase.Core.AppClass;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Core
 {
@@ -161,7 +161,7 @@ namespace JAXBase.Core
             }
             catch (Exception ex)
             {
-                app.SetError(9904, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9904, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return answer;
@@ -277,7 +277,7 @@ namespace JAXBase.Core
                 // We should have a source or compiled file in hand
                 if (FinalFileName.Length > 0 && File.Exists(FinalFileName))
                 {
-                    app.DebugLog("Loading file into cache: " + FinalFileName);
+                    AppIO.DebugLog("Loading file into cache: " + FinalFileName);
 
                     // Is it compiled code or source code?
                     ext = JAXLib.JustExt(FinalFileName);
@@ -307,40 +307,38 @@ namespace JAXBase.Core
                         {
                             // We have the source table name so call the correct
                             // table to source file processor
-                            switch (type)
+                            FinalFileName = type switch
                             {
-                                case "C":       // Class library
-                                    throw new Exception("1999| - Can't convert class library");
+                                // Class library
+                                "C" => throw new Exception("1999| - Can't convert class library"),
 
-                                case "D":       // Class definition
-                                    throw new Exception("1999| - Can't convert class definition");
+                                // Class definition
+                                "D" => throw new Exception("1999| - Can't convert class definition"),
 
-                                case "F":       // Form
-                                    FinalFileName = await ConvertFormTable(app, FinalFileName);
-                                    break;
+                                // Form
+                                "F" => await ConvertFormTable(app, FinalFileName),
 
-                                case "L":       // Label
-                                    throw new Exception("1999| - Can't convert label definition");
+                                // Label
+                                "L" => throw new Exception("1999| - Can't convert label definition"),
 
-                                case "M":       // Menu
-                                    throw new Exception("1999| - Can't convert menu definition");
+                                // Menu
+                                "M" => throw new Exception("1999| - Can't convert menu definition"),
 
-                                case "O":       // Popup
-                                    throw new Exception("1999| - Can't convert popup definition");
+                                // Popup
+                                "O" => throw new Exception("1999| - Can't convert popup definition"),
 
-                                case "Q":       // Query
-                                    throw new Exception("1999| - Can't convert query definition");
+                                // Query
+                                "Q" => throw new Exception("1999| - Can't convert query definition"),
 
-                                case "R":       // Report
-                                    throw new Exception("1999| - Can't convert report definition");
+                                // Report
+                                "R" => throw new Exception("1999| - Can't convert report definition"),
 
-                                case "V":       // View
-                                    throw new Exception("1999| - Can't convert view definition");
+                                // View
+                                "V" => throw new Exception("1999| - Can't convert view definition"),
 
-                                default:
-                                    throw new Exception("1999| - Unknown definition type " + type);
-                            }
-
+                                // Unknown
+                                _ => throw new Exception("1999| - Unknown definition type " + type),
+                            };
                             FinalFileName = CompileModule(app, FinalFileName, type);
                         }
                         else
@@ -458,7 +456,7 @@ namespace JAXBase.Core
 
             if (File.Exists(fName))
             {
-                app.DebugLog($"Loading PRG into cache: {fName}");
+                AppIO.DebugLog($"Loading PRG into cache: {fName}");
 
                 // Get the code
                 string cCode = JAXLib.FileToStr(fName);
@@ -471,7 +469,7 @@ namespace JAXBase.Core
                 string header = cCode[..f];
                 cCode = cCode[f..];
 
-                app.DebugLog("Breaking Header");
+                AppIO.DebugLog("Breaking Header");
                 FileHeader fileHeader = BreakHeader(fName, header);
 
                 app.CodeCache.Add(BreakHeaderMap(app, type, fileHeader, cCode));        // Add the new definition to CodeCache
@@ -492,12 +490,12 @@ namespace JAXBase.Core
             if (f < 1)
                 throw new Exception("9992|" + fileHeader.SourceFQFN);
 
-            app.DebugLog("Breaking Procedure Map");
+            AppIO.DebugLog("Breaking Procedure Map");
             string map = cCode[..f];
             cCode = cCode[f..];
             map = map.TrimStart(headerMapStartByte).TrimEnd(headerMapEndByte);
             string[] maps = map.Trim(AppClass.stmtDelimiter).Split(AppClass.stmtDelimiter);
-            app.DebugLog($"{maps.Length} procedures found");
+            AppIO.DebugLog($"{maps.Length} procedures found");
 
             // Place it in the codecache
             CCodeCache cc = new()
@@ -538,13 +536,12 @@ namespace JAXBase.Core
                         cCode = cCode[loc..];
                     }
 
-                    app.DebugLog($"Adding {name.ToUpper()} to cache with length of {loc} bytes");
+                    AppIO.DebugLog($"Adding {name.ToUpper()} to cache with length of {loc} bytes");
                     app.PRGCache.Add(proc);                             // Add the procedure to the PRGCache
 
                     // TODO - We overwrite duplicates, which we'll need to double
                     // check to see if it can happen during compile
-                    if (cc.Procedures.ContainsKey(name))
-                        cc.Procedures.Remove(name);
+                    cc.Procedures.Remove(name);
 
                     // Add to the CoceCache PROCEDURES dictionary
                     cc.Procedures.Add(name, app.PRGCache.Count - 1);    // Add the record to the Procedures Dictionary
@@ -570,7 +567,7 @@ namespace JAXBase.Core
         {
             int result = -1;
             string[] DCode = cCode.Replace(((char)10).ToString(), "").Split((char)13);
-            List<string> DefCode = new();
+            List<string> DefCode = [];
 
             int i = 0;
             while (i < DCode.Length)
@@ -729,6 +726,7 @@ namespace JAXBase.Core
                 };
 
                 app.AppLevels.Add(alvl);
+                Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count();
             }
             else
                 throw new Exception("9990||Illegal call in LoadForExecute: pType=" + pType);   // Bad Call
@@ -821,7 +819,7 @@ namespace JAXBase.Core
             catch (Exception e)
             {
                 ccIDX = -1;
-                app.SetError(9905, e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9905, e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return ccIDX;
@@ -843,7 +841,7 @@ namespace JAXBase.Core
          *-------------------------------------------------------------------------------------------------*/
         public static async Task<bool> LoadClassIntoCache(AppClass app, string pType, string prgParent, string prgFileName)
         {
-            bool result = true;
+            bool result;
 
             try
             {
@@ -876,7 +874,7 @@ namespace JAXBase.Core
             catch (Exception e)
             {
                 result = false;
-                app.SetError(9999, e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -896,7 +894,7 @@ namespace JAXBase.Core
          * ------------------------------------------------------------------*/
         public static string CompileModule(AppClass app, string fName, string type)
         {
-            string fResult = string.Empty;
+            string fResult;
             string fStem = JAXLib.JustStem(fName);
 
             if (File.Exists(fName))
@@ -913,10 +911,10 @@ namespace JAXBase.Core
                 // ------------------------------------------------------------------*
                 // Get the header and procedure map
                 // ------------------------------------------------------------------
-                app.DebugLog("Creating Header");
+                AppIO.DebugLog("Creating Header");
                 string header = CreateHeader(fName, MD5, type, fStem);
 
-                app.DebugLog("Creating Procedure Map");
+                AppIO.DebugLog("Creating Procedure Map");
                 string pmap = CreateProcedureMap(app, compiledCode, fStem);
 
                 // ------------------------------------------------------------------
@@ -925,7 +923,7 @@ namespace JAXBase.Core
                 fResult = JAXLib.JustFullPath(fName) + fStem + (type.Equals("S", StringComparison.OrdinalIgnoreCase) ? ".jxs" : ".jxp");
                 if (File.Exists(fResult)) FilerLib.DeleteFile(fResult);
 
-                app.DebugLog($"Saving file {fResult}");
+                AppIO.DebugLog($"Saving file {fResult}");
                 JAXLib.StrToFile(header + pmap + compiledCode, fResult, 0);
             }
             else
@@ -964,7 +962,7 @@ namespace JAXBase.Core
             string crlf = ((char)13).ToString() + ((char)10).ToString();
             string cr = ((char)13).ToString();
 
-            string FormFile = string.Empty;
+            string FormFile;
             string objName = JAXLib.JustStem(fName);
 
             // Force it to end with an scx extension - no screwing around with other extensions
@@ -988,7 +986,7 @@ namespace JAXBase.Core
                     JAXDirectDBF jdbf = app.CurrentDS.CurrentWA;
 
                     // 2025-07-07 - Added ability to autoload memo info when reading record(s)
-                    DataTable dt = await jdbf.DBFSelect("properties", "top 1", "platform='COMMENT' and uniqueid='RESERVED'", true );
+                    DataTable dt = await jdbf.DBFSelect("properties", "top 1", "platform='COMMENT' and uniqueid='RESERVED'", true);
                     if (dt.Rows.Count == 0) throw new Exception("8000|Missing 'RESERVED' record");
                     string FormFontInfo = GetFieldToken(app, dt.Rows[0], "properties").AsString().Replace(((char)10).ToString(), "");
                     string[] FormFonts = FormFontInfo.Split((char)13);
@@ -1017,7 +1015,7 @@ namespace JAXBase.Core
                     // ------------------------------------------------------------------------------------
 
                     // Class=form: get class, baseclass, classloc, objname, properties, reserved3, and methods
-                    Dictionary<string, string> ParentChild = new();
+                    Dictionary<string, string> ParentChild = [];
                     dt = await jdbf.DBFSelect("*", "all", "platform='WINDOWS' and not deleted()", true);
 
                     for (int i = 0; i < dt.Rows.Count; i++)
@@ -1072,7 +1070,7 @@ namespace JAXBase.Core
             catch (Exception ex)
             {
                 tk.TType = "U";
-                app.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             if (tk.TType.Equals("U")) throw new Exception("4012|" + fieldname);
@@ -1195,6 +1193,95 @@ namespace JAXBase.Core
         }
 
 
+        /*
+         * This routine is used to get the next parameter or to handle
+         * a parameter passed to it.  Result is returned as a token.  
+         * If Null is passed, the next parameter is retrieved and 
+         * removed from the list, and if no parameter is available
+         * it return a Token.Element.isNull()
+         * 
+         * Type:    P - PrivateVars (Public if Level=0) - ByRef
+         *          L - LocalVars - ByRef
+         *          M - Math string (such as "(4+3)*7")
+         *          R - RPN Expression - By Value
+         *          V - Var Expression to search - By Value
+         *          T - Token value
+         *          
+         * Level:   0 = These PrivateVars are the Public vars
+         *         >0 = P = PrivateVars, L=LocalVars
+         *          Ignore if Type R or V
+         *          
+         */
+        public static async Task<JAXObjects.Token> GetParameterToken(ParameterClass? p)
+        {
+            JAXObjects.Token result = new();
+
+            if (p is null)
+            {
+                if (Program.CurrentApp.ParameterClassList.Count > 0)
+                {
+                    p = Program.CurrentApp.ParameterClassList[0];
+                    Program.CurrentApp.ParameterClassList.RemoveAt(0);
+                }
+            }
+
+
+            if (p is null)
+            {
+                // Return a null
+                result.Element.MakeNull();
+            }
+            else
+            {
+                switch (p.Type)
+                {
+                    case "P":   // Private variable
+                        result = Program.CurrentApp.AppLevels[p.Level].PrivateVars.jaxObject[p.RefVal.ToLower()];
+                        break;
+
+                    case "L":   // Local variable
+                        result = Program.CurrentApp.AppLevels[p.Level].LocalVars.jaxObject[p.RefVal.ToLower()];
+                        break;
+
+                    case "T":   // Token value
+                    case "N":   // Named token value
+                        result.Element.Value = p.token.Element.Value;
+                        break;
+
+                    case "R":   // RPN
+                        result = await Program.CurrentApp.SolveFromRPNString(p.RefVal);
+                        break;
+
+                    case "M":   // Math String
+                        GenericClass gc = await Program.CurrentApp.JaxMath.SolveMath(p.RefVal);
+                        result.CopyFrom(gc.Value);
+                        break;
+
+                    default:
+                        throw new Exception($"1999|GetParametervalue Type ={p.Type}");
+                }
+            }
+
+            return result;
+        }
+
+        /*-------------------------------------------------------------*
+         * Just return the value of a parameter
+         * 
+         * An array will return just the first element
+         *-------------------------------------------------------------*/
+        public static async Task<object?> GetParameterValue(ParameterClass p)
+        {
+            JAXObjects.Token result = new();
+            JAXObjects.Token answer = await GetParameterToken(p);
+            if (answer.TType.Equals("A"))
+                result.Element.Value = answer._avalue[0].Value;
+            else
+                result.CopyFrom(answer);
+
+            return result.Element.Value;
+        }
+
 
 
 
@@ -1205,8 +1292,7 @@ namespace JAXBase.Core
         /// <param name="val"></param>
         public static void PushParameterValue(AppClass app, object? val)
         {
-            ParameterClass p = new();
-            p.Type = "T";
+            ParameterClass p = new() { Type = "T" };
 
             if (val is null)
                 p.token.Element.MakeNull();
@@ -1251,33 +1337,33 @@ namespace JAXBase.Core
             FileHeader headerClass = new();
 
             if (aHeader.Length < 7)
-                throw new Exception(string.Format("9999|{0}| - Header Cell Count is less than 6", fName));
+                throw new Exception($"9999|{fName}| - Header Cell Count is less than 6");
 
             if ("CDFLMOPQRV".Contains(aHeader[0]))
                 headerClass.Type = aHeader[0];
             else
-                throw new Exception(string.Format("9999|{0}| - Invalid Type", fName));
+                throw new Exception($"9999|{fName}| - Invalid Type");
 
             if (aHeader[1].Length > 0)
                 headerClass.Stem = aHeader[1];
             else
-                throw new Exception(string.Format("9999|{{0}| - Invalid Stem", fName));
+                throw new Exception($"9999|{fName}| - Invalid Stem");
 
             if (aHeader[2].Length == 0 || float.TryParse(aHeader[2], out headerClass.CompilerVersion) == false)
-                throw new Exception(string.Format("9999|{0}| - Invalid Compiler Version", fName));
+                throw new Exception($"9999|{fName}| - Invalid Compiler Version");
 
             if (aHeader[3].Length > 0)
                 headerClass.SourceFQFN = aHeader[3];
             else
-                throw new Exception(string.Format("9999|{0} - Invalid FQFN", fName));
+                throw new Exception($"9999|{fName} - Invalid FQFN");
 
             if (aHeader[4].Length > 0)
                 headerClass.MD5 = aHeader[4];
             else
-                throw new Exception(string.Format("9999|{0}| - Invalid MD5 checksum", fName));
+                throw new Exception($"9999|{fName}| - Invalid MD5 checksum");
 
             if (aHeader[5].Length == 0 || DateTime.TryParse(aHeader[5], out headerClass.CompiledAt) == false)
-                throw new Exception(string.Format("9999|{0}| - Invalid Compiled DateTime", fName));
+                throw new Exception($"9999|{fName}| - Invalid Compiled DateTime");
 
             headerClass.StartingProc = aHeader[6].Length > 0 ? aHeader[6] : aHeader[1];
 
@@ -1347,22 +1433,22 @@ namespace JAXBase.Core
                         c += bb > 32 && bb < 127 ? " " + (char)bb + "  " : "    ";
                     }
 
-                    app.DebugLog(string.Empty);
-                    app.DebugLog(string.Empty);
-                    app.DebugLog($"Code starting at {b}");
-                    app.DebugLog("===========================");
-                    app.DebugLog(h);
-                    app.DebugLog(d);
-                    app.DebugLog(c);
-                    app.DebugLog(string.Empty);
-                    app.DebugLog(string.Empty);
+                    AppIO.DebugLog(string.Empty);
+                    AppIO.DebugLog(string.Empty);
+                    AppIO.DebugLog($"Code starting at {b}");
+                    AppIO.DebugLog("===========================");
+                    AppIO.DebugLog(h);
+                    AppIO.DebugLog(d);
+                    AppIO.DebugLog(c);
+                    AppIO.DebugLog(string.Empty);
+                    AppIO.DebugLog(string.Empty);
 
                     // Get the length of the code for this procedure
                     int plen = b - procStart;
                     app.utl.Conv64(plen, 4, out string bp64);
 
                     // Add it to the map
-                    app.DebugLog($"Adding procedure {procName} - length of {plen} bytes");
+                    AppIO.DebugLog($"Adding procedure {procName} - length of {plen} bytes");
                     ProcMap.Append(bp64 + procName + stmtDelimiter.ToString());
 
                     // It is!  So get the name of the procedure
@@ -1399,7 +1485,7 @@ namespace JAXBase.Core
                 app.utl.Conv64(b, 4, out string bp64);
 
                 // Add it to the map
-                app.DebugLog($"Adding procedure {procName} - length of {b} bytes");
+                AppIO.DebugLog($"Adding procedure {procName} - length of {b} bytes");
                 ProcMap.Append(bp64 + procName + stmtDelimiter.ToString());
             }
 
@@ -1434,7 +1520,7 @@ namespace JAXBase.Core
                     {
                         // It's a valid runtime extension so load and check
                         string cCode = JAXLib.FileToStr(fileName);
-                        bool isCompiled = fileExt.Equals("exe") ? false : cCode[0] == headerStartByte;
+                        bool isCompiled = fileExt.Equals("exe") == false && cCode[0] == headerStartByte;
 
                         if (isCompiled)
                             result = fileName;
@@ -1461,7 +1547,7 @@ namespace JAXBase.Core
             }
             catch (Exception ex)
             {
-                app.SetError(9903, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9903, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -1534,7 +1620,7 @@ namespace JAXBase.Core
                 i++;
                 oName = string.Format(testName, i);  // Get the name to test
 
-                if ((await app.GetVarToken(oName)).TType.Equals("U"))
+                if ((await AppVars.GetVarToken(oName)).TType.Equals("U"))
                     break;  // Name doesn't exist
 
                 // If the name has {0} in it, we loop, otherwise
@@ -1827,13 +1913,13 @@ namespace JAXBase.Core
                 // Is it a variable?
                 if (p[0] == AppClass.literalStart)
                 {
-                    app.DebugLog($"DO literal adding {p} to Parameter stack");
+                    AppIO.DebugLog($"DO literal adding {p} to Parameter stack");
                     await LoadVarByRefToParameters(app, p);
                 }
                 else
                 {
                     // It's an RPN expression
-                    app.DebugLog($"DO expression adding {p} to Parameter stack");
+                    AppIO.DebugLog($"DO expression adding {p} to Parameter stack");
                     await LoadRPNStringToParameters(app, p);
                 }
             }
@@ -1873,9 +1959,9 @@ namespace JAXBase.Core
             p.token.CopyFrom(tk);
 
             if (string.IsNullOrWhiteSpace(ParamName))
-                app.DebugLog($"adding value {tk.AsString()} to Parameter stack");
+                AppIO.DebugLog($"adding value {tk.AsString()} to Parameter stack");
             else
-                app.DebugLog($"adding parameter {ParamName} with value {tk.AsString()} to Parameter stack");
+                AppIO.DebugLog($"adding parameter {ParamName} with value {tk.AsString()} to Parameter stack");
 
             app.ParameterClassList.Add(p);
         }
@@ -1902,7 +1988,7 @@ namespace JAXBase.Core
             {
                 // It's a variable in a literal expression
                 string var = rpnElement.Trim(AppClass.literalStart).Trim(AppClass.literalEnd);
-                tk = await app.GetVarFromExpression(rpnElement, jow);
+                tk = await AppVars.GetVarFromExpression(rpnElement, jow);
                 parm.token.CopyFrom(tk);
             }
             else if (rpnElement[0] == '=')
@@ -1914,11 +2000,11 @@ namespace JAXBase.Core
             else
             {
                 // Assuming it's a string that holds a variable
-                tk = await app.GetVarFromExpression(rpnElement, jow);
+                tk = await AppVars.GetVarFromExpression(rpnElement, jow);
                 parm.token.CopyFrom(tk);
             }
 
-            app.DebugLog($"adding type {parm.Type} from rpnElement {rpnElement} for value {tk.AsString()} to Parameter stack");
+            AppIO.DebugLog($"adding type {parm.Type} from rpnElement {rpnElement} for value {tk.AsString()} to Parameter stack");
             app.ParameterClassList.Add(parm);
 
         }
@@ -1954,12 +2040,12 @@ namespace JAXBase.Core
                                     if ("0123456789".Contains(vartest[0]) == false)
                                     {
                                         // Not started with a num, so definitely looks to be a var
-                                        VarRef v=await app.SolveVariableReference(vartest);
+                                        VarRef v = await AppVars.SolveVariableReference(vartest);
 
                                         if (v.row < 0 && v.col < 0)
                                         {
                                             // Double check to make sure it's just a var name
-                                            JAXObjects.Token tk = await app.GetVarToken(v.varName);
+                                            JAXObjects.Token tk = await AppVars.GetVarToken(v.varName);
                                             if (tk.TType.Equals("A") || tk.Element.Type.Equals("O"))
                                             {
                                                 // Loading ByRef
@@ -1979,7 +2065,7 @@ namespace JAXBase.Core
             }
             catch (Exception ex)
             {
-                app.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
         }
 
@@ -1994,17 +2080,16 @@ namespace JAXBase.Core
             {
                 // Get the variable information
                 string rpn = rpnElement.Trim(AppClass.literalStart).Trim(AppClass.literalEnd);
-                VarRef vRef = await app.SolveVariableReference(rpn);
+                VarRef vRef = await AppVars.SolveVariableReference(rpn);
                 string v = vRef.varName;
-                string varType = "X";
                 string refType = "S";   // Assume it's a simple token (send by value)
                 int level = -1;
 
                 if (JAXLib.InListC(v, ".null.", "null"))
                     throw new Exception("10||.null.");
 
-                    // Nulls jump this code
-                    if (v.Contains('.'))
+                // Nulls jump this code
+                if (v.Contains('.'))
                 {
                     // Likely an Object reference so we
                     // need to do some extra work to see
@@ -2013,8 +2098,8 @@ namespace JAXBase.Core
                     string[] oref = v.Split('.');
                     v = oref[0];
                 }
-                List<string> varList = app.BreakVar(v);
-                level = AppHelper.GetVar(app, varList[0], out varType);
+                List<string> varList = AppVars.BreakVar(v);
+                level = AppHelper.GetVar(app, varList[0], out string varType);
 
                 JAXObjects.Token vTest = new();
                 if (varType.Equals("L"))
@@ -2039,7 +2124,7 @@ namespace JAXBase.Core
                     // Find the base of the variable expression and save the
                     // original expression to the class and add to the list
                     ParameterClass parm = new();
-                    JAXObjects.Token tk = await app.GetVarToken(rpn);
+                    JAXObjects.Token tk = await AppVars.GetVarToken(rpn);
 
                     if (tk.Element.Type.Equals("X"))
                         tk.Element.MakeNull();
@@ -2051,21 +2136,19 @@ namespace JAXBase.Core
                         parm.Level = level;
                     }
 
-                    app.DebugLog($"adding {rpn} to Parameter stack by ref");
+                    AppIO.DebugLog($"adding {rpn} to Parameter stack by ref");
                     app.ParameterClassList.Add(parm);
                 }
             }
             catch (Exception ex)
             {
-                app.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
         }
 
         // Also used by NAMING() function
         public static string FixFileCase(string path, string filename, int naming, bool allNaming)
         {
-            string result = string.Empty;
-
             // Make sure path & filename are actually separated
             path = JAXLib.JustFullPath(JAXLib.Addbs(path) + filename);
             filename = JAXLib.JustFName(filename);
@@ -2306,7 +2389,7 @@ namespace JAXBase.Core
             {
                 // First check the current AppLevel becuase a local var
                 // will have precidence over a public var of same name
-                tk = app.AppLevels[^1].LocalVars.GetToken(varName);
+                tk = app.AppLevels[Program.CurrentApp.CurrentAppLevel].LocalVars.GetToken(varName);
 
                 if (tk.TType.Equals("U"))
                 {
@@ -2332,7 +2415,7 @@ namespace JAXBase.Core
             }
             catch (Exception ex)
             {
-                app.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 tk.TType = "U";
                 level = -1;
             }
@@ -2368,7 +2451,7 @@ namespace JAXBase.Core
                     break;
 
                 case "V":
-                    tk = await app.GetVarFromExpression(rpn, null);
+                    tk = await AppVars.GetVarFromExpression(rpn, null);
                     break;
 
                 case "T":
@@ -2383,67 +2466,144 @@ namespace JAXBase.Core
         }
 
         /*-------------------------------------------------------------*
-         * Note on Vars
-         * -------------------------------
-         * You cannot put printer variables into scope definitions (private, public, local)
-         * You cannot make a public variable private
-         * Local variables are always selected over public or private
-         * 
-         *-------------------------------------------------------------*
-         * Create an object variable
+         * Break an array or UDF into a list of parts
          *-------------------------------------------------------------*/
-        /*
-        public int SetVarObjectOrMakePrivate(string varName, string baseClass)
+        public static List<string> BreakArrayOrUDF(string varName)
         {
-            int iResult = 0;
-            Token tk;
-            varName = varName.Trim().ToLower();
+            List<string> objList = [];
 
-            if (JAXLib.InList(varName, "this", "thisform", "thisformset"))
-                throw new Exception("1960|" + varName.ToUpper());
+            int cpos = 0;
 
-            // Is it a memory Var reference?  Strip m. if it is
-            if (varName.Length > 2 && varName[..2].Equals("m.", StringComparison.OrdinalIgnoreCase))
-                varName = varName[2..];
+            if (")]".Contains(varName[^1]) == false) throw new Exception("10|End of varname is not ) or ]");
 
-            // Check local variables (Global vars are AppLevel[0] private vars
-            tk = AppLevels[^1].LocalVars.GetToken(varName);
+            char startQuote = varName[^1] == ')' ? '(' : '[';
+            varName = varName[..^1];
 
-            // Check private variables
-            if (tk.TType.Equals("U"))
+            // Break the var name from the array or UDF
+            while (varName.Length > 0 && cpos < varName.Length)
             {
-                // Check all the private vars
-                for (int i = AppLevels.Count - 1; i >= 0; i--)
+                if (varName[cpos] == startQuote)
                 {
-                    tk = AppLevels[i].PrivateVars.GetToken(varName);
-                    if (tk.TType.Equals("U") == false)
-                    {
-                        // Found it in the private vars of an app level
-                        AppLevels[i].PrivateVars.Release(varName);
-                        JAXObjectWrapper tko = new(this, baseClass, "", null);
+                    // Found the left ( or [
+                    objList.Add(varName[..cpos]);
 
-                        //tk = new(baseClass);
-                        AppLevels[i].PrivateVars.SetValue(varName, tko);
-                        iResult = i;
+                    // Is there anything left to parse?
+                    if (cpos < varName.Length - 1)
+                    {
+                        cpos++;
+                        varName = varName[cpos..];
+                    }
+                    else
+                        varName = string.Empty;
+
+                    break;  // we've got the name part
+                }
+                else
+                {
+                    if ("([".Contains(varName[cpos]))
+                        throw new Exception("10|Mismatched start and end bracket/parens");
+                    else
+                        cpos++;
+                }
+            }
+
+            // If it's a UDF, we're going to want to break up the rest of this
+            cpos = 0;
+            char endQuote = '\0';
+
+            while (varName.Length > 0 && cpos < varName.Length)
+            {
+                char c = varName[cpos];
+
+                if (endQuote == '\0')
+                {
+                    if ("(['\"".Contains(c))
+                    {
+                        if (c == '(')
+                            endQuote = ')';
+                        else if (c == '[')
+                            endQuote = ']';
+                        else
+                            endQuote = c;
+                    }
+                    else if (c == ',')
+                    {
+                        // Found a comma for split
+                        objList.Add(varName[..cpos].Trim(','));
+                        if (cpos >= varName.Length) throw new Exception("10|");
+                        varName = varName[cpos..].Trim(',');
+                        cpos = 0;
+
+                        if (varName.Contains(',') == false)
+                        {
+                            // Should be something left after the comma
+                            if (string.IsNullOrWhiteSpace(varName)) throw new Exception("10|Expression missing after commad");
+
+                            // Can't find a comma so add it to the list and we're done!
+                            objList.Add(varName);
+                            varName = string.Empty;
+                            break;
+                        }
+
+                        // Skip the cpos++ so we're
+                        // starting at pos 0
+                        continue;
+                    }
+                }
+                else if (endQuote == c)
+                {
+                    // Found the end quote
+                    endQuote = '\0';
+                }
+
+                cpos++;
+            }
+
+            // Add anything left over into the list
+            if (string.IsNullOrWhiteSpace(varName) == false)
+                objList.Add(varName);
+
+            return objList;
+        }
+
+
+        public static bool IsCompoundVar(string varName)
+        {
+            bool result = false;
+            int cpos = 0;
+            char endQuote = '\0';
+
+            while (varName.Length > 0 && cpos < varName.Length)
+            {
+                char c = varName[cpos++];
+
+                if (endQuote == '\0')
+                {
+                    if ("(['\"".Contains(c))
+                    {
+                        if (c == '(')
+                            endQuote = ')';
+                        else if (c == '[')
+                            endQuote = ']';
+                        else
+                            endQuote = c;
+                    }
+                    else if (c == '.')
+                    {
+                        // Found a period outside of a quoted area
+                        // so this is a compound variable (object.property)
+                        result = true;
                         break;
                     }
                 }
-            }
-            else
-            {
-                // Found it in the local variables of the current app level
-                AppLevels[^1].LocalVars.Release(varName);
-                JAXObjectWrapper tko = new(this, baseClass, "", null);
-
-                //tk = new(varName, baseClass);
-                AppLevels[^1].LocalVars.SetValue(varName, tko);
-                iResult = -1;
+                else if (endQuote == c)
+                {
+                    // Found the end quote
+                    endQuote = '\0';
+                }
             }
 
-            return iResult;
+            return result;
         }
-        */
-
-
     }
 }

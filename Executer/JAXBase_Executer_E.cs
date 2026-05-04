@@ -1,6 +1,7 @@
-﻿using JAXBase.Core;
+﻿using DynamicData;
+using JAXBase.Core;
+using JAXBase.Utilities;
 using JAXBase.XBase;
-using static JAXBase.Utilities.Utilities.JAXUtilities;
 
 namespace JAXBase.Executer
 {
@@ -21,7 +22,7 @@ namespace JAXBase.Executer
             {
                 JAXObjects.Token answer = new();
                 JAXObjectWrapper emptyObj = new(jbe.App, "empty", "", []);
-                
+
                 // Add fields to object
                 string fieldList = string.Empty;
                 for (int i = 0; i < eCodes.Fields.Count; i++)
@@ -42,7 +43,7 @@ namespace JAXBase.Executer
 
                 // Get the JSON string
                 JAXObjects.Token json = new();
-                json.Element.Value = JAXObjectWrapperJsonSerializer.ToJson(emptyObj, Newtonsoft.Json.Formatting.None);
+                json.Element.Value = JAXUtilities.JAXObjectWrapperJsonSerializer.ToJson(emptyObj, Newtonsoft.Json.Formatting.None);
 
                 // Set up the JSON string to be passed to the editor program
                 jbe.App.ParameterClassList.Clear();
@@ -65,7 +66,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -79,7 +80,7 @@ namespace JAXBase.Executer
         public static string Else(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+            string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
 
             try
             {
@@ -99,7 +100,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -124,7 +125,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -146,7 +147,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -165,14 +166,14 @@ namespace JAXBase.Executer
                 if (app.InDefineObject is not null)
                 {
                     JAXObjects.Token tk = await app.InDefineObject.GetProperty("name");
-                    if (tk.Element.IsNull()==false)
+                    if (tk.Element.IsNull() == false)
                     {
                         string name = tk.AsString().ToLower().Trim();
 
-                        if (app.AppLevels[^1].UserObjects.ContainsKey(name))
-                            app.AppLevels[^1].UserObjects[name] = app.InDefineObject;
+                        if (app.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects.ContainsKey(name))
+                            app.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects[name] = app.InDefineObject;
                         else
-                            app.AppLevels[^1].UserObjects.Add(name, app.InDefineObject);
+                            app.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects.Add(name, app.InDefineObject);
 
                         app.InDefine = string.Empty;
                         app.CurrentClassMethod = string.Empty;
@@ -186,7 +187,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return string.Empty;
@@ -207,7 +208,7 @@ namespace JAXBase.Executer
                 if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
                 string loc = jbe.App.MiscInfo["docmd"] + eCodes.SUBCMD;
 
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
                 int f = PrgCode.IndexOf(loc) - 1;
 
                 if (f < 0)
@@ -216,12 +217,12 @@ namespace JAXBase.Executer
                 {
                     jbe.App.utl.Conv64(f, 3, out string pos);
                     result = "X" + pos;
-                    jbe.App.PopLoopStack(); // drop the if loop from the stack
+                    AppLoop.PopLoopStack(); // drop the if loop from the stack
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -242,7 +243,7 @@ namespace JAXBase.Executer
                 if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
                 string loc = jbe.App.MiscInfo["forcmd"] + eCodes.SUBCMD;
 
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
                 int f = PrgCode.IndexOf(loc) - 1;
 
                 if (f < 0)
@@ -256,7 +257,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -280,7 +281,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -303,7 +304,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return "Z";
@@ -324,7 +325,7 @@ namespace JAXBase.Executer
                 if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
                 string loc = jbe.App.MiscInfo["scancmd"] + eCodes.SUBCMD;
 
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
                 int f = PrgCode.IndexOf(loc) - 1;
 
                 if (f < 0)
@@ -333,12 +334,12 @@ namespace JAXBase.Executer
                 {
                     jbe.App.utl.Conv64(f, 3, out string pos);
                     result = "X" + pos;
-                    jbe.App.PopLoopStack(); // drop the if loop from the stack
+                    AppLoop.PopLoopStack(); // drop the if loop from the stack
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -360,7 +361,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -371,43 +372,50 @@ namespace JAXBase.Executer
          * ENDTRY
          * 
          */
-        public static string EndTry(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static string EndTry(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
 
-                if (eCodes.SUBCMD.Length > 1)
+                int tryPos = -1;
+
+                // Look for the correct try in the current App Level
+                for (int i = 0; i < Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack.Count; i++)
                 {
-                    string thisLoopCode = eCodes.SUBCMD[1..];
-                    string thisLoopType = eCodes.SUBCMD[..1];
-                    string lastLoopFlag = jbe.App.AppLevels[^1].LoopStack[^1];
-
-                    if (lastLoopFlag.Length > 1)
+                    if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[i].Code == eCodes.SUBCMD)
                     {
-                        lastLoopFlag = lastLoopFlag[..2].Equals("C,") ? lastLoopFlag[2..] : lastLoopFlag;
-                        string lType = lastLoopFlag[..1];
-                        string lCode = lastLoopFlag[1..];
-
-                        if (lCode.Equals(thisLoopCode) && "CTF".Contains(lType))
-                        {
-                            // All is well, toss the last loop code
-                            jbe.App.PopLoopStack();
-                        }
-                        else
-                            throw new Exception("2058|");
+                        tryPos = i;
+                        break;
                     }
-                    else
-                        throw new Exception($"Loop Stack code {lastLoopFlag.ToUpper()} is malformed.");
                 }
+
+                if (tryPos < 0)
+                    throw new Exception("2058||");   // Some tom-foolery is going on with the Try code
                 else
-                    throw new Exception($"Subcommand code {eCodes.SUBCMD.ToUpper()} is malformed");
+                {
+                    // Throw away any AppLevels above the current as being here indicates we just
+                    // processed a catch statement and control fell to the EndTry command.
+                    // We no longer have the ability to call RESUME or RESUME NEXT.
+                    while (Program.CurrentApp.AppLevels.Count > Program.CurrentApp.CurrentAppLevel + 1)
+                        Program.CurrentApp.AppLevels.RemoveAt(Program.CurrentApp.AppLevels.Count - 1);
+
+                    // Reset the Try Phase to 0 for this and all following TRY structures as we
+                    // may be dealing with nested TRY structures.  If they are not nested then
+                    // they will already be set to zero.  All TRY entries before this one
+                    // will either be 1 or 0.
+                    for (int i = tryPos; i < Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack.Count; i++)
+                        Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[i].TryPhase = 0;
+
+                    Program.CurrentApp.InErrorTrap = false;
+
+                }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -425,13 +433,33 @@ namespace JAXBase.Executer
             try
             {
                 if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                if (jbe.App.AppLevels[^1].WithStack.Count == 0) throw new Exception("1939|");
-                jbe.App.AppLevels[^1].WithStack.RemoveAt(jbe.App.AppLevels[^1].WithStack.Count - 1);
+                if (jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count == 0) throw new Exception("1939|");
+                jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.RemoveAt(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count - 1);
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
+
+            return result;
+        }
+
+
+        public static async Task<string> ErrorCall(ExecuterCodes eCodes)
+        {
+            string result = "";
+
+            if (eCodes.Expressions.Count > 0)
+            {
+                JAXObjects.Token answer =await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+
+                if (answer.Element.Type.Equals("N"))
+                    AppErrorHandling.SetError(answer.AsInt(), $"{answer.AsInt()}|", Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                else
+                    throw new Exception("11||ERROR expression is not numeric");
+            }
+            else
+                throw new Exception("10||Missing expression");
 
             return result;
         }
@@ -450,10 +478,10 @@ namespace JAXBase.Executer
             {
                 if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
 
-                string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx] : string.Empty;
+                string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
 
                 // What loop are we currently in?
-                string loopType = jbe.App.PopLoopStack();
+                string loopType = AppLoop.PopLoopStack();
                 string loop = string.Empty;
 
                 switch (loopType[0])
@@ -503,7 +531,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -525,7 +553,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

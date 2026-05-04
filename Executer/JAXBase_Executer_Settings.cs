@@ -1,6 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
@@ -460,7 +460,7 @@ namespace JAXBase.Executer
                                     else
                                         jbe.App.CurrentDS.JaxSettings.Path += (";" + settingValue.Trim()).Trim(';');
 
-                                    jbe.App.Talk("Path is " + jbe.App.CurrentDS.JaxSettings.Path);
+                                    AppIO.Talk("Path is " + jbe.App.CurrentDS.JaxSettings.Path);
                                 }
                             }
                             break;
@@ -659,7 +659,7 @@ namespace JAXBase.Executer
                             }
                             catch (Exception ex)
                             {
-                                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                             }
 
                             // Revert back to the original session and area
@@ -744,7 +744,7 @@ namespace JAXBase.Executer
                             }
                             catch (Exception ex)
                             {
-                                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                             }
                             break;
 
@@ -869,7 +869,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
 
@@ -877,7 +877,7 @@ namespace JAXBase.Executer
             if (string.IsNullOrEmpty(status))
                 throw new Exception($"10||Setting {settingName} not found or could not be set.");
 
-            jbe.App.Talk(status);
+            AppIO.Talk(status);
             return string.Empty;
         }
 
@@ -1100,7 +1100,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return answer;

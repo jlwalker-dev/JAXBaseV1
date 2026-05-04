@@ -27,7 +27,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
             return result;
         }
@@ -56,10 +56,10 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 jbc.App.InDefine = string.Empty;
             }
-            return jbc.App.ErrorCount() > 0 ? string.Empty : result;
+            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : result;
         }
 
 
@@ -100,7 +100,7 @@ namespace JAXBase.Compiler
             catch (Exception ex)
             {
                 result = string.Empty;
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -202,7 +202,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
             return result;
 
@@ -285,20 +285,20 @@ namespace JAXBase.Compiler
                         break;
 
                     case "case":    // DO CASE
-                        result = jbc.CompilerXRef["CS"].ToString() + jbc.App.AddLoop("C");
+                        result = jbc.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("C");
                         break;
 
                     case "while":   // DO WHILE lExpression 
                         cmdLine = jbc.GetNextToken(cmdLine, string.Empty, out nextToken);
                         expression = jbc.GetRPNString(jbc.App, cmdLine);
-                        result = jbc.CompilerXRef["CS"].ToString() + jbc.App.AddLoop("W") + AppClass.stmtDelimiter +jbc.CompilerXRef["XX"].ToString()+ expression;
+                        result = jbc.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("W") + AppClass.stmtDelimiter +jbc.CompilerXRef["XX"].ToString()+ expression;
                         break;
 
                     default:        // DO ProgramName1 | ProcedureName [IN ProgramName2] [WITH ParameterList]
                         if (cmdLine.Length == 0)
                         {
                             // Nothing following the DO assumes an UNTIL is coming
-                            result = jbc.CompilerXRef["CS"].ToString() + jbc.App.AddLoop("U");
+                            result = jbc.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("U");
                         }
                         else
                             result = jbc.CompilerXRef["CS"].ToString() + "P" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdLine, "XX0,IN0,WT3", ["noread", "noshow", "linked"]); // Just expressions after with
@@ -308,7 +308,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

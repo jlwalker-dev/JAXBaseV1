@@ -1,17 +1,15 @@
 ﻿/*--------------------------------------------------------------------------------------------------*
  * 2025-05-06 - JLW
  * 
- * Holds common conversion of xBase to .Net, and back, routines for the XClass 
- * properties such as Color, Font related, and Anchor
+ * Holds common conversion of xBase to .Net, and back, routines for 
+ * the XClass properties and methods.
  * 
  *--------------------------------------------------------------------------------------------------*/
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Media;                // for Brush, Geometry, etc.
-using Avalonia.Media.Imaging;
-using Avalonia.VisualTree;
+using Avalonia.Media;
 using JAXBase.Core;
 using JAXBase.Executer;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
@@ -40,45 +38,6 @@ namespace JAXBase.XBase
 
             return pList;
         }
-
-        /* -----------------------------------------------------------------------------------
-         *  Font Controls
-         * -----------------------------------------------------------------------------------*/
-        public static Font SetFont(IJAXAvaClass myObj)
-        {
-
-            /* FontCharSet values (Unsupported in Ver 1)
-             *   0 Western
-             *   1 Default
-             *   2 Symbol
-             * 128 Japanese
-             * 161 Greek
-             * 162 Turkish
-             * 163 Vietnamese
-             * 177 Hebrew
-             * 178 Arabic
-             * 186 Baltic
-             * 204 Cyrillic
-             * 238 Central European
-             * 
-             */
-
-            /* Supported Font Styles
-             * 0 Regular
-             * 1 Bold
-             * 2 Italics
-             * 4 Underline
-             * 8 Strikethrough
-             */
-
-
-            int style = (myObj.UserProperties["fontbold"].AsBool() ? 1 : 0) + (myObj.UserProperties["FontItalic"].AsBool() ? 2 : 0) + (myObj.UserProperties["FontUnderline"].AsBool() ? 4 : 0) + (myObj.UserProperties["FontStrikeThrough"].AsBool() ? 8 : 0);
-            return new(myObj.UserProperties["FontName"].AsString(), myObj.UserProperties["FontSize"].AsFloat(), (System.Drawing.FontStyle)style);
-        }
-
-
-
-        
 
 
         /* -----------------------------------------------------------------------------------
@@ -163,7 +122,7 @@ namespace JAXBase.XBase
             if ((await me.IsMember(property)).Equals("P"))
             {
                 JAXObjects.Token tk = await me.GetProperty(property);
-                if ( tk.Element.IsNull())
+                if (tk.Element.IsNull())
                     throw new Exception($"9999|ResetToDefault|Failed to reset property {property}");
 
                 if (tk.Element.DefaultValue is not null)
@@ -200,6 +159,7 @@ namespace JAXBase.XBase
         public static void AddLockedProperty(JAXObjectWrapper me, string propertyName, string lockType, string lockValue)
         {
             propertyName = propertyName.ToLower();
+
             JAXObjects.Token tk;
             if (string.IsNullOrWhiteSpace(lockType))
             {
@@ -219,31 +179,6 @@ namespace JAXBase.XBase
             me.AddPropertyDirect(propertyName, tk);
         }
 
-        public static async Task Method_Addobject(AppClass App, JAXObjectWrapper me)
-        {
-            // TODO - Only certain classes can have objects added to them
-            if (App.ParameterClassList.Count == 1 && App.ParameterClassList[0].token.Element.Type.Equals("O"))
-            {
-                // JAXBase can accept an object in ADDOBJECT()
-                await me.AddObject((JAXObjectWrapper)App.ParameterClassList[0].token.Element.Value);
-            }
-            else
-            {
-                // we're expecting cName, cClass [,aInit1, aInit2...]
-                if (App.ParameterClassList.Count > 1)
-                {
-                    List<JAXObjects.Token> tkList = [];
-                    foreach (ParameterClass p in App.ParameterClassList)
-                    {
-                        JAXObjects.Token tk = new();
-                        tk.CopyFrom(p.token);
-                        tkList.Add(tk);
-                    }
-                    await me.AddObjectUsingParameters(tkList);
-                }
-            }
-        }
-
         /*
          * Create an array object using the rowsource and rowsource type information
          * 
@@ -251,13 +186,13 @@ namespace JAXBase.XBase
          * nValue   Description  
          * 0        None. (Default) 
          * 1        "Value1,Value2,..."
-         * 2        Table alias - Version 0.8
+         * 2        Table alias
          * 3        SQL statement - Version 1.0
          * 4        Query (.qpr) file - Version 1.0
          * 5        Array
-         * 6        Fields - After Version 1.0
-         * 7        Files - After Version 1.0
-         * 8        Field structure of a table - After Version 1.0
+         * 6        Fields
+         * 7        Files
+         * 8        Field structure of a table
          * 9        JSON string - After Version 1.0
          * 10       Collection object - After Version 1.0
          */
@@ -267,29 +202,88 @@ namespace JAXBase.XBase
 
             switch (rowsourcetype)
             {
-                case 0: break;      // No row source
-                case 1:             // Row source is a a comma delimited string
-                    string[] sArray = rowsource.Split(',');
-                    AppHelper.ASetDimension(rowInfo, sArray.Length, 1);
-                    for (int i = 0; i < sArray.Length; i++)
-                        rowInfo._avalue[i].Value = sArray[i];
+                case 0:
+                    // No row source
+                    rowInfo.Element.Value = "";
                     break;
 
-                case 2: break;
+                case 1:
+                    // Value row source
+                    string[] values = rowsource.Split(",");
+
+                    if (values.Length < 2)
+                        rowInfo.Element.Value = values[0];
+                    else
+                    {
+                        rowInfo.SetDimension(1, values.Length, true);
+                        for (int i = 0; i < values.Length; i++)
+                            rowInfo._avalue[i].Value = values[i];  // Field names in subsequent columns
+                    }
+                    break;
+
+                case 2:
+                    // Turn "TableAlias.FieldName,..." into "TableAlias"
+                    string[] rsource = rowsource.Split(",");
+                    string[] rstable = rsource[0].Split(".");
+                    rowInfo.Element.Value = rstable;
+                    break;
+
                 case 3: break;
                 case 4: break;
 
-                case 5:             // Row source is an array
-                    JAXObjects.Token mArray = await app.GetVarToken(rowsource);
-                    AppHelper.ASetDimension(rowInfo, mArray.Row, mArray.Col);
-
-                    for (int i = 0; i < mArray._avalue.Count; i++)
-                        rowInfo._avalue[i].Value = mArray._avalue[i];
+                case 5:
+                    // Row source is an array name to be moved into rowinfo
+                    rowInfo = await AppVars.GetVarToken(rowsource);
+                    if (rowInfo.TType.Equals("A") == false)
+                        rowInfo.Element.Value = 9999;
                     break;
 
-                case 6: break;
-                case 7: break;
-                case 8: break;
+                case 6:
+                    // Break down "TableAlias.FieldName,FieldName2,..." into "TableAlias", "FieldName", "FieldName2", ...
+                    string[] fsource = rowsource.Split(",");
+                    if (fsource[0].Contains("."))
+                    {
+                        string[] fstable = fsource[0].Split(".");
+                        rowInfo.SetDimension(1, fsource.Length + 1, true);
+                        rowInfo._avalue[0].Value = fstable[0];  // Table name in the first column
+                        rowInfo._avalue[1].Value = fstable[1];  // First field name in the second column
+
+                        for (int i = 1; i < fsource.Length; i++)
+                            rowInfo._avalue[i + 1].Value = fsource[i];  // Field names in subsequent columns
+                    }
+                    else
+                        rowInfo.Element.Value = 9999;
+                    break;
+
+                case 7:
+                    // Get list of files in the directory specified by rowsource and put into rowinfo
+                    string dir = string.IsNullOrWhiteSpace(rowsource) ? app.CurrentDS.JaxSettings.Default : rowsource;
+                    if (FilerLib.GetDirectory(dir, out string[] files) > 0)
+                    {
+                        int fileCount = 0;
+                        for(int i = 0; i<files.Length; i++)
+                        {
+                            if ((files[i].Equals('.') || files[i].Equals("..")) == false)
+                            {
+                                fileCount++;
+                                rowInfo.SetDimension(1, fileCount, true);
+                                rowInfo._avalue[fileCount - 1].Value = files[i];
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Send back an empty array
+                        rowInfo.SetDimension(1, 1, true);
+                        rowInfo.TType = "A";
+                        rowInfo.Element.Value = "";
+                    }
+                    break;
+
+                case 8:
+                    // Get field structure of the table specified by rowsource and put into rowinfo
+                    break;
+
                 case 9: break;
                 case 10: break;
 
@@ -501,164 +495,5 @@ namespace JAXBase.XBase
             }
         }
 
-        /*
-         * Used to render a screen out of sight so that we can
-         * get the controls to size correctly
-         */
-        public static RenderTargetBitmap? RenderFormOffscreen(Avalonia.Controls.Control content, double? width = null, double? height = null, double dpi = 96.0)
-        {
-            // 1. Create invisible helper window
-            var helperWindow = new Window
-            {
-                ShowInTaskbar = false,
-                WindowState = WindowState.Minimized,  // or Normal + Opacity=0 + Position offscreen
-                SizeToContent = SizeToContent.WidthAndHeight,
-                TransparencyLevelHint = new[] { WindowTransparencyLevel.None },
-                Background = null,                    // optional
-                Content = content
-            };
-
-            try
-            {
-                // 2. Critical: Show() briefly to initialize rendering / theme / layout
-                //    Then hide immediately — this is the key trick
-                helperWindow.Show();
-                helperWindow.IsVisible = false;
-
-                // 3. Force full layout pass (very important!)
-                content.Measure(new Avalonia.Size(double.PositiveInfinity, double.PositiveInfinity));
-                content.Arrange(new Avalonia.Rect(content.DesiredSize));
-                content.UpdateLayout();
-
-                // TODO - Introduce a tiny delay for complex controls
-
-
-                // 4. Determine final pixel size (respect DPI/scaling)
-                var scale = dpi / 96.0;
-                int pixelWidth = (int)System.Math.Ceiling((width ?? content.Bounds.Width) * scale);
-                int pixelHeight = (int)System.Math.Ceiling((height ?? content.Bounds.Height) * scale);
-
-                var renderSize = new PixelSize(pixelWidth, pixelHeight);
-                var bitmap = new RenderTargetBitmap(renderSize, new Vector(dpi, dpi));
-
-                // 5. Render the content (not the window!)
-                bitmap.Render(content);
-
-                return bitmap;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Offscreen render failed: {ex.Message}");
-                return null;
-            }
-            finally
-            {
-                helperWindow.Content = null;   // detach to avoid memory leaks
-                helperWindow.Close();          // clean up
-            }
-        }
-
-        /// <summary>
-        /// Applies a Visual FoxPro-compatible Anchor value to any Avalonia Control on a Canvas.
-        /// Supports the common absolute anchoring values (0-15):
-        ///   0  = Top + Left (default VFP behavior)
-        ///   1  = Top
-        ///   2  = Left
-        ///   3  = Top + Left
-        ///   4  = Bottom
-        ///   5  = Top + Bottom
-        ///   6  = Left + Bottom
-        ///   7  = Top + Left + Bottom
-        ///   8  = Right
-        ///   9  = Top + Right
-        ///  10  = Left + Right
-        ///  11  = Top + Left + Right
-        ///  12  = Bottom + Right
-        ///  13  = Top + Bottom + Right
-        ///  14  = Left + Bottom + Right
-        ///  15  = All four sides (control stretches with canvas)
-        /// 
-        /// Relative anchoring bits (16/32/64/128) are ignored in this version (they require
-        /// additional SizeChanged ratio logic - let me know if you need that too).
-        /// 
-        /// Call this AFTER the control is added to the canvas and has its initial position/size.
-        /// The layout system will then automatically keep the anchoring when the canvas resizes.
-        /// </summary>
-        public static void ApplyVFPAnchor(Avalonia.Controls.Control control, Canvas canvas, int vfpAnchorValue)
-        {
-            if (control == null || canvas == null)
-                return;
-
-            // This is wrong!  Return if 0
-            if (vfpAnchorValue == 0) return;
-
-            // Get current position and size (use attached properties first, then Bounds as fallback)
-            double curLeft = Canvas.GetLeft(control);
-            double curTop = Canvas.GetTop(control);
-            double curRight = Canvas.GetRight(control);
-            double curBottom = Canvas.GetBottom(control);
-
-            if (double.IsNaN(curLeft)) curLeft = control.Bounds.Left;
-            if (double.IsNaN(curTop)) curTop = control.Bounds.Top;
-            if (double.IsNaN(curRight)) curRight = 0;
-            if (double.IsNaN(curBottom)) curBottom = 0;
-
-            double width = double.IsNaN(control.Width) || control.Width == 0
-                ? control.Bounds.Width
-                : control.Width;
-
-            double height = double.IsNaN(control.Height) || control.Height == 0
-                ? control.Bounds.Height
-                : control.Height;
-
-            double canvasW = double.IsNaN(canvas.Bounds.Width) || canvas.Bounds.Width == 0
-                ? canvas.Width
-                : canvas.Bounds.Width;
-
-            double canvasH = double.IsNaN(canvas.Bounds.Height) || canvas.Bounds.Height == 0
-                ? canvas.Height
-                : canvas.Bounds.Height;
-
-            // VFP special case: Anchor = 0 means Top + Left
-            bool hasTop = ((vfpAnchorValue & 1) != 0) || (vfpAnchorValue == 0);
-            bool hasLeft = ((vfpAnchorValue & 2) != 0) || (vfpAnchorValue == 0);
-            bool hasBottom = (vfpAnchorValue & 4) != 0;
-            bool hasRight = (vfpAnchorValue & 8) != 0;
-
-            // Clear any attached properties we are NOT anchoring to
-            if (!hasLeft) Canvas.SetLeft(control, double.NaN);
-            if (!hasRight) Canvas.SetRight(control, double.NaN);
-            if (!hasTop) Canvas.SetTop(control, double.NaN);
-            if (!hasBottom) Canvas.SetBottom(control, double.NaN);
-
-            // Set the anchored distances (preserving current distance to each anchored edge)
-            if (hasLeft)
-                Canvas.SetLeft(control, curLeft);
-
-            if (hasRight)
-                Canvas.SetRight(control, canvasW - (curLeft + width));
-
-            if (hasTop)
-                Canvas.SetTop(control, curTop);
-
-            if (hasBottom)
-                Canvas.SetBottom(control, canvasH - (curTop + height));
-
-            // Enable automatic stretching when anchored to both opposite sides
-            if (hasLeft && hasRight)
-                control.Width = double.NaN;
-
-            if (hasTop && hasBottom)
-                control.Height = double.NaN;
-
-            // If neither horizontal side is anchored, default to Left (matches VFP behavior)
-            if (!hasLeft && !hasRight)
-                Canvas.SetLeft(control, curLeft);
-
-            // If neither vertical side is anchored, default to Top
-            if (!hasTop && !hasBottom)
-                Canvas.SetTop(control, curTop);
-
-        }
     }
 }

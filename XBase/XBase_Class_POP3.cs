@@ -52,6 +52,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_POP3 : XBase_Class_TCPClient
     {
+        public new string MyBaseClass = "POP3";
+        public new string MyDefaultName = "pop3";
+
         // === POP3 SETTINGS ===
         public string Server { get; set; } = "";
         //public int Port { get; set; } = 110;

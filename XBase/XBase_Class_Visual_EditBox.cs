@@ -1,11 +1,13 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
-using System.Security.Permissions;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_EditBox : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "EditBox";
+        public new string MyDefaultName { get; } = "editbox";
+
 
         public Avalonia.Controls.TextBox edtBox => (Avalonia.Controls.TextBox)me.avaloniaObject!;
 
@@ -104,10 +106,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -153,9 +155,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -221,7 +223,7 @@ namespace JAXBase.XBase
                 "originalvalue,,",
                 "parent,o!,","parentclass,C!,","passwordchar,c,",
                 "readonly,l,false","righttoleft,L,false",
-                "scrollbars,n,2","sellength,n,0","selstart,n,0","seltext,n,0","selectonentry,l,f","setoriginalwhen,n,0",
+                "scrollbars,n,2","sellength,n,0","selstart,n,0","seltext,c,","selectonentry,l,f","setoriginalwhen,n,0",
                 "tabindex,n,1","tabstop,l,true","tag,C,","text,c,","top,N,0","tooltiptext,c,",
                 "value,C,","visible,l,true",
                 "width,N,0"

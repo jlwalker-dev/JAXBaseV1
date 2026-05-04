@@ -5,7 +5,7 @@ using JAXBase.Core;
 using JAXBase.Data;
 using MySqlConnector;
 using System.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.Language;
 
 namespace JAXBase.XBase

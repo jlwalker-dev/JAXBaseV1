@@ -5,13 +5,17 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using System.Globalization;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Label : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Label";
+        public new string MyDefaultName { get; } = "label";
+
+
         public JAXLabel lbl => (JAXLabel)me.avaloniaObject!;
 
         public XBase_Class_Visual_Label(JAXObjectWrapper jow, string name) : base(jow, name)
@@ -57,7 +61,7 @@ namespace JAXBase.XBase
             tk.Element.Value = objValue;    // Now we can type it easily!
             propertyName = propertyName.ToLower();
 
-            App.DebugLog($"Label: {me.JOWName.ToUpper()}.{propertyName}={tk.AsString()}");
+            AppIO.DebugLog($"Label: {me.JOWName.ToUpper()}.{propertyName}={tk.AsString()}");
 
             if (UserProperties.ContainsKey(propertyName))
             {
@@ -196,10 +200,10 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -252,9 +256,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
             }

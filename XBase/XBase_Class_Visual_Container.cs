@@ -1,10 +1,13 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     internal class XBase_Class_Visual_Container : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Container";
+        public new string MyDefaultName { get; } = "container";
+
 
         public CustomBorder container => (CustomBorder)me.avaloniaObject!;
         public Avalonia.Controls.Canvas InnerCanvas;
@@ -49,24 +52,17 @@ namespace JAXBase.XBase
             {
                 try
                 {
-                    if (value.VisualClass)
+                    // Add valid controls to the canvas
+                    if (value.avaloniaObject is not null)
+                        InnerCanvas.Children.Add(value.avaloniaObject!);
+                    else if (value.nvObject is Avalonia.Controls.Shapes.Path)
+                        InnerCanvas.Children.Add((Avalonia.Controls.Shapes.Path)value.nvObject!);
+                    else if (value.nvObject is not null)
                     {
-                        if (value.avaloniaObject is not null)
-                        {
-                            // It's a control
-                            InnerCanvas.Children.Add(value.avaloniaObject);
-
-                            UserProperties["objects"].Add(value);
-                            UserProperties["controlcount"].Element.Value = UserProperties["controlcount"].AsInt() + 1;
-                            value.SetParent(me);
-                        }
-                        else if (value.nvObject is not null)
-                        {
-                            // It's something else
-                            UserProperties["objects"].Add(value);
-                            UserProperties["controlcount"].Element.Value = UserProperties["controlcount"].AsInt() + 1;
-                            value.SetParent(me);
-                        }
+                        // It's something else then add it to the form's objects collection
+                        UserProperties["objects"].Add(value);
+                        UserProperties["controlcount"].Element.Value = UserProperties["controlcount"].AsInt() + 1;
+                        value.SetParent(me);
                     }
                 }
                 catch (Exception ex)
@@ -80,10 +76,10 @@ namespace JAXBase.XBase
 
             if (err > 0)
             {
-                _AddError(err, 0, msg, App.AppLevels[^1].Procedure);
+                _AddError(err, 0, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|{msg}|{value.JOWName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|{msg}|{value.JOWName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
@@ -235,10 +231,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -294,7 +290,7 @@ namespace JAXBase.XBase
                         break;
                 }
 
-                if (JAXLib.Between(result,0,10))
+                if (JAXLib.Between(result, 0, 10))
                 {
                     if (result < 9)
                         returnToken.CopyFrom(UserProperties[propertyName]); //returnToken.Element.Value = UserProperties[propertyName].Element.Value;
@@ -307,10 +303,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }

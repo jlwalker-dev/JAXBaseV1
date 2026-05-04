@@ -2,7 +2,7 @@
 using JAXBase.XBase;
 using System.Text;
 using System.Text.RegularExpressions;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Executer
 {
@@ -71,9 +71,9 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
-            return app.ErrorCount() > 0 ? string.Empty : result;
+            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : result;
         }
 
         /* TODO NOW
@@ -83,16 +83,16 @@ namespace JAXBase.Executer
          */
         public static string Debug(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             try
             {
 
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
-            return app.ErrorCount() > 0 ? string.Empty : "$";
+            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : "$";
 
         }
 
@@ -104,16 +104,16 @@ namespace JAXBase.Executer
          */
         public static string DebugOut(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             try
             {
 
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
-            return app.ErrorCount() > 0 ? string.Empty : "$";
+            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : "$";
 
         }
 
@@ -144,7 +144,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -215,7 +215,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -246,13 +246,13 @@ namespace JAXBase.Executer
                         {
                             int iii = 0;
                         }
-                        VarRef var = await jbe.App.SolveVariableReference(answer.AsString());
-                        jbe.App.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
+                        VarRef var = await AppVars.SolveVariableReference(answer.AsString());
+                        AppVars.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
 
                         // Set the var as this type
                         string typ = (await jbe.App.SolveFromRPNString(eCodes.As[i])).AsString();
                         if (string.IsNullOrWhiteSpace(typ) == false)
-                            await jbe.App.SetAsType(var.varName, eCodes.As[i]);
+                            await AppVars.SetAsType(var.varName, eCodes.As[i]);
                     }
                     else
                         throw new Exception("11|");
@@ -260,7 +260,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return string.Empty;
@@ -336,11 +336,11 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 dInfo = new();
             }
 
-            jbe.App.SendToIDE(dInfo.ToString());
+            AppIO.SendToIDE(dInfo.ToString());
             return "";
         }
 
@@ -403,7 +403,6 @@ namespace JAXBase.Executer
                     case "memory":          // Memory
                     case "objects":         // Objects
                         List<string> vars = [];
-                        vars.Add("_WRAP".PadRight(21) + "Pub  ");       // Placeholder for _Vars
 
                         // Load all private and local variables for each level
                         // Level 0 private vars are program globals
@@ -463,85 +462,79 @@ namespace JAXBase.Executer
                         // Display the var, scope, type, and value
                         for (int j = 0; j < vars.Count; j++)
                         {
-                            if (vars[j][0] == '_')
-                            {
-                                // Skip for now
-                            }
-                            else
-                            {
-                                JAXObjects.Token t = await jbe.App.GetVarToken(vars[j][..20].Trim());
+                            JAXObjects.Token t = await AppVars.GetVarToken(vars[j][..20].Trim());
 
-                                if (t.TType.Equals("A"))
+                            if (t.TType.Equals("A"))
+                            {
+                                // Handle the array display
+                                sb.AppendLine(string.Format("{0} {1}", vars[j], t.TType));
+                                if (t.Row == 0)
                                 {
-                                    // Handle the array display
-                                    sb.AppendLine(string.Format("{0} {1}", vars[j], t.TType));
-                                    if (t.Row == 0)
+                                    // 1D array
+                                    for (int c = 1; c <= t.Col; c++)
                                     {
-                                        // 1D array
+                                        t.SetElement(0, c);
+                                        if (t.Element.Type.Equals("O"))
+                                        {
+                                            JAXObjectWrapper o = (JAXObjectWrapper)t.Element.Value;
+
+                                            JAXObjects.Token tk = await o.GetProperty("baseclass");
+                                            string typ = tk.AsString();
+                                            string nam = (await o.GetProperty("name")).AsString();
+                                            sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
+                                        }
+                                        else
+                                            sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
+                                    }
+                                }
+                                else
+                                {
+                                    // 2D array
+                                    for (int r = 1; r <= t.Row; r++)
+                                    {
                                         for (int c = 1; c <= t.Col; c++)
                                         {
-                                            t.SetElement(0, c);
+                                            t.SetElement(r, c);
                                             if (t.Element.Type.Equals("O"))
                                             {
                                                 JAXObjectWrapper o = (JAXObjectWrapper)t.Element.Value;
 
-                                                JAXObjects.Token tk=await o.GetProperty("baseclass");
+                                                JAXObjects.Token tk = await o.GetProperty("baseclass");
                                                 string typ = tk.AsString();
                                                 string nam = (await o.GetProperty("name")).AsString();
                                                 sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
                                             }
                                             else
-                                                sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
+                                                sb.AppendLine(string.Format("    [{0},{1}]={2}", r, c, t.Element.Value));
                                         }
-                                    }
-                                    else
-                                    {
-                                        // 2D array
-                                        for (int r = 1; r <= t.Row; r++)
-                                        {
-                                            for (int c = 1; c <= t.Col; c++)
-                                            {
-                                                t.SetElement(r, c);
-                                                if (t.Element.Type.Equals("O"))
-                                                {
-                                                    JAXObjectWrapper o = (JAXObjectWrapper)t.Element.Value;
-
-                                                    JAXObjects.Token tk=await o.GetProperty("baseclass");
-                                                    string typ = tk.AsString();
-                                                    string nam = (await o.GetProperty("name")).AsString();
-                                                    sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
-                                                }
-                                                else
-                                                    sb.AppendLine(string.Format("    [{0},{1}]={2}", r, c, t.Element.Value));
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    if (t.Element.Type.Equals("O"))
-                                    {
-                                        // Display the object
-                                        JAXObjectWrapper o = (JAXObjectWrapper)t.Element.Value;
-
-                                        JAXObjects.Token tk = await o.GetProperty("baseclass");
-                                        string typ = tk.AsString();
-                                        string nam;
-
-                                        if (typ.Equals("empty", StringComparison.OrdinalIgnoreCase))
-                                            nam = "<none>";
-                                        else
-                                            nam=(await o.GetProperty("name")).AsString();
-
-                                        // Program variable
-                                        sb.AppendLine(string.Format("{0} {1}  {2} (Name: {3})", vars[j], t.Element.Type, typ, nam));
-                                    }
-                                    else
-                                    {
-                                        sb.AppendLine(string.Format("{0} {1}  {2}", vars[j], t.Element.Type, t.Element.Value));
                                     }
                                 }
                             }
+                            else
+                            {
+                                if (t.Element.Type.Equals("O"))
+                                {
+                                    // Display the object
+                                    JAXObjectWrapper o = (JAXObjectWrapper)t.Element.Value;
+
+                                    JAXObjects.Token tk = await o.GetProperty("baseclass");
+                                    string typ = tk.AsString();
+                                    string nam;
+
+                                    if (typ.Equals("empty", StringComparison.OrdinalIgnoreCase))
+                                        nam = "<none>";
+                                    else
+                                        nam = (await o.GetProperty("name")).AsString();
+
+                                    // Program variable
+                                    sb.AppendLine(string.Format("{0} {1}  {2} (Name: {3})", vars[j], t.Element.Type, typ, nam));
+                                }
+                                else
+                                {
+                                    sb.AppendLine(string.Format("{0} {1}  {2}", vars[j], t.Element.Type, t.Element.Value));
+                                }
+                            }
+
                         }
                         break;
 
@@ -549,7 +542,7 @@ namespace JAXBase.Executer
                         throw new Exception("1999|" + dType);
                 }
 
-                jbe.App.DebugLog(sb.ToString(), false);
+                AppIO.DebugLog(sb.ToString(), false);
 
                 if (toType.Length > 0)
                 {
@@ -563,10 +556,10 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            jbe.App.SendToIDE(sb.ToString());
+            AppIO.SendToIDE(sb.ToString());
 
             return "";
         }
@@ -601,9 +594,9 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Do(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.DebugLog("Entering DO");
+            AppIO.DebugLog("Entering DO");
             string result = string.Empty;
-            string PrgCode = jbe.App.AppLevels[^1].PRGCacheIdx < 0 ? jbe.App.AppLevels[^1].PrgCode : jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx] : string.Empty;
+            string PrgCode = jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx < 0 ? jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgCode : jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
             JAXObjects.Token answer = new();
 
             try
@@ -611,7 +604,7 @@ namespace JAXBase.Executer
                 switch (eCodes.SUBCMD[..1])
                 {
                     case "U":       // Do Until
-                        jbe.App.PushLoop(eCodes.SUBCMD);
+                        AppLoop.PushLoop(eCodes.SUBCMD);
                         break;
 
                     case "P":       // Do Program
@@ -630,18 +623,18 @@ namespace JAXBase.Executer
 
                         while (true)
                         {
-                            int pos = PrgCode.IndexOf(ccase, jbe.App.AppLevels[^1].PrgPos + 1);
+                            int pos = PrgCode.IndexOf(ccase, jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos + 1);
 
                             if (pos < 0)
                             {
                                 // Look for otherwise
-                                pos = PrgCode.IndexOf(cOtherwise, jbe.App.AppLevels[^1].PrgPos + 1);
+                                pos = PrgCode.IndexOf(cOtherwise, jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos + 1);
 
                                 // if not found, look for endcase
                                 if (pos < 0)
                                 {
                                     // Look for endcase
-                                    pos = PrgCode.IndexOf(cEndCase, jbe.App.AppLevels[^1].PrgPos + 1);
+                                    pos = PrgCode.IndexOf(cEndCase, jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos + 1);
                                     if (pos < 0)
                                         throw new Exception("Mismatched DO CASE/ ENDCASE");
                                     else
@@ -665,7 +658,7 @@ namespace JAXBase.Executer
                                 if (endcmd < 0)
                                     throw new Exception("Unexpected end of file");
 
-                                jbe.App.AppLevels[^1].PrgPos = pos;
+                                jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = pos;
                                 string caseExpr = PrgCode[pos..endcmd];
                                 caseExpr = caseExpr[8..]; // Remove the case command 
 
@@ -688,7 +681,7 @@ namespace JAXBase.Executer
 
                     case "W":       // Do While
                         if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                        jbe.App.PushLoop(eCodes.SUBCMD);
+                        AppLoop.PushLoop(eCodes.SUBCMD);
 
                         if (eCodes.Expressions.Count != 1) throw new Exception($"10||DO WHILE has {eCodes.Expressions.Count} expressions and requires just 1");
 
@@ -723,7 +716,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -737,14 +730,14 @@ namespace JAXBase.Executer
          */
         public static string DoEvents(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             try
             {
                 Application.DoEvents();
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return string.Empty;
@@ -786,7 +779,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -819,11 +812,6 @@ namespace JAXBase.Executer
                 else
                     throw new Exception("11|");
 
-                if (prgToRun.Contains("UpdatePEM", StringComparison.OrdinalIgnoreCase))
-                {
-                    int iii = 0;
-                }
-
                 // IN what program?
                 if (string.IsNullOrWhiteSpace(eCodes.InExpr) == false)
                 {
@@ -836,12 +824,6 @@ namespace JAXBase.Executer
 
                 // WITH always uses the ParameterClasslist so that
                 // we can pass by ref
-                //
-                // TODO change all ParameterList references to ParameterClassList
-                //
-                //jbe.App.ParameterList.Clear();
-                //jbe.App.ParameterClassList.Clear();
-
                 if (eCodes.With.Count > 0)
                 {
                     jbe.App.ParameterClassList.Clear();
@@ -861,7 +843,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -885,6 +867,18 @@ namespace JAXBase.Executer
         */
         public static string DoDefault(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
+            string thisProcedure = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure;
+            JAXObjectWrapper? thisObject = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ThisObject;
+            string thisMethod = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ThisObjectMethod;
+
+            if (thisObject is null)
+            {
+                throw new Exception("|");
+            }
+            else
+            {
+                thisObject.MethodCall(thisMethod).Wait();
+            }
             return string.Empty;
         }
 
@@ -895,16 +889,16 @@ namespace JAXBase.Executer
          */
         public static string Drop(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             try
             {
 
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
-            return app.ErrorCount() > 0 ? string.Empty : "$";
+            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : "$";
 
         }
     }

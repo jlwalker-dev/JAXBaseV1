@@ -2,6 +2,9 @@
 {
     public class XBase_Class_SMS : XBase_Avalonia
     {
+        public new string MyBaseClass = "SMS";
+        public new string MyDefaultName = "sms";
+
         // === SMS SETTINGS ===
 
         public XBase_Class_SMS(JAXObjectWrapper jow, string name) : base(jow, name)

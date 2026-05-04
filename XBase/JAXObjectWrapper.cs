@@ -21,7 +21,7 @@
  *--------------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
 using JAXBase.Language;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
@@ -34,6 +34,10 @@ namespace JAXBase.XBase
     public class JAXObjectWrapper
     {
         public enum Protection { urd, Urd, uRd, URd, URD }
+
+
+        // Tie in the parent Avalonia Window
+        public Avalonia.Visual? ParentAvaloniaWindow = null;
 
         // Access to the global App class
         public readonly AppClass App;
@@ -82,7 +86,6 @@ namespace JAXBase.XBase
         }
         public string JOWName { get; private set; } = string.Empty;
 
-
         private string baseclass = string.Empty;
         public string BaseClass
         {
@@ -109,10 +112,12 @@ namespace JAXBase.XBase
 
         // Visual class flag and object
         public bool VisualClass = false;
-        public System.Windows.Forms.Control? visualObject = null;
+        //public System.Windows.Forms.Control? visualObject = null;
         public Avalonia.Controls.Control? avaloniaObject = null;
         //public Avalonia.Controls.Primitives.TemplatedControl? avaloniaObject = null;
         public object? nvObject = null;
+
+        public int AnchorValue = 0;
 
         public JAXObjectWrapper THIS;
         public JAXObjectWrapper? THISFORM = null;
@@ -124,13 +129,38 @@ namespace JAXBase.XBase
 
         public Protection Protected = Protection.URD;
 
+
+        // This section is for flags and properies that are used
+        // by the visual classes to track changes and update the
+        // visual objects as needed.
+        // ---------------------------------------------------------
+
+        // Used for controls that don't have normal validation events
+        // such as comboboxes and listboxes.
+        public bool Validated = false;
+        public int ValidMoveDirection = 0;
+
+        // TODO - Move direction tracking for visual classes.
+        // Used to track move direction for visual classes that
+        // don't have built in move direction tracking, such as grids.
+        public int MoveDirection = 0;
+
+        // Original position and size properties for visual classes
+        public double originalHeight = 0;
+        public double originalLeft = 0;
+        public double originalTop = 0;
+        public double originalWidth = 0;
+
+
+
         public JAXObjectWrapper(AppClass app, string cClass, string cName, List<ParameterClass>? parameterList)
         {
             App = app;
             Class = cClass;
             THIS = this;
-            string lastProp = string.Empty;
+            string lastProp;
 
+            int CurrentErrCount = Program.CurrentApp.Errors.Count;
             int Err = 0;
             string msg = string.Empty;
 
@@ -168,7 +198,7 @@ namespace JAXBase.XBase
             else
             {
                 // Class name is a base class
-                if (Class.Equals("column", StringComparison.OrdinalIgnoreCase))
+                if (Class.Equals("screen", StringComparison.OrdinalIgnoreCase))
                 {
                     int iii = 0;
 
@@ -206,7 +236,7 @@ namespace JAXBase.XBase
 
                         try
                         {
-                            App.DebugLog($"Adding property {p0}");
+                            AppIO.DebugLog($"Adding property {p0}");
                             lastProp = p0;
 
                             // Some properties are already assigned in some classes
@@ -238,7 +268,7 @@ namespace JAXBase.XBase
                                         break;
 
                                     case "R":   // RGB color value
-                                        if (prop[2].Contains("|"))
+                                        if (prop[2].Contains('|'))
                                         {
                                             string[] rparts = prop[2].Split('|');
                                             if (rparts.Length == 3)
@@ -305,7 +335,7 @@ namespace JAXBase.XBase
                         }
                     }
                     else
-                        App.DebugLog($"Property error {JAXProperties[i]}");
+                        AppIO.DebugLog($"Property error {JAXProperties[i]}");
                 }
 
                 // Make sure the name gets set
@@ -331,6 +361,7 @@ namespace JAXBase.XBase
                         {
                             ClassID = app.SystemCounter();
                             thisObject.AddProperty("classid", "P", ClassID);
+                            AppIO.DebugLog($"Adding classid property with value {ClassID}");
                         }
 
                         if (thisObject!.HasProperty("aerror") == false)
@@ -353,7 +384,7 @@ namespace JAXBase.XBase
                         // via SetProperty except for those that are arrays or protected
                         foreach (KeyValuePair<string, JAXObjects.Token> tok in thisObject.UserProperties)
                         {
-                            App.DebugLog($"Upating {tok.Key} = {tok.Value.AsString()}");
+                            AppIO.DebugLog($"Upating {tok.Key} = {tok.Value.AsString()}");
 
                             if (tok.Value.Protected == false && tok.Value.TType.Equals("A") == false && JAXLib.InListC(tok.Key, "datasession") == false)
                                 thisObject.SetProperty(tok.Key, tok.Value.Element.Value, 0);
@@ -363,7 +394,7 @@ namespace JAXBase.XBase
                         string[] JAXMethods = thisObject.JAXMethods();
                         for (int i = 0; i < JAXMethods.Length; i++)
                         {
-                            App.DebugLog($"Adding method {JAXMethods[i]}");
+                            AppIO.DebugLog($"Adding method {JAXMethods[i]}");
                             thisObject._SetMethod(JAXMethods[i], string.Empty, true, "M!");
                             thisObject.Methods[JAXMethods[i]].Tag = "N";
                         }
@@ -372,7 +403,7 @@ namespace JAXBase.XBase
                         string[] JAXEvents = thisObject.JAXEvents();
                         for (int i = 0; i < JAXEvents.Length; i++)
                         {
-                            App.DebugLog($"Adding event {JAXEvents[i]}");
+                            AppIO.DebugLog($"Adding event {JAXEvents[i]}");
                             thisObject._SetMethod(JAXEvents[i], string.Empty, true, "E!");
                             thisObject.Methods[JAXEvents[i]].Tag = "N";
                         }
@@ -398,23 +429,64 @@ namespace JAXBase.XBase
                     else
                         thisObject!.PostInit(null, []);
 
-                    if (thisObject is not null && cClass.Equals("empty", StringComparison.OrdinalIgnoreCase) == false)
+                    if (thisObject is not null)
                     {
                         // Now process the JAX init method
                         if (thisObject.Methods.ContainsKey("init"))
                         {
                             thisObject._CallMethod("init");
-                            if (App.ReturnValue.Element.Type.Equals("L"))
-                            {
-                                // TODO - If it returns .F. then we kill this class
-                            }
+
+                            if ("NL".Contains(App.ReturnValue.Element.Type) == false)
+                                AppErrorHandling.SetError(11, $"11||{BaseClass}.INIT returned value of type {App.ReturnValue.Element.Type}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                             else
-                                throw new Exception("11|");
+                            {
+                                // The init only accepts a bool or number for return
+                                // If .F. or 0, then the init fails
+                                if (App.ReturnValue.AsBool() == false || App.ReturnValue.AsInt() != 0)
+                                {
+                                    // Kill the class.  This doesn't cause an error unless AError has something
+                                    // in it, which we'll then push them to the Errors list
+                                    JAXObjects.Token err = thisObject.UserProperties["aerror"];
+
+                                    // Check the first column of the first row for an error number
+                                    err.SetElement(1, 1);
+                                    if (err.AsInt() > 0)
+                                    {
+                                        for (int r = 0; r < err.Row; r++)
+                                        {
+                                            int errNo = err._avalue[r * err.Col].ValueAsInt;
+
+                                            // If the error number > 0
+                                            if (errNo > 0)
+                                            {
+                                                // Update CurrentError pointer
+                                                if (r == 0) App.CurrentError = Program.CurrentApp.Errors.Count;
+
+                                                string errMsg = err._avalue[r * err.Col + 2].ValueAsString;
+                                                string jaxErrMsg = JAXErrorList.JAXErrMsg(errNo, errMsg);
+
+                                                // Push them to the App error silently
+                                                JAXErrors e = new()
+                                                {
+                                                    ErrorNo = errNo,
+                                                    ErrorMessage = jaxErrMsg,
+                                                    ErrorProcedure = err._avalue[r * err.Col + 3].ValueAsString,
+                                                    ErrorLine = err._avalue[r * err.Col + 1].ValueAsInt
+                                                };
+
+                                                Program.CurrentApp.Errors.Add(e);
+                                            }
+                                        }
+
+                                        thisObject = null;
+                                    }
+                                }
+                            }
                         }
 
                         // Various classes have other methods that need
                         // to be called after their init method completes
-                        //thisObject.PostClassInit();
+                        thisObject?.PostClassInit();
                     }
                 }
                 catch (Exception ex)
@@ -426,13 +498,30 @@ namespace JAXBase.XBase
 
             // Did the object initialize correctly?
             // If not, null out thisObject to signal a failure
+            if (Err == 0 && Program.CurrentApp.Errors.Count > CurrentErrCount)
+                Err = AppErrorHandling.LastErrorNo();
+
             if (Err > 0)
             {
                 thisObject = null;
-                App.SetError(Err, $"{Err}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(Err, $"{Err}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+            }
+            else
+            {
+                if (baseclass.Contains("form"))
+                    App._screenClass.AddForm(this);
+
+                thisObject!.PostClassInit().Wait();
             }
         }
 
+
+        // All objects should call this when shutting down
+        public void Release()
+        {
+            if (baseclass.Contains("form"))
+                App._screenClass.RemoveForm(ClassID);
+        }
 
         public void SetParent(JAXObjectWrapper parent)
         {
@@ -464,8 +553,8 @@ namespace JAXBase.XBase
         {
             JOWName = name.Trim().ToLower();
 
-            if (thisObject is not null && thisObject.UserProperties.ContainsKey("name"))
-                thisObject.UserProperties["name"].Element.Value = JOWName;
+            if (thisObject is not null && thisObject.UserProperties.TryGetValue("name", out JAXObjects.Token? value))
+                value.Element.Value = JOWName;
         }
 
 
@@ -494,7 +583,7 @@ namespace JAXBase.XBase
 
         public async Task<int> GetErrorNo()
         {
-            int result = 0;
+            int result;
 
             if (thisObject is null)
                 result = 1901;
@@ -537,7 +626,7 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
 
@@ -553,12 +642,12 @@ namespace JAXBase.XBase
                 if (thisObject is not null)
                     result = await thisObject.IsMember(memTest);
                 else
-                    App.SetError(1901, "1901|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1901, "1901|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             catch (Exception ex)
             {
                 result = "X";
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -573,11 +662,11 @@ namespace JAXBase.XBase
                 if (thisObject is not null)
                     result = thisObject.DefaultName();
                 else
-                    App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, "");
+                    AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, "");
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -587,7 +676,7 @@ namespace JAXBase.XBase
         // Add a user defined method or update an existing method/event
         public int SetMethod(string methodName, string sourceCode, bool createOK)
         {
-            int result = 0;
+            int result;
             string msg = string.Empty;
 
             try
@@ -597,7 +686,7 @@ namespace JAXBase.XBase
                 if (thisObject is null)
                 {
                     result = 1901;
-                    App.SetError(1901, "1901|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1901, "1901|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
                 else
                     result = thisObject._SetMethod(methodName, sourceCode, createOK, "U");
@@ -610,7 +699,7 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
 
@@ -628,14 +717,14 @@ namespace JAXBase.XBase
          */
         public async Task<int> MethodCall(string methodName)
         {
-            int result = 0;
+            int result;
             string msg = string.Empty;
             methodName = methodName.ToLower();
 
             // Certain events may be called before the methods dictionary is initialized.
             // If it's not an Empty class, then just return if no methods are listed.
             if (baseclass.Equals("empty"))
-                result = 1738;
+                return 1738;
             else
                 if (thisObject is not null && thisObject.Methods.Count == 0)
                     return 0;
@@ -661,7 +750,7 @@ namespace JAXBase.XBase
                             if (methodName.Equals("error", StringComparison.OrdinalIgnoreCase) && result != 0)
                             {
                                 result = 3099;
-                                App.SetError(3099, $"Name (BaseClass: {BaseClass}, ID:{ClassID})", string.Empty);
+                                AppErrorHandling.SetError(3099, $"Name (BaseClass: {BaseClass}, ID:{ClassID})", string.Empty);
                             }
                         }
                         else
@@ -688,13 +777,13 @@ namespace JAXBase.XBase
             {
                 if (thisObject is not null)
                 {
-                    thisObject._AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                    thisObject._AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                    if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                        App.SetError(result, $"{result}|{methodName}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                        AppErrorHandling.SetError(result, $"{result}|{methodName}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
                 else
-                    App.SetError(result, $"{result}|{methodName}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}|{methodName}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
             }
@@ -782,10 +871,10 @@ namespace JAXBase.XBase
         // Sometimes we have an object to which we want to add to another object
         public async Task<int> AddObject(JAXObjectWrapper eClass)
         {
-            int result = 0;
+            int result;
             int ccount = -1;
             JAXObjects.Token tk;
-            int objIdx = -1;
+            int objIdx;
             string msg = string.Empty;
 
             if (!InTransaction) ClearErrors();
@@ -936,7 +1025,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1036,7 +1125,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1053,7 +1142,7 @@ namespace JAXBase.XBase
         /// <param name="eNewValue"></param>
         public int AddPropertyDirect(string cPropertyName, JAXObjects.Token eNewValue)
         {
-            int result = 0;
+            int result;
             string msg = string.Empty;
 
             if (thisObject is null)
@@ -1063,7 +1152,7 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
 
@@ -1078,7 +1167,7 @@ namespace JAXBase.XBase
         /// <param name="eNewValue"></param>
         public int AddPropertyValue(string cPropertyName, object? eNewValue)
         {
-            int result = 0;
+            int result;
             string msg = string.Empty;
 
             if (thisObject is null)
@@ -1096,7 +1185,7 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
 
@@ -1116,7 +1205,7 @@ namespace JAXBase.XBase
         public async Task<int> AddProperty(string cPropertyName, JAXObjects.Token eNewValue, int nVisiblity, string cDescription)
         {
             // nVisibility & cDescription are not supported at this time
-            int result = 0;
+            int result;
             string msg = string.Empty;
 
             try
@@ -1144,7 +1233,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1165,8 +1254,8 @@ namespace JAXBase.XBase
             JAXObjectsAux.MethodClass result = new();
             meth = meth.ToLower();
 
-            if (thisObject is not null && thisObject.Methods.ContainsKey(meth))
-                result = thisObject.Methods[meth];
+            if (thisObject is not null && thisObject.Methods.TryGetValue(meth, out JAXObjectsAux.MethodClass? value))
+                result = value;
 
             return result;
         }
@@ -1203,7 +1292,7 @@ namespace JAXBase.XBase
             }
 
             if (err > 0)
-                App.SetError(err, $"{err}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(err, $"{err}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             // Return the list
             return props;
@@ -1240,7 +1329,7 @@ namespace JAXBase.XBase
             }
 
             if (err > 0)
-                App.SetError(err, $"{err}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(err, $"{err}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             // Return the list
             return props;
@@ -1286,11 +1375,9 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
-
-                result = -1;
             }
 
             return tk;
@@ -1305,7 +1392,6 @@ namespace JAXBase.XBase
         public async Task<JAXObjects.Token> GetProperty(string name, int idx)
         {
             JAXObjects.Token tk = new();
-            JAXObjects.Token tk1 = new();
             int result = 0;
             string msg = string.Empty;
 
@@ -1317,7 +1403,11 @@ namespace JAXBase.XBase
                     result = 1901;
                 else
                 {
-                    tk1 = await thisObject.GetProperty(name, idx);
+                    if (name.Equals("listitem", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int iii = 0;
+                    }
+                    JAXObjects.Token tk1 = await thisObject.GetProperty(name, idx);
 
                     if (tk1.Element.IsNull())
                         tk.Element.MakeNull();
@@ -1335,11 +1425,9 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
-
-                result = -1;
             }
 
             return tk;
@@ -1405,7 +1493,7 @@ namespace JAXBase.XBase
             if (err > 0)
             {
                 if (err == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1424,7 +1512,7 @@ namespace JAXBase.XBase
         /// <param name="value"></param>
         public async Task<int> SetObject(int idx, string property, JAXObjects.Token value)
         {
-            int result = 0;
+            int result;
             string msg = string.Empty;
 
             if (!InTransaction) ClearErrors();
@@ -1439,7 +1527,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1458,7 +1546,6 @@ namespace JAXBase.XBase
         public async Task<JAXObjectWrapper?> GetObject(string name)
         {
             int idx = -1;
-            string msg = string.Empty;
             JAXObjectWrapper? jow = null;
 
             if (!InTransaction) ClearErrors();
@@ -1471,7 +1558,7 @@ namespace JAXBase.XBase
                     jow.IDX = idx;
             }
 
-            return null;
+            return jow;
         }
 
         /// <summary>
@@ -1498,16 +1585,69 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                else
+                    await AddError(result, -1, msg, string.Empty);
+            }
+
+            return jow;
+        }
+
+
+        /// <summary>
+        /// Special case
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public async Task<int> SetProperty(string name, object value, int idx)
+        {
+            int result = 0;
+            string msg = string.Empty;
+
+            try
+            {
+                if (thisObject is null)
+                    result = 1901;
+                else
+                {
+                    if (!InTransaction) ClearErrors();
+
+                    if ((await thisObject.IsMember(name)).Equals("P"))
+                    {
+                        if (name.Equals("name", StringComparison.OrdinalIgnoreCase))
+                            JOWName = value.ToString() ?? string.Empty;
+
+                        await thisObject.SetProperty(name, value, idx);
+
+                        AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
+                    }
+                    else
+                    {
+                        // Property is not a member
+                        result = 1559;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // TODO - Add error support
+                result = 9999;
+                msg = ex.Message;
+            }
+
+            if (result > 0)
+            {
+                if (result != 9999)
+                    AppErrorHandling.SetError(result, $"{result}|{name}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
                 result = -1;
             }
 
-            return jow;
+            return result;
         }
-
         /// <summary>
         /// Set a class property by name.
         /// </summary>
@@ -1534,7 +1674,7 @@ namespace JAXBase.XBase
 
                         await thisObject.SetProperty(name, value, 0);
 
-                        App.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
+                        AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
                     }
                     else
                     {
@@ -1553,7 +1693,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result != 9999)
-                    App.SetError(result, $"{result}|{name}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}|{name}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1570,7 +1710,7 @@ namespace JAXBase.XBase
         /// <returns></returns>
         public async Task<int> RemoveObject(int x)
         {
-            int result = 0;
+            int result;
             string msg = string.Empty;
 
             if (!InTransaction) ClearErrors();
@@ -1586,7 +1726,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1636,7 +1776,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1688,7 +1828,9 @@ namespace JAXBase.XBase
                             }
                         }
                         else
-                            visualObject?.Show();
+                        {
+                            thisObject!._CallMethod("show").Wait();
+                        }
                     }
                     else
                         result = 6501;
@@ -1704,10 +1846,10 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 msg = JAXErrorList.JAXErrMsg(result, msg);
-                thisObject!._AddError(result, App.AppLevels[^1].CurrentLine, msg, App.AppLevels[^1].Procedure);
+                thisObject!._AddError(result, App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|SHOW|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|SHOW|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
             }
@@ -1784,7 +1926,7 @@ namespace JAXBase.XBase
             if (result > 0)
             {
                 if (result == 1901)
-                    App.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(result, $"{result}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 else
                     await AddError(result, -1, msg, string.Empty);
 
@@ -1806,7 +1948,7 @@ namespace JAXBase.XBase
 
         public int SetPrivateProperty(string name, object? value)
         {
-            int result = 0;
+            int result;
 
             if (thisObject is not null)
                 result = thisObject.SetPrivateProperty(name.ToLower(), value);
@@ -1815,6 +1957,11 @@ namespace JAXBase.XBase
 
             return result;
         }
+
+        public void ApplyVFPAnchor(double width, double height)
+        {
+            if (thisObject is not null && AnchorValue > 0)
+                thisObject.ApplyVFPAnchor(width, height);
+        }
     }
 }
-

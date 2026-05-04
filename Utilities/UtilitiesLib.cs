@@ -1,6 +1,5 @@
 ﻿using JAXBase.Core;
 using JAXBase.UI.Dialogs;
-using JAXBase.Utilities.Utilities;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
@@ -60,7 +59,7 @@ namespace JAXBase.Utilities
             {
                 byte[] salt = RandomNumberGenerator.GetBytes(nHashKeySize);
 
-                App.ClearErrors();
+                AppErrorHandling.ClearErrors();
                 stHashedPassword = string.Empty;
 
                 var vlHash = Rfc2898DeriveBytes.Pbkdf2(
@@ -72,9 +71,9 @@ namespace JAXBase.Utilities
 
                 stHashedPassword += Convert.ToBase64String(vlHash) + "|" + Convert.ToBase64String(salt);
             }
-            catch (Exception ex) { App.SetError(9999, ex.Message, "HashPassword"); stHashedPassword = string.Empty; }
+            catch (Exception ex) { AppErrorHandling.SetError(9999, ex.Message, "HashPassword"); stHashedPassword = string.Empty; }
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -93,7 +92,7 @@ namespace JAXBase.Utilities
                 string[] stHashedPW = stHashedPassword.Split("|");
                 byte[] stHPW = Convert.FromBase64String(stHashedPW[0]);
                 byte[] salt = Convert.FromBase64String(stHashedPW[1]);
-                App.ClearErrors();
+                AppErrorHandling.ClearErrors();
 
                 var vlHashToCompare = Rfc2898DeriveBytes.Pbkdf2(
                     Encoding.UTF8.GetBytes(stPassword),
@@ -106,12 +105,12 @@ namespace JAXBase.Utilities
 
                 if (!test)
                 {
-                    App.SetError(9001, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(9001, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
-            catch (Exception ex) { App.SetError(9999, ex.Message, "HashVerify"); }
+            catch (Exception ex) { AppErrorHandling.SetError(9999, ex.Message, "HashVerify"); }
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -133,14 +132,14 @@ namespace JAXBase.Utilities
         public int GetNextKey(out string sResult)
         {
             sResult = string.Empty;
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
                 if (SpRegCode == null || SpRegCode.Length != 4)
                 {
                     // Need a valid registration code
-                    App.SetError(9002, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(9002, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
                 else
                 {
@@ -151,7 +150,7 @@ namespace JAXBase.Utilities
                     if (npInc93 == 0)
                         MilCode(out spDateCode);
 
-                    if (App.LastErrorNo() == 0 && Conv36(npInc93, npIncPow, out string inc3) == 0)
+                    if (AppErrorHandling.LastErrorNo() == 0 && Conv36(npInc93, npIncPow, out string inc3) == 0)
                         sResult = SpInstance + SpRegCode + spDateCode + inc3;
                     else
                         sResult = string.Empty;
@@ -161,10 +160,10 @@ namespace JAXBase.Utilities
             }
             catch (Exception ex)
             {
-                App.SetError(9999, ex.Message, "GetNextKey");
+                AppErrorHandling.SetError(9999, ex.Message, "GetNextKey");
             }
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -187,7 +186,7 @@ namespace JAXBase.Utilities
          *------------------------------------------------------------------------------------------*/
         public int SetRegistration(string stRegCode)
         {
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             if (stRegCode.Length == 4)
             {
@@ -200,7 +199,7 @@ namespace JAXBase.Utilities
                     if (j < 0 || j > 35)
                     {
                         stRegCode = string.Empty;
-                        App.SetError(9999, string.Format("Invalid charter '{0} in registration code", stRegCode[i]), "SetRegistration");
+                        AppErrorHandling.SetError(9999, string.Format("Invalid charter '{0} in registration code", stRegCode[i]), "SetRegistration");
                         break;
                     }
                 }
@@ -209,10 +208,10 @@ namespace JAXBase.Utilities
             }
             else
             {
-                App.SetError(9999, "Registration code must be four characters in length", "SetRegistration");
+                AppErrorHandling.SetError(9999, "Registration code must be four characters in length", "SetRegistration");
             }
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -270,7 +269,7 @@ namespace JAXBase.Utilities
             catch (Exception e)
             {
                 l = 0;
-                App.SetError(9999, e.ToString(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, e.ToString(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             return l;
         }
@@ -293,7 +292,7 @@ namespace JAXBase.Utilities
             catch (Exception e)
             {
                 l = 0;
-                App.SetError(9999, e.ToString(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, e.ToString(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             return l;
         }
@@ -321,13 +320,13 @@ namespace JAXBase.Utilities
             {
                 if (ntSetLength < 0 || ntSetLength > 64)
                 {
-                    App.SetError(9999, string.Format("Property nBase has invalid value '{0}' (2-64 allowed)", ntBaseValue), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(9999, string.Format("Property nBase has invalid value '{0}' (2-64 allowed)", ntBaseValue), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
                 else
                 {
                     if (ntValue < 0)
                     {
-                        App.SetError(9999, "Cannot create index code using a negative value", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(9999, "Cannot create index code using a negative value", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     else
                     {
@@ -346,7 +345,7 @@ namespace JAXBase.Utilities
                         if (ntSetLength > 0 && sb.Length > ntSetLength)
                         {
                             stResult = string.Empty;
-                            App.SetError(39, "Numeric overflow. Data was lost", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(39, "Numeric overflow. Data was lost", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
 
                         // Make most significant digit is first
@@ -358,11 +357,11 @@ namespace JAXBase.Utilities
             }
             catch (Exception ex)
             {
-                App.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 stResult = string.Empty;
             }
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -385,7 +384,7 @@ namespace JAXBase.Utilities
             llSpanSinceEpoch %= 77712312459;
             if (Conv36(llSpanSinceEpoch, 7, out stResult) > 0) stResult = string.Empty;
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -399,7 +398,7 @@ namespace JAXBase.Utilities
             llSpanSinceEpoch %= 1671232L;  // 1671231 max 1 day shy of or 168 years
             if (Conv36(llSpanSinceEpoch, 4, out stResult) > 0) stResult = string.Empty;
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -416,7 +415,7 @@ namespace JAXBase.Utilities
             if (Conv36(unixTimeMilliseconds, 9, out stResult) > 0)
                 stResult = string.Empty;
 
-            return App.LastErrorNo();
+            return AppErrorHandling.LastErrorNo();
         }
 
 
@@ -979,8 +978,8 @@ namespace JAXBase.Utilities
 
         public async Task ShowOpenFileDialog(string fileType, string fileExt)
         {
-            DialogHelper dialogHelper= new DialogHelper();
-            await dialogHelper.ShowFilePicker(App);
+            DialogHelper dialogHelper = new DialogHelper();
+            await dialogHelper.ShowFilePicker(App, "F");
         }
     }
 }

@@ -45,6 +45,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_IRCClient : XBase_Class_TCPClient
     {
+        public new string MyBaseClass = "IRCClient";
+        public new string MyDefaultName = "ircclient";
+
         /// <summary>
         /// VFP-style IRC client: CREATEOBJECT("IrcClient")
         /// Full IRC + IRCv3 + TLS + SASL PLAIN/EXTERNAL + cert pinning + auto-reconnect

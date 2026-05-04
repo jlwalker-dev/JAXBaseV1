@@ -40,6 +40,9 @@ namespace JAXBase.XBase
     /// </summary>
     public class XBase_Class_FTPClient : XBase_Class_TCPClient
     {
+        public new string MyBaseClass = "FTPClient";
+        public new string MyDefaultName = "ftpclient";
+
         JAXObjectWrapper jow2;
 
         // === FTP SETTINGS ===

@@ -1,15 +1,21 @@
 ﻿/*
- * Listbox - Winforms is being replaced so I'm not worrying about making a special class
+ * Listbox
+ * 
+ * 2026-04-22 - JLW 
  * 
  */
 using System.ComponentModel;
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_ListBox : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "ListBox";
+        public new string MyDefaultName { get; } = "listbox";
+
+
         // Listbox item that holds DisplayValue & id
         private class ListBoxItem
         {
@@ -270,10 +276,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 result = -1;
             }
@@ -430,9 +436,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -536,7 +542,7 @@ namespace JAXBase.XBase
                         }
                         else
                         {
-                            JAXObjects.Token tk = await App.GetParameterToken(null);
+                            JAXObjects.Token tk = await AppHelper.GetParameterToken(null);
                             if (tk.TType.Equals("A"))
                             {
                                 listBoxItems.RaiseListChangedEvents = false;
@@ -588,7 +594,7 @@ namespace JAXBase.XBase
                         }
                         else
                         {
-                            JAXObjects.Token tk =await App.GetParameterToken(null);
+                            JAXObjects.Token tk =await AppHelper.GetParameterToken(null);
                             if (tk.TType.Equals("A"))
                             {
                                 if (tk.Row == 0)
@@ -655,7 +661,7 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                _AddError(result, 0, $"Error in ListBox DoDefault {methodName} - {ex.Message}", App.AppLevels[^1].Procedure);
+                _AddError(result, 0, $"Error in ListBox DoDefault {methodName} - {ex.Message}", App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
             }
 
             return result;

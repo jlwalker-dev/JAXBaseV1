@@ -3,12 +3,15 @@
  * 
  */
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_CheckBox : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "CheckBox";
+        public new string MyDefaultName { get; } = "checkbox";
+
         public Avalonia.Controls.CheckBox ChkBox => (Avalonia.Controls.CheckBox)me.avaloniaObject!;
 
         public XBase_Class_Visual_CheckBox(JAXObjectWrapper jow, string name) : base(jow, name)
@@ -23,7 +26,7 @@ namespace JAXBase.XBase
             {
                 if (UserProperties.ContainsKey(param.PName.ToLower()))
                 {
-                    object? propValue = App.GetParameterValue(param);
+                    object? propValue = AppHelper.GetParameterValue(param);
 
                     if (propValue is not null)
                         await SetProperty(param.PName, propValue, 0);
@@ -312,10 +315,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
             }
 
             return result;
@@ -360,10 +363,10 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
             }

@@ -4,8 +4,5 @@
     <Compile Update="UI\JAXTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Update="UI\PrgEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
   </ItemGroup>
 </Project>

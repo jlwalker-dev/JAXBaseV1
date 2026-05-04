@@ -96,6 +96,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_IPC : XBase_Avalonia, IDisposable
     {
+        public new string MyBaseClass = "IPC";
+        public new string MyDefaultName = "ipc";
+
         // ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
         // PUBLIC VFP-STYLE PROPERTIES
         // ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡

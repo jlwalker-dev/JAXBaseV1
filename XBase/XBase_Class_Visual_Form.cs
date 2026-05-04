@@ -1,8 +1,10 @@
 ﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using JAXBase.Core;
 using JAXBase.UI;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
+using System.ComponentModel;
 
 namespace JAXBase.XBase
 {
@@ -13,16 +15,25 @@ namespace JAXBase.XBase
 
         private XBase_Class_Visual_Form? parentForm;  // only used when ShowWindow=1
 
-        private bool windowLocked = false;
-        private string MainMenuName = string.Empty;
-        private Avalonia.Controls.Menu mainMenu = new();
+        public bool windowLocked = false;
+        public const double WidthDelta = 4;
+        public const double HeightDelta = 50;
 
-        private const double WidthDelta = 4;
-        private const double HeightDelta = 50;
+        public new string MyBaseClass = "Form";
+        public new string MyDefaultName = "form";
 
-        public XBase_Class_Visual_Form(JAXObjectWrapper jow, string name) : base(jow, name)
+        public XBase_Class_Visual_Form(JAXObjectWrapper jow, string defaultname) : base(jow, defaultname)
         {
-            SetVisualObject(null, "Form", "form", false, UserObject.URW);
+            // There are several form subclasses in JAXBase and we need to capture
+            // the default name and set up the base class accordingly
+            string formBase = defaultname.ToLower() switch
+            {
+                "editform" => "EditForm",
+                "browseform" => "BrowseForm",
+                _ => MyBaseClass
+            };
+
+            SetVisualObject(null, formBase, string.IsNullOrEmpty(defaultname) ? MyDefaultName : defaultname, false, UserObject.URW);
             me.nvObject = new FakeWindow();
             me.THISFORM = me;
 
@@ -30,28 +41,24 @@ namespace JAXBase.XBase
             InnerCanvas.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
             InnerCanvas.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch;
             InnerCanvas.Margin = new Thickness(0);
-            InnerCanvas.Background = Avalonia.Media.Brushes.White;
+            InnerCanvas.Background = Avalonia.Media.Brushes.LightCoral;
+            InnerCanvas.Name = App.SystemCounter();
         }
+
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
-            // Process named parameters
-            foreach (var param in parameterList)
-            {
-                if (UserProperties.ContainsKey(param.PName.ToLower()))
-                {
-                    object? propValue = App.GetParameterValue(param);
-                    if (propValue is not null)
-                        await SetProperty(param.PName, propValue, 0);
-                }
-            }
+            bool result = await base.PostInit(callBack, parameterList);
 
-            // Final setup — most moved to SetProperty now
-            // Datasession handling remains here
+            // Deal with datasession handling
             if (UserProperties["datasession"].AsInt() > 1 && UserProperties["datasessionid"].AsInt() < 2)
                 UserProperties["datasessionid"].Element.Value = App.CreateNewDataSession(App.SystemCounter());
 
-            bool result = await base.PostInit(callBack, parameterList);
+            // Add to the _Screen object
+            if (result)
+            {
+
+            }
             return result;
         }
 
@@ -59,26 +66,29 @@ namespace JAXBase.XBase
         public override async Task<int> AddObject(JAXObjectWrapper value)
         {
             int err = 0;
+            string msg = string.Empty;
 
-            if (value.avaloniaObject is not null)
+            AppIO.DebugLog($"Adding object '{value.JOWName}' of class '{value.Class}' to form '{me.JOWName}'");
+
+            try
             {
-                InnerCanvas.Children.Add(value.avaloniaObject!);
-
-                if ((await value.IsMember("anchor")).Equals("P"))
+                // Add valid controls to the canvas
+                if (value.avaloniaObject is not null)
+                    InnerCanvas.Children.Add(value.avaloniaObject!);
+                else if (value.nvObject is Avalonia.Controls.Shapes.Path)
+                    InnerCanvas.Children.Add((Avalonia.Controls.Shapes.Path)value.nvObject!);
+                else if (value.nvObject is not null)
                 {
-                    JAXObjects.Token answer = await value.GetProperty("anchor");
-                    XClass_AuxCode.ApplyVFPAnchor(value.avaloniaObject!, InnerCanvas, answer.AsInt());
+                    // It's something else then add it to the form's objects collection
+                    UserProperties["objects"].Add(value);
+                    UserProperties["controlcount"].Element.Value = UserProperties["controlcount"].AsInt() + 1;
+                    value.SetParent(me);
                 }
+
             }
-            else if (value.nvObject is Avalonia.Controls.Shapes.Path path)
+            catch
             {
-                InnerCanvas.Children.Add(path);
-
-                if ((await value.IsMember("anchor")).Equals("P"))
-                {
-                    JAXObjects.Token answer = await value.GetProperty("anchor");
-                    XClass_AuxCode.ApplyVFPAnchor(path, InnerCanvas, answer.AsInt());
-                }
+                err = 1980; // generic error code for unexpected exceptions
             }
 
             if (err == 0)
@@ -91,12 +101,10 @@ namespace JAXBase.XBase
             }
             else
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|{value.JOWName}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
-
-            //App.DebugLog($"========> Added {value.thisObject?.UserProperties["name"].AsString()} to InnerCanvas with children count: {fakeWindow.ContentCanvas.Children.Count}");
 
             return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
         }
@@ -106,7 +114,7 @@ namespace JAXBase.XBase
             propertyName = propertyName.ToLower();
             JAXObjects.Token objtk = new() { Element = { Value = objValue } };
 
-            App.DebugLog($"FORM.{propertyName}={objtk.AsString()}");
+            AppIO.DebugLog($"FORM.{propertyName}={objtk.AsString()}");
 
             if (UserProperties.ContainsKey(propertyName))
             {
@@ -145,6 +153,23 @@ namespace JAXBase.XBase
                             {
                                 fakeWindow.Height = objtk.AsDouble() + HeightDelta;
                                 objValue = objtk.AsDouble();
+                                me.originalHeight = objtk.AsDouble();
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "icon":
+                            if (objtk.Element.Type.Equals("C"))
+                            {
+                                if (JAXApp.MainWindowInstance is not null)
+                                {
+                                    // set up the image and apply it
+                                    var icon = string.IsNullOrEmpty(objtk.AsString()) ? null : App.JaxImages!.GetImage(objtk.AsString(), out _);
+                                    icon ??= App.JaxImages!.GetImage("*jax*", out _);
+
+                                    JAXApp.MainWindowInstance!.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
+                                }
                             }
                             else
                                 result = 11;
@@ -152,6 +177,7 @@ namespace JAXBase.XBase
 
                         case "left":
                             fakeWindow.Left = objtk.AsDouble();
+                            me.originalLeft = objtk.AsDouble();
                             break;
 
                         case "maxbutton":
@@ -224,6 +250,13 @@ namespace JAXBase.XBase
                                 result = 11;
                             break;
 
+                        case "name":
+                            if (objtk.Element.Type == "C")
+                                me.SetName(objtk.AsString());
+                            else
+                                result = 41;
+                            break;
+
                         case "showwindow":
                             if (windowLocked)
                                 result = 9702;
@@ -235,6 +268,7 @@ namespace JAXBase.XBase
 
                         case "top":
                             fakeWindow.Top = objtk.AsDouble();
+                            me.originalTop = objtk.AsDouble();
                             break;
 
                         case "visible":
@@ -253,6 +287,7 @@ namespace JAXBase.XBase
                             {
                                 fakeWindow.Width = objtk.AsDouble() + WidthDelta;
                                 objValue = objtk.AsDouble();
+                                me.originalWidth = objtk.AsDouble();
                             }
                             else
                                 result = 11;
@@ -288,9 +323,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
 
@@ -356,9 +391,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}||{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}||{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 returnToken.Element.MakeNull();
             }
 
@@ -378,40 +413,52 @@ namespace JAXBase.XBase
                         if (parentForm == null || fakeWindow.Parent == null)
                         {
                             // TODO - add error reporting here to capture name for dialog
-                            App.DebugLog($"ShowWindow=1 but no parent set — cannot show nested form {UserProperties["name"].AsString()}");
+                            AppIO.DebugLog($"ShowWindow=1 but no parent set — cannot show nested form {UserProperties["name"].AsString()}");
                             return 9701;
                         }
 
                         if (!parentForm.fakeWindow.IsShown)
                         {
-                            App.DebugLog("Parent not yet shown — showing parent first");
+                            AppIO.DebugLog("Parent not yet shown — showing parent first");
                             await parentForm.DoDefault("show"); // recursive, but safe
                         }
                     }
 
+                    AppIO.DebugLog($"'{UserProperties["objects"].Col}' objects in {me.JOWName}");
                     fakeWindow.VFPShow();
 
-                    // TODO - we may need to make a recursive call so that 
-                    //        containers and pages are updated
-                    // This ensures inline CREATEOBJECT left/top values survive the final move to InnerCanvas
-                    if (this is XBase_Class_Avalonia visualBase)
+                    switch (fakeWindow.ShowWindow)
                     {
-                        // Re-apply on the form's own children (the label and any other visual objects)
-                        foreach (var obj in UserProperties["objects"]._avalue)
-                        {
-                            JAXObjectWrapper childWrapper = (JAXObjectWrapper)obj.Value;
-                            if (childWrapper.thisObject is XBase_Class_Avalonia childVisual)
-                                await childVisual.ReapplyPosition(childWrapper);
-                        }
+                        case 0:  // Main workspace / FloatingPanel
+                        case 1:  // Nested panel
+                            me.ParentAvaloniaWindow = fakeWindow.ContentCanvas;           // or the FloatingPanel itself
+                            break;
+
+                        case 2:  // Independent real Window
+                            me.ParentAvaloniaWindow = fakeWindow._realWindow;             // private, but you can expose it
+                                                                                   // or better:
+                                                                                   // visualForDialogs = (Avalonia.Visual)fakeWindow._realWindow;
+                            break;
                     }
 
+                    me.avaloniaObject = fakeWindow.ContentCanvas;
+                    SetEvents();
+
+                    FixObjects(me);
+
                     InnerCanvas.IsVisible = true;
-                    App.DebugLog($"Form {UserProperties["name"].AsString()} shown via FakeWindow");
+                    AppIO.DebugLog($"Form {UserProperties["name"].AsString()} shown via FakeWindow");
                     break;
 
                 case "hide":
                     fakeWindow.VFPHide();
                     InnerCanvas.IsVisible = false;
+                    break;
+
+                case "queryunload":
+                    break;
+
+                case "destroy":
                     break;
 
                 default:
@@ -422,6 +469,104 @@ namespace JAXBase.XBase
             return result;
         }
 
+        private void EditFormCanvas_SizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+            if (sender is not null)
+                UpdateGridSizeToCanvas((Avalonia.Controls.Canvas)sender!);
+        }
+
+        private void UpdateGridSizeToCanvas(Avalonia.Controls.Canvas _canvas)
+        {
+            if (_canvas.Children.Count > 0 && _canvas.Children[0] is Avalonia.Controls.Grid _grid)
+            {
+                _grid.Width = _canvas.Bounds.Width;
+                _grid.Height = _canvas.Bounds.Height;
+
+                // Optional: force immediate re-layout
+                _grid.InvalidateMeasure();
+                _grid.InvalidateArrange();
+            }
+        }
+
+        // Recursive method to walk through all child objects and re-apply them to ensure they
+        // are correctly parented after the form's visual tree has been moved to the FakeWindow
+        // Also reapplies MenuItem hotkeys to ensure they are registered correctly after the move
+        private void FixObjects(JAXObjectWrapper thisJOW)
+        {
+            // Re-apply on the form's own children (the label and any other visual objects)
+            JAXObjects.Token objects = new();
+            objects = thisJOW.thisObject!.UserProperties["objects"];
+
+            if (thisJOW.BaseClass.Equals("editform", StringComparison.OrdinalIgnoreCase))
+            {
+                // EditForm has one child which is a grid.  This routine ties the grid
+                // to the form and sets a resize event to keep it sized correctly.
+                XBase_Class_Visual_Form form = (XBase_Class_Visual_Form)thisJOW.thisObject;
+
+                Avalonia.Controls.Control _grid = (Avalonia.Controls.Grid)form.InnerCanvas.Children[0];
+                Avalonia.Controls.Canvas.SetLeft(_grid, 0);
+                Avalonia.Controls.Canvas.SetTop(_grid, 0);
+
+                UpdateGridSizeToCanvas(form.InnerCanvas);
+
+                // Subscribe to resize events
+                form.InnerCanvas.SizeChanged += EditFormCanvas_SizeChanged;
+            }
+            else
+            {
+                for (int i = 0; i < objects._avalue.Count; i++)
+                {
+                    if (objects._avalue[i].IsNull() == false)
+                    {
+                        JAXObjectWrapper childWrapper = (JAXObjectWrapper)objects._avalue[i].Value;
+
+                        // This ensures inline CREATEOBJECT left/top values survive the final move to InnerCanvas
+                        if (childWrapper.thisObject is XBase_Class_Avalonia childVisual)
+                            childVisual.ReapplyPosition(childWrapper).Wait();
+
+                        if (childWrapper.BaseClass.Equals("menu", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Walk through all MenuItems and re-apply HotKeys to ensure they are registered
+                            // after the dynamic canvas move
+                            Avalonia.Controls.Menu _menu = (Avalonia.Controls.Menu)childWrapper.thisObject!;
+
+                            foreach (var menuItem in GetAllMenuItems(_menu))
+                            {
+                                if (menuItem.HotKey != null)
+                                {
+                                    var gesture = menuItem.HotKey;           // capture current gesture
+                                    menuItem.HotKey = null;                  // clear first (forces re-register in some cases)
+                                    HotKeyManager.SetHotKey(menuItem, gesture);
+                                }
+                            }
+                        }
+                        else if (JAXLib.InListC(childWrapper.BaseClass, "form", "container", "pageframe", "page"))
+                        {
+                            FixObjects((JAXObjectWrapper)objects._avalue[i].Value);  // recursive call for nested containers);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        private IEnumerable<Avalonia.Controls.MenuItem> GetAllMenuItems(Avalonia.Controls.Menu menu)
+        {
+            var items = new List<Avalonia.Controls.MenuItem>();
+            foreach (var item in menu.Items.OfType<Avalonia.Controls.MenuItem>())
+            {
+                items.Add(item);
+                // Recurse into submenus if needed
+                if (item.Items != null)
+                {
+                    foreach (var subItem in item.Items.OfType<Avalonia.Controls.MenuItem>())
+                    {
+                        items.Add(subItem);
+                    }
+                }
+            }
+            return items;
+        }
 
         // ------------------------------------------------------------------------
         // New public method — call this before Show() when using ShowWindow=1
@@ -430,15 +575,63 @@ namespace JAXBase.XBase
         {
             if (fakeWindow.ShowWindow != 1)
             {
-                App.DebugLog("SetParentForm called but ShowWindow != 1 — ignored");
+                AppIO.DebugLog("SetParentForm called but ShowWindow != 1 — ignored");
                 return;
             }
 
             parentForm = parent;
             fakeWindow.Parent = parent.fakeWindow;
-            App.DebugLog($"Form {me.thisObject?.UserProperties["name"].AsString()} nested inside parent '{parent.me.thisObject?.UserProperties["name"].AsString()}'");
+            AppIO.DebugLog($"Form {me.thisObject?.UserProperties["name"].AsString()} nested inside parent '{parent.me.thisObject?.UserProperties["name"].AsString()}'");
         }
 
+        // FAKE WINDOW Events
+        public override void SetEvents()
+        {
+            base.SetEvents();
+
+            if (fakeWindow._realWindow != null)
+            {
+                fakeWindow._realWindow.Closing += MyObj_Closing;
+                fakeWindow._realWindow.Closed += MyObj_Closed;
+            }
+            else
+            {
+                // Wire FakeWindow events
+                fakeWindow.Closing += FakeWindow_Closing;
+                fakeWindow.Closed += FakeWindow_Closed;
+            }
+        }
+
+        public override void SuspendEvents()
+        {
+            fakeWindow.Closing -= FakeWindow_Closing;
+            fakeWindow.Closed -= FakeWindow_Closed;
+
+            base.SuspendEvents();
+        }
+
+        private void FakeWindow_Closing(object? sender, CancelEventArgs e)
+        {
+            if (App.EventsAreActive && Methods.ContainsKey("queryunload"))
+            {
+                // JAX code can set ReturnValue = .F. to cancel
+                _CallMethod("queryunload").Wait();
+
+                if (App.ReturnValue.Element.Type.Equals("L") && App.ReturnValue.AsBool() == false)
+                {
+                    e.Cancel = true;
+                }
+            }
+        }
+
+        private void FakeWindow_Closed(object? sender, EventArgs e)
+        {
+            if (App.EventsAreActive && Methods.ContainsKey("destroy"))
+                _CallMethod("destroy").Wait();
+
+            // Optional: auto-cleanup
+            Dispose();
+        }
 
         public override string[] JAXMethods()
         {
@@ -466,9 +659,9 @@ namespace JAXBase.XBase
                 "caption,C,Form","class,C!,Form","classlibrary,C!,","closable,L,true","comment,C,","controlbox,L,true","controlcount,N!,0",
                 "datasession,N,1","datasessionid,N!,1",
                 "Enabled,L,true",
-                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,9","forecolor,R,0",
+                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,12","forecolor,R,0",
                 "Height,N,300",
-                "icon,C,",
+                "icon,C,*jax*",
                 "keypreview,L,false",
                 "left,N,0","lockscreen,L,false",
                 "maxbutton,L,true","maxheight,N,-1","maxwidth,N,-1","minbutton,L,true","minheight,N,-1","minwidth,N,-1","mousepointer,n,0","moveable,L,true",

@@ -23,7 +23,7 @@ using Avalonia.Input;
 using Avalonia.Styling;
 using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Windows.Controls;
@@ -32,6 +32,10 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Grid : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Grid";
+        public new string MyDefaultName { get; } = "grid";
+
+
         public Avalonia.Controls.DataGrid grid => (Avalonia.Controls.DataGrid)me.avaloniaObject!;
         private ObservableCollection<Dictionary<string, object>> _gridRows = new ObservableCollection<Dictionary<string, object>>();
 
@@ -48,7 +52,7 @@ namespace JAXBase.XBase
 
         public XBase_Class_Visual_Grid(JAXObjectWrapper jow, string name) : base(jow, name)
         {
-            App.DebugLog("Initializing grid", false);
+            AppIO.DebugLog("Initializing grid", false);
             SetVisualObject(new Avalonia.Controls.DataGrid(), "Grid", "grid", true, UserObject.URW);
         }
 
@@ -61,7 +65,7 @@ namespace JAXBase.XBase
             {
                 if (UserProperties.ContainsKey(param.PName.ToLower()))
                 {
-                    object? propValue = App.GetParameterValue(param);
+                    object? propValue = AppHelper.GetParameterValue(param);
 
                     if (propValue is not null)
                         await SetProperty(param.PName, propValue, 0);
@@ -146,7 +150,7 @@ namespace JAXBase.XBase
                 thiscol.IsReadOnly = UserProperties["readonly"].AsBool();
                 grid.Columns.Add(thiscol);
 
-                App.DebugLog("AddObject: " + value.JOWName);
+                AppIO.DebugLog("AddObject: " + value.JOWName);
 
                 // Added: Refresh grid after addition
                 grid.InvalidateVisual();
@@ -169,10 +173,10 @@ namespace JAXBase.XBase
             if (err > 0)
             {
                 // Something went wrong
-                _AddError(err, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return err > 0 ? -1 : grid.Columns.Count;
@@ -201,7 +205,7 @@ namespace JAXBase.XBase
             if (col is Avalonia.Controls.DataGridBoundColumn boundCol && !string.IsNullOrEmpty(binding))
             {
                 boundCol.Binding = new Avalonia.Data.Binding(binding);
-                App.DebugLog($"Column bound to {binding}");
+                AppIO.DebugLog($"Column bound to {binding}");
             }
 
             col.IsReadOnly = UserProperties["readonly"].AsBool();
@@ -217,7 +221,7 @@ namespace JAXBase.XBase
             // Added: Refresh grid after addition
             grid.InvalidateVisual();
 
-            App.DebugLog("AddColumn: " + colName);
+            AppIO.DebugLog("AddColumn: " + colName);
             return grid.Columns.Count;
         }
 
@@ -256,7 +260,7 @@ namespace JAXBase.XBase
                                     JAXObjects.Token tk = new();
                                     if (App.ParameterClassList.Count == 1)
                                     {
-                                        object? obj = App.GetParameterValue(App.ParameterClassList[0]);
+                                        object? obj = AppHelper.GetParameterValue(App.ParameterClassList[0]);
                                         if (obj is null)
                                             tk.Element.MakeNull();
                                         else
@@ -295,9 +299,9 @@ namespace JAXBase.XBase
 
             if (results > 0)
             {
-                _AddError(results, 0, msg, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(results, $"{results}|{msg}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(results, 0, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(results, $"{results}|{msg}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 App.ReturnValue.Element.Value = false;
                 results = -1;
             }
@@ -695,7 +699,7 @@ namespace JAXBase.XBase
                                                     if (result == 0 && SQLSelect.Contains(" ") == false)
                                                     {
                                                         // look for a sql statement in a variable
-                                                        JAXObjects.Token sql = await App.GetVarFromExpression(SQLSelect, null);
+                                                        JAXObjects.Token sql = await AppVars.GetVarFromExpression(SQLSelect, null);
                                                         if (sql.Element.Type.Equals("C"))
                                                             SQLSelect = sql.AsString();
                                                         else
@@ -711,7 +715,7 @@ namespace JAXBase.XBase
 
                                                 case 5:
                                                     // Try to bind the record source to an array name
-                                                    aGridData = await App.GetVarToken(UserProperties["recordsource"].AsString());
+                                                    aGridData = await AppVars.GetVarToken(UserProperties["recordsource"].AsString());
 
                                                     // Is it an array variable name?
                                                     if (aGridData.TType.Equals("A") == false)
@@ -860,9 +864,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
             return result;
@@ -906,9 +910,9 @@ namespace JAXBase.XBase
                 result = 1559;
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 returnToken.Element.MakeNull();
             }
@@ -1039,9 +1043,9 @@ namespace JAXBase.XBase
             }
             if (results > 0)
             {
-                _AddError(results, 0, msg, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(results, $"{results}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(results, 0, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(results, $"{results}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 results = -1;
             }
             return results;
@@ -1055,7 +1059,7 @@ namespace JAXBase.XBase
 
         public void ResetGridToBlank()
         {
-            //App.DebugLog("ResetGridToBlank", false);
+            //AppIO.DebugLog("ResetGridToBlank", false);
             //grid.Rows.Clear(); // Clear observable collection
         }
 
@@ -1063,7 +1067,7 @@ namespace JAXBase.XBase
         // Load the array into the grid
         private void LoadArrayIntoGrid()
         {
-            App.DebugLog("LoadArrayIntoGrid");
+            AppIO.DebugLog("LoadArrayIntoGrid");
 
             //_gridRows.Clear();
             //grid.Columns.Clear();
@@ -1101,12 +1105,12 @@ namespace JAXBase.XBase
                     {
                         aGridData.SetElement(r, c);
                         rowDict[key] = aGridData.Element.Value ?? string.Empty;
-                        App.DebugLog($"Row: {r} Col:{key} - {rowDict[key]}");
+                        AppIO.DebugLog($"Row: {r} Col:{key} - {rowDict[key]}");
                     }
                     else
                     {
                         rowDict[key] = string.Empty; // outside source array → blank
-                        App.DebugLog($"Row: {r} Col:{key} - Empty");
+                        AppIO.DebugLog($"Row: {r} Col:{key} - Empty");
                     }
                 }
 
@@ -1126,7 +1130,7 @@ namespace JAXBase.XBase
          */
         private async void DgvMain_KeyPress(object? sender, Avalonia.Input.KeyEventArgs e)
         {
-            //App.DebugLog("Grid Keypress", false);
+            //AppIO.DebugLog("Grid Keypress", false);
             // VFP nKeyCode translation
             ParameterClass nKeyCode = new();
             if (App.OS == OSType.Windows)
@@ -1152,7 +1156,7 @@ namespace JAXBase.XBase
         // Deleted: DgvMain_CellValidating - Replaced with more generic validation in column
         private async void DgvMain_BeforeCellChange(object? sender, EventArgs e)
         {
-            //App.DebugLog("BeforeCellChanged", false);
+            //AppIO.DebugLog("BeforeCellChanged", false);
             ParameterClass colIndex = new();
             colIndex.token.Element.Value = 0;
             ParameterClass rowIndex = new();
@@ -1176,11 +1180,11 @@ namespace JAXBase.XBase
         // ────────────────────────────────────────────────
         private async void DgvMain_AfterCellChanged(object? sender, EventArgs e)
         {
-            //App.DebugLog("AfterCellChanged", false);
+            //AppIO.DebugLog("AfterCellChanged", false);
             var (rowidx, colIdx, value) = GetSelectedCellInfo(grid);
             if (value is null)
             {
-                //App.DebugLog("Null skips AfterRowColChange logic", false);
+                //AppIO.DebugLog("Null skips AfterRowColChange logic", false);
             }
             else
             {
@@ -1195,7 +1199,7 @@ namespace JAXBase.XBase
                 AppHelper.LoadTokenValToParameters(App, new(colIdx + 1));
                 AppHelper.LoadTokenValToParameters(App, new(rowidx + 1));
                 AppHelper.LoadTokenValToParameters(App, new(value));
-                //App.DebugLog("Calling AfterRowColChange logic", false);
+                //AppIO.DebugLog("Calling AfterRowColChange logic", false);
 
                 await _CallMethod("afterrowcolchange");
                 UserProperties["lastcol"].Element.Value = colIdx + 1;
@@ -1205,7 +1209,7 @@ namespace JAXBase.XBase
 
         public void RefreshGrid()
         {
-            //App.DebugLog("Refresh grid", false);
+            //AppIO.DebugLog("Refresh grid", false);
             LoadArrayIntoGrid();
         }
 
@@ -1217,7 +1221,7 @@ namespace JAXBase.XBase
 
         private async Task PrepDataGrid()
         {
-            App.DebugLog("PrepDataGrid", false);
+            AppIO.DebugLog("PrepDataGrid", false);
             //grid.Rows.Clear();
             await SetProperty("columncount", 0, 0);
 

@@ -59,6 +59,7 @@ namespace JAXBase.XBase
         public Dictionary<string, JAXObjects.Token> UserProperties { get; }
         public Dictionary<string, MethodClass> Methods { get; }
         public Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList);
+        public Task<bool> PostClassInit();
         public Task<JAXObjects.Token> GetProperty(string propertyName);
         public Task<JAXObjects.Token> GetProperty(string propertyName, int idx);
         public List<GenericClass> GetPEMList();
@@ -90,6 +91,7 @@ namespace JAXBase.XBase
         public void SetAllOfBaseClass(string baseClassName, string property, JAXObjects.Token objtk);
         public int GetPrivateProperty(string propertyName, out JAXObjects.Token value);
         public int SetPrivateProperty(string propertyName, object? value);
+        public void ApplyVFPAnchor(double DeltaX, double DeltaY);
         public string[] JAXMethods();
         public string[] JAXEvents();
         public string[] JAXProperties();

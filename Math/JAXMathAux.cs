@@ -1,7 +1,7 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Language;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Math
 {

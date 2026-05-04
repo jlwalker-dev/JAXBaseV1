@@ -53,12 +53,12 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = theMatch.Index + 1;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`RATC":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`RATLINE":
@@ -71,7 +71,7 @@ namespace JAXBase.Math
                     else
                     {
                         if (string.IsNullOrWhiteSpace(stype3) == false)
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
                     if (stype4.Equals("N"))
@@ -85,7 +85,7 @@ namespace JAXBase.Math
                     else
                     {
                         if (string.IsNullOrWhiteSpace(stype3) == false)
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
                     if (stype1.Equals("C") && stype2.Equals("C"))
@@ -108,7 +108,7 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -133,23 +133,23 @@ namespace JAXBase.Math
                     if (stype1.Equals("_"))
                     {
                         // Is it an object?
-                        JAXObjects.Token tk = await App.GetVarToken(string1);
+                        JAXObjects.Token tk = await AppVars.GetVarToken(string1);
                         if (tk.TType.Equals("O"))
                         {
                             List<string> pop2 = await JAXMathAux.ProcessPops(App, pop, 2);
                             if (pop2.Count > 0 && pop2[0][0].Equals('C'))
                             {
                                 tAnswer._avalue[0].Value = tk.RemoveElement(pop2[0][1..]);
-                                App.SetVar(string1, tk);
+                                AppVars.SetVar(string1, tk);
                             }
                             else
-                                App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
                         else
-                            App.SetError(1924, string1.ToUpper(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(1924, string1.ToUpper(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`REPLICATE":
@@ -162,12 +162,12 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = new StringBuilder().Insert(0, string1, intval2).ToString();
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`REQUERY":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`RGB":
@@ -183,17 +183,17 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = string1[^intval1..];
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`RIGHTC":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`RLOCK":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ROLLBACK":
@@ -207,7 +207,7 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = val1;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`RTOD":

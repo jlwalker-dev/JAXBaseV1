@@ -80,6 +80,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_TCPClient : XBase_Avalonia, IDisposable
     {
+        public new string MyBaseClass = "TCPClient";
+        public new string MyDefaultName = "tcpclient";
+
         /// <summary>
         /// This is the TCP Client base needed for all of the web capable
         /// classes.  It's designed by Grok and tweaked for my needs.

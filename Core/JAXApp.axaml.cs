@@ -1,7 +1,10 @@
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
+using JAXBase.Utilities;
 
 namespace JAXBase.Core
 {
@@ -13,9 +16,6 @@ namespace JAXBase.Core
         {
             return MainWindowInstance ?? throw new InvalidOperationException("MainWindow has not been created yet.");
         }
-
-
-        public static string JaxVersion = "0.6";
 
         public override void Initialize()
         {
@@ -41,6 +41,8 @@ namespace JAXBase.Core
             }
 
             base.OnFrameworkInitializationCompleted();
+
+            AppIO.LoadWindowSettings();
         }
     }
 }

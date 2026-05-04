@@ -1,5 +1,5 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Math
 {
@@ -65,12 +65,12 @@ namespace JAXBase.Math
 
                 case "`KEY":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LASTKEY":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LEFT":   // Return the left part of a string
@@ -84,7 +84,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = string1[..intval2];
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LEFTC":
@@ -98,53 +98,53 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = intval1;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LENC":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LIKE": // TODO NOW
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LIKEC":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LOADPICTURE": // TODO NOW
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LOCK8":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LOG":
                     if (stype1.Equals("N"))
                         tAnswer.Element.Value = System.Math.Log(val1);
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LOG10":
                     if (stype1.Equals("N"))
                         tAnswer.Element.Value = System.Math.Log10(val1);
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LOWER":  // Convert a string to lower case
                     if (stype1.Equals("C"))
                         tAnswer._avalue[0].Value = string1.ToLower();
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`LTRIM":

@@ -12,17 +12,17 @@ namespace JAXBase.Executer
          */
         public static string NoDefault(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
             {
                 // Clear off the DoDefaults flag
-                app.AppLevels[^1].DoDefault = false;
+                app.AppLevels[Program.CurrentApp.CurrentAppLevel].DoDefault = false;
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

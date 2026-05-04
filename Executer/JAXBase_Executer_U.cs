@@ -1,5 +1,5 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
@@ -15,14 +15,14 @@ namespace JAXBase.Executer
         public static string Unlock(AppClass app, string cmdLine)
         {
             string result = string.Empty;
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             try
             {
                 throw new Exception("UNLOCK is not implemented in version 1.0");
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
             return result;
@@ -36,10 +36,10 @@ namespace JAXBase.Executer
         public static async Task<string> Until(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             try
             {
-                string lp = jbe.App.GetLoopStack();
+                string lp = AppLoop.GetLoopStack();
 
                 if (lp.Equals(eCodes.SUBCMD))
                 {
@@ -49,14 +49,14 @@ namespace JAXBase.Executer
                     if (answer.Element.Type.Equals("L"))
                     {
                         // Get back to the correct datasession and workarea
-                        LoopClass loop = jbe.App.AppLevels[^1].ScanLoops[eCodes.SUBCMD];
+                        LoopClass loop = jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].ScanLoops[eCodes.SUBCMD];
                         jbe.App.SetDataSession(loop.DataSession);
                         jbe.App.CurrentDS.SelectWorkArea(loop.WorkArea);
 
                         if (answer.Element.ValueAsBool)
                             result = "U" + lp;  // Go to the DO
                         else
-                            jbe.App.PopLoopStack();
+                            AppLoop.PopLoopStack();
                     }
                     else
                         throw new Exception("11|");
@@ -66,7 +66,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
             return result;
@@ -85,13 +85,13 @@ namespace JAXBase.Executer
         public static string Update(AppClass app, string cmdLine)
         {
             string result = string.Empty;
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             try
             {
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
             return result;
@@ -111,7 +111,7 @@ namespace JAXBase.Executer
         {
             string result = string.Empty;
 
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -232,7 +232,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 

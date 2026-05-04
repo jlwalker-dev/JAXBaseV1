@@ -4,7 +4,7 @@
  */
 using System.Globalization;
 
-namespace JAXBase.Utilities.Utilities
+namespace JAXBase.Utilities
 {
     public class TimeLib
     {

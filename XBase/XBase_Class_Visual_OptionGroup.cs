@@ -6,13 +6,16 @@
  *      
  *------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
-using System.DirectoryServices.ActiveDirectory;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_OptionGroup : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "OptionGroup";
+        public new string MyDefaultName { get; } = "optiongroup";
+
+
         public Avalonia.Controls.Canvas oGrp => (Avalonia.Controls.Canvas)me.avaloniaObject!;
 
         public XBase_Class_Visual_OptionGroup(JAXObjectWrapper jow, string name) : base(jow, name)
@@ -250,10 +253,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}|{propertyName} - {objtk.AsString()}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName} - {objtk.AsString()}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
             }
@@ -303,9 +306,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -475,14 +478,14 @@ namespace JAXBase.XBase
                                     {
                                         // Remark on the problem
                                         result = 1559;
-                                        App.SetError(result, $"1559|LEFT", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                        AppErrorHandling.SetError(result, $"1559|LEFT", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                     }
                                 }
                                 else
                                 {
                                     // Remark on the problem
                                     result = 1559;
-                                    App.SetError(result, $"1559|TOP", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                    AppErrorHandling.SetError(result, $"1559|TOP", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                 }
                             }
                         }
@@ -492,7 +495,7 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                App.SetError(result, $"9999|{ex.Message}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, $"9999|{ex.Message}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;

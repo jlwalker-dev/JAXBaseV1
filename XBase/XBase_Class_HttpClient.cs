@@ -46,6 +46,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_HttpClient : XBase_Class_TCPClient
     {
+        public new string MyBaseClass = "HTTPClient";
+        public new string MyDefaultName = "httpclient";
+
         /// <summary>
         /// JAXBase HTTP client: CREATEOBJECT("HttpClient")
         /// Full GET/POST/PUT/DELETE, form posts, JSON, headers, cookies, redirects, timeouts.

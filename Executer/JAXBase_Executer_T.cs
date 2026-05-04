@@ -1,5 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.XBase;
+using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 namespace JAXBase.Executer
 {
@@ -21,7 +22,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -54,7 +55,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -64,57 +65,87 @@ namespace JAXBase.Executer
         /* 
          * TRY
          * 
-         * Push the TRY loop flag to the loop stack.  
+         * Push a new TRYclass to the current app level's loop stack.  
          * 
          * If an error is occurs, the loopstack is searched to  find the most 
          * recent TRY position in the loopstack.
          * 
-         * If no TRY is found in the loop stack while in a class definition, 
-         * special processing is performed (please see the explaination in
-         * the BASE_CLASS.cs)
-         * 
-         * If a TRY loop flag is found, a cooresponding CATCH will be searched
-         * for in the current code block.
-         * 
-         * If a corresponding CATCH flag cannot be found, and unhandled
-         * exception will be raised and processing will stop for that code
-         * block and the appropriate error set, after which control will be
-         * sent to the calling code block.
+         * If a TRY loop is found, control is sent back to the level
+         * where the try was registered and we'll look for the cooresponding 
+         * CATCH statement.  If it's not found, that raises all sorts of
+         * system errors.
          * 
          * Successfully finding a CATCH causes the code in the CATCH to be
-         * executed until another CATCH, FINALLY, or ENDTRY is found.
-         * 
-         * If another CATCH is found, the process looks for FINALLY or ENDTRY
+         * executed until another CATCH, FINALLY, or ENDTRY is found. If 
+         * another CATCH is found, the process looks for FINALLY or ENDTRY
          * in the current code block.
          * 
          * If FINALLY is found, the FINALLY flag replaces the CATCH flag in
          * the loop stack and processing continues until ENDTRY.
          * 
-         * When ENDTRY is found, the current CATCH or FINALLY loop flag is 
-         * dropped and processing continues for that code block.
+         * A RESUME or RESUME NEXT will send the code back to the app level
+         * and position to restart processing, bypassing the EndTry and
+         * resetting the phase to 0.
+         * 
+         * If the ENDTRY is found, the phase goes to 0, all app levels
+         * above the current are tossed as the ENDTRY indicates that
+         * we don't want to resume.
          * 
          * If another error occurs while a CATCH or FINALLY flag is exposed, it 
          * means there is no error handling in that CATCH or FINALLY block and
-         * an unhandled exception error occurs.  Processing then ends for that 
-         * code block and falls back to the parent code block with that new 
-         * error in place.
+         * an unhandled exception error occurs.  If another TRY/CATCh or 
+         * ON ERROR is in control, then control transfers to that.
          * 
          */
-        public static string Try(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static string Try(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
 
-                string thisLoop = eCodes.SUBCMD.Length > 0 ? eCodes.SUBCMD : throw new Exception("Missing TRY ID");
-                jbe.App.PushLoop(thisLoop); // We are just pushing the TRY to the loop stack
+                string tryCode = (eCodes.SUBCMD.Length > 0 ? eCodes.SUBCMD : throw new Exception("Missing TRY ID"));
+                AppLoop.PushLoop(tryCode);
+
+                int prgPos = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
+                string PrgCode = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
+
+                TryClass lc = new()
+                {
+                    Code = tryCode,
+                    TryPhase = 1,
+                    Level = Program.CurrentApp.AppLevels.Count - 1,
+                    PrgPos = prgPos
+                };
+
+                string plead = AppClass.cmdByte.ToString();
+                string cmdString;
+
+                // Find all CATCH statements
+                int thisPos = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
+
+                while (true)
+                {
+                    //Program.CurrentApp.utl.Conv64(Program.CurrentApp.CmdList.IndexOf("catch"), 2, out string b64);
+                    cmdString = plead + Program.CurrentApp.MiscInfo["catchcmd"] + Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
+                    prgPos = Program.CurrentApp.utl.FindByteSequence(PrgCode, cmdString, thisPos);
+                    if (prgPos < 0) break;
+
+                    lc.CasePos.Add(prgPos);
+                    thisPos = prgPos + cmdString.Length;
+                }
+
+                cmdString = plead + Program.CurrentApp.MiscInfo["finallycmd"] + Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
+                lc.FinallyPos = Program.CurrentApp.utl.FindByteSequence(PrgCode, cmdString, thisPos);
+                cmdString = plead + Program.CurrentApp.MiscInfo["endtrycmd"] + Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
+                lc.EndTry = Program.CurrentApp.utl.FindByteSequence(PrgCode, cmdString, thisPos);
+
+                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[^1] = lc;
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
             return result;
         }

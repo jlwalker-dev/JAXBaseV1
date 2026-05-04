@@ -37,7 +37,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 //#pragma warning disable IDE0063 // Simplification warning
-namespace JAXBase.Utilities.Utilities
+namespace JAXBase.Utilities
 {
     public class FilerLib
     {

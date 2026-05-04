@@ -1,5 +1,5 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.UI
 {
@@ -116,7 +116,7 @@ namespace JAXBase.UI
                     txt.Text = _history;
                 }
 
-                app.ClearErrors();
+                AppErrorHandling.ClearErrors();
 
                 if (app.CurrentDS.JaxSettings.Alternate && !string.IsNullOrWhiteSpace(app.CurrentDS.JaxSettings.Alternate_Name))
                 {
@@ -152,9 +152,9 @@ namespace JAXBase.UI
                     txt.Text += System.Environment.NewLine;
                     ResetCursor(txt);
 
-                    if (app.ErrorCount() > 0)
+                    if (AppErrorHandling.ErrorCount() > 0)
                     {
-                        var err = app.GetLastError();
+                        var err = AppErrorHandling.GetCurrentError();
                         var dialog = new AvErrorDialog();
                         dialog.SetMessage(err.ErrorMessage);
                         dialog.Title = $"Error {err.ErrorNo}";

@@ -7,7 +7,7 @@ namespace JAXBase.Executer
     {
         public AppClass App;
         readonly private Dictionary<string, string> Code = [];
-        JAXObjectWrapper? CallingObject = null;
+        //JAXObjectWrapper? CallingObject = null;
         bool ContainsSource = false;
 
         public Dictionary<string, int> CmdNum = [];
@@ -32,14 +32,9 @@ namespace JAXBase.Executer
          */
         public async Task<bool> LoadAndExecuteProgram(string type, string prgToLoad, string prgToRun, JAXObjectWrapper? parent, bool obeyReadEvents)
         {
-            App.DebugLog($"LoadAndExecuteProgram: type={type}, prgToLoad={prgToLoad}, prgToRun={prgToRun}");
+            AppIO.DebugLog($"LoadAndExecuteProgram: type={type}, prgToLoad={prgToLoad}, prgToRun={prgToRun}");
             App.RuntimeFlag = true;
             bool result = true;
-
-            if (prgToRun.Contains("addpem", StringComparison.OrdinalIgnoreCase))
-            {
-                int iii = 0;
-            }
 
             // If prgToLoad is empty then fill it with prgToRun value
             prgToLoad = string.IsNullOrWhiteSpace(prgToLoad) ? prgToRun : prgToLoad;
@@ -86,34 +81,38 @@ namespace JAXBase.Executer
                     Instance = App.SystemCounter()
                 };
 
-                App.AppLevels.Add(appLevel);
+                Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count;
+                Program.CurrentApp.AppLevels.Add(appLevel);
+
+                JAXObjectWrapper? CallingObject = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ThisObject;
 
                 if (CallingObject is not null)
                 {
-                    App.DebugLog($"Program {prgToRun} found in cache at index {i} running under instance {appLevel.Instance}/{App.AppLevels.Count - 1} under object {CallingObject.JOWName} / {CallingObject.THIS.JOWName}");
+                    AppIO.DebugLog($"Program {prgToRun} found in cache at index {i} running under instance {appLevel.Instance}/{Program.CurrentApp.CurrentAppLevel} under object {CallingObject.JOWName} / {CallingObject.THIS.JOWName}");
+
                     // Set up for an object
-                    App.SetLocalSystemVar("this", CallingObject.THIS, 1, 1, false);
-                    App.SetLocalSystemVar("thisform", CallingObject.THISFORM, 1, 1, false);
-                    App.SetLocalSystemVar("thisformset", CallingObject.THISFORMSET, 1, 1, false);
+                    AppVars.SetLocalSystemVar("this", CallingObject.THIS, 1, 1, false);
+                    AppVars.SetLocalSystemVar("thisform", CallingObject.THISFORM, 1, 1, false);
+                    AppVars.SetLocalSystemVar("thisformset", CallingObject.THISFORMSET, 1, 1, false);
                 }
                 else
                 {
-                    App.DebugLog($"Program {prgToRun} found in cache at index {i} running under instance {appLevel.Instance}/{App.AppLevels.Count - 1}");
+                    AppIO.DebugLog($"Program {prgToRun} found in cache at index {i} running under instance {appLevel.Instance}/{App.AppLevels.Count - 1}");
                     // Not an object so set to null
-                    App.MakeLocalVar("this", 1, 1, false);
-                    App.MakeLocalVar("thisform", 1, 1, false);
-                    App.MakeLocalVar("thisformset", 1, 1, false);
+                    AppVars.MakeLocalVar("this", 1, 1, false);
+                    AppVars.MakeLocalVar("thisform", 1, 1, false);
+                    AppVars.MakeLocalVar("thisformset", 1, 1, false);
 
-                    JAXObjects.Token v = await App.GetVarToken("this");
+                    JAXObjects.Token v = await AppVars.GetVarToken("this");
                     v.Element.MakeNull();
-                    v = await App.GetVarToken("thisform");
+                    v = await AppVars.GetVarToken("thisform");
                     v.Element.MakeNull();
-                    v = await App.GetVarToken("thisformset");
+                    v = await AppVars.GetVarToken("thisformset");
                     v.Element.MakeNull();
                 }
 
 
-                _ = ExecuteBlock(null, cCode);
+                _ = ExecuteBlock(cCode);
             }
 
             return result;
@@ -127,7 +126,29 @@ namespace JAXBase.Executer
          */
         public async Task ExecuteCodeBlock(JAXObjectWrapper thisObject, string methodName, string ccBlock)
         {
-            // TODO - check to make sure we have what we need
+            // Set up for an object
+            AppVars.SetLocalSystemVar("this", thisObject.THIS, 1, 1, false);
+
+            // Do we have a parent form?
+            if (thisObject.THISFORM is null)
+            {
+                AppVars.MakeLocalVar("thisform", 1, 1, false);
+                JAXObjects.Token v = await AppVars.GetVarToken("thisform");
+                v.Element.MakeNull();
+            }
+            else
+                AppVars.SetLocalSystemVar("thisform", thisObject.THISFORM, 1, 1, false);
+
+            // Do we have a parent formset?
+            if (thisObject.THISFORMSET is null)
+            {
+                AppVars.MakeLocalVar("thisformset", 1, 1, false);
+                JAXObjects.Token v = await AppVars.GetVarToken("thisformset");
+                v.Element.MakeNull();
+            }
+            else
+                AppVars.SetLocalSystemVar("thisformset", thisObject.THISFORMSET, 1, 1, false);
+
             // Create a new app level and execute the code
             AppLevel appLevel = new()
             {
@@ -141,34 +162,11 @@ namespace JAXBase.Executer
                 Instance = App.SystemCounter()
             };
 
+            Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count();
             App.AppLevels.Add(appLevel);
 
-            //App.DebugLog($"Running {thisObject.nvObject}.{methodName} under instance {appLevel.Instance}/{App.AppLevels.Count - 1}", false);
 
-            // Set up for an object
-            App.SetLocalSystemVar("this", thisObject.THIS, 1, 1, false);
-
-            // Do we have a parent form?
-            if (thisObject.THISFORM is null)
-            {
-                App.MakeLocalVar("thisform", 1, 1, false);
-                JAXObjects.Token v = await App.GetVarToken("thisform");
-                v.Element.MakeNull();
-            }
-            else
-                App.SetLocalSystemVar("thisform", thisObject.THISFORM, 1, 1, false);
-
-            // Do we have a parent formset?
-            if (thisObject.THISFORMSET is null)
-            {
-                App.MakeLocalVar("thisformset", 1, 1, false);
-                JAXObjects.Token v = await App.GetVarToken("thisformset");
-                v.Element.MakeNull();
-            }
-            else
-                App.SetLocalSystemVar("thisformset", thisObject.THISFORMSET, 1, 1, false);
-
-            _ = ExecuteBlock(thisObject, ccBlock);
+            _ = ExecuteBlock(ccBlock);
         }
 
         /*
@@ -176,22 +174,22 @@ namespace JAXBase.Executer
          * Create a new App.AppLevels
          * 
          */
-        public async Task ExecuteBlock(JAXObjectWrapper? thisObject, string ccBlock)
+        public async Task ExecuteBlock(string compCodeBlock)
         {
-            //App.DebugLog($"Execute code start ─ this: {this.GetHashCode()}  me: {thisObject?.GetHashCode() ?? -1}  me.Name: {thisObject?.Name ?? "?"}", false);
+            string ccBlock = compCodeBlock;
 
             App.ReturnValue.Element.Value = true;   // Set the default return value
-            App.ClearErrors();
-            CallingObject = thisObject;
+            AppErrorHandling.ClearErrors();
+            JAXObjectWrapper? thisObject = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ThisObject;
 
-            JAXObjects.Token tk = await App.GetVarToken("this");
+            JAXObjects.Token tk = await AppVars.GetVarToken("this");
 
-            if (CallingObject is not null && tk.TType.Equals("U"))
+            if (thisObject is not null && tk.TType.Equals("U"))
             {
                 // Set up for an object
-                App.SetLocalSystemVar("this", CallingObject.THIS, 1, 1, false);
-                App.SetLocalSystemVar("thisform", CallingObject.THISFORM, 1, 1, false);
-                App.SetLocalSystemVar("thisformset", CallingObject.THISFORMSET, 1, 1, false);
+                AppVars.SetLocalSystemVar("this", thisObject.THIS, 1, 1, false);
+                AppVars.SetLocalSystemVar("thisform", thisObject.THISFORM, 1, 1, false);
+                AppVars.SetLocalSystemVar("thisformset", thisObject.THISFORMSET, 1, 1, false);
             }
 
             if (ccBlock.Length > 0)
@@ -199,23 +197,28 @@ namespace JAXBase.Executer
                 ContainsSource = App.utl.FindByteSequence(ccBlock, AppClass.cmdByte.ToString() + App.MiscInfo["sourcecode"], 0) >= 0;
 
                 string PrgCode = ccBlock;
-                App.AppLevels[^1].PrgPos = 0;
+                App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = 0;
 
                 while (true)
                 {
-                    int thisCmd = App.AppLevels[^1].PrgPos;
+                    int thisCmd = App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
                     int nextCmd = PrgCode.IndexOf(AppClass.cmdByte, thisCmd + 1);
+
+                    // End of block
+                    if (nextCmd < 0)
+                        break;
+
                     string prgCode = nextCmd > 0 ? PrgCode[thisCmd..nextCmd] : PrgCode[thisCmd..];
 
                     // Strip out the line number                
                     string lineNo = prgCode[^2..];
 
                     int ln = App.utl.Conv64ToInt(lineNo);
-                    if (App.AppLevels[^1].CurrentLine < 0)
-                        App.AppLevels[^1].StartLine = ln;
+                    if (App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine < 0)
+                        App.AppLevels[Program.CurrentApp.CurrentAppLevel].StartLine = ln;
 
-                    App.AppLevels[^1].FileLine = ln;
-                    App.AppLevels[^1].CurrentLine = ln - App.AppLevels[^1].StartLine + 1;
+                    App.AppLevels[Program.CurrentApp.CurrentAppLevel].FileLine = ln;
+                    App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine = ln - App.AppLevels[Program.CurrentApp.CurrentAppLevel].StartLine + 1;
 
                     // Clean up the line of code
                     prgCode = prgCode[..^2];
@@ -225,57 +228,51 @@ namespace JAXBase.Executer
                     // ---------------------------------------------------
                     // READ EVENTS HOOK
                     // ---------------------------------------------------
-                    while (App.AppLevels[^1].InReadEvents || App.OpenDialogCount > 0)
+                    while (App.AppLevels[Program.CurrentApp.CurrentAppLevel].InReadEvents || App.OpenDialogCount > 0)
                     {
                         await Task.Delay(1);  // now properly awaited
                     }
 
-                    // Not in Read Events, continue execution
-                    if (App.ErrorCount() > 0)
+                    char respCmd = cmdResponse.Length > 0 ? cmdResponse[0] : 'N';
+                    string respRest = cmdResponse.Length > 1 ? cmdResponse[1..] : string.Empty;
+
+                    // We handle the final part an error trap here
+                    if (Program.CurrentApp.InError > 0)
                     {
-                        bool tryCatch = false;
-                        // Is there an active TRY/CATCH?
-                        for (int i = App.AppLevels[^1].LoopStack.Count - 1; i >= 0; i--)
+                        switch (Program.CurrentApp.InError)
                         {
-                            // if there is a TRY or CATCH active, look
-                            // for the next CATCH and if not found
-                            // stop executing this level
-                            string lstack = App.AppLevels[^1].LoopStack[i];
-                            if (lstack.Length > 1 && "TC".Contains(lstack[0]))
-                            {
-                                int f = App.utl.FindByteSequence(PrgCode, AppClass.cmdByte.ToString() + App.MiscInfo["catchcmd"], 0);
+                            case 1:     // Try/Catch
+                                Program.CurrentApp.InError = 0;
 
-                                string code = PrgCode.Substring(f + 4, 3);
-                                if (f < 0 || code.Equals(lstack) == false)
-                                {
-                                    // Unhandled exception error
-                                    App.SetError(2305, string.Empty, string.Empty);
-                                    nextCmd = -1;
-                                    break;
-                                }
+                                // Move to the correct applevel and position for the catch
+                                ccBlock = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgCode;
+                                nextCmd = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
+                                break;
 
-                                tryCatch = true;
-                                App.AppLevels[^1].PrgPos = f;
-                                nextCmd = f;
-                                continue;
-                            }
+                            case 2:     // On Error
+                                Program.CurrentApp.InError = 0;
+
+                                // Compile the OnError code
+                                prgCode = Program.CurrentApp.JaxCompiler.CompileLine(Program.CurrentApp.OnErrorCommand, false);
+
+                                // Execute the OnError code
+                                cmdResponse = await ExecuteCommand(prgCode);
+                                break;
+
+                            default:    // Unhandled error
+                                // Quit, suspend, or ignore?
+                                Program.CurrentApp.InError = 0;
+                                break;
                         }
 
-                        if (tryCatch == false)
-                        {
-                            nextCmd = -1;
-                            break;
-                        }
                     }
                     else
                     {
-                        char respCmd = cmdResponse.Length > 0 ? cmdResponse[0] : 'N';
-                        string respRest = cmdResponse.Length > 1 ? cmdResponse[1..] : string.Empty;
 
                         switch (respCmd)
                         {
                             case 'N':   // Next command in this level
-                                App.AppLevels[^1].PrgPos = nextCmd;
+                                App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = nextCmd;
                                 break;
 
                             case 'I':
@@ -330,27 +327,29 @@ namespace JAXBase.Executer
                                 break;
                         }
 
-                        App.AppLevels[^1].PrgPos = nextCmd;
-                    }
+                        App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = nextCmd;
 
-                    // if less than zero, we're done
-                    // with this code block
-                    if (nextCmd < 0)
-                        break;
+
+                        // Might be given end of block at this point
+                        // because of U, Y or Z result code
+                        if (nextCmd < 0)
+                            break;
+                    }
                 }
 
                 // Now remove the level we created to run this code
                 if (App.AppLevels.Count > 1)
                 {
                     App.AppLevels.RemoveAt(App.AppLevels.Count - 1);
+                    Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count - 1;
 
                     if (App.AppLevels.Count == 1)
                     {
                         // We're done!
                         App.RuntimeFlag = false;
-                        if (App.ErrorCount() > 0)
+                        if (AppErrorHandling.ErrorCount() > 0)
                         {
-                            JAXErrors err = App.GetLastError();
+                            JAXErrors err = AppErrorHandling.GetCurrentError();
                             MessageBox.Show(err.ErrorMessage, string.Format("Error {0}", err.ErrorNo), MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                         }
@@ -358,28 +357,27 @@ namespace JAXBase.Executer
                 }
                 else
                 {
-                    if (App.ErrorCount() > 0)
+                    if (AppErrorHandling.ErrorCount() > 0)
                     {
                         // end of execution and we have an outstanding error
                         // we we need to display it for the user
-                        JAXErrors err = App.GetLastError();
+                        JAXErrors err = AppErrorHandling.GetCurrentError();
                         MessageBox.Show(err.ErrorMessage, string.Format("Error {0}", err.ErrorNo), MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
         }
 
+
         /*
          * Execute a single command
          */
         public async Task<string> ExecuteCommand(string command)
         {
-            string hold = command;
             string result = string.Empty;
             string cmd = command.Substring(1, 2);
             string cmdRest = command[3..].TrimEnd(AppClass.cmdEnd);
             int cmdCode = (int)App.utl.Conv64ToLong(cmd);
-            ExecuterCodes eCodes = new();
 
             string cmdString;
 
@@ -387,15 +385,11 @@ namespace JAXBase.Executer
                 cmdString = App.lists.JAXCommands[cmdCode];
             else
             {
-                switch (cmdCode)
+                cmdString = cmdCode switch
                 {
-                    case 250:   // Procedure Map
-                        cmdString = "*procmap";
-                        break;
-
-                    default:
-                        throw new Exception("9994|" + cmdCode.ToString());
-                }
+                    250 => "*procmap",  // Procedure Map
+                    _ => throw new Exception("9994|" + cmdCode.ToString()),
+                };
             }
 
             // Send out debug of what's executing
@@ -403,21 +397,21 @@ namespace JAXBase.Executer
             for (int i = 0; i < cmdRest.Length; i++)
                 byteDisp += cmdRest[i] < 32 ? App.lists.PRGByteCodes[cmdRest[i]] : cmdRest[i];
 
-            App.DebugLog(cmdString + " " + byteDisp);
-            string task = string.Empty;
+            AppIO.DebugLog(cmdString + " " + byteDisp);
+            ExecuterCodes eCodes;
 
             try
             {
                 if (ContainsSource == false)
-                    App.AppLevels[^1].CurrentLineOfCode = cmdString + " ...";
+                    App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = cmdString + " ...";
 
+                // Chop off the excess statement delimiters
+                cmdRest = cmdRest.Trim(AppClass.stmtDelimiter);
                 string[] mProc = cmdRest.Split(AppClass.stmtDelimiter);
 
                 // Are we in a class definition
                 if (App.InDefine.Length > 0 && App.InDefine[0] == 'C')
                 {
-                    task = "In class definition";
-
                     // --------------------------------------------------
                     // A class definition is a loading process and
                     // nothing is actually executed.  Load the methods
@@ -429,7 +423,7 @@ namespace JAXBase.Executer
                         {
                             GenericClass gc = await JAXBase_Executer_M.SolveFromRPNString(App, mProc[0]);
                             string mName = gc.Value.AsString().ToLower().Trim();
-                            App.DebugLog($"Defining class method: {mName}");
+                            AppIO.DebugLog($"Defining class method: {mName}");
 
                             gc = await JAXBase_Executer_M.SolveFromRPNString(App, mProc[1]);
                             bool mProtected = gc.Value.AsString().Length > 0 && gc.Value.AsString().ToUpper()[0].Equals('P');
@@ -453,13 +447,11 @@ namespace JAXBase.Executer
                     }
                     else if (cmdString.ToLower().Equals("endproc"))
                     {
-                        task = "End of class procedure";
                         // End the current method
                         App.CurrentClassMethod = string.Empty;
                     }
                     else
                     {
-                        task = "Loading class code";
                         // Load the command into the class definition
                         if (App.ClassDefinitions[^1].methods.Count > 0)
                             App.ClassDefinitions[^1].methods[App.CurrentClassMethod].ObjectCode += command;
@@ -469,471 +461,18 @@ namespace JAXBase.Executer
                 }
                 else
                 {
-                    // Chop off the excess statement delimiters
-                    cmdRest = cmdRest.Trim(AppClass.stmtDelimiter);
-
-                    // --------------------------------------------------
-                    // Load the eCodes class with the various components
-                    // of the statement.  Usually under 4 but could be
-                    // several for a few commands.
-                    // --------------------------------------------------
-                    task = "Parsing command codes";
-                    for (int i = 0; i < mProc.Length; i++)
-                    {
-                        // Skip blank entries
-                        if (string.IsNullOrWhiteSpace(mProc[i])) continue;
-
-                        char k = mProc[i][0];       // Get the runtime key
-                        string rpn = mProc[i][1..]; // Strip the key from the RPN expression
-                        string codeName = App.RunTimeCodes[App.XRef4Runtime[k]];    // Get the code name
-
-                        JAXObjects.Token rpnValue = new();
-                        string[] rpns = [];
-                        string[] rpnSplit = [];
-                        JAXObjects.Token answer = new();
-
-                        // Put the RPN expression into the code
-                        // Some can be solved here, others have to wait for later
-                        //App.DebugLog($"Processing line {App.AppLevels[^1].CurrentLine} in level {App.AppLevels.Count - 1} source {App.AppLevels[^1].CurrentLineOfCode} -> code: {codeName} with RPN: {rpn}", App.CurrentDS.JaxSettings.Talk == false);
-
-                        switch (codeName)
-                        {
-                            case "as":
-                                task = "breaking AS";
-                                rpnSplit = rpn.Split(AppClass.expDelimiter);
-                                for (int j = 0; j < rpnSplit.Length; j++)
-                                    eCodes.As.Add(rpnSplit[j]);
-                                break;
-
-                            case "at":
-                                task = "breaking AT";
-                                rpns = rpn.Split(AppClass.expParam);
-                                if (rpns.Length != 2) throw new Exception($"10||Invalid AT expression has {rpns.Length} parameters");
-                                answer = await App.SolveFromRPNString(rpns[0]);
-                                if (answer.Element.Type.Equals("N"))
-                                    eCodes.At.row = answer.AsInt();
-                                else
-                                    throw new Exception("11|");
-
-                                answer = await App.SolveFromRPNString(rpns[1]);
-                                if (answer.Element.Type.Equals("N"))
-                                    eCodes.At.col = answer.AsInt();
-                                else
-                                    throw new Exception("11|");
-
-                                break;
-
-                            case "command":
-                                task = "breaking COMMAND";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.COMMAND = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "collate":
-                                task = "breaking COLLATE";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.COLLATE = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "codepage":
-                                task = "breaking CODEPAGE";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("N"))
-                                    eCodes.CODEPAGE = rpnValue.AsInt();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "database":
-                                task = "breaking DATABASE";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.DATABASE = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "expressions":
-                                task = "breaking EXPRESSIONS";
-                                rpnSplit = rpn.Split(AppClass.expDelimiter);
-                                for (int j = 0; j < rpnSplit.Length; j++)
-                                {
-                                    if (string.IsNullOrWhiteSpace(rpnSplit[j]) == false)
-                                    {
-                                        // We only deal with non-blank expressions
-                                        ExCodeRPN e = new()
-                                        {
-                                            // Is the RPN expression a Literal, eXpression, or plain Text?
-                                            Type = rpnSplit[j][0] == AppClass.literalStart ? "L" : rpnSplit[j][0] == AppClass.expByte ? "X" : throw new Exception("11|"),
-                                            RNPExpr = rpnSplit[j]
-                                        };
-
-                                        eCodes.Expressions.Add(e);
-                                    }
-                                }
-                                break;
-
-                            case "flags":
-                                task = "breaking FLAGS";
-                                eCodes.Flags = rpn.Split(AppClass.expParam);
-                                for (int j = 0; j < eCodes.Flags.Length; j++)
-                                    eCodes.Flags[j] = (await App.SolveFromRPNString(eCodes.Flags[j])).AsString();
-                                break;
-
-                            case "from":
-                                task = "breaking FROM";
-                                rpnSplit = rpn.Split(AppClass.expDelimiter);
-                                if (rpnSplit.Length != 2) throw new Exception("11|");
-                                eCodes.From.Type = rpnSplit[0];
-                                eCodes.From.Name = (await App.SolveFromRPNString(rpnSplit[1])).AsString();
-                                break;
-
-                            case "fname":
-                                task = "breaking FNAME";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.FNAME = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "for":
-                                task = "breaking FOR";
-                                eCodes.ForExpr = rpn;
-                                break;
-
-                            case "fields":
-                                task = "breaking FIELDS";
-                                rpns = rpn.Split(AppClass.expDelimiter);
-
-                                for (int j = 0; j < rpns.Length; j += 2)
-                                {
-                                    if (rpns.Length > j + 1)
-                                    {
-                                        ExCodeName fld = new()
-                                        {
-                                            Type = rpns[j],
-                                            Name = rpns[j + 1]
-                                        };
-
-                                        eCodes.Fields.Add(fld);
-                                    }
-                                }
-
-                                break;
-
-                            case "in":
-                                task = "breaking IN";
-                                eCodes.InExpr = rpn;
-                                break;
-
-                            case "index":
-                                task = "breaking INDEX";
-                                rpns = rpn.Split(AppClass.expDelimiter);
-
-                                for (int j = 0; j < rpns.Length; j++)
-                                {
-                                    rpnSplit = rpns[j].Split(AppClass.expParam);
-
-                                    ExCodeName fld = new()
-                                    {
-                                        Type = rpnSplit[0],
-                                        Name = rpnSplit[1]
-                                    };
-
-                                    eCodes.Index.Add(fld);
-                                }
-                                break;
-
-                            case "into":
-                                task = "breaking INTO";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.INTO = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "like":
-                                task = "breaking LIKE";
-                                rpns = rpn.Split(AppClass.expDelimiter);
-
-                                for (int j = 0; j < rpns.Length; j += 2)
-                                {
-                                    // Is it a valid literal/expression or empty?
-                                    if (rpns[j].Length > 2)
-                                        eCodes.Like.Add((await App.SolveFromRPNString(rpns[j])).AsString());
-                                }
-
-                                break;
-
-                            case "of":
-                                task = "breaking OF";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.OF = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "on":
-                                task = "breaking ON";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.ON = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "order":
-                                task = "breaking ORDER";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.ORDER = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "record":
-                                task = "breaking RECORD";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("N"))
-                                    eCodes.RECORD = rpnValue.AsInt();
-                                else if (rpnValue.Element.Type.Equals("C"))
-                                {
-                                    if (rpnValue.AsString().Equals("top", StringComparison.OrdinalIgnoreCase))
-                                        eCodes.RECORD = -1;
-                                    else if (rpnValue.AsString().Equals("bottom", StringComparison.OrdinalIgnoreCase))
-                                        eCodes.RECORD = -2;
-                                    else
-                                        throw new Exception("11|");
-                                }
-                                else
-                                    throw new Exception("11|");
-
-                                break;
-
-                            case "sesssion":
-                                task = "breaking SESSION";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("N"))
-                                    eCodes.SESSION = rpnValue.AsInt();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "scope":
-                                task = "breaking SCOPE";
-                                rpnSplit = rpn.Split(AppClass.expDelimiter);
-                                if (rpnSplit.Length != 2) throw new Exception("11|");
-                                eCodes.Scope.Type = rpnSplit[0];
-                                answer = await App.SolveFromRPNString(rpnSplit[1]);
-                                if (answer.Element.Type.Equals("N"))
-                                    eCodes.Scope.Count = answer.AsInt();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "sheet":
-                                task = "breaking SHEET";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("C"))
-                                    eCodes.SHEET = rpnValue.AsString();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "step":
-                                task = "breaking STEP";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("N"))
-                                    eCodes.RECORD = rpnValue.AsInt();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "subcmd":
-                                task = "breaking SUBCMD";
-                                if (string.IsNullOrWhiteSpace(rpn))
-                                    throw new Exception("11|");
-                                else
-                                    eCodes.SUBCMD = rpn;
-                                break;
-
-                            case "table":
-                                task = "breaking TABLE";
-                                eCodes.TABLE = rpn;
-                                break;
-
-                            case "tag":
-                                task = "breaking TAG";
-                                rpns = rpn.Split(AppClass.expDelimiter);
-                                for (int j = 0; j < rpns.Length; j++)
-                                {
-                                    ExCodeName fld = new()
-                                    {
-                                        Type = rpns[j][0] == AppClass.literalStart ? "L" : "X",
-                                        Name = rpns[j]
-                                    };
-
-                                    eCodes.Tag.Add(fld);
-                                }
-                                break;
-
-                            case "timeout":
-                                task = "breaking TIMEOUT";
-                                rpnValue = await App.SolveFromRPNString(rpn);
-                                if (rpnValue.Element.Type.Equals("N"))
-                                    eCodes.RECORD = rpnValue.AsInt();
-                                else
-                                    throw new Exception("11|");
-                                break;
-
-                            case "to":
-                                task = "breaking TO";
-                                // TO may be two parts or just one
-                                // TO expr/lit
-                                // TO expr/lit expr/lit
-                                rpns = rpn.Split(AppClass.expDelimiter);
-
-                                for (int j = 0; j < rpns.Length; j++)
-                                {
-                                    ExCodeName fld = new()
-                                    {
-                                        Type = rpns.Length == 1 ? (rpns[0][0] == AppClass.literalStart ? "L" : "X") : rpns[0],
-                                        Name = rpns.Length == 1 ? rpns[0] : rpns[1]
-                                    };
-
-                                    eCodes.To.Add(fld);
-                                }
-                                break;
-
-                            case "type":
-                                task = "breaking TYPE";
-                                rpns = rpn.Split(AppClass.expDelimiter);
-                                for (int j = 0; j < rpns.Length; j++)
-                                {
-                                    ExCodeName fld = new()
-                                    {
-                                        Type = rpns[j][0] == AppClass.literalStart ? "L" : "X",
-                                        Name = rpns[j]
-                                    };
-
-                                    eCodes.Type.Add(fld);
-                                }
-                                break;
-
-                            case "values":
-                                task = "breaking VALUES";
-                                rpnSplit = rpn.Split(AppClass.expDelimiter);
-                                for (int j = 0; j < rpnSplit.Length; j++)
-                                {
-                                    if (string.IsNullOrWhiteSpace(rpnSplit[j]) == false)
-                                    {
-                                        // We only deal with non-blank expressions
-                                        ExCodeRPN e = new()
-                                        {
-                                            // Is the RPN expression a Literal, eXpression, or plain Text?
-                                            Type = rpnSplit[j][0] == AppClass.literalStart ? "L" : rpnSplit[j][0] == AppClass.expByte ? "X" : throw new Exception("11|"),
-                                            RNPExpr = rpnSplit[j]
-                                        };
-
-                                        eCodes.Values.Add(e);
-                                    }
-                                }
-                                break;
-
-                            case "when":
-                                task = "breaking WHEN";
-                                eCodes.WhenExpr = rpn;
-                                break;
-
-                            case "while":
-                                task = "breaking WHILE";
-                                eCodes.WhileExpr = rpn;
-                                break;
-
-                            case "with":
-                                task = "breaking WITH";
-                                rpns = rpn.Split(AppClass.expDelimiter);
-
-                                for (int j = 0; j < rpns.Length; j += 2)
-                                {
-                                    if (rpns.Length > j + 1)
-                                    {
-                                        ExCodeRPN exCodeRPN = new()
-                                        {
-                                            Type = rpns[j],
-                                            RNPExpr = rpns[j + 1]
-                                        };
-
-                                        eCodes.With.Add(exCodeRPN);
-                                    }
-                                }
-                                break;
-                        }
-                    }
+                    eCodes = await JAXBase_ECodes.Split(mProc);
 
                     // --------------------------------------------------
                     // Hook for debugger form
                     // Only execute if we're in Stepping mode and the
                     // current command is not a source code update
                     // --------------------------------------------------
-                    //if (App.CurrentDS.JaxSettings.Step && cmdString.Equals("*sc", StringComparison.OrdinalIgnoreCase) == false)
-                    //{
-                    //    // If debugger screen is not active, start it up
-                    //    if (App.JaxDebugger is null)
-                    //    {
-                    //        App.JaxDebugger = new(App);
-                    //        // At the very start of debugging (once)
-                    //        App.JaxDebugger.BeginDebugging();
-                    //    }
-
-                    //    bool debugging = true;
-
-                    //    while (debugging && App.JaxDebugger is not null)
-                    //    {
-                    //        DebugAction action = App.JaxDebugger.GetResponse();  // This now WORKS and is responsive
-
-                    //        switch (action)
-                    //        {
-                    //            case JAXDebuggerForm.DebugAction.Step:
-                    //                debugging = false;
-                    //                break;
-
-                    //            case JAXDebuggerForm.DebugAction.StepInto:
-                    //                debugging = false;
-                    //                break;
-
-                    //            case JAXDebuggerForm.DebugAction.Cancel:
-                    //                debugging = false;
-                    //                App.CurrentDS.JaxSettings.Step = false;
-                    //                App.JaxDebugger?.EndDebugging();
-                    //                App.JaxDebugger = null;
-                    //                JAXBase_Executer_C.Cancel(this, null);
-                    //                return "Z";
-
-                    //            case JAXDebuggerForm.DebugAction.Resume:
-                    //                debugging = false;
-                    //                App.CurrentDS.JaxSettings.Step = false;
-                    //                App.JaxDebugger.EndDebugging();
-                    //                App.JaxDebugger = null;
-                    //                break;
-                    //        }
-                    //    }
-                    //}
-
+                    JAXBase_Debugger.Stepper();
 
                     // --------------------------------------------------
                     // Process the command
                     // --------------------------------------------------
-                    task = "Processing command " + cmdString.ToUpper();
                     switch (cmdString.ToLower())
                     {
                         case "average":
@@ -993,13 +532,13 @@ namespace JAXBase.Executer
                                 "endprocedure" => JAXBase_Executer_E.EndProcedure(this, eCodes),
                                 "endscan" => JAXBase_Executer_E.EndScan(this, eCodes),
                                 "endtext" => JAXBase_Executer_E.EndText(this, eCodes),          // Version 1
-                                "endtry" => JAXBase_Executer_E.EndTry(this, eCodes),
+                                "endtry" => JAXBase_Executer_E.EndTry(eCodes),
                                 "endwith" => JAXBase_Executer_E.EndWith(this, eCodes),
-                                "error" => string.Empty,                                        // Version 1
+                                "error" => await JAXBase_Executer_E.ErrorCall(eCodes),                                        // Version 1
                                 "exit" => JAXBase_Executer_E.Exit(this, eCodes),
                                 "external" => JAXBase_Executer_E.External(this, eCodes),        // Version 1
-                                "finally" => string.Empty,
-                                "for" => await JAXBase_Executer_F.For(this, eCodes),
+                                "finally" => JAXBase_Executer_F.Finally(eCodes),
+                                "for" => await JAXBase_Executer_F.For(eCodes),
                                 "foreach" => JAXBase_Executer_F.ForEach(this, eCodes),          // Version 1
                                 "gather" => JAXBase_Executer_G.Gather(App, cmdRest),            // Version 0.8
                                 "getexp" => JAXBase_Executer_G.GetExpr(App, cmdRest),           // Version 1
@@ -1018,7 +557,7 @@ namespace JAXBase.Executer
                                 "md" => await JAXBase_Executer_M.MD(this, eCodes),
                                 "modify" => await JAXBase_Executer_M.Modify(this, eCodes),      // Version 1
                                 "mouse" => JAXBase_Executer_M.Mouse(App, cmdRest),              // Version 1
-                                "on" => JAXBase_Executer_O.On(App, cmdRest),                    // Version 1
+                                "on" => JAXBase_Executer_O.On(eCodes),                          // Version 1
                                 "open" => JAXBase_Executer_O.Open(App, cmdRest),                // Version 0.6
                                 "otherwise" => JAXBase_Executer_O.Otherwise(this, eCodes),
                                 "pack" => await JAXBase_Executer_P.Pack(this, eCodes),
@@ -1053,7 +592,7 @@ namespace JAXBase.Executer
                                 "suspend" => JAXBase_Executer_S.Suspend(App, cmdRest),          // Version 1
                                 "text" => JAXBase_Executer_T.Text(App, cmdRest),                // Version 1
                                 "throw" => await JAXBase_Executer_T.Throw(this, eCodes),              // Version 1
-                                "try" => JAXBase_Executer_T.Try(this, eCodes),
+                                "try" => JAXBase_Executer_T.Try(eCodes),
                                 "unlock" => JAXBase_Executer_U.Unlock(App, cmdRest),            // Version 0.8
                                 "unpdate" => JAXBase_Executer_U.Update(App, cmdRest),           // Version 1
                                 "until" => await JAXBase_Executer_U.Until(this, eCodes),
@@ -1061,7 +600,7 @@ namespace JAXBase.Executer
                                 "wait" => await JAXBase_Executer_W.Wait(this, eCodes),                // Version 1
                                 "with" => await JAXBase_Executer_W.With(this, eCodes),                // Version 1
                                 "zap" => await JAXBase_Executer_Z.Zap(this, eCodes),
-                                "~~~" => await App.ObjectCall(eCodes, false) is null ? "N" : "N",
+                                "~~~" => await AppVars.ObjectCall(eCodes, false) is null ? "N" : "N",
                                 "?" => await JAXBase_Executer_Legacy.QPrint(this, eCodes),
                                 "??" => await JAXBase_Executer_Legacy.QQPrint(this, eCodes),
                                 "*sc" => JAXBase_Executer_Legacy.SourceCode(this, eCodes),
@@ -1073,12 +612,14 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure, ex.Message);
+                AppIO.DebugLog($"Error executing command {cmdString}: {ex.Message} in ExecuteCommand");
                 result = ex.Message;
             }
 
-            if (App.AppLevels.Count > 0 && cmdCode != 129)
-                App.AppLevels[^1].LastCommand = cmdCode;
+            if (Program.CurrentApp.CurrentAppLevel < App.AppLevels.Count && App.AppLevels.Count > 1 && cmdCode != 129)
+                App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand = cmdCode;
+
 
             return result;
         }
@@ -1087,7 +628,7 @@ namespace JAXBase.Executer
 
         public static string GetExpressionOrLiteral(AppClass app, string expression)
         {
-            string result = string.Empty;
+            string result;
             char type = expression[0];
 
             if (type == AppClass.literalStart)
@@ -1096,13 +637,10 @@ namespace JAXBase.Executer
             }
             else if (type == AppClass.expByte)
             {
-                expression = expression.Replace(AppClass.expByte.ToString(), "");
-
+                result = expression.Replace(AppClass.expByte.ToString(), "");
             }
             else
                 throw new Exception(string.Format("Unknown expression {0}", expression));
-
-
 
             return result;
         }
@@ -1120,7 +658,7 @@ namespace JAXBase.Executer
             try
             {
                 string[] varInfo = varExpr.Split(AppClass.expParam);               // Break the variable expression
-                GenericClass gc=await JAXBase_Executer_M.SolveFromRPNString(app, varInfo[0]);     // Get the variable name
+                GenericClass gc = await JAXBase_Executer_M.SolveFromRPNString(app, varInfo[0]);     // Get the variable name
                 string varName = gc.Value.Element.ValueAsString;
 
                 int r = 1;
@@ -1128,7 +666,7 @@ namespace JAXBase.Executer
 
                 if (varInfo.Length > 1)
                 {
-                    gc=await JAXBase_Executer_M.SolveFromRPNString(app, varInfo[1]);                  // Get the row value if it exists
+                    gc = await JAXBase_Executer_M.SolveFromRPNString(app, varInfo[1]);                  // Get the row value if it exists
                     r = gc.Value.AsInt() > 0 ? gc.Value.AsInt() : 1;
                 }
 
@@ -1139,7 +677,7 @@ namespace JAXBase.Executer
                 }
 
                 // Make sure the varName exits
-                JAXObjects.Token v = await app.GetVarToken(varName);
+                JAXObjects.Token v = await AppVars.GetVarToken(varName);
 
                 if (v.TType.Equals("U"))
                 {
@@ -1148,7 +686,7 @@ namespace JAXBase.Executer
                     {
                         // It's a simple variable
                         if (createVar)
-                            app.SetVarOrMakePrivate(varName, 1, 1, false);                          // It's ok to create the simple variable
+                            AppVars.SetVarOrMakePrivate(varName, 1, 1, false);                          // It's ok to create the simple variable
                         else
                             throw new Exception(string.Format("12|{0}", varName));                  // Throw exception because you aren't allowed to create it
                     }
@@ -1156,18 +694,18 @@ namespace JAXBase.Executer
                         throw new Exception(string.Format("232|{0}", varName));                     // Array not defined
                 }
 
-                app.SetVar(varName, value, r, c);                                                   // Now set the variable element
-                v = await app.GetVarToken(varName);
+                AppVars.SetVar(varName, value, r, c);                                                   // Now set the variable element
+                v = await AppVars.GetVarToken(varName);
 
                 if (v.TType.Equals("A"))
-                    app.DebugLog(string.Format("Storing {0} ({1}) into {2}[{3},{4}]", v.Element.ValueAsString, v.Element.Type, varName, r, c), app.CurrentDS.JaxSettings.Talk == false);
+                    AppIO.DebugLog(string.Format("Storing {0} ({1}) into {2}[{3},{4}]", v.Element.ValueAsString, v.Element.Type, varName, r, c), app.CurrentDS.JaxSettings.Talk == false);
                 else
-                    app.DebugLog(string.Format("Storing {0} ({1}) into {2}", v.Element.ValueAsString, v.Element.Type, varName), app.CurrentDS.JaxSettings.Talk == false);
+                    AppIO.DebugLog(string.Format("Storing {0} ({1}) into {2}", v.Element.ValueAsString, v.Element.Type, varName), app.CurrentDS.JaxSettings.Talk == false);
             }
             catch (Exception ex)
             {
                 // Something went wrong
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -1200,7 +738,5 @@ namespace JAXBase.Executer
 
             return results;
         }
-
-        private readonly object _debugLock = new object();
     }
 }

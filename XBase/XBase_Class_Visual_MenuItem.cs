@@ -26,15 +26,18 @@
  *------------------------------------------------------------------------------------------*/
 using Avalonia.Input;
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_MenuItem : XBase_Class_Avalonia
     {
-        public Avalonia.Controls.MenuItem Menuitem => (Avalonia.Controls.MenuItem)me.avaloniaObject!;
-        public new string MyDefaultName { get; set; } = "mitem";
+        public new string MyBaseClass { get; } = "MenuItem";
+        public new string MyDefaultName { get; } = "menuitem";
 
+
+        public Avalonia.Controls.MenuItem Menuitem => (Avalonia.Controls.MenuItem)me.avaloniaObject!;
+        
         public XBase_Class_Visual_MenuItem(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             SetVisualObject(new Avalonia.Controls.MenuItem(), "MenuItem", "menuitem", true, UserObject.URW);
@@ -106,10 +109,10 @@ namespace JAXBase.XBase
 
             if (err > 0)
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|", string.Empty);
 
             }
             return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
@@ -139,7 +142,7 @@ namespace JAXBase.XBase
                     default:
                         // Process standard properties
                         returnToken = await base.GetProperty(propertyName, idx);
-                        result = returnToken.Element.IsNull() ? 1 : 0;  
+                        result = returnToken.Element.IsNull() ? 1 : 0;
                         break;
                 }
 
@@ -155,10 +158,10 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -169,137 +172,165 @@ namespace JAXBase.XBase
         }
 
 
-/*------------------------------------------------------------------------------------------*
- * Handle the commmon properties by calling the base and then
- * handle the special cases.
- * 
- * Return result from XBase_Visual_Class
- *      0   - Successfully proccessed
- *      1   - Did not process
- *      2   - Requires special processing
- *      >10 - Error code
- * 
- * 
- * Return from here
- *      0   - Successfully processed
- *      -1  - Error Code
- *      
- *------------------------------------------------------------------------------------------*/
-public override async Task<int> SetProperty(string propertyName, object objValue, int objIdx)
-{
-    int result = 0;
-    JAXObjects.Token tk = new();
-    tk.Element.Value = objValue;
-    propertyName = propertyName.ToLower();
-
-    if (UserProperties.ContainsKey(propertyName))
-    {
-        if (UserProperties[propertyName].Protected)
-            result = 3026;
-        else
+        /*------------------------------------------------------------------------------------------*
+         * Handle the commmon properties by calling the base and then
+         * handle the special cases.
+         * 
+         * Return result from XBase_Visual_Class
+         *      0   - Successfully proccessed
+         *      1   - Did not process
+         *      2   - Requires special processing
+         *      >10 - Error code
+         * 
+         * 
+         * Return from here
+         *      0   - Successfully processed
+         *      -1  - Error Code
+         *      
+         *------------------------------------------------------------------------------------------*/
+        public override async Task<int> SetProperty(string propertyName, object objValue, int objIdx)
         {
-            // Intercept special handling of properties
-            switch (propertyName)
-            {
-                case "caption":
-                    if (tk.Element.Type.Equals("C"))
-                        Menuitem.Header = objValue.ToString() ?? string.Empty;
-                    else
-                        result = 11;
-                    break;
+            int result = 0;
+            JAXObjects.Token tk = new();
+            tk.Element.Value = objValue;
+            propertyName = propertyName.ToLower();
 
-                case "icon":
-                    if (tk.Element.Type.Equals("C"))
+            if (UserProperties.ContainsKey(propertyName))
+            {
+                if (UserProperties[propertyName].Protected)
+                    result = 3026;
+                else
+                {
+                    // Intercept special handling of properties
+                    switch (propertyName)
                     {
-                        // Registered Icon or file name
-                        //Menuitem.Icon = JAXImages();
+                        case "caption":
+                            if (tk.Element.Type.Equals("C"))
+                                Menuitem.Header = (objValue.ToString() ?? string.Empty).Replace("\\<","_");
+                            else
+                                result = 11;
+                            break;
+
+                        case "hotkey":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                string keyinfo = tk.AsString().ToUpper().Trim();
+                                if (keyinfo.Length > 0)
+                                {
+                                    string akeyinfo = keyinfo.Replace("CTRL", "Control").Replace("ALT", "Alt").Replace("SHIFT", "Shift").Replace("ESC", "Escape");
+                                    akeyinfo=akeyinfo.Replace("UPARROW", "Up").Replace("DNARROW", "Down").Replace("LEFTARROW", "Left").Replace("RIGHTARROW", "Right");
+
+                                    try
+                                    {
+                                        AppIO.DebugLog($"Parsing hotkey: {akeyinfo}");
+                                        Menuitem.HotKey = Avalonia.Input.KeyGesture.Parse(akeyinfo);
+                                        Menuitem.InputGesture = Avalonia.Input.KeyGesture.Parse(akeyinfo);
+                                        objValue = keyinfo;
+                                    }
+                                    catch
+                                    {
+                                        result = 9860; // Invalid hotkey expression
+                                    }
+                                }
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "icon":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                // Registered Icon or file name
+                                //Menuitem.Icon = JAXImages();
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        default:
+                            result = await base.SetProperty(propertyName, objValue, objIdx);
+                            result = result == 0 ? 9 : result;
+                            break;
                     }
-                    else
-                        result = 11;
-                    break;
 
-                default:
-                    result = await base.SetProperty(propertyName, objValue, objIdx);
-                    result = result == 0 ? 9 : result;
-                    break;
+                    // We don't save what we don't process
+                    if (JAXLib.Between(result, 0, 10))
+                    {
+                        if (result < 9)
+                            UserProperties[propertyName].Element.Value = objValue;
+
+                        result = 0;
+                    }
+                }
             }
+            else
+                result = 1559;
 
-            // We don't save what we don't process
-            if (JAXLib.Between(result, 0, 10))
+
+            if (result > 10)
             {
-                if (result < 9)
-                    UserProperties[propertyName].Element.Value = objValue;
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                result = 0;
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
+
+                result = -1;
             }
+            else
+                result = 0;
+
+            return result;
         }
-    }
-    else
-        result = 1559;
-
-
-    if (result > 10)
-    {
-        _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-
-        if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-            App.SetError(result, $"{result}|", string.Empty);
-
-        result = -1;
-    }
-    else
-        result = 0;
-
-    return result;
-}
 
 
 
-/*------------------------------------------------------------------------------------------*
- * 
- *------------------------------------------------------------------------------------------*/
-public override string[] JAXMethods()
-{
-    return
-        [
-        "addproperty","addobject","refresh","removeobject","saveasclass","settooriginalvalue","setfocus",
-                "writeexpression","writemethod","zorder"
-        ];
-}
+        /*------------------------------------------------------------------------------------------*
+         * 
+         *------------------------------------------------------------------------------------------*/
+        public override string[] JAXMethods()
+        {
+            return
+                [
+                "addproperty","addobject","readexpression","readmethod","refresh","removeobject",
+                "saveasclass","setfocus","writeexpression","writemethod","zorder"
+                ];
+        }
 
-/*------------------------------------------------------------------------------------------*
- * 
- *------------------------------------------------------------------------------------------*/
-public override string[] JAXEvents()
-{
-    return
-        [
-        "click","error","mousedown","mouseenter","mousehover","mouseleave","mouseup","visiblechanged","writemethod","when"
-        ];
-}
+        /*------------------------------------------------------------------------------------------*
+         * 
+         *------------------------------------------------------------------------------------------*/
+        public override string[] JAXEvents()
+        {
+            return
+                [
+                "click","dblclick","error","gotfocus","lostfocus",
+                "mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
+                "rightclick","visiblechanged","writemethod","when"
+                ];
+        }
 
-/*------------------------------------------------------------------------------------------*
- * property data types
- *      C = Character
- *      N = Numeric         I=Integer       R=Color
- *      D = Date
- *      T = DateTime
- *      L = Logical         LY = Yes/No logical
- *      
- *      Attributes
- *          ! Protected - can't change after initialization
- *          $ Special Handling - do not auto process
- * 
- *------------------------------------------------------------------------------------------*/
-public override string[] JAXProperties()
-{
-    return
-        [
-        "baseclass,C!,menuitem","backcolor,r,255|255|255","backstyle,n,0",
+        /*------------------------------------------------------------------------------------------*
+         * property data types
+         *      C = Character
+         *      N = Numeric         I=Integer       R=Color
+         *      D = Date
+         *      T = DateTime
+         *      L = Logical         LY = Yes/No logical
+         *      
+         *      Attributes
+         *          ! Protected - can't change after initialization
+         *          $ Special Handling - do not auto process
+         * 
+         *------------------------------------------------------------------------------------------*/
+        public override string[] JAXProperties()
+        {
+            return
+                [
+                "baseclass,C!,menuitem","backcolor,r,255|255|255","backstyle,n,0",
                 "caption,c,","class,C!,menuitem","classlibrary,C!,","comment,c,","controlcount,n,0",
                 "enabled,l,.t.",
-                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial",
-                "FontSize,N,9","FontStrikeThrough,L,false","FontUnderline,L,false","forecolor,r,0",
+                "fontBold,L,false","fontitalic,L,false","fontname,C,Arial","fontsize,N,9","forecolor,r,0",
+                "hotkey,c,",
                 "icon,c,",
                 "name,c,",
                 "objects,*,",
@@ -308,11 +339,11 @@ public override string[] JAXProperties()
                 "tag,c,","tooltiptext,c,",
                 "visible,l,.t.",
                 ];
-}
+        }
 
-private void HandleTapped(object? sender, TappedEventArgs e)
-{
-    e.Handled = true;
-}
+        private void HandleTapped(object? sender, TappedEventArgs e)
+        {
+            e.Handled = true;
+        }
     }
 }

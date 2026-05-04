@@ -118,7 +118,7 @@ namespace JAXBase.UI.Dialogs
 
     public class DialogHelper
     {
-        public async Task ShowFilePicker(AppClass app)
+        public async Task ShowFilePicker(AppClass app, string dialogType)
         {
             Avalonia.Controls.Window? owner = null;
 
@@ -145,10 +145,22 @@ namespace JAXBase.UI.Dialogs
                 owner.Show();
             }
 
-            app.fileDialog = new FilePickerDialog();
-            var selectedFile = await app.ShowDialogAsync<string?>(app.fileDialog, owner);
+            switch (dialogType)
+            {
+                case "F":
+                    app.fileDialog = new FilePickerDialog();
+                    var selectedFile = await AppIO.ShowDialogAsync<string?>(app.fileDialog, owner);
+                    app.ReturnValue.Element.Value = selectedFile ?? string.Empty;
+                    app.fileDialog = null;
+                    break;
 
-            app.ReturnValue.Element.Value = selectedFile ?? string.Empty;
+                case "D":
+                    var folderDialog = new FolderPickerDialog();
+                    var selectedFolder = await AppIO.ShowDialogAsync<string?>(folderDialog, owner);
+                    app.ReturnValue.Element.Value = selectedFolder ?? string.Empty;
+                    app.folderDialog = null;
+                    break;
+            }
         }
     }
 }

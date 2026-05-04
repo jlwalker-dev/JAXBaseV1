@@ -1,7 +1,7 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.XBase;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using System.Globalization;
 
 namespace JAXBase.Math
@@ -53,7 +53,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.Day.ToString();
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DBC":
@@ -66,12 +66,12 @@ namespace JAXBase.Math
 
                 case "`DBGETPROP":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DBSETPROP":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DBUSED":                         // TODO - Is this database open?
@@ -95,17 +95,17 @@ namespace JAXBase.Math
 
                 case "`DESCENDING":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DIFFERENCE":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DIRECTORY":  // TODO NOW
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DISKSPACE":
@@ -132,7 +132,7 @@ namespace JAXBase.Math
                             tAnswer.Element.Value = dt.DayOfYear;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -145,15 +145,15 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.ToString("dd MMMM yyyy", CultureInfo.CreateSpecificCulture("en-US"));
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DODEFAULT":
-                    JAXObjectWrapper? wrapper = App.AppLevels[^1].ThisObject;
+                    JAXObjectWrapper? wrapper = App.AppLevels[Program.CurrentApp.CurrentAppLevel].ThisObject;
 
                     if (wrapper is not null)
                     {
-                        await wrapper.MethodCall(App.AppLevels[^1].ThisObjectMethod);
+                        await wrapper.MethodCall(App.AppLevels[Program.CurrentApp.CurrentAppLevel].ThisObjectMethod);
                     }
                     else
                     {
@@ -170,19 +170,19 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.DayOfWeek;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DRIVETYPE":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DTOC":                   // TODO - Convert date to string MM/dd/yyyy
                     if ("DT".Contains(stype1))
                         tAnswer._avalue[0].Value = string.Concat("C", string1.AsSpan(1, 10));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DTOR":                       // Degrees to Radians
@@ -194,7 +194,7 @@ namespace JAXBase.Math
                     if ("DT".Contains(stype1))
                         tAnswer._avalue[0].Value = string1[..10].Replace("-", "");
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DTOT":                       // Convert a date to a date/time
@@ -204,7 +204,7 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = dtVal;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`EMPTY":                      // Is the value empty string or 0
@@ -222,7 +222,7 @@ namespace JAXBase.Math
                     break;
 
                 case "`ERROR":
-                    tAnswer._avalue[0].Value = App.LastErrorNo();
+                    tAnswer._avalue[0].Value = AppErrorHandling.LastErrorNo();
                     break;
 
                 case "`EVALUATE":                   // Evaluate string
@@ -262,14 +262,14 @@ namespace JAXBase.Math
                             break;
 
                         default:
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                             break;
                     }
                     break;
 
                 case "`EXECSCRIPT":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`EXP":

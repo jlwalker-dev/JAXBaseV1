@@ -20,13 +20,13 @@ namespace JAXBase.Compiler
 
             try
             {
-                string loop = jbc.App.GetLoopStack();
+                string loop = AppLoop.GetLoopStack();
                 result = jbc.CompilerXRef["CS"].ToString() + loop + AppClass.stmtDelimiter + jbc.Struct_Parser(cmdLine, "UE", "XX*", []);
             }
 
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 
@@ -64,7 +64,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
             return result;
@@ -91,7 +91,7 @@ namespace JAXBase.Compiler
 
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 

@@ -38,6 +38,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_SMTP: XBase_Class_TCPClient
     {
+        public new string MyBaseClass = "SMTP";
+        public new string MyDefaultName = "smtp";
+
         // === SMTP SETTINGS ===
         public string Server { get; set; } = "";
         //public int Port { get; set; } = 25;

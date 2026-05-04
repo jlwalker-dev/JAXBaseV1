@@ -37,12 +37,12 @@ namespace JAXBase.Math
             {
                 case "`UNBINDEVENTS":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`UPDATED":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`UPPER":  // Upper case a string
@@ -57,7 +57,7 @@ namespace JAXBase.Math
                     if (stype1.Equals("C"))
                         tAnswer._avalue[0].Value = val1;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`VARTYPE":
@@ -79,7 +79,7 @@ namespace JAXBase.Math
 
                 case "`XMLTOCURSOR":  // TODO
                     // --------------------------------------------------------------- 
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`YEAR":
@@ -91,7 +91,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = 0;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 default:

@@ -2,7 +2,7 @@
 using JAXBase.Data;
 using JAXBase.Math;
 using JAXBase.XBase;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.UI.Dialogs;
 
 namespace JAXBase.Executer
@@ -29,12 +29,12 @@ namespace JAXBase.Executer
                         break;
 
                     default:
-                        throw new Exception($"1099||Unknown device {eCodes.SUBCMD.ToUpper()}");
+                        throw new Exception($"1999||Unknown device {eCodes.SUBCMD.ToUpper()}");
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -76,7 +76,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -179,7 +179,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -196,7 +196,7 @@ namespace JAXBase.Executer
         public static async Task<string> AParameters(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             if (jbe.App.AppLevels.Count == 0) throw new Exception("2|");
-            if (JAXLib.InList(jbe.App.AppLevels[^1].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+            if (JAXLib.InList(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
 
             // Get the parameter name
             JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
@@ -212,10 +212,10 @@ namespace JAXBase.Executer
                     int j = jbe.App.ParameterClassList.Count;
 
                     // Create the array if it does not exist
-                    jbe.App.SetVarOrMakePrivate(aVar, 1, j, true);
+                    AppVars.SetVarOrMakePrivate(aVar, 1, j, true);
 
                     // Get the array pointer
-                    JAXObjects.Token destArray = await jbe.App.GetVarToken(aVar);
+                    JAXObjects.Token destArray = await AppVars.GetVarToken(aVar);
 
                     // Fill in the array
                     for (int i = 0; i < j; i++)
@@ -229,7 +229,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return string.Format("Private array {0} created with {1} elements", aVar, jbe.App.ParameterClassList.Count);
@@ -310,7 +310,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             // Get back to the starting data session & work area
@@ -370,7 +370,7 @@ namespace JAXBase.Executer
                         throw new Exception("11|");
                 }
 
-                jbe.App.DebugLog("ASSERT: " + result);
+                AppIO.DebugLog("ASSERT: " + result);
 
                 // Always write to debug file if DEBUG is ON
                 if (jbe.App.CurrentDS.JaxSettings.Debug && string.IsNullOrWhiteSpace(jbe.App.CurrentDS.JaxSettings.DebugOut) == false)
@@ -411,14 +411,14 @@ namespace JAXBase.Executer
                             throw new Exception("10|");
 
                         string filestr = msg + ((char)13).ToString() + res.ToString();
-                        jbe.App.SetVarOrMakePrivate(toName, 1, 1, false);
-                        jbe.App.SetVar(toName, filestr, 1, 1);
+                        AppVars.SetVarOrMakePrivate(toName, 1, 1, false);
+                        AppVars.SetVar(toName, filestr, 1, 1);
                     }
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -573,11 +573,11 @@ namespace JAXBase.Executer
 
                 if (To[0].Type.Equals("A"))
                 {
-                    jbe.App.SetVarOrMakePrivate(To[0].Name, 1, Expr.Count, false);
+                    AppVars.SetVarOrMakePrivate(To[0].Name, 1, Expr.Count, false);
                     NotArray = false;
                 }
                 else
-                    jbe.App.SetVarOrMakePrivate(To[0].Name, 1, 1, false);
+                    AppVars.SetVarOrMakePrivate(To[0].Name, 1, 1, false);
 
                 for (int i = 0; i < Expr.Count; i++)
                 {
@@ -587,18 +587,18 @@ namespace JAXBase.Executer
 
                     if (NotArray)
                     {
-                        answer = await jbe.App.GetVarFromExpression(To[i].Name, null);
-                        //jbe.App.GetVar(To[i].Name, out answer);
+                        answer = await AppVars.GetVarFromExpression(To[i].Name, null);
+                        //AppVars.GetVar(To[i].Name, out answer);
 
                         if (answer.TType.Equals("U"))
-                            jbe.App.SetVarOrMakePrivate(To[i].Name, 1, 1, true);
+                            AppVars.SetVarOrMakePrivate(To[i].Name, 1, 1, true);
                     }
 
                     // Set the value
                     if (NotArray)
-                        jbe.App.SetVar(To[i].Name, dval, 1, 1);
+                        AppVars.SetVar(To[i].Name, dval, 1, 1);
                     else
-                        jbe.App.SetVar(To[i].Name, dval, 1, i);
+                        AppVars.SetVar(To[i].Name, dval, 1, i);
                 }
 
                 // ---------------------------------------------------------------------
@@ -608,7 +608,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

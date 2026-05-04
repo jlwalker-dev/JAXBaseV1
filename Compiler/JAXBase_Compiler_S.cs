@@ -1,4 +1,6 @@
-﻿namespace JAXBase.Compiler
+﻿using JAXBase.Core;
+
+namespace JAXBase.Compiler
 {
     public class JAXBase_Compiler_S
     {
@@ -38,7 +40,7 @@
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -64,7 +66,7 @@
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

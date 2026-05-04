@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 using System.IO.Compression;
 using System.Text;
 
-namespace JAXBase.Utilities.Utilities
+namespace JAXBase.Utilities
 {
     public static class JAXUtilities
     {

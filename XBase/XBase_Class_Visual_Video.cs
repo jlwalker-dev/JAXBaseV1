@@ -4,7 +4,7 @@
  * 
  */
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using LibVLCSharp.Avalonia;
 using LibVLCSharp.Shared;
 
@@ -12,6 +12,10 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Video : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Video";
+        public new string MyDefaultName { get; } = "video";
+
+
         public VideoView videoViewer => (VideoView)me.avaloniaObject!;  // Place holder
         public readonly LibVLC _libVLC = new LibVLC();
         public readonly LibVLCSharp.Shared.MediaPlayer mediaPlayer;
@@ -44,20 +48,20 @@ namespace JAXBase.XBase
         private async void MediaPlayer_Paused(object? sender, EventArgs e)
         {
             UserProperties["status"].Element.Value = 2;
-            App.DebugLog("Video paused");
+            AppIO.DebugLog("Video paused");
             await me.MethodCall("paused");
         }
 
         private async void MediaPlayer_Playing(object? sender, EventArgs e)
         {
             UserProperties["status"].Element.Value = 1;
-            App.DebugLog("Video playing");
+            AppIO.DebugLog("Video playing");
             await me.MethodCall("playing");
         }
 
         private async void MediaPlayer_Stopped(object? sender, EventArgs e)
         {
-            App.DebugLog("Video stopped");
+            AppIO.DebugLog("Video stopped");
             UserProperties["status"].Element.Value = 0;
             await me.MethodCall("stopped");
         }
@@ -307,10 +311,10 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{msg}|{propertyName}={tk.AsString()}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{msg}|{propertyName}={tk.AsString()}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
             }
@@ -356,10 +360,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{msg}|{propertyName}={returnToken.AsString()}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{msg}|{propertyName}={returnToken.AsString()}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 returnToken.Element.MakeNull();
             }
@@ -431,7 +435,7 @@ namespace JAXBase.XBase
             await me.MethodCall("destroy");
             mediaPlayer?.Dispose();
             _libVLC?.Dispose();
-            App?.DebugLog("Disposed video components");
+            AppIO.DebugLog("Disposed video components");
 
             base.CleanUp(disposing);
         }

@@ -7,49 +7,66 @@ namespace JAXBase.Executer
 {
     public class JAXBase_Executer_O
     {
-        public static async Task<JAXObjectWrapper> ObjectResolve(AppClass app, string varObject)
-        {
-            string[] objParts = varObject.Split('.');
-
-            // This is the base object
-            //app.GetVar(objParts[0], out JAXObjects.Token obj);
-            JAXObjects.Token obj = await app.GetVarFromExpression(objParts[0], null);
-            JAXObjectWrapper? thisObject = (JAXObjectWrapper)obj.Element.Value;
-
-            if (thisObject is not null)
-            {
-                // The following are all nested objects
-                for (int i = 1; i < objParts.Length - 2; i++)
-                {
-                    int j = await thisObject.FindObjectByName(objParts[i]);
-                    thisObject = await thisObject.GetObject(j);
-
-                    if (thisObject is null) throw new Exception("1901|");
-                }
-            }
-            else
-                throw new Exception("1901|");
-
-            return thisObject;
-        }
-
-        /* TODO
+        /* 
+         * Set the ON command by storing the source code passed
+         * to it for later execution.  If no source code is
+         * passed, the command is effectively turned off.
          * 
-         * ON ERROR
-         * ON KEY LABEL
-         * ON SHUTDOWN
+         *      ON ERROR
+         *      ON KEY LABEL
+         *      ON SHUTDOWN
          * 
          */
-        public static string On(AppClass app, string CmdString)
+        public static string On(ExecuterCodes eCodes)
         {
             try
             {
+                switch (eCodes.SUBCMD.ToLower())
+                {
+                    case "L":       // ON KEY LABEL
+                        // Set or remove the on key handler from the dictionary
+                        string keylabel = eCodes.ON.Trim().ToLower();
+                        string code2Execute = eCodes.COMMAND.Trim();
 
+                        if (Program.CurrentApp.OnKeyLabel.ContainsKey(keylabel) == false && code2Execute.Length > 0)
+                        {
+                            Program.CurrentApp.OnKeyLabel.Add(keylabel, code2Execute); // Add key label
+                            AppIO.SetOnKeyLabel(keylabel, false);
+                        }
+                        if (Program.CurrentApp.OnKeyLabel.ContainsKey(keylabel) && code2Execute.Length > 0)
+                        {
+                            Program.CurrentApp.OnKeyLabel[keylabel] = code2Execute;    // Update key label
+                            AppIO.SetOnKeyLabel(keylabel, false);
+                        }
+                        else if (Program.CurrentApp.OnKeyLabel.ContainsKey(keylabel) && code2Execute.Length == 0)
+                        {
+                            Program.CurrentApp.OnKeyLabel.Remove(keylabel);            // Remove key label
+                            AppIO.SetOnKeyLabel(keylabel, false);
+                        }
+
+                        if (Program.CurrentApp.OnKeyLabel.ContainsKey(keylabel) == false)
+                            Program.CurrentApp.OnKeyLabel.Add(keylabel, eCodes.COMMAND);
+                        else
+                            Program.CurrentApp.OnKeyLabel[keylabel] = eCodes.COMMAND;
+                        break;
+
+                    case "E":       // ON ERROR
+                        Program.CurrentApp.OnErrorCommand = eCodes.COMMAND;
+                        break;
+
+                    case "S":       // ON SHUTDOWN
+                        Program.CurrentApp.OnShutDownCommand = eCodes.COMMAND;
+                        break;
+
+                    default:
+                        throw new Exception($"1999||Unsupported ON code '{eCodes.SUBCMD}'");
+                }
             }
             catch (Exception ex)
             {
-                
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
+
             return string.Empty;
         }
 
@@ -85,7 +102,7 @@ namespace JAXBase.Executer
                 string cEndCase = AppClass.cmdByte.ToString() + jbe.App.MiscInfo["endcasecmd"] + eCodes.SUBCMD;
 
                 // Find the endcase
-                int pos = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx].IndexOf(cEndCase);
+                int pos = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx].IndexOf(cEndCase);
 
                 if (pos < 0)
                     throw new Exception("1211|");   // If/Else/Endif stmt is missing
@@ -97,7 +114,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
