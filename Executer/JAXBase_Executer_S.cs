@@ -1,8 +1,7 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
-using ZXing.Aztec.Internal;
 
 namespace JAXBase.Executer
 {
@@ -24,7 +23,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -51,10 +50,10 @@ namespace JAXBase.Executer
                 LoopClass loop;
                 bool firstTime = false;
 
-                if (jbe.App.GetLoopStack().Equals(eCodes.SUBCMD))
+                if (AppLoop.GetLoopStack().Equals(eCodes.SUBCMD))
                 {
                     // Already in this loop, so grab the loop info
-                    loop = jbe.App.AppLevels[^1].ScanLoops[eCodes.SUBCMD];
+                    loop = jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].ScanLoops[eCodes.SUBCMD];
                     jbe.App.SetDataSession(loop.DataSession);
                     jbe.App.CurrentDS.SelectWorkArea(loop.WorkArea);
                 }
@@ -62,7 +61,7 @@ namespace JAXBase.Executer
                 {
                     // First time through, so set the loop stack
                     firstTime = true;
-                    jbe.App.PushLoop(eCodes.SUBCMD);
+                    AppLoop.PushLoop(eCodes.SUBCMD);
                     loop = new()
                     {
                         DataSession = jbe.App.CurrentDataSession,
@@ -76,7 +75,7 @@ namespace JAXBase.Executer
 
 
 
-                    jbe.App.AppLevels[^1].ScanLoops.Add(eCodes.SUBCMD, loop);
+                    jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].ScanLoops.Add(eCodes.SUBCMD, loop);
                     await jbe.App.CurrentDS.CurrentWA.DBFGotoRecord("top");
                 }
 
@@ -127,7 +126,7 @@ namespace JAXBase.Executer
                 {
                     // Done with SCAN.  Find the ENDSCAN and instruct
                     // JAXBase to proceed to next command
-                    string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx] : string.Empty;
+                    string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
                     string endscan = AppClass.cmdByte + jbe.App.MiscInfo["endscancmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                     int pos = PrgCode.IndexOf(endscan);
                     pos = PrgCode.IndexOf(AppClass.cmdEnd, pos);
@@ -143,7 +142,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -165,7 +164,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -248,7 +247,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             // Go back to current workarea
@@ -266,7 +265,7 @@ namespace JAXBase.Executer
         public static async Task<string> Select(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -291,7 +290,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -314,7 +313,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -373,7 +372,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
             finally
             {
@@ -399,7 +398,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -420,13 +419,16 @@ namespace JAXBase.Executer
                 // basic sanity checks
                 if (eCodes.Expressions.Count < 1) throw new Exception("10|");
 
-                if (eCodes.To.Count > 0 && eCodes.To[0].Name.Contains("btndel.cap", StringComparison.OrdinalIgnoreCase))
+                if (eCodes.To.Count > 0 && eCodes.To[0].Name.Contains(".listitem", StringComparison.OrdinalIgnoreCase))
                 {
                     int iii = 0;
                 }
 
                 // get the expression to store to the var list
-                JAXObjects.Token ExprValue = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                JAXObjects.Token ExprValue = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+
+                if ("EM".Contains(ExprValue.TType))
+                    ExprValue = new("");
 
                 for (int i = 0; i < eCodes.To.Count; i++)
                 {
@@ -437,7 +439,7 @@ namespace JAXBase.Executer
                     if (varName.Element.Type.Equals("C") && string.IsNullOrWhiteSpace(varName.AsString()) == false)
                     {
                         // Get the var name to which we're storing the value
-                        JAXObjects.Token tk = await jbe.App.GetVarFromExpression(varName.AsString(), null);
+                        JAXObjects.Token tk = await AppVars.GetVarFromExpression(varName.AsString(), null);
 
                         // Are we trying to save to an unknown object.property?
                         if (tk.TType.Equals("X") == false)
@@ -461,7 +463,7 @@ namespace JAXBase.Executer
                             {
                                 // Set the varName to the Expression Value with CreatePrivateVar set to true
                                 // so it will create the variable if it's not found.
-                                await jbe.App.SetVarFromExpression(varName.AsString(), ExprValue.Element.Value, true);
+                                await AppVars.SetVarFromExpression(varName.AsString(), ExprValue.Element.Value, true);
                             }
                         }
                     }
@@ -471,7 +473,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -492,7 +494,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

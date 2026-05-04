@@ -2,7 +2,7 @@
 using JAXBase.Data;
 using NodaTime;
 using NodaTime.TimeZones;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Math
@@ -67,7 +67,7 @@ namespace JAXBase.Math
                             if (stype1.Equals("C"))
                             {
                                 string[] arrayParts = string1.Split(',');
-                                JAXObjects.Token aVar = await App.GetVarToken(arrayParts[0]);
+                                JAXObjects.Token aVar = await AppVars.GetVarToken(arrayParts[0]);
 
                                 if (aVar.TType.Equals("A") == false)
                                     throw new Exception("Not an array");
@@ -330,11 +330,11 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = lCount;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`MESSAGE":
-                    JAXErrors e = App.GetLastError();
+                    JAXErrors e = AppErrorHandling.GetCurrentError();
                     tAnswer._avalue[0].Value = intval1 == 1 ? e.ErrorSource : e.ErrorMessage;
                     break;
 
@@ -383,7 +383,7 @@ namespace JAXBase.Math
                             if (stype1.Equals("C"))
                             {
                                 string[] arrayParts = string1.Split(',');
-                                JAXObjects.Token aVar = await App.GetVarToken(arrayParts[0]);
+                                JAXObjects.Token aVar = await AppVars.GetVarToken(arrayParts[0]);
 
                                 if (aVar.TType.Equals("A") == false)
                                     throw new Exception("Not an array");
@@ -629,7 +629,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.Minute;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`MLINE":  // Return the nth row of a chr(13) delimited string
@@ -661,10 +661,10 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = string1;
                         }
                         else
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     else
-                        App.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -672,7 +672,7 @@ namespace JAXBase.Math
                     if ((stype1 + stype2).Equals("NN"))
                         tAnswer.Element.Value = val1 % val2;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`MONTH":
@@ -681,15 +681,15 @@ namespace JAXBase.Math
                         if (DateTime.TryParse(string1, out DateTime dtm))
                             tAnswer.Element.Value = dtm.Month;
                         else
-                            App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`NDX":  // TODO NOW
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     cwa = App.CurrentDS.CurrentWorkArea();
 
                     if (stype1.Equals("N"))
@@ -715,7 +715,7 @@ namespace JAXBase.Math
 
                 case "`NEWOBJECT":  // TODO NOW ????
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`NODA":
@@ -787,7 +787,7 @@ namespace JAXBase.Math
 
                 case "`NORMALIZE":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`NUMLOCK":

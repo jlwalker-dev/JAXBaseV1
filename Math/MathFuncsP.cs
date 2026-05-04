@@ -8,7 +8,7 @@
 using JAXBase.Core;
 using JAXBase.Data;
 using System.Globalization;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using static JAXBase.Core.AppClass;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -52,12 +52,12 @@ namespace JAXBase.Math
             {
                 case "`OBJTOCLIENT@":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`OBJTOJSON@":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`OCCURS":
@@ -72,12 +72,12 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`OLDVAL":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ONKEY":  // TODO NOW
@@ -86,7 +86,7 @@ namespace JAXBase.Math
                         // TODO - Return the On key label setting for this key
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ORDER":
@@ -174,7 +174,7 @@ namespace JAXBase.Math
                     break;
 
                 case "`PEMSTATUS":   // TODO NOW???
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`PI":
@@ -183,7 +183,7 @@ namespace JAXBase.Math
 
                 case "PIXELPOS@":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1096, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1096, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`PROGRAM":        // TODO
@@ -209,7 +209,7 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`PUTFILE":
@@ -227,12 +227,12 @@ namespace JAXBase.Math
                     else if (string.IsNullOrWhiteSpace(stype1))
                         tAnswer.Element.Value = JAXLib.PutFile(string.Empty,string.Empty,string.Empty);
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`PUTJSON@":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`PV":
@@ -261,7 +261,7 @@ namespace JAXBase.Math
                             tAnswer.Element.Value = 0;
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -307,7 +307,7 @@ namespace JAXBase.Math
                         if (stype3.Equals("C"))
                             char1 = string3[0];
                         else
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
                     if (string1.Length + 1 > intval2)
@@ -324,10 +324,10 @@ namespace JAXBase.Math
                     }
                 }
                 else
-                    App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             else
-                App.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
 
             return result;
@@ -359,7 +359,7 @@ namespace JAXBase.Math
                         if (stype3.Equals("C"))
                             char1 = string3[0];
                         else
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
                     if (string1.Length + 1 > intval2)
@@ -368,10 +368,10 @@ namespace JAXBase.Math
                         result = string1.PadLeft(intval2, char1);
                 }
                 else
-                    App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             else
-                App.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
 
             return result;
@@ -403,7 +403,7 @@ namespace JAXBase.Math
                         if (stype3.Equals("C"))
                             char1 = string3[0];
                         else
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
                     if (string1.Length + 1 > intval2)
@@ -412,10 +412,10 @@ namespace JAXBase.Math
                         result = string1.PadRight(intval2, char1);
                 }
                 else
-                    App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             else
-                App.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(1229, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             return result;
         }

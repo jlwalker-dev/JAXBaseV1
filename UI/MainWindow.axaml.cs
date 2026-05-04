@@ -45,8 +45,8 @@
  *      
  *      ------------------------------ FACT ------------------------------
  *      I'm going to convert some of my VFP projects over to JAXBase
- *      and I'm going to pull the On Key Label, On Error, and anything
- *      else that's from the last century.
+ *      and I'm going to pull try to the On Key Label, On Error, and 
+ *      anything else that's from the last century.
  * 
  *
  * 2026-02-20 - JLW
@@ -57,13 +57,14 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using JAXBase.Core;
 using JAXBase.UI;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using System.ComponentModel;
 
 namespace JAXBase
@@ -103,15 +104,6 @@ namespace JAXBase
                 Background = Avalonia.Media.Brushes.Transparent
             };
 
-            //_mainOutputText = new TextBlock
-            //{
-            //    FontFamily = new Avalonia.Media.FontFamily("Consolas, monospace"),
-            //    FontSize = 13,
-            //    TextWrapping = TextWrapping.Wrap,
-            //    Foreground = Avalonia.Media.Brushes.DarkGreen,
-            //    Padding = new Thickness(12, 12, 12, 40)  // extra bottom padding so last line isn't cut off
-            //};
-
             _mainOutputText = new TextBlock
             {
                 FontFamily = new Avalonia.Media.FontFamily("Consolas, monospace"),
@@ -123,7 +115,7 @@ namespace JAXBase
                 // Initial text can be added via Inlines instead
             };
 
-            _mainOutputText.Inlines!.Add(new Avalonia.Controls.Documents.Run("JAXBase Version " + JAXApp.JaxVersion + "\n"));
+            _mainOutputText.Inlines!.Add(new Avalonia.Controls.Documents.Run($"JAXBase Version {Program.Version}\n"));
 
             _mainOutputScroll = new ScrollViewer
             {
@@ -143,10 +135,26 @@ namespace JAXBase
             // Resize to always fill the entire canvas
             _workspaceCanvas.SizeChanged += OnWorkspaceSizeChanged;
 
-            //_mainOutputText.Text = "JAXBase Version " + JAXApp.JaxVersion + "\n";
+            // ==================== HOOK WINDOW CLOSING HERE ====================
+            this.Closing += OnMainWindowClosing;
 
             // Bring up the command window (unchanged)
             commandWindow = CommandWindow.Create(app, "Command Window");
+        }
+
+
+        /// <summary>
+        /// Fires when the user tries to close the main IDE window
+        /// </summary>
+        private void OnMainWindowClosing(object? sender, WindowClosingEventArgs e)
+        {
+            AppIO.DebugLog("MainWindow Closing event fired - Saving settings");
+
+            // Call the save method from JAXApp
+            AppIO.SaveWindowSettings();
+
+            // Optional: If you ever want to cancel the close (e.g. unsaved changes later)
+            // e.Cancel = true;
         }
 
 
@@ -186,6 +194,16 @@ namespace JAXBase
             return null;
         }
 
+        public void ClearMainOutput()
+        {
+            if (_mainOutputText is not null)
+            {
+                _mainOutputText.Inlines = [];
+                //_mainOutputText.Inlines.Add("");
+            }
+
+        }
+
         /// <summary>
         /// Appends free text to the full-screen workspace output area.
         /// New lines appear at the bottom and the view scrolls up (old text exits the top).
@@ -202,7 +220,7 @@ namespace JAXBase
                 for (int i = 0; i < lines.Length; i++)
                 {
                     // Only add separator if not the very first content ever
-                    if (!isFirst || i > 0)
+                    if (isFirst || string.IsNullOrEmpty(lines[i]))
                     {
                         _mainOutputText.Inlines.Add(new Avalonia.Controls.Documents.LineBreak());
                     }

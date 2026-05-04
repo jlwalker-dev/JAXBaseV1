@@ -15,14 +15,17 @@
  *      The menu is a text only object.
  *------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Menu : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Menu";
+        public new string MyDefaultName { get; } = "menu";
+
+
         public Avalonia.Controls.Menu MenuObj => (Avalonia.Controls.Menu)me.avaloniaObject!;
-        public new string MyDefaultName { get; set; } = "menu";
 
         public XBase_Class_Visual_Menu(JAXObjectWrapper jow, string name) : base(jow, name)
         {
@@ -85,10 +88,10 @@ namespace JAXBase.XBase
 
             if (err > 0)
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|", string.Empty);
 
             }
             return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
@@ -132,10 +135,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -190,10 +193,10 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -212,7 +215,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addobject","addproperty","mousehover","move","readexpression","readmethod","refresh","resettodefault",
+                "addobject","addproperty","move","readexpression","readmethod","refresh","resettodefault",
                 "saveasclass","settooriginalvalue","setfocus","writeexpression","writemethod","zorder"
                 ];
         }
@@ -224,7 +227,9 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "destroy","error","init","load","visiblechanged","when"
+                "destroy","error","init","load",
+                "mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
+                "visiblechanged","when"
                 ];
         }
 

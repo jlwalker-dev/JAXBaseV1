@@ -74,7 +74,7 @@
 using JAXBase.Core;
 using JAXBase.Math;
 using System.Text;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Data
@@ -172,11 +172,11 @@ namespace JAXBase.Data
                 db = new(App);
                 await db.DBFUse(filename, alias, exclusive, false, string.Empty);
 
-                if (App.ErrorCount() == 0)
+                if (AppErrorHandling.ErrorCount() == 0)
                 {
                     if (db.DbfInfo.IsDBC == false)
                     {
-                        App.SetError(1552, $"1552|{filename}", "OpenDB");
+                        AppErrorHandling.SetError(1552, $"1552|{filename}", "OpenDB");
                         await db.DBFClose();
                     }
                     else
@@ -184,7 +184,7 @@ namespace JAXBase.Data
                 }
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
         /*---------------------------------------------------------------------------------*
@@ -281,7 +281,7 @@ namespace JAXBase.Data
                     await OpenDB(table.DbfInfo.DBCLink);
             }
 
-            return App.ErrorCount();
+            return AppErrorHandling.ErrorCount();
         }
 
 
@@ -938,7 +938,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(8030, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8030, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             return result;
         }
@@ -1001,7 +1001,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(8031, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8031, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             return result;
         }
@@ -1065,7 +1065,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(8032, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8032, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             return result;
         }

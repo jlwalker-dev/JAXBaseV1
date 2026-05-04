@@ -88,6 +88,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_UDPClient : XBase_Avalonia, IDisposable
     {
+        public new string MyBaseClass = "UDPClient";
+        public new string MyDefaultName = "udpclient";
+
         private UdpClient? _udp;
         private IPEndPoint? _remoteEp;
         private IPEndPoint? _localEp;

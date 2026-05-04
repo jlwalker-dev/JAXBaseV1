@@ -2,6 +2,9 @@
 {
     public class XBase_Class_Custom : XBase_Class_Avalonia
     {
+        public new string MyBaseClass = "Custom";
+        public new string MyDefaultName = "custom";
+
         public XBase_Class_Custom(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             name = string.IsNullOrEmpty(name) ? "custom" : name;

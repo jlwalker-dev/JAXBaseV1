@@ -1,5 +1,4 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
 
 namespace JAXBase.Utilities
 {
@@ -47,7 +46,7 @@ namespace JAXBase.Utilities
 
                         // Trim the & and get the macro value
                         macro = macro[1..];
-                        JAXObjects.Token tok = await app.GetVarFromExpression(macro, null);
+                        JAXObjects.Token tok = await AppVars.GetVarFromExpression(macro, null);
 
                         cmdLine = tok.AsString().Trim() + cmdLine;
 
@@ -61,7 +60,7 @@ namespace JAXBase.Utilities
             }
             catch (Exception e)
             {
-                app.SetError(9987,e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9987,e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 throw new Exception("9987|");
             }
 

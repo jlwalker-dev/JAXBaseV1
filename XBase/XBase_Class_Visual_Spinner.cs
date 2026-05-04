@@ -1,10 +1,14 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Spinner : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Spinner";
+        public new string MyDefaultName { get; } = "spinner";
+
+
         public Avalonia.Controls.NumericUpDown spn => (Avalonia.Controls.NumericUpDown)me.avaloniaObject!;
 
         int LastInputType = -1; // -1 = none, 0=spinner, 1=user key
@@ -227,10 +231,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -289,9 +293,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -361,7 +365,7 @@ namespace JAXBase.XBase
                 "originalvalue,N,0",
                 "parent,o!,","parentclass,C!,","precision,N,0",
                 "readonly,l,false","righttoleft,L,false",
-                "sellength,n,0","selstart,n,0","seltext,n,0","selectonentry,l,f",
+                "sellength,n,0","selstart,n,0","seltext,c,","selectonentry,l,f",
                 "spinnerhighvalue,n,2147483647.00","spinnerlowvalue,n,-2147483647.00",
                 "tabindex,n,1","tabstop,l,true","tag,C,","thousandsseparator,l,.T.","top,N,0","tooltiptext,c,",
                 "value,n,0","visible,l,true","width,N,120"

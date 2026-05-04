@@ -7,12 +7,16 @@
  *------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
 using JAXBase.UI.Controls;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_TextBox : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "TextBox";
+        public new string MyDefaultName { get; } = "textbox";
+
+
         public int MaxLength = 0;
 
         public JAXMaskedTextBox txt => (JAXMaskedTextBox)me.avaloniaObject!;
@@ -82,50 +86,6 @@ namespace JAXBase.XBase
                     // Intercept property handling
                     switch (propertyName.ToLower())
                     {
-                        case "bordercolor":
-                            txt.BorderBrush = new Avalonia.Media.SolidColorBrush(XClass_AuxCode.IntToAvColor(JAXUtilities.ReturnColorInt(tk.AsString())));
-                            break;
-
-                        case "borderwidth":
-                            txt.BorderThickness = new Avalonia.Thickness(tk.AsInt());
-                            break;
-
-                        case "fontbold":
-                            if (tk.Element.Type.Equals("L"))
-                            {
-                                txt.FontWeight = tk.AsBool() ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal;
-                            }
-                            else
-                                result = 11;
-                            break;
-
-                        case "fontitalic":
-                            if (tk.Element.Type.Equals("L"))
-                            {
-                                txt.FontStyle = tk.AsBool() ? Avalonia.Media.FontStyle.Italic : Avalonia.Media.FontStyle.Normal;
-                            }
-                            else
-                                result = 11;
-                            break;
-
-                        case "fontname":
-                            if (tk.Element.Type.Equals("C"))
-                            {
-                                txt.FontFamily = new Avalonia.Media.FontFamily(tk.AsString());
-                            }
-                            else
-                                result = 11;
-                            break;
-
-                        case "fontsize":
-                            if (tk.Element.Type.Equals("N"))
-                            {
-                                txt.FontSize = tk.AsDouble();
-                            }
-                            else
-                                result = 11;
-                            break;
-
                         case "format":
                             if (tk.Element.Type.Equals("C"))
                                 txt.JAXFormat = tk.AsString();
@@ -139,6 +99,27 @@ namespace JAXBase.XBase
                             else
                                 result = 11;
                             break;
+
+
+                        case "inputmaskskip":
+                            if (tk.Element.Type.Equals("L"))
+                                txt.MaskCharSkip = tk.AsBool();
+                            else
+                                result = 11;
+                            break;
+
+
+                        case "inputmaskfillchar":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                // If string length is zero, then no fill allowed
+                                char fc = (tk.AsString().Length < 1) ? '\0' : tk.AsString()[0];
+                                txt.MaskFillChar = fc;
+                            }
+                            else
+                                result = 11;
+                            break;
+
 
                         case "maxlength":
                             if (tk.Element.Type.Equals("N") == false)
@@ -161,11 +142,25 @@ namespace JAXBase.XBase
                                 result = 11;
                             break;
 
-                        case "readonly":
-                            if (tk.Element.Type.Equals("L") == false)
-                                throw new Exception("11|");
+                        case "sellength":
+                            if (tk.Element.Type.Equals("N"))
+                                txt.SelectionEnd = txt.SelectionStart + tk.AsInt();
+                            else
+                                result = 11;
+                            break;
 
-                            txt.IsReadOnly = tk.AsBool();
+                        case "selstart":
+                            if (tk.Element.Type.Equals("N"))
+                                txt.SelectionStart = tk.AsInt();
+                            else
+                                result = 11;
+                            break;
+
+                        case "seltext":
+                            if (tk.Element.Type.Equals("C"))
+                                txt.SelectedText = tk.AsString();
+                            else
+                                result = 11;
                             break;
 
                         case "value":
@@ -197,10 +192,10 @@ namespace JAXBase.XBase
             if (result > 10)
             {
                 // log the error
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -233,8 +228,16 @@ namespace JAXBase.XBase
                         returnToken.Element.Value = txt.MaxLength;
                         break;
 
-                    case "readonly":
-                        returnToken.Element.Value = txt.IsReadOnly;
+                    case "sellength":
+                        returnToken.Element.Value = txt.SelectionEnd - txt.SelectionStart;
+                        break;
+
+                    case "selstart":
+                        returnToken.Element.Value = txt.SelectionStart;
+                        break;
+
+                    case "seltext":
+                        returnToken.Element.Value = txt.SelectedText;
                         break;
 
                     case "text":
@@ -242,7 +245,7 @@ namespace JAXBase.XBase
                         break;
 
                     case "value":
-                        returnToken= txt.GetValue();
+                        returnToken = txt.GetValue();
                         break;
 
                     default:
@@ -263,9 +266,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -326,14 +329,14 @@ namespace JAXBase.XBase
                 "FontSize,N,9",
                 "format,c,","forecolor,R,0",
                 "height,n,21",
-                "inputmask,c,",
+                "inputmask,c,","inputmaskskip,l,.F.","inputmaskfillchar,c,",
                 "left,N,0",
-                "margin,n,2","maxlength,n,0",
+                "margin,n,2","maxlength,n,0","maxheight,n,-1","maxwidth,n,-1","minheight,n,-1","minwidth,n,-1",
                 "name,c,",
                 "originalvalue,,",
                 "parent,o!,","parentclass,C!,","passwordchar,c,",
                 "readonly,l,false","righttoleft,L,false",
-                "sellength,n,0","selstart,n,0","seltext,n,0","selectonentry,l,f","setoriginalwhen,n,0",
+                "sellength,n,0","selstart,n,0","seltext,c,","selectonentry,l,f","setoriginalwhen,n,0",
                 "tabindex,n,1","tabstop,l,.T.","tag,C,","text,c,","top,N,0","tooltiptext,c,",
                 "value,C,","visible,l,.T.",
                 "width,N,100"

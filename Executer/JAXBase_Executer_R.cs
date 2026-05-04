@@ -1,6 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
@@ -30,7 +30,7 @@ namespace JAXBase.Executer
         public static string Read(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             // We're performing a read events without attaching to a form
-            jbe.App.AppLevels[^1].InReadEvents = true;
+            jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].InReadEvents = true;
             return string.Empty;
         }
 
@@ -197,7 +197,7 @@ namespace JAXBase.Executer
                 err = 10;
 
             if (err > 0)
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, $"{err}|");
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, $"{err}|");
 
             return string.Empty;
         }
@@ -301,7 +301,7 @@ namespace JAXBase.Executer
                                     bool IsArrayElement = answer.AsString().Contains("[") || answer.AsString().Contains("(");
 
                                     // Get the variable if it exists
-                                    answer = await jbe.App.GetVarFromExpression(answer.AsString(), null);
+                                    answer = await AppVars.GetVarFromExpression(answer.AsString(), null);
 
                                     // Is it an array or a simple value?
                                     if (answer.TType.Equals("A") && IsArrayElement == false)
@@ -340,7 +340,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -447,12 +447,14 @@ namespace JAXBase.Executer
                         // Remove everything higher than this AppLevel location
                         while (jbe.App.AppLevels.Count > j)
                             jbe.App.AppLevels.RemoveAt(j + 1);
+
+                        Program.CurrentApp.CurrentAppLevel = j - 1;
                     }
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             // Done with this level

@@ -6,12 +6,15 @@
  *      4 - Horizontal stack auto size borders
  *------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_CommandGroup : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "CommandGroup";
+        public new string MyDefaultName { get; } = "commandgroup";
+
         public Avalonia.Controls.Canvas cmdGroup => (Avalonia.Controls.Canvas)me.avaloniaObject!;
 
         public XBase_Class_Visual_CommandGroup(JAXObjectWrapper jow, string name) : base(jow, name)
@@ -70,10 +73,10 @@ namespace JAXBase.XBase
 
             if (err > 0)
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|{value?.BaseClass}", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|{value?.BaseClass}", string.Empty);
             }
 
             return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
@@ -241,14 +244,14 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -553,14 +556,14 @@ namespace JAXBase.XBase
                                         {
                                             // Remark on the problem
                                             result = 1559;
-                                            App.SetError(result, $"1559|LEFT", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                            AppErrorHandling.SetError(result, $"1559|LEFT", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                         }
                                     }
                                     else
                                     {
                                         // Remark on the problem
                                         result = 1559;
-                                        App.SetError(result, $"1559|TOP", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                        AppErrorHandling.SetError(result, $"1559|TOP", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                     }
                                 }
                             }
@@ -575,7 +578,7 @@ namespace JAXBase.XBase
             }
 
             if (result > 0)
-                _AddError(result, 0, msg, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
             return result;
         }
@@ -652,9 +655,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }

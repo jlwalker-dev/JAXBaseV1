@@ -1,7 +1,8 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using JAXBase.Core;         // JAXApp, AppClass, etc. 
+using JAXBase.Core;
+using System.ComponentModel;
 
 namespace JAXBase.UI
 {
@@ -24,8 +25,7 @@ namespace JAXBase.UI
             set
             {
                 _minButton = value;
-                if (_floatingPanel != null)
-                    _floatingPanel.SetMinimizeButtonVisible(value);
+                _floatingPanel?.SetMinimizeButtonVisible(value);
             }
         }
 
@@ -35,8 +35,7 @@ namespace JAXBase.UI
             set
             {
                 _maxButton = value;
-                if (_floatingPanel != null)
-                    _floatingPanel.SetMaximizeButtonVisible(value);
+                _floatingPanel?.SetMaximizeButtonVisible(value);
             }
         }
 
@@ -64,6 +63,20 @@ namespace JAXBase.UI
             }
         }
 
+        // Event handlers for when a fake window closes
+        public event EventHandler<CancelEventArgs>? Closing;
+        public event EventHandler? Closed;
+
+        // Raise the events (call these before actually hiding/removing)
+        protected virtual void OnClosing(CancelEventArgs e)
+        {
+            Closing?.Invoke(this, e);
+        }
+
+        protected virtual void OnClosed()
+        {
+            Closed?.Invoke(this, EventArgs.Empty);
+        }
 
         // Border style (0=no border, 1=fixed single, 2=fixed dialog, 3=sizable)
         private int _borderStyle = 3;
@@ -85,7 +98,7 @@ namespace JAXBase.UI
 
         // Internal controls
         private FloatingPanel? _floatingPanel;
-        private Window? _realWindow;
+        public Window? _realWindow { get; private set; } = null;
         private Canvas? _contentCanvas;
         private bool _isShown;
 
@@ -143,7 +156,20 @@ namespace JAXBase.UI
 
         public void VFPHide()
         {
+            // TODO - I think this is where the JAXBase QueryUnload will occur for forms
+            AppIO.DebugLog(">>>>>>>>>> QUERYUNLOAD? <<<<<<<<<<");
+
             if (!_isShown) return;
+            // === Safe Closing logic for FakeWindow ===
+            var cancelArgs = new System.ComponentModel.CancelEventArgs();
+
+            OnClosing(cancelArgs);
+
+            if (cancelArgs.Cancel)
+            {
+                AppIO.DebugLog("FakeWindow close canceled by OnClosing handler");
+                return;   // Abort hide
+            }
 
             if (_floatingPanel?.Parent is Canvas parentCanvas)
             {
@@ -155,6 +181,7 @@ namespace JAXBase.UI
             _realWindow = null;
 
             _isShown = false;
+            OnClosed();   // Fire Closed after everything is gone
         }
 
         private void CreateAsMainWorkspacePanel()
@@ -190,6 +217,7 @@ namespace JAXBase.UI
             // Move any early-added children from placeholder to real InnerCanvas
             if (_contentCanvas != null && _contentCanvas.Children.Count > 0)
             {
+                AppIO.DebugLog($"CreateAsMainWorkspacePanel: Moving {_contentCanvas.Children.Count} early children to main panel");
                 var tempChildren = _contentCanvas.Children.ToList();
                 foreach (var child in tempChildren)
                 {
@@ -197,7 +225,11 @@ namespace JAXBase.UI
                     _floatingPanel.InnerCanvas.Children.Add(child);
                 }
             }
+
             _contentCanvas = _floatingPanel.InnerCanvas;
+
+            //jow.ParentAvaloniaWindow = _contentCanvas.Parent;
+
             _floatingPanel.InnerCanvas.ClipToBounds = true;
             _floatingPanel.InnerCanvas.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
             _floatingPanel.InnerCanvas.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch;
@@ -237,10 +269,10 @@ namespace JAXBase.UI
             {
                 if (_borderStyle != 1)  // Dialog or no borders
                 {
-                    if (_borderStyle==0)
+                    if (_borderStyle == 0)
                     {
                         // No borders
-                        _floatingPanel.BorderThickness= new Thickness(0);
+                        _floatingPanel.BorderThickness = new Thickness(0);
                     }
 
                     // Hide title bar elements for dialog
@@ -259,7 +291,7 @@ namespace JAXBase.UI
             if (_contentCanvas != null && _contentCanvas.Children.Count > 0)
             {
                 var tempChildren = _contentCanvas.Children.ToList();
-                JAXApp.MainWindowInstance?.App.DebugLog($"Nested mode: Moving {tempChildren.Count} early children to child panel");
+                AppIO.DebugLog($"CreateAsNestedPanel: Moving {tempChildren.Count} early children to child panel");
 
                 foreach (var child in tempChildren)
                 {
@@ -306,7 +338,10 @@ namespace JAXBase.UI
             // Move early children if any
             if (_contentCanvas != null && _contentCanvas.Children.Count > 0)
             {
+                AppIO.DebugLog($"CreateAsIndependentWindow: Moving {_contentCanvas.Children.Count} early children to real window canvas");
+
                 var tempChildren = _contentCanvas.Children.ToList();
+
                 foreach (var child in tempChildren)
                 {
                     _contentCanvas.Children.Remove(child);

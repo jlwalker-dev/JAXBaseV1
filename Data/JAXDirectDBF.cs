@@ -369,10 +369,9 @@
 using JAXBase.Core;
 using JAXBase.Math;
 using JAXBase.Utilities;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Collections;
-using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Text;
 
@@ -716,6 +715,13 @@ namespace JAXBase.Data
             public DataTable CurrentRow = new();
             public DataTable Cursor = new();
 
+            public bool currentRowIsDeleted { get; private set; } = false;
+
+            public void SetDeleted(bool deleted)
+            {
+                currentRowIsDeleted = deleted;
+            }
+
             public int LogicalRecNo = 0;
             public int RecNo = 0;
             public int RecCount = 0;
@@ -728,6 +734,7 @@ namespace JAXBase.Data
             public string SysID = string.Empty;
 
             public byte[] Buffer = [];
+
 
             // Some table types can contain more than one row
             // in memory (views, cursors, and buffered tables)
@@ -841,7 +848,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 // Execution error
-                App.SetError(8005, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8005, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return 0;
@@ -882,7 +889,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 // Execution error
-                App.SetError(8005, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8005, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dbcFiles;
@@ -985,10 +992,10 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 // Execution error
-                App.SetError(8005, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8005, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -1047,10 +1054,10 @@ namespace JAXBase.Data
                     catch (Exception ex)
                     {
                         // If IO error then we could not open the file
-                        App.SetError(101, string.Format("Cannot open file \"{0}\" - ", FileName) + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(101, string.Format("Cannot open file \"{0}\" - ", FileName) + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
-                    if (App.ErrorCount() == 0)
+                    if (AppErrorHandling.ErrorCount() == 0)
                     {
                         /*
                          * Header Information
@@ -1097,43 +1104,43 @@ namespace JAXBase.Data
                         DbfInfo.CodePage = buffer[29];
 
                         // Check header length against calculated
-                        if (App.ErrorCount() == 0 && DbfInfo.FileLen < DbfInfo.FieldCount * 32 + 32)
+                        if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.FileLen < DbfInfo.FieldCount * 32 + 32)
                         {
                             // Error 3
-                            App.SetError(15, "Not a table - " + DbfInfo.FQFN, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(15, "Not a table - " + DbfInfo.FQFN, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                             tableErr = true;
                         }
 
                         // Check file length against calculated file length
                         // TODO - allow repair option
-                        if (App.ErrorCount() == 0 && DbfInfo.FileLen < DbfInfo.HeaderLen + DbfInfo.RecordLen * DbfInfo.RecCount)
+                        if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.FileLen < DbfInfo.HeaderLen + DbfInfo.RecordLen * DbfInfo.RecCount)
                         {
                             // Error 4
-                            App.SetError(2091, string.Format("Table \"{0}\" has become corrupted.  The table will need to be repaired before using again.", DbfInfo.FQFN), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(2091, string.Format("Table \"{0}\" has become corrupted.  The table will need to be repaired before using again.", DbfInfo.FQFN), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                             tableErr = true;
                         }
 
                         // Write out some debug
-                        App.DebugLog(string.Format(""));
-                        App.DebugLog(string.Format("DBF File Name: {0}", DbfInfo.FQFN));
-                        App.DebugLog(string.Format("Header Byte  : {0}", DbfInfo.HeaderByte));
-                        App.DebugLog(string.Format("Last Update  : {0}", DbfInfo.LastUpdate));
-                        App.DebugLog(string.Format("Rec Count    : {0}", DbfInfo.RecCount));
-                        App.DebugLog(string.Format("Header Length: {0}", DbfInfo.HeaderLen));
-                        App.DebugLog(string.Format("Record Len   : {0}", DbfInfo.RecordLen));
-                        App.DebugLog(string.Format("Field Count  : {0}", DbfInfo.FieldCount));
-                        App.DebugLog(string.Format("File Length  : {0}", DbfInfo.FileLen));
-                        App.DebugLog(string.Format("Has CDX      : {0}", DbfInfo.HasCDX));
-                        App.DebugLog(string.Format("Has Memo     : {0}", DbfInfo.HasMemo));
-                        App.DebugLog(string.Format("DBC Container: {0}", DbfInfo.IsDBC));
-                        App.DebugLog(string.Format(""));
+                        AppIO.DebugLog(string.Format(""));
+                        AppIO.DebugLog(string.Format("DBF File Name: {0}", DbfInfo.FQFN));
+                        AppIO.DebugLog(string.Format("Header Byte  : {0}", DbfInfo.HeaderByte));
+                        AppIO.DebugLog(string.Format("Last Update  : {0}", DbfInfo.LastUpdate));
+                        AppIO.DebugLog(string.Format("Rec Count    : {0}", DbfInfo.RecCount));
+                        AppIO.DebugLog(string.Format("Header Length: {0}", DbfInfo.HeaderLen));
+                        AppIO.DebugLog(string.Format("Record Len   : {0}", DbfInfo.RecordLen));
+                        AppIO.DebugLog(string.Format("Field Count  : {0}", DbfInfo.FieldCount));
+                        AppIO.DebugLog(string.Format("File Length  : {0}", DbfInfo.FileLen));
+                        AppIO.DebugLog(string.Format("Has CDX      : {0}", DbfInfo.HasCDX));
+                        AppIO.DebugLog(string.Format("Has Memo     : {0}", DbfInfo.HasMemo));
+                        AppIO.DebugLog(string.Format("DBC Container: {0}", DbfInfo.IsDBC));
+                        AppIO.DebugLog(string.Format(""));
 
-                        if (App.ErrorCount() == 0)
+                        if (AppErrorHandling.ErrorCount() == 0)
                         {
                             // Create debug header for field list
-                            App.DebugLog(string.Format("Field List"));
-                            App.DebugLog(string.Format("Field Name   Type   Len Dec Disp Sys   Bin   Auto  Null  NFld"));
-                            App.DebugLog(string.Format("--------------------------------------------------------------"));
+                            AppIO.DebugLog(string.Format("Field List"));
+                            AppIO.DebugLog(string.Format("Field Name   Type   Len Dec Disp Sys   Bin   Auto  Null  NFld"));
+                            AppIO.DebugLog(string.Format("--------------------------------------------------------------"));
                             JAXTables.FieldInfo field = new();
                             DbfInfo.Fields.Add(field);
 
@@ -1198,7 +1205,7 @@ namespace JAXBase.Data
                                     i + 1, field.FieldName, field.FieldType, field.FieldLen,
                                     field.FieldDec, field.Displacement, field.SystemColumn,
                                     field.BinaryData, field.AutoIncrement, field.NullOK, field.NullFieldCount);
-                                App.DebugLog(dbug);
+                                AppIO.DebugLog(dbug);
                             }
 
                             // Add the $Changes system field which is
@@ -1225,12 +1232,12 @@ namespace JAXBase.Data
                             if (buffer[headerEnd] != 13)
                             {
                                 // Missing Terminator mark
-                                App.SetError(2091, string.Format("Table \"{0}\" has become corrupted.  The table will need to be repaired before using again. Missing header terminator.", DbfInfo.FQFN), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(2091, string.Format("Table \"{0}\" has become corrupted.  The table will need to be repaired before using again. Missing header terminator.", DbfInfo.FQFN), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                 tableErr = true;
                             }
                         }
 
-                        if (App.ErrorCount() == 0)
+                        if (AppErrorHandling.ErrorCount() == 0)
                         {
                             // Set deletion system field length
                             DbfInfo.Fields[0].FieldName = "$del";
@@ -1240,7 +1247,7 @@ namespace JAXBase.Data
                         }
 
                         // Is this a VFP/JAX table?
-                        if (App.ErrorCount() == 0 && JAXLib.InList(DbfInfo.HeaderByte, 16, 17, 18, 32, 33, 34, 48, 49, 50))
+                        if (AppErrorHandling.ErrorCount() == 0 && JAXLib.InList(DbfInfo.HeaderByte, 16, 17, 18, 32, 33, 34, 48, 49, 50))
                         {
                             // If VFP/JAX, read in next 263 characters for DBC link
                             int bufferStart = headerEnd + 1;
@@ -1265,15 +1272,15 @@ namespace JAXBase.Data
                                             await thisSession.OpenDB(dbcLink);
 
                                         // Update field information from DBC
-                                        if (App.ErrorCount() == 0)
+                                        if (AppErrorHandling.ErrorCount() == 0)
                                             await thisSession.Databases[dbName].DBCFixFields(DbfInfo);
 
-                                        App.DebugLog(string.Format("DBC Link     : {0}", DbfInfo.DBCLink));
+                                        AppIO.DebugLog(string.Format("DBC Link     : {0}", DbfInfo.DBCLink));
                                     }
                                     else
                                     {
                                         // ERROR - DBC found
-                                        App.SetError(1578, "Invalid database table name: " + dbcLink, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                        AppErrorHandling.SetError(1578, "Invalid database table name: " + dbcLink, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                         tableErr = true;
                                     }
                                 }
@@ -1289,7 +1296,7 @@ namespace JAXBase.Data
                         }
 
                         // Is there a memo (FPT) file?
-                        if (App.ErrorCount() == 0 && DbfInfo.HasMemo)
+                        if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.HasMemo)
                         {
                             // Create a memo object and save it
                             MemoInfo dbfMemo = new();
@@ -1324,11 +1331,11 @@ namespace JAXBase.Data
                             catch (Exception ex)
                             {
                                 // Execution Error (likely I/O)
-                                App.SetError(8006, ex.Message + string.Format(" - Opening memo file \"{0}\"", memoName), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(8006, ex.Message + string.Format(" - Opening memo file \"{0}\"", memoName), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                             }
 
                             DbfInfo.Memo = dbfMemo;
-                            App.DebugLog(string.Format("Memo Filename: {0}", dbfMemo.FileName));
+                            AppIO.DebugLog(string.Format("Memo Filename: {0}", dbfMemo.FileName));
                         }
                     }
 
@@ -1340,7 +1347,7 @@ namespace JAXBase.Data
                     DbfInfo.EmptyRow = DbfInfo.EmptyRow.Copy();
 
                     // Look for a CDX
-                    if (App.ErrorCount() == 0 && DbfInfo.HasCDX)
+                    if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.HasCDX)
                     {
                         // Load the CDX object and save it
                         CDXInfo dbfCDX = new();
@@ -1358,21 +1365,21 @@ namespace JAXBase.Data
                         catch (Exception ex)
                         {
                             // Execution Error (likely I/O)
-                            App.SetError(8007, ex.Message + string.Format(" - Opening structural index file \"{0}\"", cdxName), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(8007, ex.Message + string.Format(" - Opening structural index file \"{0}\"", cdxName), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
 
                         DbfInfo.CDX = dbfCDX;
-                        App.DebugLog(string.Format("CDX Filename : {0}", dbfCDX.FileName));
+                        AppIO.DebugLog(string.Format("CDX Filename : {0}", dbfCDX.FileName));
                     }
 
-                    App.DebugLog(string.Format("DBF Error    : {0}", tableErr));
-                    App.DebugLog(string.Format(""));
+                    AppIO.DebugLog(string.Format("DBF Error    : {0}", tableErr));
+                    AppIO.DebugLog(string.Format(""));
 
                     // Setup is done
                     InSetup = false;
                     DataTable dt = DbfInfo.CurrentRow.Copy();
 
-                    if (App.ErrorCount() == 0)
+                    if (AppErrorHandling.ErrorCount() == 0)
                     {
                         DbfInfo.CurrentRow = DbfInfo.EmptyRow.Copy();       // Must contain at least an empty row
 
@@ -1410,17 +1417,17 @@ namespace JAXBase.Data
                 else
                 {
                     // Did not find the table
-                    App.SetError(1, "File \"{0}\" does not exists: " + FileName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1, "File \"{0}\" does not exists: " + FileName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
             catch (Exception ex)
             {
                 // Execution error
-                App.SetError(8008, ex.Message + "- Opening table " + FileName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8008, ex.Message + "- Opening table " + FileName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             // If we failed to open, clean things up
-            if (App.ErrorCount() > 0)
+            if (AppErrorHandling.ErrorCount() > 0)
             {
                 // Close up any open indexes
                 if (DbfInfo.IDX is not null)
@@ -1462,7 +1469,7 @@ namespace JAXBase.Data
             }
 
 
-            return App.ErrorCount();
+            return AppErrorHandling.ErrorCount();
         }
 
         /*-----------------------------------------------------------------------------------*
@@ -1630,7 +1637,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 // Execution error
-                App.SetError(8009, ex.Message + "- Opening table " + DbfInfo.TableName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8009, ex.Message + "- Opening table " + DbfInfo.TableName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dt;
@@ -1860,10 +1867,10 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8010, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8010, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -1920,18 +1927,18 @@ namespace JAXBase.Data
                         break;
 
                     if ((i + 1) % 100 == 0)
-                        App.DebugLog(string.Format("{0} records appended", i + 1));
+                        AppIO.DebugLog(string.Format("{0} records appended", i + 1));
                 }
 
                 await DBFGotoRecord("bottom");
-                App.DebugLog(string.Format("{0} records appended", rows.Rows.Count));
+                AppIO.DebugLog(string.Format("{0} records appended", rows.Rows.Count));
             }
             catch (Exception ex)
             {
-                App.SetError(8011, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8011, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -1992,15 +1999,15 @@ namespace JAXBase.Data
                     newTable.Rows.Add(newRow.ItemArray);
                 }
 
-                App.DebugLog(string.Format("{0} records converted", newTable.Rows.Count));
+                AppIO.DebugLog(string.Format("{0} records converted", newTable.Rows.Count));
                 await DBFAppendRecord(newTable);
             }
             catch (Exception ex)
             {
-                App.SetError(8011, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8011, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
         /*-----------------------------------------------------------------------------------*
@@ -2041,10 +2048,10 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8012, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8012, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -2096,10 +2103,10 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8013, "Delete/Recalll error - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8013, "Delete/Recalll error - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -2124,7 +2131,7 @@ namespace JAXBase.Data
                         throw new Exception("File length vs calculatated length mismatch");
                 }
 
-                if (App.ErrorCount() == 0)
+                if (AppErrorHandling.ErrorCount() == 0)
                 {
                     for (int i = 0; i <= DbfInfo.FieldCount; i++)
                     {
@@ -2266,13 +2273,13 @@ namespace JAXBase.Data
                         }
 
                         // Drop out if a problem was found
-                        if (App.ErrorCount() > 0)
+                        if (AppErrorHandling.ErrorCount() > 0)
                             break;
                     }
                 }
 
                 // Write the record
-                if (App.ErrorCount() == 0)
+                if (AppErrorHandling.ErrorCount() == 0)
                 {
                     // Write the Data array to the file
                     if (DbfInfo.DBFStream is not null)
@@ -2293,11 +2300,11 @@ namespace JAXBase.Data
                             await DBFSetHeader("LU", 0);
                         }
 
-                        if (App.ErrorCount() == 0)
+                        if (AppErrorHandling.ErrorCount() == 0)
                         {
                             recPos = (DbfInfo.RecNo - 1) * DbfInfo.RecordLen + DbfInfo.HeaderLen;
 
-                            App.DebugLog(string.Format("Writing to dbf record {0} at position {1} length {2}: {3}", DbfInfo.RecNo, recPos, Data.Length, Encoding.UTF8.GetString(Data)));
+                            AppIO.DebugLog(string.Format("Writing to dbf record {0} at position {1} length {2}: {3}", DbfInfo.RecNo, recPos, Data.Length, Encoding.UTF8.GetString(Data)));
 
                             // Write the record
                             DbfInfo.DBFStream.Seek(recPos, SeekOrigin.Begin);
@@ -2314,7 +2321,7 @@ namespace JAXBase.Data
                         throw new Exception("DBF Stream is null for " + DbfInfo.Alias);
                     }
 
-                    if (App.ErrorCount() == 0)
+                    if (AppErrorHandling.ErrorCount() == 0)
                     {
                         // Now update the indexes
                         for (int i = 0; i < DbfInfo.IDX.Count; i++)
@@ -2339,7 +2346,7 @@ namespace JAXBase.Data
                                 }
 
                                 // Upate the index with the current record information
-                                if (PRINTDEBUG) App.DebugLog(string.Format("Updating index #{0} - {1}", i, DbfInfo.IDX[i].Name));
+                                if (PRINTDEBUG) AppIO.DebugLog(string.Format("Updating index #{0} - {1}", i, DbfInfo.IDX[i].Name));
                                 await IDXUpdateIndex(i);
 
                                 // Update the current key
@@ -2347,17 +2354,17 @@ namespace JAXBase.Data
                                 Array.Copy(keyBytes, 0, DbfInfo.IDX[i].CurrentKey, 0, keyLen);
                             }
                             else
-                                App.DebugLog(string.Format("Skipping index {0} update because it is up to date", i));
+                                AppIO.DebugLog(string.Format("Skipping index {0} update because it is up to date", i));
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                App.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -2416,7 +2423,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dt;
@@ -2492,7 +2499,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 goRec = 0;
-                App.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dt;
@@ -2519,12 +2526,12 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 DbfInfo.IDX[DbfInfo.ControllingIDX].RecordStatus = new();
-                App.SetError(8015, "Goto error - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8015, "Goto error - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
 
             // Update the indexes
-            if (App.ErrorCount() == 0 && DbfInfo.IDX.Count > 0)
+            if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.IDX.Count > 0)
             {
                 JAXMath jaxMath = new(App);
 
@@ -2616,7 +2623,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dt;
@@ -2847,7 +2854,8 @@ namespace JAXBase.Data
                         if (i == 0)
                         {
                             // Deletion Field is * (deleted) or space (not deleted)
-                            dt.Rows[0][0] = RecFieldVal.Trim().Length > 0;
+                            DbfInfo.SetDeleted(RecFieldVal.Trim().Length > 0);
+                            dt.Rows[0][0] = DbfInfo.currentRowIsDeleted;
                         }
                         else
                         {
@@ -2986,13 +2994,13 @@ namespace JAXBase.Data
                     dt.Rows[0]["$changes"] = new string('0', DbfInfo.VisibleFields + 1);
                     DbfInfo.CurrentRow = dt.Copy();
 
-                    App.DebugLog(string.Format("Row {0}: {1}", DbfInfo.RecNo, sb));
+                    AppIO.DebugLog(string.Format("Row {0}: {1}", DbfInfo.RecNo, sb));
                 }
             }
             catch (Exception ex)
             {
-                App.DebugLog(string.Format("Error reading record {0} - Field {1}", DbfInfo.RecNo, FieldName));
-                App.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppIO.DebugLog(string.Format("Error reading record {0} - Field {1}", DbfInfo.RecNo, FieldName));
+                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dt;
@@ -3233,7 +3241,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dt;
@@ -3485,7 +3493,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 // TODO - make sure the old table and memo are put back where they belong
-                App.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
         }
 
@@ -3507,7 +3515,7 @@ namespace JAXBase.Data
                 if (moveToRec < 1 || moveStartRec < 1 || moveStartRec > DbfInfo.RecCount)
                     throw new Exception(string.Format("Invalid move parameters move to={0}, starting record={1}", moveToRec, moveStartRec));
 
-                if (App.ErrorCount() == 0 && DbfInfo.DBFStream is not null)
+                if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.DBFStream is not null)
                 {
                     // Init some variables
                     int headerLen = DbfInfo.HeaderLen;
@@ -3607,10 +3615,10 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -3653,10 +3661,10 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            return App.ErrorCount() == 0;
+            return AppErrorHandling.ErrorCount() == 0;
         }
 
 
@@ -3794,13 +3802,13 @@ namespace JAXBase.Data
                         catch (Exception ex)
                         {
                             // If IO error then we could not open the file
-                            App.SetError(3, "Error opening index " + FullFileName + " - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(3, "Error opening index " + FullFileName + " - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
 
 
                         // Break the header out into an IDXInfo class and
                         // add it to the list in DbfInfo
-                        if (App.ErrorCount() == 0)
+                        if (AppErrorHandling.ErrorCount() == 0)
                         {
                             // Root Node (integer)
                             buffer = new byte[4];
@@ -3851,23 +3859,23 @@ namespace JAXBase.Data
 
                             if (PRINTDEBUG)
                             {
-                                App.DebugLog("");
-                                App.DebugLog(string.Format("    Index {0}", FullFileName));
-                                App.DebugLog(string.Format("    File Length = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].FileLen));
-                                App.DebugLog(string.Format("    Root Node   = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].RootNode));
-                                App.DebugLog(string.Format("    Key Length  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].KeyLen));
-                                App.DebugLog(string.Format("    Unique      = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].IsUnique));
-                                App.DebugLog(string.Format("    Descending  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].Descending));
-                                App.DebugLog(string.Format("    Compact     = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].IsCompactIDX));
-                                App.DebugLog(string.Format("    Compound    = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].IsCompoundIDX));
-                                App.DebugLog(string.Format("    Signature   = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].Signature));
-                                App.DebugLog(string.Format("    Key Clause  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].KeyClause));
-                                App.DebugLog(string.Format("    For Cluase  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].ForClause));
-                                App.DebugLog("");
+                                AppIO.DebugLog("");
+                                AppIO.DebugLog(string.Format("    Index {0}", FullFileName));
+                                AppIO.DebugLog(string.Format("    File Length = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].FileLen));
+                                AppIO.DebugLog(string.Format("    Root Node   = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].RootNode));
+                                AppIO.DebugLog(string.Format("    Key Length  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].KeyLen));
+                                AppIO.DebugLog(string.Format("    Unique      = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].IsUnique));
+                                AppIO.DebugLog(string.Format("    Descending  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].Descending));
+                                AppIO.DebugLog(string.Format("    Compact     = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].IsCompactIDX));
+                                AppIO.DebugLog(string.Format("    Compound    = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].IsCompoundIDX));
+                                AppIO.DebugLog(string.Format("    Signature   = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].Signature));
+                                AppIO.DebugLog(string.Format("    Key Clause  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].KeyClause));
+                                AppIO.DebugLog(string.Format("    For Cluase  = {0}", DbfInfo.IDX[DbfInfo.ControllingIDX].ForClause));
+                                AppIO.DebugLog("");
 
-                                //for (int i = 0; i < 16; i++) App.DebugLog(string.Format("Byte {0} = {1}", i, idxBuffer[i]));
-                                App.DebugLog("");
-                                App.DebugLog("");
+                                //for (int i = 0; i < 16; i++) AppIO.DebugLog(string.Format("Byte {0} = {1}", i, idxBuffer[i]));
+                                AppIO.DebugLog("");
+                                AppIO.DebugLog("");
                             }
 
                             // Position the index on the first record of the index
@@ -3880,7 +3888,7 @@ namespace JAXBase.Data
                 }
                 catch (Exception ex)
                 {
-                    App.SetError(8016, $"8016|{FullFileName}|" + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(8016, $"8016|{FullFileName}|" + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
 
@@ -4010,13 +4018,13 @@ namespace JAXBase.Data
                 node[0] = 3;
 
                 // Keys = 0 (bytes 2 & 3)
-                App.DebugLog(string.Format(""));
-                App.DebugLog(string.Format("Creating Header for {0}", idxInfo.FileName));
-                App.DebugLog(string.Format("Root Pos   = {0}", idxInfo.RootNode));
-                App.DebugLog(string.Format("Max Keys   = {0}", (512 - 12) / (idxInfo.KeyLen + 4)));
-                App.DebugLog(string.Format("Key Len    = {0}", idxInfo.KeyLen));
-                App.DebugLog(string.Format("Key Clause = {0}", idxInfo.KeyClause));
-                App.DebugLog(string.Format("For Clause = {0}", idxInfo.ForClause));
+                AppIO.DebugLog(string.Format(""));
+                AppIO.DebugLog(string.Format("Creating Header for {0}", idxInfo.FileName));
+                AppIO.DebugLog(string.Format("Root Pos   = {0}", idxInfo.RootNode));
+                AppIO.DebugLog(string.Format("Max Keys   = {0}", (512 - 12) / (idxInfo.KeyLen + 4)));
+                AppIO.DebugLog(string.Format("Key Len    = {0}", idxInfo.KeyLen));
+                AppIO.DebugLog(string.Format("Key Clause = {0}", idxInfo.KeyClause));
+                AppIO.DebugLog(string.Format("For Clause = {0}", idxInfo.ForClause));
 
                 // Left & Right pointer
                 bv = Convert.FromBase64String(App.utl.MKI(-1));
@@ -4040,7 +4048,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 // Execution error
-                App.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8014, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
         }
 
@@ -4168,7 +4176,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 llSuccess = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             LeafRecords = [];
@@ -4310,7 +4318,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 llSuccess = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             try
@@ -4362,7 +4370,7 @@ namespace JAXBase.Data
                         catch (Exception ex)
                         {
                             llSuccess = false;
-                            App.SetError(8017, "Error creating blank index nodes - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(8017, "Error creating blank index nodes - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
 
 
@@ -4452,7 +4460,7 @@ namespace JAXBase.Data
                         catch (Exception ex)
                         {
                             llSuccess = false;
-                            App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
                     }
                     else
@@ -4486,7 +4494,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 llSuccess = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             // Remember to unlock it
@@ -4501,7 +4509,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task IDXFillAndWrite(List<IDXRecord> indexRecords, List<IDXRecord> sourceRecords, int keyCount, int maxKeys, int keyLen, int idx)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             int sourceRec = keyCount - 1;
             int keys = 0;
@@ -4545,7 +4553,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
         }
@@ -4565,7 +4573,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<List<IDXRecord>> IDXCreateIndexNodes(List<IDXRecord> records, int maxKeys)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             List<IDXRecord> nodeRecords = [];
             int nodeCount = records.Count / (maxKeys) + (records.Count % maxKeys == 0 ? 0 : 1);
@@ -4607,7 +4615,7 @@ namespace JAXBase.Data
         /// <exception cref="Exception"></exception>
         public async Task<byte[]> IDXGetKey(JAXObjects.Token slAnswer, int keyLen)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             //string thisKey;
             byte[] keyBytes = new byte[keyLen];
@@ -4701,7 +4709,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<bool> IDXUpdateIndex(int idx)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             bool success = true;
 
@@ -4785,7 +4793,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 success = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return success;
@@ -4809,7 +4817,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<bool> IDXInsertLeafNodeRight(IDXCommand idxCmd)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             bool result = true;
 
@@ -4876,7 +4884,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -4904,14 +4912,14 @@ namespace JAXBase.Data
          */
         private async Task IDXCreateIndexNodeRight(IDXCommand idxCmd, int mapLevel, byte[] oldKey, byte[] newKey, int newNodePos)
         {
-            App.DebugLog("");
-            App.DebugLog(new string('~', 80));
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog("");
+            AppIO.DebugLog(new string('~', 80));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             if (mapLevel == 0)
-                App.DebugLog("At Root Level");
+                AppIO.DebugLog("At Root Level");
 
-            if (App.ErrorCount() == 0)
+            if (AppErrorHandling.ErrorCount() == 0)
             {
                 try
                 {
@@ -4923,12 +4931,12 @@ namespace JAXBase.Data
                     // Get the old node node
                     int leafPosition = idxCmd.NodeMap[mapLevel].Position;
                     IDXNode oldLeaf = await IDXGetNode(leafPosition, idx);
-                    App.DebugLog(string.Format("    Loading old leaf at {0} - keys={1}", leafPosition, oldLeaf.Keys));
+                    AppIO.DebugLog(string.Format("    Loading old leaf at {0} - keys={1}", leafPosition, oldLeaf.Keys));
 
                     if (oldLeaf.Keys < maxKeys)
                     {
                         // Node has room, so add to this node
-                        App.DebugLog($"    **** NODE HAS ROOM - inserting new key at {idxCmd.NodeMap[mapLevel].NodeRecord}****");
+                        AppIO.DebugLog($"    **** NODE HAS ROOM - inserting new key at {idxCmd.NodeMap[mapLevel].NodeRecord}****");
 
                         // New node always goes before old node
                         await IDXInsertKey(idx, oldLeaf, idxCmd.NodeMap[mapLevel].NodeRecord, newKey, newNodePos);
@@ -4945,7 +4953,7 @@ namespace JAXBase.Data
                             LeftPtr = oldLeaf.LeftPtr,
                             Position = DbfInfo.IDX[idx].FileLen
                         };
-                        App.DebugLog(string.Format("    Creating new type {0} node {1}", newLeaf.Attributes, newLeaf.Position));
+                        AppIO.DebugLog(string.Format("    Creating new type {0} node {1}", newLeaf.Attributes, newLeaf.Position));
 
                         // If the right pointer of the old is >0 then we need to
                         // load and fix the left pointer of node to the right
@@ -4953,15 +4961,15 @@ namespace JAXBase.Data
                         {
                             IDXNode fixLink = await IDXGetNode(oldLeaf.LeftPtr, idx);
                             fixLink.RightPtr = newLeaf.Position;
-                            App.DebugLog(string.Format("    Fixing RightPtr at {0}", fixLink.RightPtr));
+                            AppIO.DebugLog(string.Format("    Fixing RightPtr at {0}", fixLink.RightPtr));
                             await IDXWrite(idx, fixLink.Position, fixLink.Buffer);
                         }
 
                         // Link the old leaf to the new leaf
                         oldLeaf.LeftPtr = newLeaf.Position;
 
-                        App.DebugLog(string.Format("    Chain is updated"));
-                        App.DebugLog(string.Format(""));
+                        AppIO.DebugLog(string.Format("    Chain is updated"));
+                        AppIO.DebugLog(string.Format(""));
 
                         // The leaf chain has now been updated.  Now split the old
                         // leaf and put bottom half into the new leaf
@@ -4989,7 +4997,7 @@ namespace JAXBase.Data
                         int oldLeafKeys = maxKeys - maxKeys / 2;
                         oldLeaf.Keys = oldLeafKeys;
                         newLeaf.Keys = maxKeys - oldLeafKeys;
-                        App.DebugLog(string.Format("    Split @ {0}", oldLeafKeys));
+                        AppIO.DebugLog(string.Format("    Split @ {0}", oldLeafKeys));
 
                         int putRec = mapLevel == idxCmd.NodeMap.Count - 1 ? idxCmd.Record : newNodePos;
 
@@ -5011,12 +5019,12 @@ namespace JAXBase.Data
                                 string recSKey = Encoding.UTF8.GetString(nodeRec);
                                 int keyCompare = StructuralComparisons.StructuralComparer.Compare(newKey, nodeRec);
 
-                                App.DebugLog(string.Format("    Comparing {0} to {1} = {2}", newSKey.Trim(), recSKey.Trim(), keyCompare));
+                                AppIO.DebugLog(string.Format("    Comparing {0} to {1} = {2}", newSKey.Trim(), recSKey.Trim(), keyCompare));
 
                                 if (keyCompare < 0)
                                 {
                                     // Insert here
-                                    App.DebugLog(string.Format("    Inserting node type {0} at record {1}", buffer[0], i));
+                                    AppIO.DebugLog(string.Format("    Inserting node type {0} at record {1}", buffer[0], i));
                                     await IDXInsertKey(idx, newLeaf, i, newKey, putRec);
 
                                     if (newLeaf.IsLeafNode)
@@ -5035,7 +5043,7 @@ namespace JAXBase.Data
                                     if (i == oldLeaf.Keys - 1)
                                     {
                                         // Append and done
-                                        App.DebugLog(string.Format("    Appending node type {0}", buffer[0], i));
+                                        AppIO.DebugLog(string.Format("    Appending node type {0}", buffer[0], i));
                                         await IDXAppendKey(idx, newLeaf, newKey, putRec);
 
                                         if (newLeaf.IsLeafNode)
@@ -5067,12 +5075,12 @@ namespace JAXBase.Data
                                 string recSKey = Encoding.UTF8.GetString(nodeRec);
                                 int keyCompare = StructuralComparisons.StructuralComparer.Compare(newKey, nodeRec);
 
-                                App.DebugLog(string.Format("    Comparing {0} to {1} = {2}", newSKey.Trim(), recSKey.Trim(), keyCompare));
+                                AppIO.DebugLog(string.Format("    Comparing {0} to {1} = {2}", newSKey.Trim(), recSKey.Trim(), keyCompare));
 
                                 if (keyCompare < 0)
                                 {
                                     // Insert here
-                                    App.DebugLog(string.Format("    Inserting node type {0} at record {1}", buffer[0], i));
+                                    AppIO.DebugLog(string.Format("    Inserting node type {0} at record {1}", buffer[0], i));
                                     await IDXInsertKey(idx, oldLeaf, i, newKey, putRec);
 
                                     if (oldLeaf.IsLeafNode)
@@ -5091,7 +5099,7 @@ namespace JAXBase.Data
                                     if (i == newLeaf.Keys - 1)
                                     {
                                         // Append and done
-                                        App.DebugLog(string.Format("    Appending node type {0}", buffer[0], i));
+                                        AppIO.DebugLog(string.Format("    Appending node type {0}", buffer[0], i));
                                         await IDXAppendKey(idx, oldLeaf, newKey, newNodePos);
 
                                         if (oldLeaf.IsLeafNode)
@@ -5115,7 +5123,7 @@ namespace JAXBase.Data
                         {
                             if (oldLeaf.IsRootNode)
                             {
-                                App.DebugLog(string.Format("    Just split root"));
+                                AppIO.DebugLog(string.Format("    Just split root"));
                                 // We just split the root, so make the two
                                 // nodes into index nodes and write them out
                                 oldLeaf.Attributes = 0;
@@ -5150,9 +5158,9 @@ namespace JAXBase.Data
                                 Position = DbfInfo.IDX[idx].FileLen
                             };
 
-                            App.DebugLog(string.Format("    Creating new root at {0}", rootNode.Position));
-                            App.DebugLog(string.Format("    Adding {0}", Encoding.UTF8.GetString(oldKey)));
-                            App.DebugLog(string.Format("    Adding {0}", Encoding.UTF8.GetString(newKey)));
+                            AppIO.DebugLog(string.Format("    Creating new root at {0}", rootNode.Position));
+                            AppIO.DebugLog(string.Format("    Adding {0}", Encoding.UTF8.GetString(oldKey)));
+                            AppIO.DebugLog(string.Format("    Adding {0}", Encoding.UTF8.GetString(newKey)));
 
                             await IDXAppendKey(idx, rootNode, newKey, newLeaf.Position);
                             await IDXAppendKey(idx, rootNode, oldKey, oldLeaf.Position);
@@ -5163,7 +5171,7 @@ namespace JAXBase.Data
                             DbfInfo.IDX[idx].RootNode = rootNode.Position;
                             DbfInfo.IDX[idx].IDXStream!.Position = 0;
                             DbfInfo.IDX[idx].IDXStream!.Write(rootPos, 0, 4);
-                            App.DebugLog(string.Format("    Updated root node position to {0}", rootNode.Position));
+                            AppIO.DebugLog(string.Format("    Updated root node position to {0}", rootNode.Position));
                             DbfInfo.IDX[idx].IDXStream!.Flush();
 
                         }
@@ -5171,13 +5179,13 @@ namespace JAXBase.Data
                 }
                 catch (Exception ex)
                 {
-                    App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
 
-            App.DebugLog("---- INSERT RIGHT DONE ----");
-            App.DebugLog("");
-            App.DebugLog("");
+            AppIO.DebugLog("---- INSERT RIGHT DONE ----");
+            AppIO.DebugLog("");
+            AppIO.DebugLog("");
         }
 
 
@@ -5213,7 +5221,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -5238,7 +5246,7 @@ namespace JAXBase.Data
                     result = true;
 
                 if (PRINTDEBUG)
-                    App.DebugLog(string.Format("    Insert @ {0}   move to {1}   len {2}   REC {3}", insertAt, moveBlockTo, blockLen, atRec));
+                    AppIO.DebugLog(string.Format("    Insert @ {0}   move to {1}   len {2}   REC {3}", insertAt, moveBlockTo, blockLen, atRec));
 
                 Array.Copy(buffer, insertAt, buffer, moveBlockTo, blockLen);                    // Move evertything down
                 Array.Copy(keyBytes, 0, buffer, insertAt, keyLen);                              // Insert the key
@@ -5258,7 +5266,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -5293,7 +5301,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 NodeUpdated = false;
-                App.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8017, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return NodeUpdated;
@@ -5330,7 +5338,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
@@ -5350,13 +5358,13 @@ namespace JAXBase.Data
                     IDXInfo idxInfo = DbfInfo.IDX[idx];
                     int keyLen = DbfInfo.IDX[idx].KeyLen;
 
-                    App.DebugLog("");
-                    App.DebugLog(new string('-', 80));
-                    App.DebugLog("Linear Map for " + DbfInfo.IDX[idx].FileName);
-                    App.DebugLog("");
-                    App.DebugLog(string.Format("Root Node at {0}", DbfInfo.IDX[idx].RootNode));
-                    App.DebugLog(string.Format("File Length Calculated {0}   File Length Actual {1}", DbfInfo.IDX[idx].FileLen, DbfInfo.IDX[idx].IDXStream!.Length));
-                    App.DebugLog(new string('-', 80));
+                    AppIO.DebugLog("");
+                    AppIO.DebugLog(new string('-', 80));
+                    AppIO.DebugLog("Linear Map for " + DbfInfo.IDX[idx].FileName);
+                    AppIO.DebugLog("");
+                    AppIO.DebugLog(string.Format("Root Node at {0}", DbfInfo.IDX[idx].RootNode));
+                    AppIO.DebugLog(string.Format("File Length Calculated {0}   File Length Actual {1}", DbfInfo.IDX[idx].FileLen, DbfInfo.IDX[idx].IDXStream!.Length));
+                    AppIO.DebugLog(new string('-', 80));
 
                     while (position < DbfInfo.IDX[idx].FileLen)
                     {
@@ -5368,11 +5376,11 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
-            App.DebugLog(new string('-', 80));
-            App.DebugLog("");
+            AppIO.DebugLog(new string('-', 80));
+            AppIO.DebugLog("");
         }
 
         public async Task IDXMapNodeDebug(IDXNode node, int keyLen, int position)
@@ -5384,9 +5392,9 @@ namespace JAXBase.Data
             byte[] recBytes = new byte[4];
             string nodeType = (node.IsRootNode ? "R" : string.Empty) + (node.IsIndexNode ? "I" : string.Empty) + (node.IsLeafNode ? "L" : string.Empty);
 
-            App.DebugLog("");
-            App.DebugLog(string.Format("Position {0}   type {1}   Left {2}   Right {3}   Keys {4}", position, nodeType, node.LeftPtr, node.RightPtr, node.Keys));
-            App.DebugLog(new string('-', 60));
+            AppIO.DebugLog("");
+            AppIO.DebugLog(string.Format("Position {0}   type {1}   Left {2}   Right {3}   Keys {4}", position, nodeType, node.LeftPtr, node.RightPtr, node.Keys));
+            AppIO.DebugLog(new string('-', 60));
 
             for (int j = 0; j < keys; j++)
             {
@@ -5394,9 +5402,10 @@ namespace JAXBase.Data
                 Array.Copy(buffer, keyPos, thisKey, 0, keyLen);
                 Array.Copy(buffer, keyPos + keyLen, recBytes, 0, 4);
                 int pos = App.utl.RevBin2Int(recBytes);
-                App.DebugLog(Encoding.UTF8.GetString(thisKey) + " " + pos.ToString());
+                AppIO.DebugLog(Encoding.UTF8.GetString(thisKey) + " " + pos.ToString());
             }
-            App.DebugLog("");
+
+            AppIO.DebugLog("");
         }
 
 
@@ -5409,7 +5418,7 @@ namespace JAXBase.Data
         private async Task IDXUpdateMap(int idx, IDXCommand idxCmd, int stopAt, byte[] keyBytes)
         {
             IDXInfo idxInfo = DbfInfo.IDX[idx];
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             for (int i = 0; i < stopAt; i++)
             {
@@ -5455,7 +5464,7 @@ namespace JAXBase.Data
         private async Task<bool> IDXWrite(int idx, int position, byte[] buffer)
         {
             bool llSuccess = true;
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -5476,13 +5485,13 @@ namespace JAXBase.Data
 
                 // DEBUG
                 IDXNode test = new() { Buffer = buffer };
-                App.DebugLog(string.Format("    Writing node for index {0} type {1} to position {2}, file length={3}, keys={4}, leftPtr={5}, rightPtr={6}", idx, buffer[0], position, DbfInfo.IDX[idx].FileLen, test.Keys, test.LeftPtr, test.RightPtr));
+                AppIO.DebugLog(string.Format("    Writing node for index {0} type {1} to position {2}, file length={3}, keys={4}, leftPtr={5}, rightPtr={6}", idx, buffer[0], position, DbfInfo.IDX[idx].FileLen, test.Keys, test.LeftPtr, test.RightPtr));
                 await IDXMapNodeDebug(test, DbfInfo.IDX[idx].KeyLen, position);
             }
             catch (Exception ex)
             {
                 llSuccess = false;
-                App.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return llSuccess;
@@ -5503,7 +5512,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         public async Task<IDXCommand> IDXSearchByKey(int idx, byte[] searchValue, int rec, bool naturalOrder, bool justFind)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             IDXCommand idxCmd;
             if (justFind) DbfInfo.Found = false;
@@ -5529,7 +5538,7 @@ namespace JAXBase.Data
                     DbfInfo.IDX[idx].RecordStatus = idxCmd;
 
                     if (PRINTDEBUG)
-                        App.DebugLog(string.Format("    ---- Command {0} ---- Position {1} ---- Record {2} ---- Node Record {3} ----", idxCmd.Command, idxCmd.NodeMap[^1].Position, idxCmd.Record, idxCmd.NodeMap[^1].NodeRecord));
+                        AppIO.DebugLog(string.Format("    ---- Command {0} ---- Position {1} ---- Record {2} ---- Node Record {3} ----", idxCmd.Command, idxCmd.NodeMap[^1].Position, idxCmd.Record, idxCmd.NodeMap[^1].NodeRecord));
                 }
                 else
                 {
@@ -5540,13 +5549,13 @@ namespace JAXBase.Data
                         Command = -99
                     };
 
-                    App.SetError(8019, "Search key is too long", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(8019, "Search key is too long", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
             catch (Exception ex)
             {
                 idxCmd = new();
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             if (justFind) DbfInfo.Found = idxCmd.Command == 1;
@@ -5581,10 +5590,10 @@ namespace JAXBase.Data
         /// <returns></returns>
         public async Task<IDXCommand> IDXSearch(int idx, object value, int rec, bool naturalOrder, bool justFind)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
             IDXCommand idxCmd;
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -5640,7 +5649,7 @@ namespace JAXBase.Data
                     DbfInfo.IDX[idx].RecordStatus = idxCmd;
 
                     if (PRINTDEBUG)
-                        App.DebugLog(string.Format("    ---- Command {0} ---- Position {1} ---- Record {2} ---- Node Record {3} ----", idxCmd.Command, idxCmd.NodeMap[^1].Position, idxCmd.Record, idxCmd.NodeMap[^1].NodeRecord));
+                        AppIO.DebugLog(string.Format("    ---- Command {0} ---- Position {1} ---- Record {2} ---- Node Record {3} ----", idxCmd.Command, idxCmd.NodeMap[^1].Position, idxCmd.Record, idxCmd.NodeMap[^1].NodeRecord));
                 }
                 else
                 {
@@ -5650,13 +5659,13 @@ namespace JAXBase.Data
                         Command = -99
                     };
 
-                    App.SetError(8019, "Search key is too long", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(8019, "Search key is too long", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
             catch (Exception ex)
             {
                 idxCmd = new();
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
 
@@ -5675,8 +5684,8 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<bool> IDXRemoveKey(int idx, IDXNode node, int nodeRec)
         {
-            //App.DebugLog(string.Format("Entering {0} - idx={1},  node.pos={2}, noderec={4}", System.Reflection.MethodBase.GetCurrentMethod()!.Name, idx, node.Position, nodeRec));
-            App.ClearErrors();
+            //AppIO.DebugLog(string.Format("Entering {0} - idx={1},  node.pos={2}, noderec={4}", System.Reflection.MethodBase.GetCurrentMethod()!.Name, idx, node.Position, nodeRec));
+            AppErrorHandling.ClearErrors();
             bool success = true;
 
             try
@@ -5699,7 +5708,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 success = false;
-                App.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return success;
@@ -5718,9 +5727,9 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<bool> IDXReplaceKey(int idx, IDXNode node, int nodeRec, byte[] keyBytes)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             bool success;
 
             try
@@ -5745,7 +5754,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 success = false;
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return success;
@@ -5767,9 +5776,9 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<bool> IDXUpdateIndexNode(int idx, IDXCommand idxCmd, int mapNode, byte[] newKey)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
 
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             bool success = true;
 
             try
@@ -5835,7 +5844,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 success = false;
-                App.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return success;
@@ -5849,7 +5858,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<IDXNode> IDXGetNode(int position, int indexID)
         {
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             IDXNode node = new();
 
             try
@@ -5873,7 +5882,7 @@ namespace JAXBase.Data
                     node.Position = position;
                     node.ID = indexID;
 
-                    App.DebugLog(string.Format("    Read node at {0}, type {1}, keys {2}, leftPtr {3}, rightPtr {4}", node.Position, node.Attributes, node.Keys, node.LeftPtr, node.RightPtr));
+                    AppIO.DebugLog(string.Format("    Read node at {0}, type {1}, keys {2}, leftPtr {3}, rightPtr {4}", node.Position, node.Attributes, node.Keys, node.LeftPtr, node.RightPtr));
                 }
                 else
                 {
@@ -5883,7 +5892,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 node = new();
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return node;
@@ -5896,8 +5905,8 @@ namespace JAXBase.Data
          */
         private async Task<IDXCommand> IDXGoto(bool top, int idx)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
-            App.ClearErrors();
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppErrorHandling.ClearErrors();
 
             int keyLen = DbfInfo.IDX[idx].KeyLen;
 
@@ -5966,8 +5975,8 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task IDXFindFromRoot(IDXNode thisNode, IDXCommand idxCmd)
         {
-            App.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
-            App.ClearErrors();
+            AppIO.DebugLog(string.Format("Entering {0}", System.Reflection.MethodBase.GetCurrentMethod()!.Name));
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -5975,7 +5984,7 @@ namespace JAXBase.Data
                 int RecNo = idxCmd.Record;
                 bool justFind = idxCmd.FindOnly;
 
-                if (PRINTDEBUG) App.DebugLog("    Start of Search");
+                if (PRINTDEBUG) AppIO.DebugLog("    Start of Search");
 
                 // Record the root's node point
                 IDXNodePoint point = new()
@@ -5995,9 +6004,9 @@ namespace JAXBase.Data
                 // reverse it to be root to Leaf
                 idxCmd.NodeMap.Reverse();
 
-                App.DebugLog(string.Format("idxCmd Command={0},  Rec={1},  Node Rec={2}", idxCmd.Command, idxCmd.Record, idxCmd.NodeMap[^1].NodeRecord));
+                AppIO.DebugLog(string.Format("idxCmd Command={0},  Rec={1},  Node Rec={2}", idxCmd.Command, idxCmd.Record, idxCmd.NodeMap[^1].NodeRecord));
                 for (int i = 0; i < idxCmd.NodeMap.Count; i++)
-                    App.DebugLog(string.Format("Node Map {0} - Pos={1}  Node Rec={2}", i, idxCmd.NodeMap[i].Position, idxCmd.NodeMap[i].NodeRecord));
+                    AppIO.DebugLog(string.Format("Node Map {0} - Pos={1}  Node Rec={2}", i, idxCmd.NodeMap[i].Position, idxCmd.NodeMap[i].NodeRecord));
 
                 // Store the idxCmd in the index record in case we need it later
                 if (thisNode.ID >= 0)
@@ -6005,7 +6014,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
         }
 
@@ -6016,9 +6025,9 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task IDXFindFromNode(IDXNode thisNode, IDXCommand idxCmd)
         {
-            App.DebugLog(string.Format("Entering {0} - nodemap index = {1}   node pos={2}", System.Reflection.MethodBase.GetCurrentMethod()!.Name, idxCmd.NodeMap.Count - 1, thisNode.Position));
+            AppIO.DebugLog(string.Format("Entering {0} - nodemap index = {1}   node pos={2}", System.Reflection.MethodBase.GetCurrentMethod()!.Name, idxCmd.NodeMap.Count - 1, thisNode.Position));
 
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -6033,7 +6042,7 @@ namespace JAXBase.Data
                 {
                     // This root nodes are the top index nodes
                     if (PRINTDEBUG)
-                        App.DebugLog(string.Format("    Searching for ={0}", Encoding.UTF8.GetString(idxCmd.Key)));
+                        AppIO.DebugLog(string.Format("    Searching for ={0}", Encoding.UTF8.GetString(idxCmd.Key)));
 
                     if (thisNode.Keys < 1)
                     {
@@ -6044,7 +6053,7 @@ namespace JAXBase.Data
                     {
                         // Look at the last key of this node
                         int lastKeyPosition = 12 + (thisNode.Keys - 1) * (keyLen + 4);
-                        App.DebugLog(string.Format(" Step 4 thisNode.Keys={0},   lastKeyPos={1}", thisNode.Keys, lastKeyPosition));
+                        AppIO.DebugLog(string.Format(" Step 4 thisNode.Keys={0},   lastKeyPos={1}", thisNode.Keys, lastKeyPosition));
                         Array.Copy(thisNode.Buffer, lastKeyPosition, lastKey, 0, keyLen);
                         Array.Copy(thisNode.Buffer, lastKeyPosition + keyLen, data4, 0, 4);
                         //int nextNodePosition = Utilities.CVI(Convert.ToBase64String(data4));
@@ -6052,7 +6061,7 @@ namespace JAXBase.Data
                         int keyCompare = StructuralComparisons.StructuralComparer.Compare(idxCmd.Key, lastKey);
 
                         if (PRINTDEBUG)
-                            App.DebugLog(string.Format("    Record compare={0}   Last key = {1}", keyCompare, Encoding.ASCII.GetString(lastKey)));
+                            AppIO.DebugLog(string.Format("    Record compare={0}   Last key = {1}", keyCompare, Encoding.ASCII.GetString(lastKey)));
 
                         if (keyCompare <= 0)
                         {
@@ -6060,7 +6069,7 @@ namespace JAXBase.Data
                             Array.Copy(thisNode.Buffer, 12, lastKey, 0, keyLen);
                             keyCompare = StructuralComparisons.StructuralComparer.Compare(idxCmd.Key, lastKey);
 
-                            if (PRINTDEBUG) App.DebugLog(string.Format("    Correct index node"));
+                            if (PRINTDEBUG) AppIO.DebugLog(string.Format("    Correct index node"));
 
                             // This is the correct node. Search key belongs in this node
                             // Step through each index record to find the correct one
@@ -6076,7 +6085,7 @@ namespace JAXBase.Data
                                 keyCompare = StructuralComparisons.StructuralComparer.Compare(idxCmd.Key, keyRec);
 
                                 if (PRINTDEBUG)
-                                    App.DebugLog(string.Format("    Record compare={0}   Key = {1}", keyCompare, Encoding.ASCII.GetString(keyRec)));
+                                    AppIO.DebugLog(string.Format("    Record compare={0}   Key = {1}", keyCompare, Encoding.ASCII.GetString(keyRec)));
 
                                 idxCmd.NodeMap[0].NodeRecord = j;
 
@@ -6087,9 +6096,9 @@ namespace JAXBase.Data
                         else
                         {
                             // Enter last node until we hit the leaf
-                            App.DebugLog(string.Format("    Using last node reference"));
+                            AppIO.DebugLog(string.Format("    Using last node reference"));
                             idxCmd.NodeMap[0].NodeRecord = thisNode.Keys - 1;
-                            if (thisNode.Keys > 6) App.DebugLog(string.Format("4 nodeRecord={0}", thisNode.Keys));
+                            if (thisNode.Keys > 6) AppIO.DebugLog(string.Format("4 nodeRecord={0}", thisNode.Keys));
                         }
 
                         IDXNode nextNode = await IDXGetNode(nextNodePosition, thisNode.ID);
@@ -6101,7 +6110,7 @@ namespace JAXBase.Data
                             Position = nextNode.Position
                         };
 
-                        App.DebugLog(string.Format("    Going to node at {0}", nextNodePosition));
+                        AppIO.DebugLog(string.Format("    Going to node at {0}", nextNodePosition));
                         idxCmd.NodeMap.Insert(0, point);
                         await IDXFindFromNode(nextNode, idxCmd);
                     }
@@ -6109,13 +6118,13 @@ namespace JAXBase.Data
                 else
                 {
                     // It's a leaf node so we're at the end of the chain
-                    if (PRINTDEBUG) App.DebugLog(string.Format("    Found a Leaf Node at Position ={0}", thisNode.Position));
+                    if (PRINTDEBUG) AppIO.DebugLog(string.Format("    Found a Leaf Node at Position ={0}", thisNode.Position));
                     await IDXFindFromLeaf(thisNode, idxCmd);
                 }
             }
             catch (Exception ex)
             {
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
         }
 
@@ -6260,7 +6269,7 @@ namespace JAXBase.Data
                 }
                 catch (Exception ex)
                 {
-                    App.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(8018, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
         }
@@ -6287,14 +6296,14 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task IDXFindFromLeaf(IDXNode thisNode, IDXCommand idxCmd)
         {
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
                 int RecNo = 0;
                 int idx = thisNode.ID;
 
-                if (PRINTDEBUG) App.DebugLog(string.Format("    Leaf Search for {0}", Encoding.UTF8.GetString(idxCmd.Key)));
+                if (PRINTDEBUG) AppIO.DebugLog(string.Format("    Leaf Search for {0}", Encoding.UTF8.GetString(idxCmd.Key)));
 
                 int keyLen = DbfInfo.IDX[idx].KeyLen;
                 byte[] keyRec = new byte[DbfInfo.IDX[idx].KeyLen];
@@ -6305,7 +6314,7 @@ namespace JAXBase.Data
                 {
                     // This root node is an index node that may lead to another index node below
                     if (PRINTDEBUG)
-                        App.DebugLog(string.Format("    Searching for ={0}", Encoding.UTF8.GetString(idxCmd.Key)));
+                        AppIO.DebugLog(string.Format("    Searching for ={0}", Encoding.UTF8.GetString(idxCmd.Key)));
 
                     if (thisNode.Keys > 0)
                     {
@@ -6325,7 +6334,7 @@ namespace JAXBase.Data
                             {
                                 // We have room on this leaf node, find the right spot
                                 if (PRINTDEBUG)
-                                    App.DebugLog(string.Format("    We have room on this node"));
+                                    AppIO.DebugLog(string.Format("    We have room on this node"));
                                 insertHere = true;
                             }
                             else
@@ -6336,8 +6345,8 @@ namespace JAXBase.Data
                                     // We've reached the end so need to add to the right
                                     if (PRINTDEBUG)
                                     {
-                                        App.DebugLog(string.Format("    lastRec={0} => {1} - moving right", Encoding.UTF8.GetString(keyRec).Trim(), RecNo));
-                                        App.DebugLog(string.Format("    Going to position {0}", thisNode.RightPtr));
+                                        AppIO.DebugLog(string.Format("    lastRec={0} => {1} - moving right", Encoding.UTF8.GetString(keyRec).Trim(), RecNo));
+                                        AppIO.DebugLog(string.Format("    Going to position {0}", thisNode.RightPtr));
                                     }
 
                                     // too low - need to go right
@@ -6361,8 +6370,8 @@ namespace JAXBase.Data
                         {
                             if (PRINTDEBUG)
                             {
-                                App.DebugLog("");
-                                App.DebugLog(string.Format("    Correct leaf"));
+                                AppIO.DebugLog("");
+                                AppIO.DebugLog(string.Format("    Correct leaf"));
                             }
 
                             if (thisNode.Keys < DbfInfo.IDX[idx].MaxKeys)
@@ -6381,14 +6390,14 @@ namespace JAXBase.Data
                                         keyCompare = StructuralComparisons.StructuralComparer.Compare(idxCmd.Key, keyRec);
 
                                         if (PRINTDEBUG)
-                                            App.DebugLog(string.Format("    {0} <{1}> {2}", Encoding.UTF8.GetString(idxCmd.Key), keyCompare, Encoding.UTF8.GetString(keyRec)));
+                                            AppIO.DebugLog(string.Format("    {0} <{1}> {2}", Encoding.UTF8.GetString(idxCmd.Key), keyCompare, Encoding.UTF8.GetString(keyRec)));
 
                                         if (keyCompare == 0)
                                         {
                                             // FOUND IT!
                                             idxCmd.Command = 1;     // Exact match
                                             idxCmd.NodeMap[0].NodeRecord = k;
-                                            App.DebugLog(string.Format("FOUND at record {0} in leaf node at position {1}", k, thisNode.Position));
+                                            AppIO.DebugLog(string.Format("FOUND at record {0} in leaf node at position {1}", k, thisNode.Position));
                                         }
 
                                         if (keyCompare < 0)
@@ -6398,7 +6407,7 @@ namespace JAXBase.Data
                                                 // TOO FAR!
                                                 idxCmd.Command = 9;     // NEAR MATCH
                                                 idxCmd.NodeMap[0].NodeRecord = k;
-                                                App.DebugLog(string.Format("NEAR found at record {0} in leaf node at position {1}", k, thisNode.Position));
+                                                AppIO.DebugLog(string.Format("NEAR found at record {0} in leaf node at position {1}", k, thisNode.Position));
                                             }
                                             else
                                             {
@@ -6432,13 +6441,13 @@ namespace JAXBase.Data
                                         keyCompare = StructuralComparisons.StructuralComparer.Compare(idxCmd.Key, keyRec);
 
                                         if (PRINTDEBUG)
-                                            App.DebugLog(string.Format("    {0} <{1}> {2}", Encoding.UTF8.GetString(idxCmd.Key), keyCompare, Encoding.UTF8.GetString(keyRec)));
+                                            AppIO.DebugLog(string.Format("    {0} <{1}> {2}", Encoding.UTF8.GetString(idxCmd.Key), keyCompare, Encoding.UTF8.GetString(keyRec)));
 
                                         if (keyCompare < 0)
                                         {
                                             //idxCmd.NodeRecord = k;  // Split here and append
                                             idxCmd.NodeMap[0].NodeRecord = k;
-                                            App.DebugLog(string.Format("Split at {0} in leaf node at position {1}", k, thisNode.Position));
+                                            AppIO.DebugLog(string.Format("Split at {0} in leaf node at position {1}", k, thisNode.Position));
                                             break;
                                         }
                                     }
@@ -6448,7 +6457,7 @@ namespace JAXBase.Data
 
                         if (insertHere)
                         {
-                            App.DebugLog("Insert here");
+                            AppIO.DebugLog("Insert here");
 
                             // We have the correct leaf, step through
                             // and get the correct record
@@ -6462,7 +6471,7 @@ namespace JAXBase.Data
                                 keyCompare = StructuralComparisons.StructuralComparer.Compare(idxCmd.Key, keyRec);
 
                                 if (PRINTDEBUG)
-                                    App.DebugLog(string.Format("    {0} <{1}> {2}", Encoding.UTF8.GetString(idxCmd.Key), keyCompare, Encoding.UTF8.GetString(keyRec)));
+                                    AppIO.DebugLog(string.Format("    {0} <{1}> {2}", Encoding.UTF8.GetString(idxCmd.Key), keyCompare, Encoding.UTF8.GetString(keyRec)));
 
                                 if (keyCompare == 0)
                                 {
@@ -6498,7 +6507,7 @@ namespace JAXBase.Data
                                         }
 
                                         if (PRINTDEBUG)
-                                            App.DebugLog("   Found but recno is not same");
+                                            AppIO.DebugLog("   Found but recno is not same");
 
                                         //DbfInfo.IDX[thisNode.ID].NodeRecord = k;
                                         idxCmd.NodeMap[0].NodeRecord = k;
@@ -6512,7 +6521,7 @@ namespace JAXBase.Data
                                         vrecPos += thisNode.Keys;
                                     }
 
-                                    if (PRINTDEBUG) App.DebugLog(string.Format("   Found it!  Rec={0}, VRec={1}", RecNo, vrecPos));
+                                    if (PRINTDEBUG) AppIO.DebugLog(string.Format("   Found it!  Rec={0}, VRec={1}", RecNo, vrecPos));
                                 }
                                 else if (keyCompare <= 0)
                                 {
@@ -6520,7 +6529,7 @@ namespace JAXBase.Data
                                     {
                                         if (App.CurrentDS.JaxSettings.Near)
                                         {
-                                            if (PRINTDEBUG) App.DebugLog("   NEAR!");
+                                            if (PRINTDEBUG) AppIO.DebugLog("   NEAR!");
 
                                             // Near is set on, so select this record
                                             idxCmd.Record = RecNo;
@@ -6537,11 +6546,11 @@ namespace JAXBase.Data
                                                 vrecPos += thisNode.Keys;
                                             }
 
-                                            if (PRINTDEBUG) App.DebugLog(string.Format("   Found it!  Rec={0}, VRec={1}", RecNo, vrecPos));
+                                            if (PRINTDEBUG) AppIO.DebugLog(string.Format("   Found it!  Rec={0}, VRec={1}", RecNo, vrecPos));
                                         }
                                         else
                                         {
-                                            if (PRINTDEBUG) App.DebugLog("   Where is it?");
+                                            if (PRINTDEBUG) AppIO.DebugLog("   Where is it?");
 
                                             // Can't find it
                                             //idxCmd.Position = thisNode.Position;
@@ -6559,7 +6568,7 @@ namespace JAXBase.Data
                                         idxCmd.NodeMap[0].NodeRecord = k;
                                         idxCmd.Command = 3;
                                         //DbfInfo.IDX[thisNode.ID].NodeRecord = k;
-                                        if (PRINTDEBUG) App.DebugLog(string.Format("    Please insert @ {0}", k));
+                                        if (PRINTDEBUG) AppIO.DebugLog(string.Format("    Please insert @ {0}", k));
                                     }
                                 }
 
@@ -6589,7 +6598,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 idxCmd.Command = -99;
-                App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
         }
 
@@ -6601,7 +6610,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         private async Task<IDXCommand> IDXSkipRecord(int recSkip, int thisIDX)
         {
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             int keyLen = DbfInfo.IDX[thisIDX].KeyLen;
 
             if (recSkip != 0)
@@ -6688,7 +6697,7 @@ namespace JAXBase.Data
                     }
                     catch (Exception ex)
                     {
-                        App.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(8019, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         DbfInfo.IDX[thisIDX].RecordStatus.Command = -99;
                     }
                 }
@@ -6777,7 +6786,7 @@ namespace JAXBase.Data
         public async Task<bool> CDXOpen(string FullFileName)
         {
             bool llSuccess = true;
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -6785,7 +6794,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8007, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8007, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return llSuccess;
@@ -6796,7 +6805,7 @@ namespace JAXBase.Data
         public async Task<bool> CDXCreate()
         {
             bool llSuccess = true;
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -6804,7 +6813,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8020, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8020, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return llSuccess;
@@ -6815,7 +6824,7 @@ namespace JAXBase.Data
         public async Task<bool> CDXWrite(DataTable dt)
         {
             bool llSuccess;
-            App.ClearErrors();
+            AppErrorHandling.ClearErrors();
 
             try
             {
@@ -6824,7 +6833,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 llSuccess = false;
-                App.SetError(8020, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8020, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return llSuccess;
@@ -6873,13 +6882,13 @@ namespace JAXBase.Data
 
                 // What did we get?
                 if (memoText.Length > 50)
-                    App.DebugLog(string.Format("Reading block {0} - return length={1} - {2}...", block, memoText.Length, memoText[..50]));
+                    AppIO.DebugLog(string.Format("Reading block {0} - return length={1} - {2}...", block, memoText.Length, memoText[..50]));
                 else
-                    App.DebugLog(string.Format("Reading block {0} - {1}", block, memoText));
+                    AppIO.DebugLog(string.Format("Reading block {0} - {1}", block, memoText));
             }
             catch (Exception ex)
             {
-                App.SetError(8026, "Failed to convert memo to text - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8026, "Failed to convert memo to text - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return memoText;
@@ -6908,7 +6917,7 @@ namespace JAXBase.Data
 
                 if (blockPos > 511 && blockPos >= DbfInfo.Memo.NextFree * DbfInfo.Memo.BlockSize)
                 {
-                    App.SetError(8026, "Invalid location specified for memo field", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(8026, "Invalid location specified for memo field", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
                 else
                 {
@@ -6928,7 +6937,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                App.SetError(8026, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8026, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return outBuffer;
@@ -6959,7 +6968,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 blockNumber = negOne;
-                App.SetError(8025, "Failed to convert memo to text - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8025, "Failed to convert memo to text - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return blockNumber;
@@ -7011,7 +7020,7 @@ namespace JAXBase.Data
                     {
                         // ERROR - not at end of file
                         blockNumber = [255, 255, 255, 255];
-                        App.SetError(8025, "Write position failure", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(8025, "Write position failure", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     else
                     {
@@ -7042,7 +7051,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 blockNumber = [255, 255, 255, 255];
-                App.SetError(8025, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8025, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return blockNumber;
@@ -7080,7 +7089,7 @@ namespace JAXBase.Data
             catch (Exception ex)
             {
                 results = [];
-                App.SetError(8804, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8804, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return results;

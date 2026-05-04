@@ -5,13 +5,37 @@ namespace JAXBase.Executer
 {
     public class JAXBase_Executer_F
     {
+        /* 
+         * 
+         * FINALLY
+         * 
+         */
+        public static string Finally(ExecuterCodes eCodes)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                if (eCodes.SUBCMD.Equals(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[^1].Code))
+                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[^1].TryPhase = 4;
+                else
+                    throw new Exception("9999||TRY AGAIN!");
+            }
+            catch (Exception ex)
+            {
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return result;
+        }
+
 
         /* TODO
          * 
          * FLUSH
          * 
          */
-        public static string Flush(AppClass app, string cmdRest)
+        public static string Flush(string cmdRest)
         {
             string result = string.Empty;
 
@@ -20,7 +44,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -34,28 +58,28 @@ namespace JAXBase.Executer
          *      LoopLabel/forVarExpr/startExpr/endExpr/stepExpr
          *
          */
-        public static async Task<string> For(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> For(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
-                jbe.App.DebugLog("Entering FOR");
+                AppIO.DebugLog("Entering FOR");
 
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                string PrgCode = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
 
                 // Check to see if we're in this FOR loop
                 string thisLoop = eCodes.SUBCMD.Length > 0 ? eCodes.SUBCMD : throw new Exception("9999|Missing FOR ID");
-                string currentLoop = jbe.App.GetLoopStack();
+                string currentLoop = AppLoop.GetLoopStack();
 
                 if (currentLoop.Equals(thisLoop))
                 {
                     // YES! Continuing the FOR loop
-                    LoopClass thisFor = jbe.App.AppLevels[^1].ForLoops[thisLoop];
+                    LoopClass thisFor = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ForLoops[thisLoop];
 
                     // Next step value
-                    JAXObjects.Token tk = await jbe.App.GetVarFromExpression(thisFor.VarName, null);
+                    JAXObjects.Token tk = await AppVars.GetVarFromExpression(thisFor.VarName, null);
 
                     if (tk.Element.Type.Equals("N"))
                     {
@@ -64,19 +88,19 @@ namespace JAXBase.Executer
                         if ((thisFor.StepValue > 0D && nextStep > thisFor.EndValue) || (thisFor.StepValue < 0D && nextStep < thisFor.EndValue))
                         {
                             // Done!
-                            string look4 = jbe.App.MiscInfo["endforcmd"] + thisLoop;
+                            string look4 = Program.CurrentApp.MiscInfo["endforcmd"] + thisLoop;
                             int f = PrgCode.IndexOf(look4);
                             if (f >= 0)
                             {
                                 // Go to the next command after the endfor
-                                jbe.App.utl.Conv64(f, 3, out string pos);
+                                Program.CurrentApp.utl.Conv64(f, 3, out string pos);
                                 result = "Y" + pos;
                             }
                             else
                                 throw new Exception("1213|");
                         }
                         else
-                            await jbe.App.SetVarFromExpression(thisFor.VarName, nextStep, true);
+                            await AppVars.SetVarFromExpression(thisFor.VarName, nextStep, true);
                     }
                     else
                         throw new Exception("27|");
@@ -93,35 +117,35 @@ namespace JAXBase.Executer
                     double forEnd = 0;
 
                     JAXObjects.Token answer = new();
-                    answer = await jbe.App.SolveFromRPNString(vExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(vExpr);
                     if (answer.Element.Type.Equals("C"))
                         vExpr = answer.AsString();
                     else
                         throw new Exception("10|");
 
-                    answer = await jbe.App.SolveFromRPNString(fStart);
+                    answer = await Program.CurrentApp.SolveFromRPNString(fStart);
                     if (answer.Element.Type.Equals("N"))
                         forStart = answer.AsDouble();
                     else
                         throw new Exception("11|");
 
-                    answer = await jbe.App.SolveFromRPNString(fEnd);
+                    answer = await Program.CurrentApp.SolveFromRPNString(fEnd);
                     if (answer.Element.Type.Equals("N"))
                         forEnd = answer.AsDouble();
                     else
                         throw new Exception("11|");
 
 
-                    jbe.App.PushLoop(thisLoop);
-                    jbe.App.AppLevels[^1].ForLoops[thisLoop].VarName = await jbe.App.SetVarFromExpression(vExpr, forStart, true);
-                    jbe.App.AppLevels[^1].ForLoops[thisLoop].StepValue = forStep;
-                    jbe.App.AppLevels[^1].ForLoops[thisLoop].EndValue = forEnd;
+                    AppLoop.PushLoop(thisLoop);
+                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ForLoops[thisLoop].VarName = await AppVars.SetVarFromExpression(vExpr, forStart, true);
+                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ForLoops[thisLoop].StepValue = forStep;
+                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ForLoops[thisLoop].EndValue = forEnd;
                 }
 
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -139,11 +163,11 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -163,7 +187,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

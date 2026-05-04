@@ -2,7 +2,7 @@
  ******************************************************************************************************************************************/
 using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Math
 {
@@ -43,7 +43,7 @@ namespace JAXBase.Math
                     if (File.Exists(string1))
                         tAnswer.Element.Value = File.GetLastWriteTime(string1).Date;
                     else
-                        App.SetError(1, string1, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1, string1, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FIELD":                          // Get field name for field #
@@ -62,7 +62,7 @@ namespace JAXBase.Math
                                 App.CurrentDS.SelectWorkArea(string2);
                         }
                         else
-                            App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                         if (JAXLib.Between(intval1, 1, App.CurrentDS.CurrentWA.DbfInfo.FieldCount))
                             tAnswer.Element.Value = App.CurrentDS.CurrentWA.DbfInfo.Fields[intval1].FieldName;
@@ -82,12 +82,12 @@ namespace JAXBase.Math
 
                 case "`FILTER":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FLOCK":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FLOOR":  // Get the next lowest int
@@ -97,17 +97,17 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = intval1;
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FONTMETRIC":                         // https://learn.microsoft.com/en-us/dotnet/desktop/winforms/advanced/how-to-obtain-font-metrics?view=netframeworkdesktop-4.8
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FOR":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FORCEEXT":
@@ -132,7 +132,7 @@ namespace JAXBase.Math
                             App.CurrentDS.SelectWorkArea(string1);
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     tAnswer.Element.Value = App.CurrentDS.CurrentWA.DbfInfo.Found;
                     App.CurrentDS.SelectWorkArea(cwa);
@@ -157,7 +157,7 @@ namespace JAXBase.Math
                     }
                     catch (Exception e)
                     {
-                        App.SetError(9999, e.Message, "MathFuncsF.FSize");
+                        AppErrorHandling.SetError(9999, e.Message, "MathFuncsF.FSize");
                         tAnswer._avalue[0].Value = 0;
                     }
                     break;
@@ -166,12 +166,12 @@ namespace JAXBase.Math
                     if (File.Exists(string1))
                         tAnswer.Element.Value = File.GetLastWriteTime(string1).ToString("HH:mm:ss");
                     else
-                        App.SetError(1, string1, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1, string1, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FULLPATH@":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`FV":
@@ -194,7 +194,7 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, string1, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string1, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 default:

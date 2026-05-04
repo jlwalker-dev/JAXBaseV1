@@ -35,6 +35,10 @@ namespace JAXBase.Core
                 app.utl.Conv64(ibyte, 2, out b64);
                 app.MiscInfo.Add("endcasecmd", b64);
 
+                ibyte = app.CmdList.IndexOf("try");
+                app.utl.Conv64(ibyte, 2, out b64);
+                app.MiscInfo.Add("trycmd", b64);
+
                 ibyte = app.CmdList.IndexOf("catch");
                 app.utl.Conv64(ibyte, 2, out b64);
                 app.MiscInfo.Add("catchcmd", b64);
@@ -109,12 +113,10 @@ namespace JAXBase.Core
             // Create the JAX paths
             // -------------------------------------------------------------------------
             app.JaxVariables._AppPath = AppContext.BaseDirectory;
-
-            // Read in the startup paths
-            app.JaxVariables._BaseFolder = @"c:\programdata\JAXBase\";
-            app.JaxVariables._WorkPath = app.JaxVariables._BaseFolder + @"Work\";
-            app.JaxVariables._TempPath = app.JaxVariables._BaseFolder + @"Temp\";
-
+            app.JaxVariables._BaseFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            app.JaxVariables._WorkPath = app.JaxVariables._BaseFolder + @"JAXBase\Work\";
+            app.JaxVariables._TempPath = app.JaxVariables._BaseFolder + @"JAXBase\Temp\";
+            app.JaxVariables._LogPath = app.JaxVariables._BaseFolder + @"JAXBase\Logs\";
             // -------------------------------------------------------------------------
             // Create the environment variables
             // -------------------------------------------------------------------------

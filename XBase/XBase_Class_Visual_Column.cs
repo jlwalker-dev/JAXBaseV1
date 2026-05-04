@@ -12,14 +12,17 @@
 using Avalonia.Controls.Templates;
 using Avalonia.Styling;
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Column : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Column";
+        public new string MyDefaultName { get; } = "column";
+
         public Avalonia.Controls.DataGridColumn Column => (Avalonia.Controls.DataGridColumn)me.nvObject!;
-        public new string MyDefaultName { get; set; } = "column";
+
         private string temp = "";
 
         public XBase_Class_Visual_Column(JAXObjectWrapper jow, string name) : base(jow, name)
@@ -36,7 +39,7 @@ namespace JAXBase.XBase
             {
                 if (UserProperties.ContainsKey(param.PName.ToLower()))
                 {
-                    object? propValue = App.GetParameterValue(param);
+                    object? propValue = AppHelper.GetParameterValue(param);
                     JAXObjects.Token pval = new();
                     if (propValue is null)
                         pval.Element.MakeNull();
@@ -64,7 +67,7 @@ namespace JAXBase.XBase
                 if (col is Avalonia.Controls.DataGridTextColumn textCol && !string.IsNullOrEmpty(initialBinding))
                 {
                     textCol.Binding = new Avalonia.Data.Binding(initialBinding);
-                    App.DebugLog($"Inital binding = {initialBinding}");
+                    AppIO.DebugLog($"Inital binding = {initialBinding}");
                 }
             }
             else if (col is Avalonia.Controls.DataGridTemplateColumn templateCol)
@@ -199,6 +202,7 @@ namespace JAXBase.XBase
                         ApplyCommonProperties(checkBox);
                         return checkBox;
                     });
+
                 case 2: // Image
                     return new Avalonia.Controls.Templates.FuncDataTemplate<object>((item, namescope) =>
                     {
@@ -216,11 +220,13 @@ namespace JAXBase.XBase
                         ApplyCommonProperties(image);
                         return image;
                     });
+
                 case 3: // ComboBox - Typically only editing template, so null for cell template
                     return new Avalonia.Controls.Templates.FuncDataTemplate<object>((item, namescope) => new Avalonia.Controls.TextBlock
                     {
                         [!Avalonia.Controls.TextBlock.TextProperty] = new Avalonia.Data.Binding(bindingPath)
                     });
+
                 case 4: // Link (as styled button)
                     return new Avalonia.Controls.Templates.FuncDataTemplate<object>((item, namescope) =>
                     {
@@ -242,6 +248,7 @@ namespace JAXBase.XBase
                         ApplyCommonProperties(button, true);
                         return button;
                     });
+
                 case 5: // Button
                     return new Avalonia.Controls.Templates.FuncDataTemplate<object>((item, namescope) =>
                     {
@@ -251,11 +258,13 @@ namespace JAXBase.XBase
                         ApplyCommonProperties(button);
                         return button;
                     });
+
                 case 6: // NumericUpDown - Display as TextBlock
                     return new Avalonia.Controls.Templates.FuncDataTemplate<object>((item, namescope) => new Avalonia.Controls.TextBlock
                     {
                         [!Avalonia.Controls.TextBlock.TextProperty] = new Avalonia.Data.Binding(bindingPath)
                     });
+
                 default:
                     return null;
             }
@@ -568,9 +577,9 @@ namespace JAXBase.XBase
                 result = 1559;
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
             return result;
@@ -623,9 +632,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }

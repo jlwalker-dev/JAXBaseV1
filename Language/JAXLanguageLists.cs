@@ -10,7 +10,7 @@
  *
  */
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Language
 {
@@ -29,7 +29,7 @@ namespace JAXBase.Language
                 "BARCODE(", // Return BMP image string of barcode(type,content[,size?]) - size = 1=100x100, 2=150x150, 3=200x200, 4=300,300, 5=450x450, 6=600,600, 7=1200x1200, 8=1800x1800, 9=2400x2400
                 "BETWEEN(", "BINDEVENT(", "BINTOC(", "BITAND(", "BITCLEAR(",
                 "BITLSHIFT(", "BITNOT(", "BITOR(", "BITRSHIFT(", "BITSET(", "BITTEST(", "BITXOR(", "BOF(",
-                "CANDIDATE(", "CAPSLOCK(", "CAST(", "CDOW(", "CEILING(", "CHR(", "CHRSAW(", "CHRTRAN(",
+                "CANDIDATE(", "CAPSLOCK(", "CAST(", "CD(", "CDOW(", "CEILING(", "CHR(", "CHRSAW(", "CHRTRAN(",
                 "CHRTRANC(", "CLEARRESULTSET(", "CMONTH(", "CNTBAR(", "CNTPAD(", "COL(", "COM(", "COMARRAY(",
                 "COMCLASSINFO(", "COMPOBJ(", "COMPROP(", "COMRETURNERROR(", "COS(", "CPCONVERT(", "CPCURRENT(",
                 "CONVERT(", // TODO - Convert integer to Base xx
@@ -136,14 +136,14 @@ namespace JAXBase.Language
             "OF|of|0xC0", "ON|on|0xC4", "OR|order|0xC8", "RC|record|0xCA", "SC|scope|0xCC", "SH|sheet|0xCE",
             "SI|size|0xD0", "SS|session|0xD1", "ST|step|0xD2", "TB|table|0xD4", "TG|tag|0xD6","TI|timeout|0xD8", "TO|to|0xDC",
             "TY|type|0xE0", "VL|values|0xE4", "WL|while|0xE8", "WH|when|0xEC",
-            "WI||0xF0", "WT|with|0xF4", "XX|expressions|0xF8"];
+            "WI||0xF0", "WT|with|0xF4", "XF|fileexpr|0xF6", "XX|expressions|0xF8"];
 
         /// <summary>
         /// Array containing all valid JAXBase object types
         /// </summary>
-        public string[] JAXObjects = ["barcode","browser","checkbox","collection","column","combobox","commandbutton","commandgroup","container",
-            "custom","editbox","empty","file","form","formset","ftp","grid","http","hyperlink","image","ipc","irc","label","line","listbox",
-            "menu","menuitem","optionbutton","optiongroup","page","pageframe","pgp","pipe","pop3","printer","separator","shape","sms",
+        public string[] JAXObjects = ["barcode","browser","checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container",
+            "custom","editbox","empty","file","form","formset","ftp","grid","http","hyperlink","image","jax","jaxedit","ipc","irc","label","line","listbox",
+            "menu","menuitem","optionbutton","optiongroup","page","pageframe","pgp","pipe","pop3","printer","screen","separator","shape","sms",
             "smtp","sound","spinner","sql","textbox","toolbar","toolbutton","tcp","timer","udp","video"];
 
         /// <summary>

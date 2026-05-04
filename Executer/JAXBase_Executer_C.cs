@@ -1,7 +1,8 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
+using JAXBase.UI.Dialogs;
+using JAXBase.Utilities;
 using JAXBase.XBase;
-using JAXBase.Utilities.Utilities;
 using static JAXBase.Core.AppClass;
 
 namespace JAXBase.Executer
@@ -185,7 +186,7 @@ namespace JAXBase.Executer
 
                 // if going to an array
                 if (eCodes.To[0].Type.Equals("A"))
-                    jbe.App.SetVarOrMakePrivate(eCodes.To[0].Name, 1, eCodes.Expressions.Count, false);
+                    AppVars.SetVarOrMakePrivate(eCodes.To[0].Name, 1, eCodes.Expressions.Count, false);
 
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
@@ -196,25 +197,25 @@ namespace JAXBase.Executer
                     double dval = sums[i].Element.ValueAsDouble;
 
                     // Does the var exist?                    
-                    //jbe.App.GetVar(vName, out JAXObjects.Token v);
-                    JAXObjects.Token v = await jbe.App.GetVarFromExpression(vName, null);
+                    //AppVars.GetVar(vName, out JAXObjects.Token v);
+                    JAXObjects.Token v = await AppVars.GetVarFromExpression(vName, null);
 
                     if (v.TType.Equals("U"))
                     {
                         if (eCodes.To[0].Type.Equals("A"))         // If user wants an array, make sure you accomodate
-                            jbe.App.SetVarOrMakePrivate(vName, 1, eCodes.Expressions.Count, true);
+                            AppVars.SetVarOrMakePrivate(vName, 1, eCodes.Expressions.Count, true);
                         else
-                            jbe.App.SetVarOrMakePrivate(vName, 1, 1, true);
+                            AppVars.SetVarOrMakePrivate(vName, 1, 1, true);
                     }
 
                     // Put the value into the var
-                    //jbe.App.GetVar(vName, out v);
-                    v = await jbe.App.GetVarFromExpression(vName, null);
+                    //AppVars.GetVar(vName, out v);
+                    v = await AppVars.GetVarFromExpression(vName, null);
 
                     if (v.TType.Equals("A"))
-                        jbe.App.SetVar(vName, dval, 1, i);
+                        AppVars.SetVar(vName, dval, 1, i);
                     else
-                        jbe.App.SetVar(vName, dval, 1, 1);
+                        AppVars.SetVar(vName, dval, 1, 1);
                 }
 
                 // Make sure we get back to starting workarea
@@ -222,7 +223,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -240,6 +241,8 @@ namespace JAXBase.Executer
             // We're in the IDE, so just stop execution
             for (int i = jbe.App.AppLevels.Count; i > 1; i--)
                 jbe.App.AppLevels.RemoveAt(i - 1);
+
+            Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count - 1;
 
             return "!";
         }
@@ -265,7 +268,7 @@ namespace JAXBase.Executer
                 string cEndCase = AppClass.cmdByte.ToString() + jbe.App.MiscInfo["endcasecmd"] + eCodes.SUBCMD;
 
                 // Find the endcase
-                int pos = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx].IndexOf(cEndCase);
+                int pos = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx].IndexOf(cEndCase);
 
                 if (pos < 0)
                     throw new Exception("1211|");   // If/Else/Endif stmt is missing
@@ -277,7 +280,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -291,117 +294,133 @@ namespace JAXBase.Executer
         public static async Task<string> Catch(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             string result = string.Empty;
+            bool tryDone = false;
 
             try
             {
-                // Decide if we execute or bypass
-                if (jbe.App.AppLevels[^1].LoopStack.Count > 0)
+                // Get the expected tryCode string
+                string tryCode = eCodes.SUBCMD;
+                int prgPos = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
+
+                // If there is nothing in the LoopStack then something is wrong
+                if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LoopStack.Count == 0)
+                    throw new Exception("2058||No active loop");
+                // What phase are we in?
+                TryClass tryElement = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[^1];
+
+                if (tryElement.TryPhase == 1)
                 {
-                    string lastFlag = jbe.App.AppLevels[^1].LoopStack[^1];
+                    tryDone = true;
+                }
+                else if (tryElement.TryPhase > 2)
+                {
+                    // A CATCH has executed already
+                    tryDone = true;
+                }
+                else
+                {
+                    // Set the answer to TRUE.  If there isn't a WHEN expression
+                    // then answer falls through and this CATCH is executed.
+                    // The only way it be false is if the CATCH has a WHEN.
+                    JAXObjects.Token answer = new(true);
+                    if (string.IsNullOrWhiteSpace(eCodes.WhenExpr) == false)
+                        answer = await Program.CurrentApp.SolveFromRPNString(eCodes.WhenExpr);
 
-                    if (lastFlag.Length > 1)
+                    if (answer.Element.Type.Equals("L"))
                     {
-                        string flagType = lastFlag[..1];
-                        string flagCode = lastFlag[1..];
-
-                        if ("CT".Contains(flagType) == false)
-                            throw new Exception("2058|");
-
-                        // As long as the last flag type is not C
-                        if (jbe.App.ErrorCount() > 0)
+                        if (answer.AsBool())
                         {
-                            string loopstack = jbe.App.AppLevels[^1].LoopStack[^1];
-                            loopstack = loopstack.Length > 0 ? loopstack[0].ToString() : "x";
+                            // We found a CATCH to execute.  Get the current error object
+                            JAXErrors le = AppErrorHandling.GetCurrentError();
 
-                            if ("CT".Contains(loopstack))
+                            // Is there a TO entry?
+                            if (eCodes.To.Count > 0)
                             {
-                                // We are looking for a catch!
-                                if (lastFlag.Equals(eCodes.SUBCMD))
+                                // Create the array variable from the TO expression
+                                string to = (await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name)).AsString();
+
+                                if (to.Length > 0)
                                 {
-                                    // We're dealing with the correct structure
-                                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.WhenExpr);
-                                    answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.WhenExpr) ? true : answer.Element.Value;
-
-                                    if (answer.Element.Type.Equals("L"))
+                                    if (AppHelper.IsLegalObjectName(to))
                                     {
-                                        if (answer.AsBool())
-                                        {
-                                            // If found the right catch, set it up and 
-                                            // clear the error.
-                                            if (eCodes.To.Count > 0)
-                                            {
-                                                List<ParameterClass> pList = [];
-                                                JAXErrors le = jbe.App.GetLastError();
-                                                ParameterClass p = new() { PName = "errorno" };
-                                                p.token.Element.Value = le.ErrorNo;
+                                        // Create an empty class and populate it with the error information
+                                        AppVars.MakeLocalVar(to, 1, 1, false);
+                                        JAXObjects.Token errtk = await AppVars.GetVarToken(to, false);
 
-                                                p = new() { PName = "lineno" };
-                                                p.token.Element.Value = le.ErrorLine;
+                                        JAXObjectWrapper errInfo = new(Program.CurrentApp, "empty", "", []);
+                                        await errInfo.AddProperty("errorno", new(le.ErrorNo), 0, "");
+                                        await errInfo.AddProperty("lineno", new(le.ErrorLine), 0, "");
+                                        await errInfo.AddProperty("message", new(le.ErrorMessage), 0, "");
+                                        await errInfo.AddProperty("procedure", new(le.ErrorProcedure), 0, "");
 
-                                                p = new() { PName = "procedure" };
-                                                p.token.Element.Value = le.ErrorProcedure;
-
-                                                p = new() { PName = "message" };
-                                                p.token.Element.Value = le.ErrorMessage;
-
-                                                JAXObjectWrapper c = new(jbe.App, "empty", string.Empty, pList);
-                                                string to = (await jbe.App.SolveFromRPNString(eCodes.To[0].Name)).AsString();
-                                                answer.Element.Value = c;
-                                                jbe.App.SetVarOrMakePrivate(to, answer);
-                                                jbe.App.AppLevels[^1].LoopStack[^1] = "C," + lastFlag;
-                                                jbe.App.ClearErrors();
-                                            }
-                                        }
+                                        errtk.Element.Value = errInfo;
                                     }
                                     else
-                                        throw new Exception("11|");
+                                        throw new Exception($"46|TO|CATCH {tryCode} TO value '{to.ToUpper()}' is not a legal name");
                                 }
-                                else
-                                    throw new Exception("2058|");
+
+                                // We found a CATCH to execute
+                                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[^1].TryPhase = 3;
                             }
-                            else
-                                throw new Exception("2058|");
                         }
                         else
                         {
-                            // not looking to catch, so look for FINALLY
-                            string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
-                            int f = jbe.App.utl.FindByteSequence(PrgCode, AppClass.cmdByte.ToString() + jbe.App.MiscInfo["finallycmd"], jbe.App.AppLevels[^1].PrgPos);
+                            // This CATCH had a WHEN that resolved to .F.
+                            // Look for the next catch and if not found raise an error
+                            int nextCatch = -1;
+                            int thisPos = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
 
-                            if (f < 0)
+                            for (int i = 0; i < tryElement.CasePos.Count; i++)
                             {
-                                // no FINALLY, so look for ENDRY
-                                f = jbe.App.utl.FindByteSequence(PrgCode, AppClass.cmdByte.ToString() + jbe.App.MiscInfo["endtrycmd"], jbe.App.AppLevels[^1].PrgPos);
+                                if (tryElement.CasePos[i] > prgPos)
+                                    nextCatch = tryElement.CasePos[i];
+                            }
 
-                                // TODO - make sure it's the right one!
-
-                                if (f < 0)
-                                    throw new Exception("2058||Missing ENDTRY");
-                                else
-                                {
-                                    // found the ENDTRY
-                                    jbe.App.utl.Conv64(f, 3, out string lp2);
-                                    result = "Y" + lp2;
-                                }
+                            if (nextCatch < 0)
+                            {
+                                throw new Exception("9999||Missing catch");
                             }
                             else
                             {
-                                // Found the FINALLY
-                                jbe.App.utl.Conv64(f, 3, out string lp2);
-                                result = "Y" + lp2;
+                                // We have the next one
+                                Program.CurrentApp.utl.Conv64(nextCatch, 3, out string lp2);
+                                result = "X" + lp2;
                             }
                         }
                     }
                     else
-                        throw new Exception($"9996|Invalid loop token|Empty loop token");
+                        throw new Exception("11|");
+
                 }
-                else
-                    throw new Exception("2058||Empty loop stack");
+
+                if (tryDone)
+                {
+                    // No error so CATCH is not needed. Is there a FINALLY?
+                    if (tryElement.FinallyPos < 0)
+                    {
+                        if (tryElement.EndTry < 0)
+                            throw new Exception("2058||Missing ENDTRY");
+                        else
+                        {
+                            // Found the ENDTRY
+                            Program.CurrentApp.utl.Conv64(tryElement.EndTry, 3, out string lp2);
+                            result = "X" + lp2;
+                        }
+                    }
+                    else
+                    {
+                        // Found the FINALLY
+                        Program.CurrentApp.utl.Conv64(tryElement.FinallyPos, 3, out string lp2);
+                        result = "X" + lp2;
+                    }
+
+                }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
+
 
             return result;
         }
@@ -416,50 +435,66 @@ namespace JAXBase.Executer
 
             try
             {
-                if (eCodes.Expressions.Count > 0)
+                if (eCodes.FileExpr.Count > 0)
                 {
-                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.FileExpr[0].RNPExpr);
 
                     if (answer.Element.Type.Equals("C") == false)
                         throw new Exception("10|");
 
-                    string path = JAXLib.Addbs(answer.AsString().Trim());
+                    if (answer.Element.Value.Equals("?"))
+                    {
+                        // Bring up directory dialog
+                        DialogHelper dialogHelper = new DialogHelper();
+                        await dialogHelper.ShowFilePicker(Program.CurrentApp, "D");
 
-                    // Was something sent?
-                    if (string.IsNullOrWhiteSpace(path) == false)
-                    {
-                        if (jbe.App.OS == OSType.Windows)
+                        string path = Program.CurrentApp.ReturnValue.Element.IsNull() ? "" : Program.CurrentApp.ReturnValue.AsString();
+                        if (Directory.Exists(path))
                         {
-                            // If not an absolute path, then put the default path in first
-                            if ((path.Length > 2 && (path[..2].Equals(@"\\") || path[1] == ':')) == false)
-                                path = jbe.App.CurrentDS.JaxSettings.Default + (path.Length > 1 && path[0] == '\\' ? path[1..] : path);
+                            jbe.App.CurrentDS.JaxSettings.Default = path;
+                            result = "Default directory is " + path;
                         }
-                        else
-                        {
-                            // Assuming Linux - add to default path if
-                            // the provided path doesn't start with backslash
-                            if (path[0] != '\\')
-                                path = jbe.App.CurrentDS.JaxSettings.Default + path;
-                        }
-                    }
-
-                    if (string.IsNullOrWhiteSpace(path))
-                    {
-                        // Nothing to do, so just return the default
-                        result = "Current directory is " + jbe.App.CurrentDS.JaxSettings.Default;
-                    }
-                    else if (Directory.Exists(path))
-                    {
-                        jbe.App.CurrentDS.JaxSettings.Default = path;
-                        result = "Default directory is " + path;
                     }
                     else
-                        throw new Exception("202|" + path);
+                    {
+                        string path = JAXLib.Addbs(answer.AsString().Trim());
+
+                        // Was something sent?
+                        if (string.IsNullOrWhiteSpace(path) == false)
+                        {
+                            if (jbe.App.OS == OSType.Windows)
+                            {
+                                // If not an absolute path, then put the default path in first
+                                if ((path.Length > 2 && (path[..2].Equals(@"\\") || path[1] == ':')) == false)
+                                    path = jbe.App.CurrentDS.JaxSettings.Default + (path.Length > 1 && path[0] == '\\' ? path[1..] : path);
+                            }
+                            else
+                            {
+                                // Assuming Linux - add to default path if
+                                // the provided path doesn't start with backslash
+                                if (path[0] != '\\')
+                                    path = jbe.App.CurrentDS.JaxSettings.Default + path;
+                            }
+                        }
+
+                        if (string.IsNullOrWhiteSpace(path))
+                        {
+                            // Nothing to do, so just return the default
+                            result = "Current directory is " + jbe.App.CurrentDS.JaxSettings.Default;
+                        }
+                        else if (Directory.Exists(path))
+                        {
+                            jbe.App.CurrentDS.JaxSettings.Default = path;
+                            result = "Default directory is " + path;
+                        }
+                        else
+                            throw new Exception("202|" + path);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -484,7 +519,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -505,17 +540,17 @@ namespace JAXBase.Executer
             try
             {
                 string clearCode = eCodes.SUBCMD;
-                JAXObjects.Token clearName = new(string.Empty, "C");    // Set to empty string
+                JAXObjects.Token clearName = new("");    // Set to empty string
 
                 if (eCodes.Expressions.Count > 0)
                     clearName = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
 
                 string name = clearName.Element.Type.Equals("C") ? clearName.AsString() : throw new Exception("11|");
 
-                // Clear named console
                 if (clearCode.Equals("N") || string.IsNullOrEmpty(clearCode))
                 {
-                    //jbe.App.JAXConsoles[string.IsNullOrEmpty(name) ? jbe.App.ActiveConsole : name.ToLower().Trim()].Clear();
+                    // Clear named console
+                    JAXApp.MainWindowInstance?.ClearMainOutput();
                 }
                 else if ("P*".Contains(clearCode))
                 {
@@ -523,7 +558,8 @@ namespace JAXBase.Executer
                     if (name.Length == 0)
                     {
                         // Clear all code from cache
-                        jbe.App.CodeCache = [];
+                        Program.CurrentApp.CodeCache = [];
+                        Program.CurrentApp.PRGCache = [];
                     }
                     else
                     {
@@ -537,7 +573,7 @@ namespace JAXBase.Executer
                         }
                     }
                 }
-                else if ("L*".Contains(clearCode))
+                else if ("V*".Contains(clearCode))
                 {
                     // Clear ClassLib
                     if (name.Length == 0)
@@ -559,7 +595,7 @@ namespace JAXBase.Executer
                 {
                     // TODO - think this through
                 }
-                else if ("Y*".Contains(clearCode))
+                else if ("M*".Contains(clearCode))
                 {
                     // Clear Memory
                     for (int i = 0; i < jbe.App.AppLevels.Count; i++)
@@ -568,7 +604,7 @@ namespace JAXBase.Executer
                         jbe.App.AppLevels[i].LocalVars = new();
                     }
                 }
-                else if ("B*".Contains(clearCode))
+                else if ("D*".Contains(clearCode))
                 {
                     // Clear debug
                     //JAXSysObj.SetValue("debug", "OFF");
@@ -578,16 +614,36 @@ namespace JAXBase.Executer
                 else if ("R*".Contains(clearCode))
                 {
                     // Clear errors
-                    jbe.App.ClearErrors();
+                    AppErrorHandling.ClearErrors();
                 }
-                else if (clearCode.Equals("EVENTS"))
+                else if ("L*".Contains(clearCode))
                 {
-                    // Look for first read events flag and kill it
+                    // Clear DLLs
+                }
+                else if ("R*".Contains(clearCode))
+                {
+                    // Clear Read
+                }
+                else if ("S*".Contains(clearCode))
+                {
+                    // Clear Resources
+                }
+                else if ("F*".Contains(clearCode))
+                {
+                    // Clear Fields
+                }
+                else if ("T*".Contains(clearCode))
+                {
+                    // Clear typeahead
+                }
+                else if (clearCode.Equals("E"))
+                {
+                    // Look for all read events flag and kill them
                     for (int i = jbe.App.AppLevels.Count - 1; i > 0; i--)
                     {
-                        if (jbe.App.AppLevels[^1].InReadEvents)
+                        if (jbe.App.AppLevels[i].InReadEvents)
                         {
-                            jbe.App.AppLevels[^1].InReadEvents = false;
+                            jbe.App.AppLevels[i].InReadEvents = false;
 
                             // If no flag, just do the one, for now
                             if (eCodes.Flags.Length == 0)
@@ -598,7 +654,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -684,7 +740,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
 
@@ -731,7 +787,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
         }
 
@@ -753,7 +809,7 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Compile(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
             int errcount = 0;
 
@@ -796,7 +852,7 @@ namespace JAXBase.Executer
 
                 for (int i = 0; i < fileArray.Length; i++)
                 {
-                    jbe.App.ClearErrors();
+                    AppErrorHandling.ClearErrors();
 
                     FilerLib.GetFileInfo(fileArray[i], out string[] fileInfo);
 
@@ -808,12 +864,12 @@ namespace JAXBase.Executer
 
                         jbe.App.lists.Decompile(jbe.App, fileInfo[0].Replace(".", "_"), JAXLib.FileToStr(cCode));
 
-                        if (jbe.App.ErrorCount() == 0)
+                        if (AppErrorHandling.ErrorCount() == 0)
                             result = Environment.NewLine + "Compiled " + fileInfo[0].ToUpper() + " with no errors";
                         else
                         {
-                            errcount += jbe.App.ErrorCount();
-                            result = Environment.NewLine + fileInfo[0].ToUpper() + $" has {jbe.App.ErrorCount()} errors";
+                            errcount += AppErrorHandling.ErrorCount();
+                            result = Environment.NewLine + fileInfo[0].ToUpper() + $" has {AppErrorHandling.ErrorCount()} errors";
                         }
                     }
                     else
@@ -823,10 +879,10 @@ namespace JAXBase.Executer
             catch (Exception ex)
             {
                 jbe.App.InCompile = false;
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             jbe.App.InCompile = false;
 
             return result;
@@ -846,7 +902,7 @@ namespace JAXBase.Executer
                     else
                         throw new Exception("1999|" + cType);
 
-                    if (app.ErrorCount() == 0)
+                    if (AppErrorHandling.ErrorCount() == 0)
                         result = "Compiled " + FQFN + " with no errors";
                     else
                         throw new Exception("9997|" + FQFN);
@@ -856,7 +912,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
             finally
             {
@@ -873,7 +929,7 @@ namespace JAXBase.Executer
         public static string Continue(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            string loopType = jbe.App.GetLoopStack();
+            string loopType = AppLoop.GetLoopStack();
 
             string cFindMe = loopType[0] switch
             {
@@ -886,7 +942,7 @@ namespace JAXBase.Executer
 
 
             // Find the endcase
-            int pos = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx].IndexOf(cFindMe);
+            int pos = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx].IndexOf(cFindMe);
 
             if (pos < 0)
             {
@@ -928,7 +984,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -948,7 +1004,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -1014,7 +1070,7 @@ namespace JAXBase.Executer
 
                 if (isArray)
                 {
-                    jbe.App.DebugLog($"Creating table {TableName} from array");
+                    AppIO.DebugLog($"Creating table {TableName} from array");
 
                     // Go through the array and collect the information
                     string arrayName;
@@ -1024,7 +1080,7 @@ namespace JAXBase.Executer
                     else
                         throw new Exception("10|");
 
-                    JAXObjects.Token fa = await jbe.App.GetVarToken(arrayName);
+                    JAXObjects.Token fa = await AppVars.GetVarToken(arrayName);
 
                     if ((fa.Col == 4 || fa.Col > 17) == false)
                         throw new Exception("CREATE FROM ARRAY requires a two dimensional array with 4 or 18 columns");
@@ -1095,12 +1151,12 @@ namespace JAXBase.Executer
                 }
                 else
                 {
-                    jbe.App.DebugLog($"Creating table {TableName} from expression list", jbe.App.CurrentDS.JaxSettings.Talk == false);
+                    AppIO.DebugLog($"Creating table {TableName} from expression list", jbe.App.CurrentDS.JaxSettings.Talk == false);
                     string[] expr = eCodes.TABLE.Split(AppClass.expDelimiter);
 
                     for (int i = 0; i < expr.Length; i++)
                     {
-                        jbe.App.DebugLog($"Processing field {i + 1} expression {expr[i]}", jbe.App.CurrentDS.JaxSettings.Talk == false);
+                        AppIO.DebugLog($"Processing field {i + 1} expression {expr[i]}", jbe.App.CurrentDS.JaxSettings.Talk == false);
 
                         string[] fld = expr[i].Split(AppClass.expParam);
 
@@ -1192,7 +1248,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

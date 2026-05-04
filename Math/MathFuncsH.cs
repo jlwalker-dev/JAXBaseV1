@@ -1,7 +1,7 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.XBase;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.Language;
 
 namespace JAXBase.Math
@@ -88,12 +88,12 @@ namespace JAXBase.Math
                             else
                             {
                                 // It's not a hex value - TODO
-                                App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                             }
                         }
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -106,7 +106,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.Hour;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ICASE":
@@ -153,24 +153,24 @@ namespace JAXBase.Math
 
                 case "`IDXCOLLATE":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`IIF":  // Perform an IIF 
                     if (stype1.Equals("L"))
                         tAnswer._avalue[0].Value = string1.Equals(".T.") ? AppHelper.Convert2STValue(pop[1])! : AppHelper.Convert2STValue(pop[3])!;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`IMESTATUS":
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`INDBC@??":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], "*JLW");
+                    AppErrorHandling.SetError(1999, _rpn[..1], "*JLW");
                     break;
 
                 case "`INDEXSEEK":
@@ -299,7 +299,7 @@ namespace JAXBase.Math
                     if ((stype1 + stype2 + stype3).Equals("CCC"))
                         tAnswer.Element.Value = JAXLib.InputBox.Show(string1, string2, string3, intval4, string5, string6);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -311,7 +311,7 @@ namespace JAXBase.Math
                     if (stype1.Equals("N"))
                         tAnswer._avalue[0].Value = intval1;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`INTTOHEX":
@@ -320,10 +320,10 @@ namespace JAXBase.Math
                         if (intval1 >= 0)
                             tAnswer.Element.Value = intval1.ToString("X");
                         else
-                            App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // TODO
+                            AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // TODO
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ISALPHA":
@@ -388,12 +388,12 @@ namespace JAXBase.Math
                     dbf = App.CurrentDS.CurrentWA.DbfInfo;
 
                     App.CurrentDS.SelectWorkArea(cwa);
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ISLEADBYTE":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ISLOWER":
@@ -407,7 +407,7 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = string1.Equals(string2);
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -419,13 +419,13 @@ namespace JAXBase.Math
                     if (stype1.Equals("N"))
                         tAnswer.Element.Value = intval1 % 1 == 1;
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
                 case "`ISPEN":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ISREADONLY":
@@ -448,7 +448,7 @@ namespace JAXBase.Math
                     dbf = App.CurrentDS.CurrentWA.DbfInfo;
 
                     App.CurrentDS.SelectWorkArea(cwa);
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ISRLOCKED":
@@ -471,7 +471,7 @@ namespace JAXBase.Math
                     dbf = App.CurrentDS.CurrentWA.DbfInfo;
 
                     App.CurrentDS.SelectWorkArea(cwa);
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ISUPPER":
@@ -485,7 +485,7 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = string1.Equals(string2);
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 default:

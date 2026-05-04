@@ -1,5 +1,5 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Compiler
 {
@@ -27,14 +27,49 @@ namespace JAXBase.Compiler
                     jbc.GetNextToken(cmdRest, string.Empty, out string token);
 
                     if (JAXLib.InListC(token, "class", "classlib", "console", "dlls", "program", "read", "resources", "windows"))
-                        result = jbc.Key_Parser(cmdRest, ["class", "classlib", "console", "dlls", "program", "read", "resources", "windows"], "XX0", []);
+                    {
+                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token).ToLower();
+
+                        string mType = token switch
+                        {
+                            "class" => "C",
+                            "classlib" => "V",
+                            "console" => "N",
+                            "dlls" => "L",
+                            "program" => "P",
+                            "prog" => "P",
+                            "read" => "A",
+                            "resources" => "S",
+                            _ => throw new Exception("9999|")
+                        };
+
+                        result = Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0", []);
+                    }
                     else
-                        result = jbc.Key_Parser(cmdRest, ["all", "debug", "events", "error", "fields", "gets", "marcos", "memory", "menus", "popups", "prompt", "typeahead"], string.Empty, []);
+                    {
+                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token).ToLower();
+                        string mType = token switch
+                        {
+                            "all" => "*",
+                            "debug" => "D",
+                            "events" => "E",
+                            "error" => "R",
+                            "errors" => "R",
+                            "fields" => "F",
+                            "memory" => "M",
+                            "typeahead" => "T",
+                            _ => throw new Exception("9999|")
+                        };
+
+                        result = Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter;
+
+                        //result = jbc.Key_Parser(cmdRest, ["all", "debug", "events", "error", "fields", "macros", "memory", "typeahead"], string.Empty, []);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -116,7 +151,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

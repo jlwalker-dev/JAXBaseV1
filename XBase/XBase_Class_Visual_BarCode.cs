@@ -1,13 +1,15 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using System.Runtime.InteropServices;
 using ZXing;
-using ZXing.Common;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_BarCode : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "BarCode";
+        public new string MyDefaultName { get; } = "barcode";
+
         public Avalonia.Controls.Image img => (Avalonia.Controls.Image)me.avaloniaObject!;
 
         public XBase_Class_Visual_BarCode(JAXObjectWrapper jow, string name) : base(jow, name)
@@ -140,10 +142,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -185,10 +187,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}|{propertyName}", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -311,7 +313,7 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = false;
-                App.SetError(1525, $"{1525}|{ex.Message}|{text}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(1525, $"{1525}|{ex.Message}|{text}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
             return result;
         }

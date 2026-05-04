@@ -1,4 +1,6 @@
-﻿namespace JAXBase.Compiler
+﻿using JAXBase.Core;
+
+namespace JAXBase.Compiler
 {
     public class JAXBase_Compiler_M
     {
@@ -29,13 +31,25 @@
 
                 mType = mType switch
                 {
-                    "clas"=>"class",
-                    "comm"=>"command",
-                    "labe"=>"label",
-                    "proj"=>"project",
-                    "quer"=>"query",
-                    "repo"=>"report",
-                    _ => mType
+                    "blob" => "B",
+                    "class" => "C",
+                    "classlib" => "V",
+                    "comm" => "P",
+                    "command" => "P",
+                    "form" => "M",
+                    "gen" => "G",
+                    "general" => "G",
+                    "image" => "I",
+                    "label" => "L",
+                    "menu" => "U",
+                    "memo" => "O",
+                    "proj" => "J",
+                    "project" => "J",
+                    "query" => "Q",
+                    "report" => "R",
+                    "stru" => "S",
+                    "structure" => "S",
+                    _ => "F"
                 };
 
                 string[] kwrd = [mType];
@@ -43,32 +57,32 @@
 
                 switch (mType)
                 {
-                    case "class":
+                    case "C":
                         result = jbc.Key_Parser(cmdRest, kwrd, "XX0,OF0", []);
                         break;
 
-                    case "command":
-                    case "file":
-                    case "form":
-                    case "label":
-                    case "menu":
-                    case "memo":
-                    case "project":
-                    case "query":
-                    case "report":
+                    case "P":
+                    case "F":
+                    case "M":
+                    case "L":
+                    case "U":
+                    case "O":
+                    case "J":
+                    case "Q":
+                    case "R":
+                    case "V":
                         result = jbc.Key_Parser(cmdRest, kwrd, "XX0", []);
                         break;
 
 
-                    case "structure":
-                    case "stru":
+                    case "S":
                         result = jbc.Key_Parser(cmdRest, kwrd, "", []);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                jbc.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

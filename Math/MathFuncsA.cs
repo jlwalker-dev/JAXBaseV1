@@ -12,7 +12,7 @@
  ******************************************************************************************************************************************/
 using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.CodeDom;
 using System.Drawing.Printing;
@@ -28,8 +28,7 @@ namespace JAXBase.Math
         public static async Task<JAXObjects.Token> A0(AppClass App, string _rpn, List<string> pop)
         {
             JAXObjects.Token tAnswer = new();
-            JAXObjects.Token answer = new();
-            JAXDataSession thisDS = App.jaxDataSession[App.CurrentDataSession];
+            JAXObjects.Token answer;
 
             // token types (_ is var, N=Numeric, C=character, etc)
             string stype1 = (pop.Count > 0 ? pop[0][..1] : string.Empty);
@@ -45,11 +44,9 @@ namespace JAXBase.Math
 
             int intval2 = 0;
             int intval3 = 0;
-            int intval4 = 0;
 
             if (pop.Count > 1 && int.TryParse(string2, out intval2) == false) intval2 = 0;
             if (pop.Count > 2 && int.TryParse(string3, out intval3) == false) intval3 = 0;
-            if (pop.Count > 3 && int.TryParse(string4, out intval4) == false) intval4 = 0;
 
             switch (_rpn)
             {
@@ -61,7 +58,7 @@ namespace JAXBase.Math
 
                         if (stype2.Equals("_"))
                         {
-                            answer = await App.GetVarFromExpression(string2, null);
+                            answer = await AppVars.GetVarFromExpression(string2, null);
                             if (answer.TType.Equals("O"))
                             {
                                 // We have an obejct to traverse!
@@ -69,7 +66,7 @@ namespace JAXBase.Math
                                 JAXObjects.Token tk = await obj.GetProperty("Class");
                                 ClassList.Add(tk.AsString());
 
-                                string tName = string.Empty;
+                                string tName;
                                 tk = await obj.GetProperty("baseclass");
                                 tName = tk.AsString();
 
@@ -88,9 +85,9 @@ namespace JAXBase.Math
                             }
 
                             // Create the array and fill it
-                            App.SetVarOrMakePrivate(arrayName, 1, ClassList.Count, true);
+                            AppVars.SetVarOrMakePrivate(arrayName, 1, ClassList.Count, true);
                             for (int i = 0; i < ClassList.Count; i++)
-                                App.SetVar(arrayName, ClassList[i], 1, i + 1);
+                                AppVars.SetVar(arrayName, ClassList[i], 1, i + 1);
 
                             tAnswer._avalue[0].Value = ClassList.Count;
                         }
@@ -98,28 +95,28 @@ namespace JAXBase.Math
                             throw new Exception("11|");
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ACOPY":                                                              // Copy from one array to another
                     if (stype1.Equals("_") & stype2.Equals("_"))
                         tAnswer = await ACopy(App, string1, string2, await JAXMathAux.ProcessPops(App, pop, 2));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ADATABASES":                                                         // Array of all open databases
                     if (stype1.Equals("_"))
                         tAnswer = ADatabases(App, string1);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ADBOBJECTS":                                                         // Array of named connections, relations, tables, or SQL views from current database
                     if (stype1.Equals("_"))
                         tAnswer = await ADBObjects(App, string1, string2, await JAXMathAux.ProcessPops(App, pop, 2));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ADDPROPERTY":                                                        // Add a property at runtime - TODO - WTF? - Fever dream?  Forgot to finish?  Too much beer?
@@ -128,7 +125,7 @@ namespace JAXBase.Math
                     if (stype1.Equals("_"))
                     {
                         // Make sure it's a class object
-                        JAXObjects.Token tk = await App.GetVarToken(string1);
+                        JAXObjects.Token tk = await AppVars.GetVarToken(string1);
                         if (tk.TType.Equals("O"))
                         {
                             // We have an object, so add the property and the value
@@ -138,13 +135,13 @@ namespace JAXBase.Math
                             object? var = pop.Count > 2 ? AppHelper.Convert2STValue(pop[2]) : false;
                             tk.AddElement(string2, var, true, true);
                             tAnswer.Element.Value = true;
-                            //App.SetVar(string1, tk);
+                            //AppVars.SetVar(string1, tk);
                         }
                         else
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);    // Not an object
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);    // Not an object
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -152,44 +149,44 @@ namespace JAXBase.Math
                     if (stype1.Equals("_"))
                         tAnswer = await ADel(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ADIR":                                                               // Gets file/directory information to an array
                     if (stype1.Equals("_"))
                         tAnswer = await ADir(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AELEMENT":                                                           // Returns element number based on subscript
                     if (stype1.Equals("_"))
                         tAnswer = await AElement(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AERROR":                                                             // Array of last error
                     if (stype1.Equals("_"))
                         tAnswer = AError(App, string1);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AEVENTS":                                                            // Number of exising binding events
                     if (stype1.Equals("_"))
                     {
-                        App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AFIELDS":                                                            // Get fields in table
                     if (stype1.Equals("_"))
                         tAnswer = AFields(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AFONT":                                                              // Available fonts
@@ -203,8 +200,8 @@ namespace JAXBase.Math
                                 if (string.IsNullOrWhiteSpace(string2) || fa.Name.Contains(string2, StringComparison.OrdinalIgnoreCase))
                                 {
                                     fCount++;
-                                    App.SetVarOrMakePrivate(string1, 1, fCount, true);
-                                    App.SetVar(string1, fa.Name, 1, fCount);
+                                    AppVars.SetVarOrMakePrivate(string1, 1, fCount, true);
+                                    AppVars.SetVar(string1, fa.Name, 1, fCount);
                                     // Only list the first 100
                                     if (fCount > 99)
                                         break;
@@ -213,7 +210,7 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     tAnswer.Element.Value = fCount;
                     break;
@@ -222,17 +219,17 @@ namespace JAXBase.Math
                     //----------------------------------------------------
                     if (stype1.Equals("_"))
                     {
-                        throw new Exception("1999|");
+                        throw new Exception("1999||AGETCLASS");
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AINS":                                                               // insert into an array - does not grow array
                     if (stype1.Equals("_"))
                         tAnswer = await AIns(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AINSTANCE":                                                          // Class instances
@@ -248,14 +245,14 @@ namespace JAXBase.Math
                             matchX.Sort();
 
                             // Move them to the array
-                            App.SetVarOrMakePrivate(string1, 1, matchX.Count, true);
+                            AppVars.SetVarOrMakePrivate(string1, 1, matchX.Count, true);
                             for (int j = 0; j < matchX.Count; j++)
-                                App.SetVar(string1, matchX[j], 1, j);
+                                AppVars.SetVar(string1, matchX[j], 1, j);
 
                         }
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     tAnswer.Element.Value = matchX.Count;
                     break;
@@ -264,20 +261,20 @@ namespace JAXBase.Math
                     if (stype1.Equals("_"))
                         tAnswer = await ALen(App, string1, intval2);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ALINE":                                                             // Copy lines from a character expression or memo field to an array
                     if (stype1.Equals("_"))
                         tAnswer = ALines(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AMEMBERS":                                                           // Return an array of all properties of an object (by default)
                     if (stype1.Equals("_") && stype2.Equals("_"))
                     {
-                        JAXObjects.Token sourcetk = await App.GetVarToken(string2);
+                        JAXObjects.Token sourcetk = await AppVars.GetVarToken(string2);
                         tAnswer._avalue[0].Value = 0;
 
                         if (sourcetk.Element.Type.Equals("O") && (string.IsNullOrWhiteSpace(stype3) || stype3.Equals("N")))
@@ -296,7 +293,7 @@ namespace JAXBase.Math
                                 vList.Add(string4);
                                 if (pop.Count < 5)
                                 {
-                                    JAXObjects.Token s4 = await App.GetVarToken(string4);
+                                    JAXObjects.Token s4 = await AppVars.GetVarToken(string4);
                                     if (s4.Element.Type.Equals("C"))
                                         string4 = s4.AsString();
                                     else
@@ -313,21 +310,21 @@ namespace JAXBase.Math
                             }
 
                             string4 = string4.ToUpper();
-                            bool lProtected = string4.Contains("P");
-                            bool lHidden = string4.Contains("H");
-                            bool lPublic = string4.Contains("G");
+                            bool lProtected = string4.Contains('P');
+                            bool lHidden = string4.Contains('H');
+                            bool lPublic = string4.Contains('G');
 
-                            bool lNative = string4.Contains("N");
-                            bool lUser = string4.Contains("U");
+                            bool lNative = string4.Contains('N');
+                            bool lUser = string4.Contains('U');
 
-                            bool lInherited = string4.Contains("I");
-                            bool lBase = string4.Contains("B");
+                            bool lInherited = string4.Contains('I');
+                            bool lBase = string4.Contains('B');
 
                             int nChanged = string4.IndexOf('C');
 
                             // Make sure public is set if protected
                             // and hidden are not.
-                            lPublic = !lProtected && !lHidden;
+                            lPublic = lPublic || (!lProtected && !lHidden);
 
                             if (!lNative && !lUser)
                             {
@@ -356,7 +353,7 @@ namespace JAXBase.Math
 
                                         for (int i = 0; i < props.Count; i++)
                                         {
-                                            JAXObjects.Token proptk=await jow.GetProperty(props[i], 0);
+                                            JAXObjects.Token proptk = await jow.GetProperty(props[i], 0);
 
                                             // Do we include this property?
                                             if (lPublic || (lProtected && proptk.Protected) || (proptk.Hidden && lHidden))
@@ -385,7 +382,7 @@ namespace JAXBase.Math
 
                                         for (int i = 0; i < props.Count; i++)
                                         {
-                                            JAXObjects.Token proptk=await jow.GetProperty(props[i], 0);
+                                            JAXObjects.Token proptk = await jow.GetProperty(props[i], 0);
 
                                             // Do we include this property?
                                             if ((lPublic && proptk.Hidden == false) || (lProtected && proptk.Protected) || (proptk.Hidden && lHidden))
@@ -409,7 +406,7 @@ namespace JAXBase.Math
 
                                         for (int i = 0; i < meths.Count; i++)
                                         {
-                                            JAXObjects.Token proptk=await jow.GetProperty(meths[i], 0);
+                                            JAXObjects.Token proptk = await jow.GetProperty(meths[i], 0);
                                             JAXObjectsAux.MethodClass minfo = jow.MethodInfo(meths[i]);
 
                                             // Do we include this property?
@@ -451,23 +448,23 @@ namespace JAXBase.Math
                             // and copy the data over to it
                             if (props.Count + meths.Count > 0)
                             {
-                                App.SetVarOrMakePrivate(string1, desttk.Row, desttk.Col, true);
-                                JAXObjects.Token finaltk = await App.GetVarToken(string1);
+                                AppVars.SetVarOrMakePrivate(string1, desttk.Row, desttk.Col, true);
+                                JAXObjects.Token finaltk = await AppVars.GetVarToken(string1);
 
                                 for (int i = 0; i < (desttk.Row < 1 ? 1 : desttk.Row) * desttk.Col; i++)
                                     finaltk._avalue[i].Value = desttk._avalue[i].Value;
                             }
                         }
                         else
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
 
                 case "`ANETRESOURCES":
-                    List<string> shares = new List<string>();
+                    List<string> shares = [];
 
                     if (stype1.Equals("_"))
                     {
@@ -477,15 +474,15 @@ namespace JAXBase.Math
                             try
                             {
                                 // Connect to the WMI namespace on the specified computer
-                                ManagementScope scope = new ManagementScope($@"\\{string2}\root\cimv2");
+                                ManagementScope scope = new($@"\\{string2}\root\cimv2");
                                 scope.Connect();
 
                                 // Query for Win32_Share instances
-                                ObjectQuery query = new ObjectQuery("SELECT Name FROM Win32_Share");
-                                ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query);
+                                ObjectQuery query = new("SELECT Name FROM Win32_Share");
+                                ManagementObjectSearcher searcher = new(scope, query);
 
                                 // Iterate through the results and add share names to the list
-                                foreach (ManagementObject obj in searcher.Get())
+                                foreach (ManagementObject obj in searcher.Get().Cast<ManagementObject>())
                                 {
                                     string? name = obj["Name"].ToString();
 
@@ -509,13 +506,13 @@ namespace JAXBase.Math
                         // Set the array only if there is something to return
                         if (shares.Count > 0)
                         {
-                            App.SetVarOrMakePrivate(string1, 1, shares.Count, true);
+                            AppVars.SetVarOrMakePrivate(string1, 1, shares.Count, true);
                             for (int j = 0; j < shares.Count; j++)
-                                App.SetVar(string1, shares[j], 1, j);
+                                AppVars.SetVar(string1, shares[j], 1, j);
                         }
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     // Send back the count
                     tAnswer.Element.Value = shares.Count;
@@ -546,10 +543,10 @@ namespace JAXBase.Math
                             }
 
                             if (xTypes is null)
-                                App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                             else
                             {
-                                string cCode = string.Empty;
+                                string cCode;
 
                                 if (ext.Equals(xTypes.CompiledCode, StringComparison.OrdinalIgnoreCase) == false)
                                 {
@@ -561,7 +558,7 @@ namespace JAXBase.Math
                                     if (errCount > 0)
                                     {
                                         err = 9992;
-                                        App.SetError(err, string2, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                        AppErrorHandling.SetError(err, string2, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                     }
 
                                     string header = AppHelper.CreateHeader(string2, MD5, jfType, fStem);
@@ -580,7 +577,7 @@ namespace JAXBase.Math
                                     if (f < 1)
                                     {
                                         err = 9992;
-                                        App.SetError(err, string2, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                        AppErrorHandling.SetError(err, string2, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                     }
 
                                     string headerstring = cCode[..f];
@@ -590,19 +587,19 @@ namespace JAXBase.Math
                                     CCodeCache cc = AppHelper.BreakHeaderMap(App, jfType, fileHeader, cCode);
 
                                     // Fill the array
-                                    App.SetVarOrMakePrivate(string1, cc.Procedures.Count + cc.Classes.Count, 4, true);
+                                    AppVars.SetVarOrMakePrivate(string1, cc.Procedures.Count + cc.Classes.Count, 4, true);
                                     foreach (KeyValuePair<string, int> proc in cc.Procedures)
                                     {
                                         idx++;
-                                        App.SetVar(string1, "CODE", idx, 1);
+                                        AppVars.SetVar(string1, "CODE", idx, 1);
 
                                         if (cc.StartProc.Equals(proc.Key, StringComparison.OrdinalIgnoreCase))
-                                            App.SetVar(string1, "PROGRAM", idx, 2);   // MAIN or PROCEDURE
+                                            AppVars.SetVar(string1, "PROGRAM", idx, 2);   // MAIN or PROCEDURE
                                         else
-                                            App.SetVar(string1, "PROCEDURE", idx, 2);   // MAIN or PROCEDURE
+                                            AppVars.SetVar(string1, "PROCEDURE", idx, 2);   // MAIN or PROCEDURE
 
-                                        App.SetVar(string1, proc.Key, idx, 3);
-                                        App.SetVar(string1, proc.Value, idx, 4);
+                                        AppVars.SetVar(string1, proc.Key, idx, 3);
+                                        AppVars.SetVar(string1, proc.Value, idx, 4);
                                     }
 
                                     // TODO - Class definitions
@@ -613,10 +610,10 @@ namespace JAXBase.Math
                                         if (kval.Length > 1)
                                         {
                                             idx++;
-                                            App.SetVar(string1, "CLASS", idx, 1);
-                                            App.SetVar(string1, kval[1], idx, 2);   // BaseClass or PROCEDURE
-                                            App.SetVar(string1, kval[0], idx, 3);   // Class/Method/Event Name
-                                            App.SetVar(string1, proc.Value, idx, 4);
+                                            AppVars.SetVar(string1, "CLASS", idx, 1);
+                                            AppVars.SetVar(string1, kval[1], idx, 2);   // BaseClass or PROCEDURE
+                                            AppVars.SetVar(string1, kval[0], idx, 3);   // Class/Method/Event Name
+                                            AppVars.SetVar(string1, proc.Value, idx, 4);
                                         }
                                     }
                                 }
@@ -624,7 +621,7 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     tAnswer.Element.Value = idx;
                     break;
@@ -633,17 +630,17 @@ namespace JAXBase.Math
                     if (stype1.Equals("_"))
                         tAnswer = await AScan(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ASELOBJ":
                     //----------------------------------------------------
                     if (stype1.Equals("_"))
                     {
-                        throw new Exception("1999|");
+                        throw new Exception("1999||ASELOBJ");
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ASESSIONS":
@@ -652,7 +649,7 @@ namespace JAXBase.Math
                         tAnswer = ASessions(App, string1);
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ASORT":                                                              // Sort an array
@@ -662,7 +659,7 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = ASort(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
 
@@ -672,14 +669,14 @@ namespace JAXBase.Math
                         tAnswer = AStackinfo(App, string1);
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ASUBSCRIPT":                                                         // Return row or col of element number
                     if ((stype1).Equals("_"))
                         tAnswer = await ASubscript(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ATAGINFO":   // Get array of index information for current table
@@ -697,7 +694,7 @@ namespace JAXBase.Math
                                 App.SetDataSession(intval3);
                         }
                         else if (string.IsNullOrWhiteSpace(stype3) == false)
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                         // Set the work area
                         if (stype2.Equals("N"))
@@ -708,7 +705,7 @@ namespace JAXBase.Math
                         else if (stype2.Equals("C"))
                             App.CurrentDS.SelectWorkArea(string2);
                         else if (string.IsNullOrWhiteSpace(stype2) == false)
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                         JAXDirectDBF.DBFInfo dbf = App.CurrentDS.CurrentWA.DbfInfo;
 
@@ -716,12 +713,12 @@ namespace JAXBase.Math
                         if (dbf.IDX.Count > 0)
                         {
                             // Create the array
-                            App.SetVarOrMakePrivate(string1, dbf.IDX.Count, 6, true);
+                            AppVars.SetVarOrMakePrivate(string1, dbf.IDX.Count, 6, true);
 
                             // Fill it in with index information
                             for (int i = 0; i < dbf.IDX.Count; i++)
                             {
-                                string type = string.Empty;
+                                string type;
 
                                 if (dbf.IDX[0].IsUnique)
                                     type = "UNIQUE";
@@ -730,19 +727,22 @@ namespace JAXBase.Math
                                 else
                                     type = "REGULAR";
 
-                                App.SetVar(string1, dbf.IDX[i].Name, i, 1);                                     // Index name
-                                App.SetVar(string1, type, i, 2);                                                // Type
-                                App.SetVar(string1, dbf.IDX[i].KeyClause, i, 3);                                // Index key expression
-                                App.SetVar(string1, dbf.IDX[i].ForClause, i, 4);                                // Filter (for) expression
-                                App.SetVar(string1, dbf.IDX[i].Descending ? "DESCENDING" : "ASCENDING", i, 5);  // .T. for descending
-                                App.SetVar(string1, "MACHINE", i, 6);                                           // Collation sequence
-                                App.SetVar(string1, dbf.IDX[i].FileName, i, 7);                                 // Filename
-                                App.SetVar(string1, dbf.IDX[i].IsRegistered ? "REGISTERED" : string.Empty, i, 8); // Is it a registered index?
+                                AppVars.SetVar(string1, dbf.IDX[i].Name, i, 1);                                     // Index name
+                                AppVars.SetVar(string1, type, i, 2);                                                // Type
+                                AppVars.SetVar(string1, dbf.IDX[i].KeyClause, i, 3);                                // Index key expression
+                                AppVars.SetVar(string1, dbf.IDX[i].ForClause, i, 4);                                // Filter (for) expression
+                                AppVars.SetVar(string1, dbf.IDX[i].Descending ? "DESCENDING" : "ASCENDING", i, 5);  // .T. for descending
+                                AppVars.SetVar(string1, "MACHINE", i, 6);                                           // Collation sequence
+                                AppVars.SetVar(string1, dbf.IDX[i].FileName, i, 7);                                 // Filename
+                                AppVars.SetVar(string1, dbf.IDX[i].IsRegistered ? "REGISTERED" : string.Empty, i, 8); // Is it a registered index?
                             }
                         }
+
+                        App.SetDataSession(cds);                // Restore the data session
+                        App.CurrentDS.SelectWorkArea(cwa);      // Restore the work area
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AUSED":
@@ -801,9 +801,9 @@ namespace JAXBase.Math
                             if (lowWA > 0)
                             {
                                 idx++;
-                                App.SetVarOrMakePrivate(string1, idx, 2, true);
-                                App.SetVar(string1, temp[lowWA].DbfInfo.Alias, idx, 1);
-                                App.SetVar(string1, lowWA, idx, 2);
+                                AppVars.SetVarOrMakePrivate(string1, idx, 2, true);
+                                AppVars.SetVar(string1, temp[lowWA].DbfInfo.Alias, idx, 1);
+                                AppVars.SetVar(string1, lowWA, idx, 2);
 
                                 temp.Remove(lowWA);
                             }
@@ -817,11 +817,11 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = idx;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AVCXCLASSES@??":
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AWORKAREAS":     // List of active workareas AWORKAREAS(datasession)
@@ -879,13 +879,13 @@ namespace JAXBase.Math
                             if (lowWA > 0)
                             {
                                 idx++;
-                                App.SetVarOrMakePrivate(string1, idx, 6, true);
-                                App.SetVar(string1, lowWA, idx, 1);                         // Work area number
-                                App.SetVar(string1, temp[lowWA].DbfInfo.Alias, idx, 2);     // Alias
-                                App.SetVar(string1, temp[lowWA].DbfInfo.TableType, idx, 3); // Table type
-                                App.SetVar(string1, temp[lowWA].DbfInfo.TableName, idx, 4); // Table Name
-                                App.SetVar(string1, temp[lowWA].DbfInfo.TableRef, idx, 5);  // Table FQFN or database!table for sql result set
-                                App.SetVar(string1, temp[lowWA].DbfInfo.RecCount, idx, 6);  // Record Count
+                                AppVars.SetVarOrMakePrivate(string1, idx, 6, true);
+                                AppVars.SetVar(string1, lowWA, idx, 1);                         // Work area number
+                                AppVars.SetVar(string1, temp[lowWA].DbfInfo.Alias, idx, 2);     // Alias
+                                AppVars.SetVar(string1, temp[lowWA].DbfInfo.TableType, idx, 3); // Table type
+                                AppVars.SetVar(string1, temp[lowWA].DbfInfo.TableName, idx, 4); // Table Name
+                                AppVars.SetVar(string1, temp[lowWA].DbfInfo.TableRef, idx, 5);  // Table FQFN or database!table for sql result set
+                                AppVars.SetVar(string1, temp[lowWA].DbfInfo.RecCount, idx, 6);  // Record Count
 
                                 temp.Remove(lowWA);
                             }
@@ -899,12 +899,12 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = idx;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
                 default:
-                    throw new Exception("1099|" + _rpn[..1]);
+                    throw new Exception("1999|" + _rpn[..1] + "|A0");
             }
 
             return tAnswer;
@@ -913,7 +913,6 @@ namespace JAXBase.Math
         public static JAXObjects.Token A1(AppClass App, string _rpn, List<string> pop)
         {
             JAXObjects.Token tAnswer = new();
-            JAXDataSession thisDS = App.jaxDataSession[App.CurrentDataSession];
 
             // token types (_ is var, N=Numeric, C=character, etc)
             string stype1 = (pop.Count > 0 ? pop[0][..1] : string.Empty);
@@ -944,14 +943,14 @@ namespace JAXBase.Math
                     if (stype1.Equals("L"))
                         tAnswer._avalue[0].Value = string1.Equals(".F.") ? ".T." : ".F.";
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ABS":                                                                // Get the absolute value of the number
                     if (stype1.Equals("N"))
                         tAnswer._avalue[0].Value = System.Math.Abs(val1);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ACOS":                                                               // Arc Cosine
@@ -1020,7 +1019,7 @@ namespace JAXBase.Math
                     else
                     {
                         if (string.IsNullOrWhiteSpace(stype3) == false)
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
                     if (stype4.Equals("N"))
@@ -1034,7 +1033,7 @@ namespace JAXBase.Math
                     else
                     {
                         if (string.IsNullOrWhiteSpace(stype3) == false)
-                            App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
 
                     if (stype1.Equals("C") && stype2.Equals("C"))
@@ -1057,7 +1056,7 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -1069,7 +1068,7 @@ namespace JAXBase.Math
                     break;
 
                 default:
-                    throw new Exception("1099|" + _rpn[..1]);
+                    throw new Exception("1999|" + _rpn[..1] + "|A1");
             }
 
             return tAnswer;
@@ -1082,8 +1081,8 @@ namespace JAXBase.Math
             JAXObjects.Token tAnswer = new();
             int j = 0;
 
-            JAXObjects.Token SourceTK = await App.GetVarToken(string1);
-            JAXObjects.Token DestTK = await App.GetVarToken(string2);
+            JAXObjects.Token SourceTK = await AppVars.GetVarToken(string1);
+            JAXObjects.Token DestTK = await AppVars.GetVarToken(string2);
 
             if (SourceTK.TType.Equals("A"))
             {
@@ -1101,8 +1100,8 @@ namespace JAXBase.Math
                 // Do we need to create or enlarge the Destination?
                 if (DestTK.TType.Equals("A") == false || (DestTK.Row < 1 ? 1 : DestTK.Row) * DestTK.Col < nSourceElementCount)
                 {
-                    App.SetVarOrMakePrivate(string2, SourceTK.Row, SourceTK.Col, true);
-                    DestTK = await App.GetVarToken(string2);
+                    AppVars.SetVarOrMakePrivate(string2, SourceTK.Row, SourceTK.Col, true);
+                    DestTK = await AppVars.GetVarToken(string2);
                 }
 
                 // Make sure the offset doesn't go past the current element count
@@ -1110,13 +1109,13 @@ namespace JAXBase.Math
                 {
                     int icount = (nFirstSourceElement + nElementCount) / DestTK.Col;
                     if (icount * DestTK.Col < nFirstSourceElement + nElementCount) icount++;
-                    App.SetVarOrMakePrivate(string2, icount, SourceTK.Col, true);
+                    AppVars.SetVarOrMakePrivate(string2, icount, SourceTK.Col, true);
                 }
 
                 // Load the pointer for the variable in question and then
                 // step through the source array, replacing elements of
                 // the destination array by value
-                JAXObjects.Token destArray = await App.GetVarToken(string2);
+                JAXObjects.Token destArray = await AppVars.GetVarToken(string2);
 
                 // Adjust the starting points for a zero based array
                 nFirstDestElement--;
@@ -1144,7 +1143,7 @@ namespace JAXBase.Math
             if (stype1.Equals("N"))
                 tAnswer._avalue[0].Value = System.Math.Acos(val1);
             else
-                App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             return tAnswer;
         }
@@ -1164,14 +1163,14 @@ namespace JAXBase.Math
             {
 
                 // Set the dimensions
-                App.SetVarOrMakePrivate(string1, j1, 2, true);
+                AppVars.SetVarOrMakePrivate(string1, j1, 2, true);
 
                 for (int i = 0; i < thisDS.Databases.Count; i++)
                 {
                     if (thisDS.Databases.ElementAt(i).Value.DbfInfo.IsDBC)
                     {
-                        App.SetVar(string1, thisDS.Databases.ElementAt(i).Value.DbfInfo.Alias, i, 1);
-                        App.SetVar(string1, JAXLib.JustFullPath(thisDS.Databases.ElementAt(i).Value.DbfInfo.FQFN), i, 2);
+                        AppVars.SetVar(string1, thisDS.Databases.ElementAt(i).Value.DbfInfo.Alias, i, 1);
+                        AppVars.SetVar(string1, JAXLib.JustFullPath(thisDS.Databases.ElementAt(i).Value.DbfInfo.FQFN), i, 2);
                     }
                 }
             }
@@ -1205,12 +1204,12 @@ namespace JAXBase.Math
 
             if (results.Count > 0)
             {
-                JAXObjects.Token tkarray = await App.GetVarToken(string1);
+                JAXObjects.Token tkarray = await AppVars.GetVarToken(string1);
                 if (tkarray.Col > 1 || tkarray.Row < results.Count)
-                    App.SetVarOrMakePrivate(string1, results.Count, 1, true);
+                    AppVars.SetVarOrMakePrivate(string1, results.Count, 1, true);
 
                 for (int i = 0; i < results.Count; i++)
-                    App.SetVar(string1, results[i], i, 1);
+                    AppVars.SetVar(string1, results[i], i, 1);
             }
 
             tAnswer._avalue[0].Value = results.Count.ToString();
@@ -1222,15 +1221,14 @@ namespace JAXBase.Math
         {
             JAXObjects.Token tAnswer = new();
             bool llSuccess = true;
-            int intval2, intval3;
 
             try
             {
-                if (p.Count < 1 || (int.TryParse(p[0][1..], out intval2) == false)) intval2 = 0;    // which row/col
-                if (p.Count < 2 || (int.TryParse(p[1][1..], out intval3) == false)) intval3 = 0;    // 2=col
+                if (p.Count < 1 || (int.TryParse(p[0][1..], out int intval2) == false)) intval2 = 0;    // which row/col
+                if (p.Count < 2 || (int.TryParse(p[1][1..], out int intval3) == false)) intval3 = 0;    // 2=col
 
                 // Get the token from the memory location
-                JAXObjects.Token tkArray = await App.GetVarToken(string1);
+                JAXObjects.Token tkArray = await AppVars.GetVarToken(string1);
 
                 if (tkArray.TType.Equals("A"))
                 {
@@ -1293,7 +1291,7 @@ namespace JAXBase.Math
             }
             catch (Exception e)
             {
-                App.SetError(9999, "ADEL: " + e.Message, "*JLW");
+                AppErrorHandling.SetError(9999, "ADEL: " + e.Message, "*JLW");
                 llSuccess = false;
             }
 
@@ -1319,10 +1317,11 @@ namespace JAXBase.Math
                 string2 = "*.*";
             }
 
-            int intval3, intval4, results = 0;
+            int results = 0;
 
-            if (p.Count < 2 || (int.TryParse(p[1][1..], out intval3) == false)) intval3 = 0;
-            if (p.Count < 3 || (int.TryParse(p[2][1..], out intval4) == false)) intval4 = 0;
+            // TODO 
+            if (p.Count > 1 || (int.TryParse(p[1][1..], out int intval3) == false)) intval3 = 0;
+            if (p.Count > 2 || (int.TryParse(p[2][1..], out int intval4) == false)) intval4 = 0;
 
             if (stype2.Equals("C"))
             {
@@ -1336,11 +1335,11 @@ namespace JAXBase.Math
 
                 if (fileArray.Length > 0)
                 {
-                    JAXObjects.Token tkArray = await App.GetVarToken(string1);
+                    JAXObjects.Token tkArray = await AppVars.GetVarToken(string1);
                     if (tkArray.TType.Equals("A") == false || tkArray.Row != fileArray.Length || tkArray.Col != 5)
-                        App.SetVarOrMakePrivate(string1, fileArray.Length, 5, true);
+                        AppVars.SetVarOrMakePrivate(string1, fileArray.Length, 5, true);
 
-                    JAXObjects.Token tk = await App.GetVarToken(string1);
+                    JAXObjects.Token tk = await AppVars.GetVarToken(string1);
                     int k = 0;
 
                     for (int i = 0; i < fileArray.Length; i++)
@@ -1366,7 +1365,7 @@ namespace JAXBase.Math
                 tAnswer._avalue[0].Value = results;
             }
             else
-                App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             return tAnswer;
         }
@@ -1382,7 +1381,7 @@ namespace JAXBase.Math
             if (p.Count < 1 || (int.TryParse(p[0][1..], out intval2) == false)) intval2 = 0;
             if (p.Count < 2 || (int.TryParse(p[1][1..], out intval3) == false)) intval3 = 0;
 
-            JAXObjects.Token tk = await App.GetVarToken(string1);
+            JAXObjects.Token tk = await AppVars.GetVarToken(string1);
             if (tk.TType.Equals("A"))
             {
                 intval1 = tk.Row * tk.Col;
@@ -1408,16 +1407,16 @@ namespace JAXBase.Math
         public static JAXObjects.Token AError(AppClass App, string string1)
         {
             JAXObjects.Token tAnswer = new();
-            App.SetVarOrMakePrivate(string1, 1, 7, true);
+            AppVars.SetVarOrMakePrivate(string1, 1, 7, true);
 
-            var Err = App.GetLastError();
-            App.SetVar(string1, Err.ErrorNo, 1, 1);
-            App.SetVar(string1, Err.ErrorMessage, 1, 2);
-            App.SetVar(string1, null, 1, 3);
-            App.SetVar(string1, Err.ErrorProcedure, 1, 4);
-            App.SetVar(string1, null, 1, 5);
-            App.SetVar(string1, null, 1, 6);
-            App.SetVar(string1, null, 1, 7);
+            var Err = AppErrorHandling.GetCurrentError();
+            AppVars.SetVar(string1, Err.ErrorNo, 1, 1);
+            AppVars.SetVar(string1, Err.ErrorMessage, 1, 2);
+            AppVars.SetVar(string1, null, 1, 3);
+            AppVars.SetVar(string1, Err.ErrorProcedure, 1, 4);
+            AppVars.SetVar(string1, null, 1, 5);
+            AppVars.SetVar(string1, null, 1, 6);
+            AppVars.SetVar(string1, null, 1, 7);
 
             tAnswer._avalue[0].Value = 1;
             return tAnswer;
@@ -1457,28 +1456,28 @@ namespace JAXBase.Math
             {
                 JAXDirectDBF.DBFInfo DbfInfo = thisDS.WorkAreas[wa].DbfInfo;
                 result = DbfInfo.FieldCount;
-                App.SetVarOrMakePrivate(string1, result, 18, true);
+                AppVars.SetVarOrMakePrivate(string1, result, 18, true);
 
                 for (int i = 1; i <= result; i++)
                 {
-                    App.SetVar(string1, DbfInfo.Fields[i].FieldName, i, 1); // Field Name
-                    App.SetVar(string1, DbfInfo.Fields[i].FieldType, i, 2); // Field Type
-                    App.SetVar(string1, DbfInfo.Fields[i].FieldLen, i, 3);   // Field width
-                    App.SetVar(string1, DbfInfo.Fields[i].FieldDec, i, 4);  // Field decimal
-                    App.SetVar(string1, DbfInfo.Fields[i].NullOK, i, 5); // Field is nullable
-                    App.SetVar(string1, DbfInfo.Fields[i].BinaryData, i, 6); // Codepage translation not allowed (data is binary)
-                    App.SetVar(string1, string.Empty, i, 7);    // Field Validation Expresion
-                    App.SetVar(string1, string.Empty, i, 8);    // Field validation Text
-                    App.SetVar(string1, DbfInfo.Fields[i].DefaultValue, i, 9);
-                    App.SetVar(string1, string.Empty, i, 10);   // Table validation Expression
-                    App.SetVar(string1, string.Empty, i, 11);   // Table validation Text
-                    App.SetVar(string1, string.Empty, i, 12);   // Long Table Name
-                    App.SetVar(string1, string.Empty, i, 13);   // Insert Trigger Expression
-                    App.SetVar(string1, string.Empty, i, 14);   // Update Trigger Expression
-                    App.SetVar(string1, string.Empty, i, 15);   // Delete Trigger Expression
-                    App.SetVar(string1, string.Empty, i, 16);   // Table comment
-                    App.SetVar(string1, DbfInfo.Fields[i].AutoIncNext, i, 17);  // NextValue for autoincrementing
-                    App.SetVar(string1, DbfInfo.Fields[i].AutoIncrement, i, 18);  // Step for autoincrementing
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].FieldName, i, 1); // Field Name
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].FieldType, i, 2); // Field Type
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].FieldLen, i, 3);   // Field width
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].FieldDec, i, 4);  // Field decimal
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].NullOK, i, 5); // Field is nullable
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].BinaryData, i, 6); // Codepage translation not allowed (data is binary)
+                    AppVars.SetVar(string1, string.Empty, i, 7);    // Field Validation Expresion
+                    AppVars.SetVar(string1, string.Empty, i, 8);    // Field validation Text
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].DefaultValue, i, 9);
+                    AppVars.SetVar(string1, string.Empty, i, 10);   // Table validation Expression
+                    AppVars.SetVar(string1, string.Empty, i, 11);   // Table validation Text
+                    AppVars.SetVar(string1, string.Empty, i, 12);   // Long Table Name
+                    AppVars.SetVar(string1, string.Empty, i, 13);   // Insert Trigger Expression
+                    AppVars.SetVar(string1, string.Empty, i, 14);   // Update Trigger Expression
+                    AppVars.SetVar(string1, string.Empty, i, 15);   // Delete Trigger Expression
+                    AppVars.SetVar(string1, string.Empty, i, 16);   // Table comment
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].AutoIncNext, i, 17);  // NextValue for autoincrementing
+                    AppVars.SetVar(string1, DbfInfo.Fields[i].AutoIncrement, i, 18);  // Step for autoincrementing
                 }
             }
 
@@ -1501,7 +1500,7 @@ namespace JAXBase.Math
                 if (p.Count < 2 || (int.TryParse(p[1][1..], out intval3) == false)) intval3 = 0;
 
                 // Get the token from the memory location
-                JAXObjects.Token tkArray = await App.GetVarToken(string1);
+                JAXObjects.Token tkArray = await AppVars.GetVarToken(string1);
 
                 if (tkArray.TType.Equals("A"))
                 {
@@ -1565,7 +1564,7 @@ namespace JAXBase.Math
             }
             catch (Exception e)
             {
-                App.SetError(9999, "AINS: " + e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9999, "AINS: " + e.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 llSuccess = false;
             }
 
@@ -1579,7 +1578,7 @@ namespace JAXBase.Math
             JAXObjects.Token tAnswer = new();
             tAnswer._avalue[0].Value = 0;
 
-            JAXObjects.Token tk = await App.GetVarToken(string1);
+            JAXObjects.Token tk = await AppVars.GetVarToken(string1);
             if (tk.TType.Equals("A"))
             {
                 tAnswer._avalue[0].Value = intval2 switch
@@ -1601,10 +1600,10 @@ namespace JAXBase.Math
 
 
             List<string> ln = GetALinesList(App, p);
-            App.SetVarOrMakePrivate(varName, ln.Count, 1, true);   // adjust array length
+            AppVars.SetVarOrMakePrivate(varName, ln.Count, 1, true);   // adjust array length
 
             for (int i = 1; i <= ln.Count; i++)
-                App.SetVar(varName, ln[i - 1], i, 1);
+                AppVars.SetVar(varName, ln[i - 1], i, 1);
 
             tAnswer._avalue[0].Value = ln.Count;
             return tAnswer;
@@ -1832,7 +1831,7 @@ namespace JAXBase.Math
             if (stype1.Equals("N"))
                 tAnswer._avalue[0].Value = System.Math.Asin(val1);
             else
-                App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             return tAnswer;
         }
@@ -1874,7 +1873,7 @@ namespace JAXBase.Math
             bool exactOff = (nFlags & (1 << 1)) > 0 && (nFlags & (1 << 2)) > 0;
             bool returnRow = (nFlags & (1 << 3)) > 0;
 
-            JAXObjects.Token searchTK = await App.GetVarToken(string1);
+            JAXObjects.Token searchTK = await AppVars.GetVarToken(string1);
             if (searchTK.TType.Equals("A"))
             {
                 if (nSearchColumn > 0)
@@ -1978,9 +1977,9 @@ namespace JAXBase.Math
             // Get a list of active data sessions
             if (j1 > 0)
             {
-                App.SetVarOrMakePrivate(string1, j1, 1, true);
+                AppVars.SetVarOrMakePrivate(string1, j1, 1, true);
                 for (int i = 0; i < App.jaxDataSession.Count; i++)
-                    App.SetVar(string1, App.jaxDataSession.ElementAt(i).Key, i, 1);
+                    AppVars.SetVar(string1, App.jaxDataSession.ElementAt(i).Key, i, 1);
             }
 
             tAnswer._avalue[0].Value = j1;
@@ -1992,17 +1991,17 @@ namespace JAXBase.Math
         public static JAXObjects.Token AStackinfo(AppClass App, string string1)
         {
             JAXObjects.Token tAnswer = new();
-            App.SetVarOrMakePrivate(string1, App.AppLevels.Count, 6, true);
+            AppVars.SetVarOrMakePrivate(string1, App.AppLevels.Count, 6, true);
 
             for (int i = 0; i < App.AppLevels.Count; i++)
             {
                 // TODO - Should I support 4 - 6?
-                App.SetVar(string1, i, 1, 1);                                           // Level
-                App.SetVar(string1, App.AppLevels[0].PrgName, 2, 1);                    // Main Program
-                App.SetVar(string1, JAXLib.JustStem(App.AppLevels[i].PrgName), 3, 1);   // Object or module
-                App.SetVar(string1, string.Empty, 4, 1);                                // Object or model source name
-                App.SetVar(string1, 0, 5, 1);                                           // Line Number
-                App.SetVar(string1, string.Empty, 6, 1);                                // Source
+                AppVars.SetVar(string1, i, 1, 1);                                           // Level
+                AppVars.SetVar(string1, App.AppLevels[0].PrgName, 2, 1);                    // Main Program
+                AppVars.SetVar(string1, JAXLib.JustStem(App.AppLevels[i].PrgName), 3, 1);   // Object or module
+                AppVars.SetVar(string1, string.Empty, 4, 1);                                // Object or model source name
+                AppVars.SetVar(string1, 0, 5, 1);                                           // Line Number
+                AppVars.SetVar(string1, string.Empty, 6, 1);                                // Source
             }
 
             tAnswer._avalue[0].Value = App.AppLevels.Count;
@@ -2019,7 +2018,7 @@ namespace JAXBase.Math
             if (p.Count < 1 || (int.TryParse(p[0][1..], out intval2) == false)) intval2 = 0;
             if (p.Count < 2 || (int.TryParse(p[1][1..], out intval3) == false)) intval3 = 3;
 
-            JAXObjects.Token tk = await App.GetVarToken(string1);
+            JAXObjects.Token tk = await AppVars.GetVarToken(string1);
 
             if (intval2 <= tk.Row * tk.Col)
                 tAnswer._avalue[0].Value = intval3 == 1 ? (tk.Col == 1 ? intval2 : (intval2 / tk.Col)) : (tk.Col == 1 ? 1 : intval2 % tk.Col + 1);
@@ -2045,7 +2044,7 @@ namespace JAXBase.Math
 
                     for (int j = 0; j < varsX.Count; j++)
                     {
-                        JAXObjects.Token t = await App.GetVarToken(varsX[j]);
+                        JAXObjects.Token t = await AppVars.GetVarToken(varsX[j]);
                         if (t.TType.Equals("O"))
                         {
                             JAXObjectWrapper this1 = (JAXObjectWrapper)t.Element.Value;
@@ -2066,7 +2065,7 @@ namespace JAXBase.Math
 
                 for (int j = 0; j < varsX.Count; j++)
                 {
-                    JAXObjects.Token t = await App.GetVarToken(varsX[j]);
+                    JAXObjects.Token t = await AppVars.GetVarToken(varsX[j]);
                     if (t.TType.Equals("O"))
                     {
                         JAXObjectWrapper this1 = (JAXObjectWrapper)t.Element.Value;
@@ -2088,7 +2087,7 @@ namespace JAXBase.Math
         public static int ASort(AppClass App, string string1, List<string> p)
         {
             int result = 0;
-            throw new Exception("1999|");
+            throw new Exception("1999||ASort");
         }
     }
 }

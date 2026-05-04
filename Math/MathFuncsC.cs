@@ -2,7 +2,7 @@
  * --------------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Text;
 
@@ -41,7 +41,7 @@ namespace JAXBase.Math
             {
                 case "`CANDIDATE":                          // Is index a candidate index?
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CAPSLOCK":                           // Caps key is on
@@ -50,6 +50,10 @@ namespace JAXBase.Math
 
                 case "`CAST":                               // Cast one type to another, usually in a SQL statement
                     tAnswer._avalue[0].Value = Cast(App, pop);
+                    break;
+
+                case "`CD":
+                    tAnswer._avalue[0].Value = Program.CurrentApp.CurrentDS.JaxSettings.Default;
                     break;
 
                 case "`CDOW":                               // Calendar Day of Week
@@ -61,7 +65,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.DayOfWeek.ToString();
                     }
                     else
-                        App.SetError(9996, "11|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(9996, "11|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CEILING":                            // Get next highest integer
@@ -71,7 +75,7 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = intval1;
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CHR":                // Return the ascii character of a number
@@ -80,7 +84,7 @@ namespace JAXBase.Math
 
                 case "`CHRSAW":             // is this character in the keyboard buffer?
                     // --------------------------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CHRTRAN": // Change each characer in string1 with string2
@@ -98,12 +102,12 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = result;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CHRTRANC":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CMONTH":
@@ -115,7 +119,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.Month.ToString();
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`COMMIT":
@@ -141,27 +145,27 @@ namespace JAXBase.Math
                     if (stype1.Equals("N"))
                         tAnswer._avalue[0].Value = System.Math.Acos(val1);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CPCONVERT":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CPCURRENT":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CPDBF":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CREATEBINARY":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CREATEOBJECT":                   // Create an object of specified class
@@ -200,7 +204,7 @@ namespace JAXBase.Math
                                 else
                                 {
                                     // Was not in the format NAME=VALUE
-                                    App.SetError(9999,$"1905|{pl[i]}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                    AppErrorHandling.SetError(9999,$"1905|{pl[i]}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                 }
                             }
                         }
@@ -220,7 +224,7 @@ namespace JAXBase.Math
                         if (jow is not null)
                             tAnswer._avalue[0].Value = JAXUtilities.CloneJson(jow)!;
                         else
-                            App.SetError(9999, "1733|CREATEOBJECT()|" + string1.ToUpper(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(9999, "1733|CREATEOBJECT()|" + string1.ToUpper(), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     }
                     break;
 
@@ -244,7 +248,7 @@ namespace JAXBase.Math
                             if (string.IsNullOrWhiteSpace(stype2))
                                 string2 = "4I";
                             else
-                                App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
 
                         // First, how long is it?
@@ -297,7 +301,7 @@ namespace JAXBase.Math
 
                 case "`CURSORGETPROP":
                     // ---------------------------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CURSORSETPROP":
@@ -328,10 +332,10 @@ namespace JAXBase.Math
                             App.CurrentDS.SelectWorkArea(string2.Trim());
                     }
                     else if (string.IsNullOrWhiteSpace(string2) == false)
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     if (App.CurrentDS.CurrentWA is null || App.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
-                        App.SetError(52, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(52, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     else
                     {
                         // Now get the current field value directly from the table
@@ -352,7 +356,7 @@ namespace JAXBase.Math
                         App.CurrentDS.SelectWorkArea(cwa);
 
                         if (valueList.Count == 0)
-                            App.SetError(9999, "9999|CURREC()|"+_rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(9999, "9999|CURREC()|"+_rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         else
                         {
                             // Create the object and save the answer
@@ -380,10 +384,10 @@ namespace JAXBase.Math
                             App.CurrentDS.SelectWorkArea(string2.Trim());
                     }
                     else if (string.IsNullOrWhiteSpace(string2) == false)
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     if (App.CurrentDS.CurrentWA is null || App.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
-                        App.SetError(52, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(52, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     else
                     {
 
@@ -407,7 +411,7 @@ namespace JAXBase.Math
                         if (valueList.Count == 1)
                             tAnswer.Element.Value = valueList[0].Element.Value;
                         else
-                            App.SetError(9999, "9999|CURVAL()"+_rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(9999, "9999|CURVAL()"+_rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     }
                     break;
@@ -472,7 +476,7 @@ namespace JAXBase.Math
                                     break;
 
                                 default:
-                                    App.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                    AppErrorHandling.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                     break;
                             }
 
@@ -488,7 +492,7 @@ namespace JAXBase.Math
                                 result._avalue[0].Value = val1;
                         }
                         else
-                            App.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // Invalid number of parameters
+                            AppErrorHandling.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // Invalid number of parameters
                         break;
 
                     case "D":
@@ -501,7 +505,7 @@ namespace JAXBase.Math
                             result._avalue[0].Value = dtVal.AddSeconds(-dtVal.Hour * 3600 - dtVal.Minute * 60 - dtVal.Second);
                         }
                         else
-                            App.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case "I":
@@ -523,7 +527,7 @@ namespace JAXBase.Math
                                 break;
 
                             default:
-                                App.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                 break;
                         }
                         break;
@@ -538,7 +542,7 @@ namespace JAXBase.Math
                             result._avalue[0].Value = dtVal;
                         }
                         else
-                            App.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case "L":
@@ -562,22 +566,22 @@ namespace JAXBase.Math
                                 break;
 
                             default:
-                                App.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(9999, "9999|CAST()|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                 break;
                         }
                         break;
 
                     case "U":
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // TODO
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // TODO
                         break;
 
                     case "X":
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // TODO
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // TODO
                         break;
                 }
             }
             else
-                App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             return result;
         }

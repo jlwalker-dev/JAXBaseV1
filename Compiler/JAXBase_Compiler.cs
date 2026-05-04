@@ -2,7 +2,7 @@
 using JAXBase.Math;
 using System.Text;
 using System.Text.RegularExpressions;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Compiler
@@ -74,7 +74,7 @@ namespace JAXBase.Compiler
                 "build" => throw new Exception("1999|BUILD"),
                 "calculate" => Generic_Parser(cmdRest, "XX1,SC0,FR0,WL0,TO1", []),
                 "cancel" => string.Empty,
-                "cd" => Generic_Parser(cmdRest, "XX0", []),
+                "cd" => Generic_Parser(cmdRest, "XF0", []),
                 "case" => Struct_Parser(cmdRest, "CS", "XX*", []),
                 "catch" => Struct_Parser(cmdRest, "TC", "TO0,WH0", []),
                 "clear" => JAXBase_Compiler_C.Clear(this, cmdRest),
@@ -195,7 +195,7 @@ namespace JAXBase.Compiler
                 _ => Generic_Parser(cmdRest, "XX*", [])
             };
 
-            App.DebugLog($"adding {result.Length} bytes");
+            AppIO.DebugLog($"adding {result.Length} bytes");
             return result;
         }
 
@@ -217,7 +217,7 @@ namespace JAXBase.Compiler
 
 
             string[] block = cmdBlock.Replace("\n", "").Split('\r');
-            App.DebugLog($"Compiling {block.Length} lines");
+            AppIO.DebugLog($"Compiling {block.Length} lines");
 
             for (int i = 0; i < block.Length; i++)
             {
@@ -249,7 +249,7 @@ namespace JAXBase.Compiler
                     {
                         cmpLine.Append(ln);
 
-                        App.DebugLog(ln);
+                        AppIO.DebugLog(ln);
 
                         string cLine = cmpLine.ToString().Trim();
                         string cmdLine = CompileLine(cLine, inCompile).Trim();
@@ -268,52 +268,52 @@ namespace JAXBase.Compiler
                 }
             }
 
-            App.DebugLog($"{cmpBlock.Length} bytes in block");
+            AppIO.DebugLog($"{cmpBlock.Length} bytes in block");
 
             // If there is something in the loop stack, we have a problem
-            string lp = App.GetLoopStack();
+            string lp = AppLoop.GetLoopStack();
 
             while (lp.Length > 0)
             {
-                App.DebugLog($"LoopStack is not empty");
-                App.PopLoopStack();
+                AppIO.DebugLog($"LoopStack is not empty");
+                AppLoop.PopLoopStack();
 
                 switch (lp[0])
                 {
                     case 'C':   // DO CASE
-                        App.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case 'H':   // WITH
-                        App.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case 'I':   // IF
-                        App.SetError(1211, "1211|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1211, "1211|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case 'S':   // SCAN
-                        App.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case 'T':   // TRY
-                        App.SetError(2058, "2058|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(2058, "2058|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case 'W':   // DO WHILE
-                        App.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
 
                     case 'X':   // TEXT
-                        App.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1939, "1939|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         break;
                 }
 
                 // anything else?
-                lp = App.GetLoopStack();
+                lp = AppLoop.GetLoopStack();
             }
 
-            App.DebugLog("CompileBlock complete");
+            AppIO.DebugLog("CompileBlock complete");
             return cmpBlock.ToString();
         }
 
@@ -335,7 +335,7 @@ namespace JAXBase.Compiler
 
             if (string.IsNullOrWhiteSpace(cmdLine) == false)
             {
-                App.AppLevels[^1].CurrentLineOfCode = cmdLine;
+                App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = cmdLine;
 
                 // Get the leading token or variable/object name
                 string c = GetNextToken(cmdLine, " )]=", out string cmd);
@@ -632,6 +632,9 @@ namespace JAXBase.Compiler
          * XX@ - Lit/Expr List
          * XX! - FOR variable literal
          * XX: - Directory literal or expression
+         * XX$ - Get entire expression
+         * 
+         * XF0 - Path template
          * 
          * 
          * -----------------------------------------------------------------------------------------*/
@@ -899,7 +902,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 
@@ -961,7 +964,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 
@@ -1013,11 +1016,6 @@ namespace JAXBase.Compiler
             string result = string.Empty;
             List<string> thisParse = [];
 
-            if (Type.Equals("IE"))
-            {
-                int iii = 0;
-            }
-
             try
             {
                 if (JAXLib.InListC(Type, "WH", "HE"))
@@ -1048,12 +1046,12 @@ namespace JAXBase.Compiler
                 {
                     // If it's a start code then push the loop type to the loop stack
                     // Do Case, Do While, Do Until, Transaction, Try, PrintJob, If, For, Scan
-                    result = CompilerXRef["CS"].ToString() + App.AddLoop(Type[0].ToString()) + AppClass.stmtDelimiter;
+                    result = CompilerXRef["CS"].ToString() + AppLoop.AddLoop(Type[0].ToString()) + AppClass.stmtDelimiter;
                 }
                 else if (JAXLib.InListC(Type, "IS"))
                 {
                     // ELSEIF
-                    result = App.GetLoopStack();
+                    result = AppLoop.GetLoopStack();
                     if (result[0] == Type[0])
                         result = CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
                     else
@@ -1062,7 +1060,7 @@ namespace JAXBase.Compiler
                 else if (JAXLib.InListC(Type, "CS", "CO", "TC", "TF", "IL"))
                 {
                     // Case, Otherwise, Catch, Finally, Else
-                    result = App.GetLoopStack();
+                    result = AppLoop.GetLoopStack();
                     if (result[0] == Type[0])
                         result = CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
                     else
@@ -1071,7 +1069,7 @@ namespace JAXBase.Compiler
                 else if (JAXLib.InListC(Type, "CE", "WE", "UE", "BE", "TE", "PE", "IE", "FE", "SE"))
                 {
                     // End Case, End DoWhile, Until End, End BeginTransaction, End Try, End PrintJob, End If, EndFor, End Scan
-                    result = App.PopLoopStack();
+                    result = AppLoop.PopLoopStack();
 
                     if (result[0] == Type[0])
                         result = CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
@@ -1154,8 +1152,8 @@ namespace JAXBase.Compiler
                 }
             }
             catch (Exception ex)
-            {   
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            {
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 
@@ -1181,14 +1179,9 @@ namespace JAXBase.Compiler
 
                     switch (onCmd.ToLower())
                     {
-                        case "escape":
-                            // Set up the ON ESCAPE command
-                            result = CompilerXRef["CS"].ToString() + "ES" + AppClass.stmtDelimiter;
-                            break;
-
                         case "error":
                             // Set up the ON ERROR command
-                            result = CompilerXRef["CS"].ToString() + "ER" + AppClass.stmtDelimiter;
+                            result = CompilerXRef["CS"].ToString() + "E" + AppClass.stmtDelimiter;
                             break;
 
                         case "key":
@@ -1197,14 +1190,13 @@ namespace JAXBase.Compiler
                             if (onCmd.Equals("label", StringComparison.OrdinalIgnoreCase))
                             {
                                 if (string.IsNullOrEmpty(cmdRest))
-                                    onCmd = "";
+                                    throw new Exception("10|");
                                 else
                                 {
                                     cmdRest = GetNextLiteralOrExpression(cmdRest, "", out onCmd);
-                                    string code2Execute = "";
-
+                                    
                                     // Get the key label
-                                    KeyClass key = App.KeyLabel(onCmd);
+                                    KeyClass key = AppIO.KeyLabel(onCmd);
 
                                     // Build the dictionary for the command to execute
                                     string keylabel = key.CTRL ? "CTRL+" : "";
@@ -1212,26 +1204,11 @@ namespace JAXBase.Compiler
                                     keylabel += key.SHIFT ? "SHIFT+" : "";
                                     keylabel += key.keyLabel;
 
-                                    // Set or remove the on key handler from the dictionary
-                                    if (App.OnKeyLabel.ContainsKey(keylabel) == false && code2Execute.Length > 0)
-                                    {
-                                        App.OnKeyLabel.Add(keylabel, code2Execute); // Add key label
-                                        App.SetOnKeyLabel(key, keylabel, false);
-                                    }
-                                    if (App.OnKeyLabel.ContainsKey(keylabel) && code2Execute.Length > 0)
-                                    {
-                                        App.OnKeyLabel[keylabel] = code2Execute;    // Update key label
-                                        App.SetOnKeyLabel(key, keylabel, false);
-                                    }
-                                    else if (App.OnKeyLabel.ContainsKey(keylabel) && code2Execute.Length == 0)
-                                    {
-                                        App.OnKeyLabel.Remove(keylabel);            // Remove key label
-                                        App.SetOnKeyLabel(key, keylabel, false);
-                                    }
+                                    result = CompilerXRef["CS"].ToString() + "L" + AppClass.expDelimiter + CompilerXRef["ON"].ToString() + keylabel;
                                 }
 
                                 // Set up the ON KEY LABEL command
-                                result = CompilerXRef["CS"].ToString() + "LB" + AppClass.expDelimiter + onCmd + AppClass.stmtDelimiter;
+                                ;
                             }
                             else
                                 throw new Exception("10|");
@@ -1239,22 +1216,20 @@ namespace JAXBase.Compiler
 
                         case "shutdown":
                             // Set up the ON SHUTDOWN command
-                            result = CompilerXRef["CS"].ToString() + "SD" + AppClass.stmtDelimiter;
+                            result = CompilerXRef["CS"].ToString() + "S" + AppClass.stmtDelimiter;
                             break;
 
                         default:
                             throw new Exception("10|");
                     }
 
-                    if (string.IsNullOrWhiteSpace(onCmd) == false)
-                    {
-                        // Compile the command to execute
-                    }
+                    // Add the command source - syntax is checked if the ON command is executed
+                    result += CompilerXRef["CM"] + cmdRest + AppClass.stmtDelimiter;
                 }
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 
@@ -1325,7 +1300,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
                 result = string.Empty;
             }
 
@@ -1387,7 +1362,7 @@ namespace JAXBase.Compiler
         }
 
         /// <summary>
-        /// Return a literal string unless surrounded by () which indicates an expression
+        /// Return a literal name string unless surrounded by () which indicates an expression
         /// </summary>
         /// <param name="command">Command string to parse</param>
         /// <param name="tokens">Terminating tokens (space assumed)</param>
@@ -1417,6 +1392,44 @@ namespace JAXBase.Compiler
 
             return cmd;
         }
+
+
+        /// <summary>
+        /// Return a literal path+file string unless surrounded by () which indicates an expression
+        /// </summary>
+        /// <param name="command">Command string to parse</param>
+        /// <param name="tokens">Terminating tokens (space assumed)</param>
+        /// <param name="exprResult">Compiled RPN string</param>
+        /// <returns>Returns the remainder of the command string</returns>
+        public string GetFileLiteralOrExpression(string command, string tokens, out string exprResult)
+        {
+            string cmd = command.Trim();
+            string expr = string.Empty;
+            exprResult = "";
+
+            if (cmd.Length > 0)
+            {
+                if (cmd[..1].Equals("("))
+                {
+                    // It's an (expression)
+                    cmd = GetNextExpression(command, tokens, out exprResult);
+                }
+                else
+                {
+                    // Grab the next expression
+                    cmd = GetNextToken(command, tokens, out exprResult);
+
+                    // Now make sure it's just letters, numbers, and underscores
+                    if (Regex.IsMatch(exprResult[..1], @"^[a-zA-Z0-9_\.\\*?]+$"))
+                        exprResult = AppClass.literalStart + exprResult + AppClass.literalEnd; // Wrap it up as a literal
+                    else
+                        throw new Exception("11|"); // Toss an error
+                }
+            }
+
+            return cmd;
+        }
+
 
         /// <summary>
         /// Return a directory literal unless surrounded by () which indicates an expression
@@ -1920,7 +1933,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return cmd;
@@ -2024,7 +2037,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return sb.ToString().TrimEnd(AppClass.expParam) + AppClass.expEnd;
@@ -2537,11 +2550,22 @@ namespace JAXBase.Compiler
                         // ---------------------------------------------
                         // WHILE lExpression
                         // ---------------------------------------------
-                        if (allowed.Contains("WH") == false) throw new Exception("10||Unexpected WHILE");
+                        if (allowed.Contains("WL") == false) throw new Exception("10||Unexpected WHILE");
                         if (code["while"].Length > 0) throw new Exception("10||Cannot redefine while");
 
                         cmdRest = GetNextExpression(cmdRest, string.Empty, out cmdOut);
                         code["while"] = cmdOut;
+                    }
+                    else if (s.Equals("when", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // ---------------------------------------------
+                        // WHEN lExpression
+                        // ---------------------------------------------
+                        if (allowed.Contains("WH") == false) throw new Exception("10||Unexpected WHEN");
+                        if (code["when"].Length > 0) throw new Exception("10||Cannot redefine when");
+
+                        cmdRest = GetNextExpression(cmdRest, string.Empty, out cmdOut);
+                        code["when"] = cmdOut;
                     }
                     else if (s.Equals("with", StringComparison.OrdinalIgnoreCase))
                     {
@@ -2759,6 +2783,20 @@ namespace JAXBase.Compiler
                             }
                         }
                     }
+                    else if (allowed.Contains("XF"))
+                    {
+                        cmdRest = (s + " " + cmdRest).Trim();
+
+                        if (allowed.Contains("XF0"))
+                        {
+                            // FilePath literal or expression
+                            cmdRest = GetFileLiteralOrExpression(cmdRest, ", ", out cmdOut);
+
+                            code["fileexpr"] = cmdOut;
+                        }
+                        else
+                            throw new Exception("1999||XF issue in{allowed}");
+                    }
                     else if (allowed.Contains("XX"))
                     {
                         // ---------------------------------------------
@@ -2902,7 +2940,7 @@ namespace JAXBase.Compiler
             }
             catch (Exception ex)
             {
-                App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return code;
@@ -3150,7 +3188,7 @@ namespace JAXBase.Compiler
             // Get the var name(s)
             cmdRest = GetNextToken(cmdRest, ", ", out var);
             if (var.Length == 0) throw new Exception("10||Missing var list");
-            List<string> aTest = App.BreakArrayOrUDF(var);
+            List<string> aTest = AppHelper.BreakArrayOrUDF(var);
             if (aTest.Count < 2) throw new Exception($"10||Invalid dimension of {var.ToUpper()}");
             cmdOut = AppClass.literalStart + var + AppClass.literalEnd;
 

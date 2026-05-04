@@ -1,4 +1,5 @@
-﻿using JAXBase.XBase;
+﻿using JAXBase.Core;
+using JAXBase.XBase;
 
 namespace JAXBase.Executer
 {
@@ -18,7 +19,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

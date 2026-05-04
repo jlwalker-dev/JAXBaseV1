@@ -1,7 +1,12 @@
 ﻿using Avalonia.Input;
 using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
+using System.Collections;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Dynamic;
+using System.Windows.Navigation;
 
 namespace JAXBase.XBase
 {
@@ -33,8 +38,8 @@ namespace JAXBase.XBase
     // SubTypes: F=Loaded IImage/memorystream, N=Local File Name, L=URL, I=URI, T=Token Var name
     public class MediaEntry
     {
-        public char Type = 'I';         
-        public string SubType = "";     
+        public char Type = 'I';
+        public string SubType = "";
         public string FileName = "";
         public object? Media = null;
     }
@@ -130,17 +135,34 @@ namespace JAXBase.XBase
     }
 
     // FOR and SCAN loop information because once the loop
-    // is started, the parameters aren't allowed to change
+    // is started, the parameters aren't allowed to change.
+    // Also used by the TryLoop stack
     public class LoopClass
     {
-        public string VarName = string.Empty;
+        public string VarName = string.Empty;   // Try code
         public double EndValue = 0.0D;
         public double StepValue = 0.0D;
         public int DataSession = 0;
         public int WorkArea = 0;
-        public int RecordCounter = 0;
+        public int RecordCounter = 0;           // Try phase
         public JAXScope? Scope = null;
     }
+
+
+    /// <summary>
+    /// Loop class: TryPhase 1=In Try, 2=Looking for Catch, 3=In Catch, 4=In Finally
+    /// </summary>
+    public class TryClass
+    {
+        public string Code = string.Empty;
+        public int TryPhase = 0;
+        public int Level = -1;
+        public int PrgPos = -1;
+        public List<int> CasePos = [];
+        public int FinallyPos = -1;
+        public int EndTry = -1;
+    }
+
 
     // Used for data binding
     public class ListObjectCollection
@@ -223,7 +245,6 @@ namespace JAXBase.XBase
         }
     }
 
-
     /*-----------------------------------------------------------*
      * Each PRG is assigned a level that holds information for 
      * that instance including private variables that are 
@@ -241,6 +262,7 @@ namespace JAXBase.XBase
         public int CurrentLine = -1;                // Current executing line
         public int FileLine = -1;
         public int StartLine = -1;
+        public int CallingLevel = -1;               // Used to return back to the correct level
 
         public int LastCommand = -1;
         public string CurrentLineOfCode = string.Empty;
@@ -260,6 +282,7 @@ namespace JAXBase.XBase
         public List<string> LoopStack = [];         // Loop stacks
         public Dictionary<string, LoopClass> ForLoops = [];
         public Dictionary<string, LoopClass> ScanLoops = [];
+        public List<TryClass> TryStack = [];
         public List<string> WithStack = [];         // With statements
 
         public int CodeCacheIDX = -1;
@@ -394,6 +417,7 @@ namespace JAXBase.XBase
         public string DATABASE = string.Empty;
         public List<ExCodeRPN> Expressions = [];
         public List<ExCodeName> Fields = [];
+        public List<ExCodeRPN> FileExpr = [];
         public string[] Flags = [];
         public string FNAME = string.Empty;
         public string ForExpr = string.Empty;
@@ -584,7 +608,7 @@ namespace JAXBase.XBase
         public string Coverage_Name = string.Empty;
 
         public bool CP_Dialog = true;
-        
+
         public string Currency = "LEFT";
         public string Currency_Symbol = "$";
 
@@ -764,16 +788,72 @@ namespace JAXBase.XBase
         public string _Wizard = string.Empty;
 
         // JAX Paths
-        public string _AppPath = string.Empty;
-        public string _BaseFolder = string.Empty;
-        public string _ExePath = string.Empty;
-        public string _HomePath = string.Empty;
-        public string _LogPath = string.Empty;
+        private string _appPath = string.Empty;
+        public string _AppPath
+        {
+            get { return _appPath; }
+            set { _appPath = JAXLib.Addbs(value); }
+        }
+
+        private string _baseFolder = string.Empty;
+        public string _BaseFolder
+        {
+            get { return _baseFolder; }
+            set { _baseFolder = JAXLib.Addbs(value); }
+        }
+
+        private string _exePath = string.Empty;
+        public string _ExePath
+        {
+            get { return _exePath; }
+            set { _exePath = JAXLib.Addbs(value); }
+        }
+
+        private string _homePath = string.Empty;
+        public string _HomePath
+        {
+            get { return _homePath; }
+            set { _homePath = JAXLib.Addbs(value); }
+        }
+
+        private string _logPath = string.Empty;
+        public string _LogPath
+        {
+            get { return _logPath; }
+            set { _logPath = JAXLib.Addbs(value); }
+        }
+
+
         public string _LogName = string.Empty;
-        public string _SamplesPath = string.Empty;
-        public string _TempPath = string.Empty;
-        public string _ToolsPath = string.Empty;
-        public string _WorkPath = string.Empty;
+
+        private string _samplesPath = string.Empty;
+        public string _SamplesPath
+        {
+            get { return _samplesPath; }
+            set { _samplesPath = JAXLib.Addbs(value); }
+        }
+
+
+        private string _tempPath = string.Empty;
+        public string _TempPath
+        {
+            get { return _tempPath; }
+            set { _tempPath = JAXLib.Addbs(value); }
+        }
+
+        private string _toolsPath = string.Empty;
+        public string _ToolsPath
+        {
+            get { return _toolsPath; }
+            set { _toolsPath = JAXLib.Addbs(value); }
+        }
+
+        private string _workPath = string.Empty;
+        public string _WorkPath
+        {
+            get { return _workPath; }
+            set { _workPath = JAXLib.Addbs(value); }
+        }
 
         // Defaults for various class properties
         public int _ConsoleColums = 80;
@@ -869,6 +949,137 @@ namespace JAXBase.XBase
             }
 
             return false;   // let all other keys through
+        }
+    }
+
+    /// <summary>
+    /// SortedDictionary with change notifications (CollectionChanged and PropertyChanged).
+    /// Useful for UI binding in Avalonia and for runtime monitoring in JAXBaseV1.
+    /// </summary>
+    public class ObservableSortedDictionary<TKey, TValue> :
+        IDictionary<TKey, TValue>,
+        INotifyCollectionChanged,
+        INotifyPropertyChanged
+        where TKey : notnull
+    {
+        private readonly SortedDictionary<TKey, TValue> _innerDictionary;
+
+        public event NotifyCollectionChangedEventHandler? CollectionChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public ObservableSortedDictionary()
+        {
+            _innerDictionary = new SortedDictionary<TKey, TValue>();
+        }
+
+        public ObservableSortedDictionary(IComparer<TKey>? comparer)
+        {
+            _innerDictionary = new SortedDictionary<TKey, TValue>(comparer);
+        }
+
+        // IDictionary members
+        public TValue this[TKey key]
+        {
+            get => _innerDictionary[key];
+            set
+            {
+                bool exists = _innerDictionary.ContainsKey(key);
+                TValue oldValue = exists ? _innerDictionary[key] : default!;
+
+                _innerDictionary[key] = value;
+
+                if (exists)
+                {
+                    // Value replaced
+                    OnCollectionChanged(new NotifyCollectionChangedEventArgs(
+                        NotifyCollectionChangedAction.Replace,
+                        new KeyValuePair<TKey, TValue>(key, value),
+                        new KeyValuePair<TKey, TValue>(key, oldValue)));
+                }
+                else
+                {
+                    // New key added
+                    OnCollectionChanged(new NotifyCollectionChangedEventArgs(
+                        NotifyCollectionChangedAction.Add,
+                        new KeyValuePair<TKey, TValue>(key, value)));
+                }
+
+                OnPropertyChanged(nameof(Count));
+            }
+        }
+
+        public ICollection<TKey> Keys => _innerDictionary.Keys;
+        public ICollection<TValue> Values => _innerDictionary.Values;
+
+        public int Count => _innerDictionary.Count;
+        public bool IsReadOnly => false;
+
+        public void Add(TKey key, TValue value)
+        {
+            _innerDictionary.Add(key, value);
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(
+                NotifyCollectionChangedAction.Add,
+                new KeyValuePair<TKey, TValue>(key, value)));
+            OnPropertyChanged(nameof(Count));
+        }
+
+        public void Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
+
+        public bool Remove(TKey key)
+        {
+            if (_innerDictionary.TryGetValue(key, out TValue? value))
+            {
+                _innerDictionary.Remove(key);
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(
+                    NotifyCollectionChangedAction.Remove,
+                    new KeyValuePair<TKey, TValue>(key, value)));
+                OnPropertyChanged(nameof(Count));
+                return true;
+            }
+            return false;
+        }
+
+        public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
+
+        public void Clear()
+        {
+            _innerDictionary.Clear();
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            OnPropertyChanged(nameof(Count));
+        }
+
+        public bool ContainsKey(TKey key) => _innerDictionary.ContainsKey(key);
+        public bool TryGetValue(TKey key, out TValue value) => _innerDictionary.TryGetValue(key, out value);
+        public bool Contains(KeyValuePair<TKey, TValue> item) => _innerDictionary.Contains(item);
+
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+            => ((ICollection<KeyValuePair<TKey, TValue>>)_innerDictionary).CopyTo(array, arrayIndex);
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+            => _innerDictionary.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        // Helper methods to raise events
+        protected virtual void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+        {
+            CollectionChanged?.Invoke(this, e);
+        }
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    public class EmptyFactory
+    {
+        /// <summary>
+        /// Creates a new empty object (VFP Empty equivalent).
+        /// </summary>
+        public dynamic Create()
+        {
+            return new ExpandoObject();
         }
     }
 }

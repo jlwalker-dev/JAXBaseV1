@@ -23,15 +23,18 @@
  *      
  *------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_ToolBar : XBase_Class_Avalonia
     {
-        public Avalonia.Controls.Canvas Toolbar => (Avalonia.Controls.Canvas)me.avaloniaObject!;
-        public new string MyDefaultName { get; set; } = "toolbar";
+        public new string MyBaseClass { get; } = "ToolBar";
+        public new string MyDefaultName { get; } = "toolbar";
 
+
+        public Avalonia.Controls.Canvas Toolbar => (Avalonia.Controls.Canvas)me.avaloniaObject!;
+        
         public XBase_Class_Visual_ToolBar(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             SetVisualObject(new Avalonia.Controls.Canvas(), "Toolbar", string.IsNullOrWhiteSpace(name) ? MyDefaultName : name, true, UserObject.URW);
@@ -79,10 +82,10 @@ namespace JAXBase.XBase
 
             if (err > 0)
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|{value?.BaseClass}", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|{value?.BaseClass}", string.Empty);
             }
 
             return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
@@ -126,9 +129,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
             }
@@ -322,10 +325,10 @@ namespace JAXBase.XBase
             // If result>0 at this point, then there's been an error
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -628,14 +631,14 @@ namespace JAXBase.XBase
                                             {
                                                 // Remark on the problem
                                                 result = 1559;
-                                                App.SetError(result, $"1559|LEFT", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                                AppErrorHandling.SetError(result, $"1559|LEFT", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                             }
                                         }
                                         else
                                         {
                                             // Remark on the problem
                                             result = 1559;
-                                            App.SetError(result, $"1559|TOP", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                            AppErrorHandling.SetError(result, $"1559|TOP", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                         }
                                     }
                                 }
@@ -647,149 +650,13 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                App.SetError(result, $"9999|FIXSPACING|{ex.Message}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, $"9999|FIXSPACING|{ex.Message}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return result;
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /*
-         * Set up the button names
-         */
-        private async Task<int> FixButtons(int btnRequest)
-        {
-            int result = 0;
-
-            if (InInit)
-                return 0;
-
-            try
-            {
-                int btnValue = 0;
-                int btnCount = 0;
-                string[] btnNames = UserProperties["buttonnames"].AsString().Replace(',', ';').Split(';');
-
-                if (btnRequest == -1)
-                {
-                    if (btnNames.Length > 1)
-                        btnRequest = btnNames.Length;
-                    else
-                        return 0;
-                }
-
-                JAXObjects.Token tbar = UserProperties["objects"];
-                JAXObjects.Token objprop = new();
-
-                //-----------------------------------------------------
-                // How many toolbuttons are there in the objects list?
-                //-----------------------------------------------------
-                btnCount = tbar.Col;
-
-                if (btnRequest == -2)
-                    btnRequest = btnCount;
-
-                if (btnCount < 1 && btnRequest < 1)
-                    return 0;
-
-                //-----------------------------------------------------
-                // Now fix the buttons names
-                //-----------------------------------------------------
-                JAXObjects.Token objects = new();
-                objects = UserProperties["objects"];
-
-                int buttonLayout = UserProperties["buttonlayout"].AsInt();
-                int width = UserProperties["width"].AsInt();
-                int height = UserProperties["height"].AsInt();
-                int spacing = UserProperties["spacing"].AsInt();
-
-                int btnSize = buttonLayout == 0 ? width : height - spacing * 2;
-                int temp = spacing;
-                int pos = 0;
-
-                for (int i = 0; i < objects.Count; i++)
-                {
-                    if (i > 0) temp += spacing;
-
-                    JAXObjectWrapper? btn = objects._avalue[i].Value as JAXObjectWrapper;
-
-                    // It should never be null.  This is just to 
-                    // turn off the bloody warnings.
-                    if (btn is not null)
-                    {
-                        // Only touch height/width if not layout 2
-                        if (buttonLayout != 2)
-                        {
-                            await btn.SetProperty("width", btnSize);
-                            await btn.SetProperty("height", btnSize);
-                        }
-
-                        // Set tooltip and images
-                        FixToolTip(btn, pos);
-                        await FixImage(btn, pos);
-
-                        // Fix the name?
-                        if (pos < btnNames.Length)
-                        {
-                            string name = btnNames[pos];
-                            if (string.IsNullOrWhiteSpace(name) == false)
-                            {
-                                if (JAXUtilities.IsValidName(name))
-                                    await btn.SetProperty("name", name);
-                                else
-                                {
-                                    result = 1575;
-                                    throw new Exception($"1575|{name}");
-                                }
-                            }
-                        }
-
-                        // Fix the position of this button for horizontal
-                        // or vertical stacking.  If layout is 2, do nothing.
-                        if (buttonLayout == 0)
-                        {
-                            Avalonia.Controls.Canvas.SetLeft((Avalonia.Controls.Button)btn.avaloniaObject!, spacing);
-                            Avalonia.Controls.Canvas.SetTop((Avalonia.Controls.Button)btn.avaloniaObject!, temp);
-                        }
-                        else if (buttonLayout == 1)
-                        {
-                            Avalonia.Controls.Canvas.SetLeft((Avalonia.Controls.Button)btn.avaloniaObject!, temp);
-                            Avalonia.Controls.Canvas.SetTop((Avalonia.Controls.Button)btn.avaloniaObject!, spacing);
-                        }
-                    }
-
-                    // Set location for the next button
-                    temp += spacing;
-
-                    // Advance the position marker
-                    pos++;
-                }
-            }
-            catch (Exception ex)
-            {
-                result = result == 0 ? 9999 : result;
-                App.SetError(result, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-            }
-
-            return result;
-        }
 
         /*    
          * Set up image for a specific button

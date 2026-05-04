@@ -1,6 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
@@ -19,7 +19,7 @@ namespace JAXBase.Executer
             try
             {
                 if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx];
+                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
 
                 if (eCodes.Expressions.Count < 1) throw new Exception("10|");
                 if (string.IsNullOrWhiteSpace(eCodes.SUBCMD)) 
@@ -74,7 +74,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -95,7 +95,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -157,7 +157,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -235,7 +235,7 @@ namespace JAXBase.Executer
                     {
                         // FROM ARRAY
                         string arrayName = eCodes.From.Name;
-                        JAXObjects.Token av = await jbe.App.GetVarToken(arrayName);
+                        JAXObjects.Token av = await AppVars.GetVarToken(arrayName);
 
                         if (av.TType.Equals("A"))
                         {
@@ -269,7 +269,7 @@ namespace JAXBase.Executer
                             string cField = "m." + fieldList[k];
 
                             // Look for the matching memory variable
-                            JAXObjects.Token mv = await jbe.App.GetVarToken(cField);
+                            JAXObjects.Token mv = await AppVars.GetVarToken(cField);
 
                             if (mv.TType.Equals("U"))
                             {
@@ -334,7 +334,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

@@ -1,6 +1,6 @@
 ﻿using JAXBase.Core;
 using NodaTime;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Math
 {
@@ -45,7 +45,7 @@ namespace JAXBase.Math
 
                 case "`TARGET":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
 
@@ -55,7 +55,7 @@ namespace JAXBase.Math
 
                 case "TEXTPOS@":
                     // ---------------------------------------------------------------
-                    App.SetError(1096, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1096, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`TIME":                                   // Return current time as HH:mm:ss include .ff if an expression is sent
@@ -98,7 +98,7 @@ namespace JAXBase.Math
                             tAnswer.Element.Value = 0;
                     }
                     else
-                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`TRANSFORM":  // Transform a value to a string using foxpro format codes
@@ -132,17 +132,17 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = dtVal.AddSeconds(-dtVal.Hour * 3600 - dtVal.Minute * 60 - dtVal.Second);
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`TXNLEVEL":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`TXTWIDTH":  // TODO NOW
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`TYPE":                           // Get the "type" of what's in the string
@@ -281,7 +281,7 @@ namespace JAXBase.Math
                 if (intval2 == 1)
                 {
                     // Is the var an array, collecton, or unknown?
-                    JAXObjects.Token tkA = await App.GetVarToken(string1);
+                    JAXObjects.Token tkA = await AppVars.GetVarToken(string1);
                     if (tkA.TType == "A")
                         result = "A";
                     else if (tkA.TType == "O")      // We really only support collections

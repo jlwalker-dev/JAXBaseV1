@@ -120,7 +120,6 @@
  * ----------------------------------------------------------------------------------------------------------*/
 
 using Avalonia;
-using System;
 
 namespace JAXBase.Core
 {
@@ -128,6 +127,7 @@ namespace JAXBase.Core
     {
         // Static property to access the AppClass instance from other classes (e.g., JAXApp, MainWindow)
         public static AppClass CurrentApp { get; private set; } = null!;  // Initialized in Main
+        public static double Version { get; private set; } = 0.6;
 
         // The main entry point for the application.
         [STAThread]
@@ -139,15 +139,17 @@ namespace JAXBase.Core
             string appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name ?? "IDE";
             string parm1 = args.Length > 0 ? args[0] : string.Empty;
 
+            App.SetEnvironment();
+
             // Determine mode
             bool parm1IsRT = parm1.Equals("/rt", StringComparison.OrdinalIgnoreCase) ||
-                             parm1.Equals("-rt", StringComparison.OrdinalIgnoreCase);
+                                 parm1.Equals("-rt", StringComparison.OrdinalIgnoreCase);
 
             bool isRuntimeMode = appName.Contains("jaxrt.exe", StringComparison.OrdinalIgnoreCase) || parm1IsRT;
 
             if (isRuntimeMode)
             {
-                App.DebugLog("Starting JAXBase in Runtime Mode");
+                AppIO.DebugLog("Starting JAXBase in Runtime Mode");
                 App.RuntimeFlag = true;
 
                 int startIndex = parm1IsRT ? 1 : 0;
@@ -158,13 +160,13 @@ namespace JAXBase.Core
                     if (i == startIndex)
                     {
                         // First non-flag arg is the file to run
-                        App.DebugLog($"File to run: {args[i]}");
+                        AppIO.DebugLog($"File to run: {args[i]}");
                         App.RTFileName = args[i];
                     }
                     else
                     {
                         // Additional params passed to the app
-                        App.DebugLog($"Runtime Parameter {++paramCounter}: {args[i]}");
+                        AppIO.DebugLog($"Runtime Parameter {++paramCounter}: {args[i]}");
                         var tk = new JAXBase.XBase.ParameterClass();
                         tk.token.Element.Value = args[i];
                         App.ParameterClassList.Add(tk);
@@ -176,14 +178,14 @@ namespace JAXBase.Core
             }
             else
             {
-                App.DebugLog("Starting JAXBase in IDE Mode");
+                AppIO.DebugLog("Starting JAXBase in IDE Mode");
             }
 
             // Build and start the Avalonia app (replaces WinForms Application.Run)
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
 
-            App.DebugLog("Exiting JAXBase");
+            AppIO.DebugLog("Exiting JAXBase");
             return App.ReturnValue.Element.Type.Equals("N") ? App.ReturnValue.AsInt() : 0;
         }
 

@@ -124,13 +124,22 @@
  *          STD() - Standard Deviation
  *          TIP() - Total Interest Paid - New
  *          VAR() - Variance
+ * 
+ * 2026.03.17 - JLW
+ *      Added ASYNC logic where needed to support Avalonica.  This 
+ *      is going to be a big change and will require a lot of testing.
+ *      Debugged functionality.  Still need to go through and make 
+ *      sure all functions are updating the decimal width correctly.
+ *      
+ * 2026.04.20 - JLW
+ *      Updated math to handle E/M types correctly.  When E/M types
+ *      are converted to string, they should return an empty string.
  *      
  **********************************************************************/
 
 using JAXBase.Core;
+using JAXBase.Utilities;
 using JAXBase.XBase;
-using static JAXBase.Core.JAXObjects;
-using JAXBase.Utilities.Utilities;
 
 namespace JAXBase.Math
 {
@@ -290,7 +299,8 @@ namespace JAXBase.Math
                 if (Tokens.Count < 1)
                     throw new Exception("9989|Stack underflow|PopString");
 
-                string value = Tokens[0].Element.Value.ToString() ?? string.Empty;
+                // Popping an E/M TType to string always produces an empty string
+                string value = "EM".Contains(Tokens[0].TType) ? "" : Tokens[0].Element.Value.ToString() ?? string.Empty;
                 Tokens.RemoveAt(0);
                 return value;
             }
@@ -305,7 +315,7 @@ namespace JAXBase.Math
                 if (Tokens.Count < 1)
                     throw new Exception("9989|Stack underflow|PopTokenString");
 
-                string value = Tokens[0].Element.Type + Tokens[0].Element.Value.ToString() ?? string.Empty;
+                string value = "EM".Contains(Tokens[0].TType) ? "C" : Tokens[0].Element.Type + Tokens[0].Element.Value.ToString() ?? string.Empty;
                 Tokens.RemoveAt(0);
                 return value;
             }
@@ -447,771 +457,751 @@ namespace JAXBase.Math
             mathStack.Clear();
             inArray = 0;
 
-            try
+            foreach (string _rpn in rpn)
             {
-                foreach (string _rpn in rpn)
+                // Handle the NOT operator
+                if (_rpn.Equals("!", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Handle the NOT operator
-                    if (_rpn.Equals("!", StringComparison.OrdinalIgnoreCase))
+                    if (mathStack.Count > 0)
                     {
-                        if (mathStack.Count > 0)
-                        {
-                            // process if variable without popping
-                            // from the stack
-                            mathStack.Token = await SolveIfVar(false);
+                        // process if variable without popping
+                        // from the stack
+                        mathStack.Token = await SolveIfVar(false);
 
-                            if (mathStack.Token.Element.Type.Equals("L", StringComparison.OrdinalIgnoreCase))
-                            {
-                                mathStack.Token.Element.Value = !mathStack.Token.Element.ValueAsBool;
-                                continue;
-                            }
-                            else
-                                App.SetError(9, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name); // data type mismatch
+                        if (mathStack.Token.Element.Type.Equals("L", StringComparison.OrdinalIgnoreCase))
+                        {
+                            mathStack.Token.Element.Value = !mathStack.Token.Element.ValueAsBool;
+                            continue;
                         }
                         else
-                            App.SetError(1231, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // Missing operand
+                            AppErrorHandling.SetError(9, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name); // data type mismatch
                     }
+                    else
+                        AppErrorHandling.SetError(1231, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);  // Missing operand
+                }
 
-                    // Start of variable & object handling
-                    if (_rpn[..1].Equals("_", StringComparison.OrdinalIgnoreCase))
+                // Start of variable & object handling
+                if (_rpn[..1].Equals("_", StringComparison.OrdinalIgnoreCase))
+                {
+                    // We found a variable, array variable, or UDF
+                    // so add it and expect the next token to be
+                    // an object part, a left bracket/paren, an
+                    // operator, or end of rpn list
+                    varCount++;
+                    inVar = true;
+                    mathStack.PushTokenRef(_rpn[1..], "V");
+
+                    // loop around
+                    continue;
+                }
+
+                // Handling of JAX true & false expressions
+                if (_rpn.Equals(".T.", StringComparison.OrdinalIgnoreCase) || _rpn.Equals(".F.", StringComparison.OrdinalIgnoreCase))
+                {
+                    mathStack.PushValue(_rpn.Equals(".T.", StringComparison.OrdinalIgnoreCase));
+                    inVar = false;
+                    continue;
+                }
+
+                if (_rpn.Equals(".null.", StringComparison.OrdinalIgnoreCase))
+                {
+                    mathStack.PushValue(null);
+                    inVar = false;
+                    continue;
+                }
+
+                // Object references
+                if (_rpn[..1].Equals(".", StringComparison.OrdinalIgnoreCase))
+                {
+                    // We found an ObjectPart, are we currently
+                    // in a Varialble reference?
+                    if (inVar)
                     {
-                        // We found a variable, array variable, or UDF
-                        // so add it and expect the next token to be
-                        // an object part, a left bracket/paren, an
-                        // operator, or end of rpn list
-                        varCount++;
-                        inVar = true;
-                        mathStack.PushTokenRef(_rpn[1..], "V");
-
-                        // loop around
-                        continue;
-                    }
-
-                    // Handling of JAX true & false expressions
-                    if (_rpn.Equals(".T.", StringComparison.OrdinalIgnoreCase) || _rpn.Equals(".F.", StringComparison.OrdinalIgnoreCase))
-                    {
-                        mathStack.PushValue(_rpn.Equals(".T.", StringComparison.OrdinalIgnoreCase));
-                        inVar = false;
-                        continue;
-                    }
-
-                    if (_rpn.Equals(".null.", StringComparison.OrdinalIgnoreCase))
-                    {
-                        mathStack.PushValue(null);
-                        inVar = false;
-                        continue;
-                    }
-
-                    // Object references
-                    if (_rpn[..1].Equals(".", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // We found an ObjectPart, are we currently
-                        // in a Varialble reference?
-                        if (inVar)
-                        {
-                            // Yes, so put it onto the stack as is
-                            mathStack.PushTokenRef(_rpn, "v");
-                        }
-                        else
-                        {
-                            // No, so push the WITH keyword followed
-                            // by the object part reference
-                            mathStack.PushTokenRef("with", "V");
-
-                            mathStack.PushTokenRef(_rpn, "v");
-                            inVar = true;
-                            varCount++;
-                        }
-
-                        // loop around
-                        continue;
-                    }
-
-                    // JAX Functions don't have () so this delimits the
-                    // end of the expression as you might have 1, 2, or
-                    // more parameters
-                    if (_rpn[..1].Equals("~", StringComparison.OrdinalIgnoreCase) && inArray > 0)
-                    {
-                        // Finding a ~ in an array means there were
-                        // parenthises that were not part of a
-                        // function call
-                        inVar = false;
-                        continue;
-                    }
-
-                    // If there is a variable in waiting, the
-                    // next token needs to be a left braket
-                    // or paren, otherwise it's a simple variable
-                    // and needs to be resolved and stacked
-                    if (inVar && (_rpn.Equals("[") || _rpn.Equals("(")))
-                    {
-                        // Add left bracket/parent to the stack
-                        mathStack.PushString(_rpn);
-                        inArray++;
-                        continue;
-                    }
-
-                    // parameter delimiter for array
-                    if (_rpn.Equals(",") && inArray > 0)
-                    {
-                        //SolveArrayParam(_rpn);
-                        mathStack.PushTokenRef(",", "c");    // comma flag
-                        continue;
-                    }
-
-                    // Right bracket/parent closes the literal - TODO: I think we should solve to , or [
-                    if (_rpn.Equals("]"))
-                    {
-                        if (inArray == 0)
-                            throw new Exception("10|");
-
-                        //SolveArrayParam(_rpn);
-
-                        // Add right bracket/parent to the stack
-                        mathStack.PushString(_rpn);
-                        inArray--;
-                        continue;
-                    }
-
-                    // JAX built in functions like str(), strtran(), ect
-                    // dont have the parens in the RPN.  Since they can
-                    // have 1, 2, or more parameters, this tells the
-                    // code when to stop reading them in
-                    if (_rpn.Equals("~", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // End of a function call
-                        mathStack.PushString("~");
-                    }
-                    else if (" CNLDT".IndexOf(_rpn[..1]) > 0)
-                    {
-                        // It's a literal, so break it out and put it
-                        // into a token before storing to the stack
-                        inVar = false;
-
-                        JAXObjects.Token oAnswer = new();
-                        string sAnswer = _rpn;
-                        char cType = 'U';
-
-                        if (sAnswer.Length > 0)
-                        {
-                            cType = sAnswer[0];
-                            sAnswer = sAnswer![1..];
-                        }
-
-                        switch (cType)
-                        {
-                            case 'N':       // Number
-                                if (sAnswer.Contains('.'))
-                                {
-                                    if (double.TryParse(sAnswer, out double dval) == false)
-                                        dval = 0D;
-                                    oAnswer.Element.Value = dval;
-                                    oAnswer.Element.Dec = sAnswer.Length - sAnswer.IndexOf(".") - 1;
-
-                                }
-                                else
-                                {
-                                    if (long.TryParse(sAnswer, out long lval) == false)
-                                        lval = 0L;
-                                    oAnswer.Element.Value = lval;
-                                    oAnswer.Element.Dec = 0;
-                                }
-                                break;
-
-                            case 'L':       // Logical
-                                oAnswer.Element.Value = sAnswer.Equals(".T.", StringComparison.OrdinalIgnoreCase);
-                                break;
-
-                            case 'C':       // Character
-                                oAnswer.Element.Value = sAnswer;
-                                break;
-
-                            case 'T':       // DateTime
-                                if (DateTime.TryParse(sAnswer, out DateTime tval) == false)
-                                    tval = DateTime.MinValue;
-                                oAnswer.Element.Value = tval;
-                                break;
-
-                            case 'D':       // DateOnly
-                                if (DateOnly.TryParse(sAnswer, out DateOnly doval) == false)
-                                    doval = DateOnly.MinValue;
-                                oAnswer.Element.Value = doval;
-                                break;
-                        }
-
-                        mathStack.PushToken(oAnswer);
+                        // Yes, so put it onto the stack as is
+                        mathStack.PushTokenRef(_rpn, "v");
                     }
                     else
                     {
-                        if (_rpn.Equals("(", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // found a left paren, push it to the stack
-                            mathStack.PushString("(");
-                        }
-                        else if (" +-*/^%".IndexOf(_rpn) > 0)
-                        {
-                            // Trigger to resolve if inVar = true
-                            if (inVar && inArray == 0)
+                        // No, so push the WITH keyword followed
+                        // by the object part reference
+                        mathStack.PushTokenRef("with", "V");
+
+                        mathStack.PushTokenRef(_rpn, "v");
+                        inVar = true;
+                        varCount++;
+                    }
+
+                    // loop around
+                    continue;
+                }
+
+                // JAX Functions don't have () so this delimits the
+                // end of the expression as you might have 1, 2, or
+                // more parameters
+                if (_rpn[..1].Equals("~", StringComparison.OrdinalIgnoreCase) && inArray > 0)
+                {
+                    // Finding a ~ in an array means there were
+                    // parenthises that were not part of a
+                    // function call
+                    inVar = false;
+                    continue;
+                }
+
+                // If there is a variable in waiting, the
+                // next token needs to be a left braket
+                // or paren, otherwise it's a simple variable
+                // and needs to be resolved and stacked
+                if (inVar && (_rpn.Equals("[") || _rpn.Equals("(")))
+                {
+                    // Add left bracket/parent to the stack
+                    mathStack.PushString(_rpn);
+                    inArray++;
+                    continue;
+                }
+
+                // parameter delimiter for array
+                if (_rpn.Equals(",") && inArray > 0)
+                {
+                    //SolveArrayParam(_rpn);
+                    mathStack.PushTokenRef(",", "c");    // comma flag
+                    continue;
+                }
+
+                // Right bracket/parent closes the literal - TODO: I think we should solve to , or [
+                if (_rpn.Equals("]"))
+                {
+                    if (inArray == 0)
+                        throw new Exception("10|");
+
+                    //SolveArrayParam(_rpn);
+
+                    // Add right bracket/parent to the stack
+                    mathStack.PushString(_rpn);
+                    inArray--;
+                    continue;
+                }
+
+                // JAX built in functions like str(), strtran(), ect
+                // dont have the parens in the RPN.  Since they can
+                // have 1, 2, or more parameters, this tells the
+                // code when to stop reading them in
+                if (_rpn.Equals("~", StringComparison.OrdinalIgnoreCase))
+                {
+                    // End of a function call
+                    mathStack.PushString("~");
+                }
+                else if (" CNLDT".IndexOf(_rpn[..1]) > 0)
+                {
+                    // It's a literal, so break it out and put it
+                    // into a token before storing to the stack
+                    inVar = false;
+
+                    JAXObjects.Token oAnswer = new();
+                    string sAnswer = _rpn;
+                    char cType = 'U';
+
+                    if (sAnswer.Length > 0)
+                    {
+                        cType = sAnswer[0];
+                        sAnswer = sAnswer![1..];
+                    }
+
+                    switch (cType)
+                    {
+                        case 'N':       // Number
+                            if (sAnswer.Contains('.'))
                             {
-                                inVar = false;
-                                await SolveIfVar(false);
+                                if (double.TryParse(sAnswer, out double dval) == false)
+                                    dval = 0D;
+                                oAnswer.Element.Value = dval;
+                                oAnswer.Element.Dec = sAnswer.Length - sAnswer.IndexOf(".") - 1;
 
-                                //List<JAXObjects.Token> vInfo = [];
-                                //while (mathStack.Count > 0 && "VvO".Contains(mathStack.TType()))
-                                //{
-                                //    vInfo.Insert(0, mathStack.PopToken());
-                                //}
-
-                                //ProcessVarCall(vInfo);
                             }
-
-                            // TODO - what a mess!  Clean this up!
-
-                            // is there more than 1 item on the stack?
-                            if (mathStack.Count > 1)
+                            else
                             {
-                                t2 = await SolveIfVar(true);
-                                string2 = t2.AsString();
-                                stype2 = t2.Element.Type;
-                                dec2 = t2.Element.Dec;
+                                if (long.TryParse(sAnswer, out long lval) == false)
+                                    lval = 0L;
+                                oAnswer.Element.Value = lval;
+                                oAnswer.Element.Dec = 0;
+                            }
+                            break;
 
-                                t1 = await SolveIfVar(false);
-                                string1 = t1.AsString();
-                                stype1 = t1.Element.Type;
-                                dec1 = t1.Element.Dec;
+                        case 'L':       // Logical
+                            oAnswer.Element.Value = sAnswer.Equals(".T.", StringComparison.OrdinalIgnoreCase);
+                            break;
 
-                                List<string> vInfo = [];
+                        case 'C':       // Character
+                            oAnswer.Element.Value = sAnswer;
+                            break;
 
-                                if (!double.TryParse(string2.Trim(), out val2)) val2 = 0d;
-                                if (!double.TryParse(string1.Trim(), out val1)) val1 = 0d;
+                        case 'T':       // DateTime
+                            if (DateTime.TryParse(sAnswer, out DateTime tval) == false)
+                                tval = DateTime.MinValue;
+                            oAnswer.Element.Value = tval;
+                            break;
 
-                                if (stype1.Equals("C") || stype2.Equals("C"))
+                        case 'D':       // DateOnly
+                            if (DateOnly.TryParse(sAnswer, out DateOnly doval) == false)
+                                doval = DateOnly.MinValue;
+                            oAnswer.Element.Value = doval;
+                            break;
+                    }
+
+                    mathStack.PushToken(oAnswer);
+                }
+                else
+                {
+                    if (_rpn.Equals("(", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // found a left paren, push it to the stack
+                        mathStack.PushString("(");
+                    }
+                    else if (" +-*/^%".IndexOf(_rpn) > 0)
+                    {
+                        // Trigger to resolve if inVar = true
+                        if (inVar && inArray == 0)
+                        {
+                            inVar = false;
+                            await SolveIfVar(false);
+                        }
+
+                        // TODO - what a mess!  Clean this up!
+
+                        // is there more than 1 item on the stack?
+                        if (mathStack.Count > 1)
+                        {
+                            t2 = await SolveIfVar(true);
+                            string2 = t2.AsString();
+                            stype2 = t2.Element.Type;
+                            dec2 = t2.Element.Dec;
+
+                            t1 = await SolveIfVar(false);
+                            string1 = t1.AsString();
+                            stype1 = t1.Element.Type;
+                            dec1 = t1.Element.Dec;
+
+                            List<string> vInfo = [];
+
+                            if (!double.TryParse(string2.Trim(), out val2)) val2 = 0d;
+                            if (!double.TryParse(string1.Trim(), out val1)) val1 = 0d;
+
+                            if (stype1.Equals("C") || stype2.Equals("C"))
+                            {
+                                if (_rpn[..1].Equals("+"))
                                 {
-                                    if (_rpn[..1].Equals("+"))
-                                    {
-                                        // Concatinating two strings
-                                        mathStack.SetString(string1 + string2);
-                                    }
-                                    else
-                                        throw new Exception("9|");
+                                    // Concatinating two strings
+                                    mathStack.SetString(string1 + string2);
                                 }
-                                else if (JAXLib.InListC(stype1 + stype2, "DN", "ND"))
+                                else
+                                    throw new Exception("9|");
+                            }
+                            else if (JAXLib.InListC(stype1 + stype2, "DN", "ND"))
+                            {
+                                // Date math
+                                DateOnly dt;
+                                int days;
+
+                                if ((stype1 + stype2).Equals("DN"))
                                 {
-                                    // Date math
-                                    DateOnly dt;
-                                    int days;
-
-                                    if ((stype1 + stype2).Equals("DN"))
-                                    {
-                                        dt = t1.AsDate();
-                                        days = t2.AsInt();
-                                    }
-                                    else
-                                    {
-                                        dt = t2.AsDate();
-                                        days = t1.AsInt();
-                                    }
-
-                                    switch (_rpn[..1])
-                                    {
-                                        case "+":
-                                            mathStack.SetValue(dt.AddDays(days), 0);
-                                            break;
-
-                                        case "-":
-                                            mathStack.SetValue(dt.AddDays(-days), 0);
-                                            break;
-
-                                        default:
-                                            throw new Exception("9|");
-                                    }
-                                }
-                                else if (JAXLib.InListC(stype1 + stype2, "TN", "NT"))
-                                {
-                                    // DateTime math
-                                    DateTime dt = t1.AsDateTime();
-                                    int secs;
-
-                                    if ((stype1 + stype2).Equals("DN"))
-                                    {
-                                        dt = t1.AsDateTime();
-                                        secs = t2.AsInt();
-                                    }
-                                    else
-                                    {
-                                        dt = t2.AsDateTime();
-                                        secs = t1.AsInt();
-                                    }
-
-                                    switch (_rpn[..1])
-                                    {
-                                        case "+":
-                                            mathStack.SetValue(dt.AddSeconds(secs), 0);
-                                            break;
-
-                                        case "-":
-                                            mathStack.SetValue(dt.AddSeconds(-secs), 0);
-                                            break;
-
-                                        default:
-                                            throw new Exception("9|");
-                                    }
+                                    dt = t1.AsDate();
+                                    days = t2.AsInt();
                                 }
                                 else
                                 {
-                                    if ((stype1 + stype2).Equals("NN"))
-                                    {
-                                        // Numeric math
-                                        switch (_rpn[..1])
-                                        {
-                                            case "+":
-                                                val1 += val2;
-                                                DecWidth = DecWidth > dec1 ? DecWidth : dec1;
-                                                DecWidth = DecWidth > dec2 ? DecWidth : dec2;
-                                                break;
-                                            case "-":
-                                                val1 -= val2;
-                                                DecWidth = DecWidth > dec1 ? DecWidth : dec1;
-                                                DecWidth = DecWidth > dec2 ? DecWidth : dec2;
-                                                break;
-                                            case "*":
-                                                val1 *= val2;
-                                                DecWidth = DecWidth > dec1 + dec2 ? DecWidth : dec1 + dec2;
-                                                break;
-                                            case "/":
-                                                val1 /= val2;
-                                                DecWidth = DecWidth > dec1 + dec2 ? DecWidth : dec1 + dec2;
-                                                break;
-                                            case "^":
-                                                val1 = System.Math.Pow(val1, val2);
-                                                DecWidth = DecWidth > decimalPlaces ? DecWidth : decimalPlaces;
-                                                DecWidth = DecWidth > dec1 ? DecWidth : dec1;
-                                                break;
-                                            case "%":
-                                                val1 %= val2;   // modulus always returns an int/long value
-                                                val1 = System.Math.Truncate(val1);
-                                                DecWidth = DecWidth > dec1 ? DecWidth : dec1;
-                                                break;
-                                        }
+                                    dt = t2.AsDate();
+                                    days = t1.AsInt();
+                                }
 
-                                        mathStack.SetValue(val1, DecWidth);
-                                    }
-                                    else
+                                switch (_rpn[..1])
+                                {
+                                    case "+":
+                                        mathStack.SetValue(dt.AddDays(days), 0);
+                                        break;
+
+                                    case "-":
+                                        mathStack.SetValue(dt.AddDays(-days), 0);
+                                        break;
+
+                                    default:
+                                        throw new Exception("9|");
+                                }
+                            }
+                            else if (JAXLib.InListC(stype1 + stype2, "TN", "NT"))
+                            {
+                                // DateTime math
+                                DateTime dt = t1.AsDateTime();
+                                int secs;
+
+                                if ((stype1 + stype2).Equals("DN"))
+                                {
+                                    dt = t1.AsDateTime();
+                                    secs = t2.AsInt();
+                                }
+                                else
+                                {
+                                    dt = t2.AsDateTime();
+                                    secs = t1.AsInt();
+                                }
+
+                                switch (_rpn[..1])
+                                {
+                                    case "+":
+                                        mathStack.SetValue(dt.AddSeconds(secs), 0);
+                                        break;
+
+                                    case "-":
+                                        mathStack.SetValue(dt.AddSeconds(-secs), 0);
+                                        break;
+
+                                    default:
                                         throw new Exception("9|");
                                 }
                             }
                             else
                             {
-                                // We have a problem with the math
-                                // since there is an operator but
-                                // only one item to work on
-                                App.SetError(1231, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-                            }
-                        }
-                        else if (" @=#><{}&|$?".IndexOf(_rpn) > 0)
-                        {
-                            inVar = false;
-
-                            // We are comparing
-                            if (mathStack.Count > 1)
-                            {
-                                bool boolAnswer = false;
-
-                                t2 = await SolveIfVar(true);
-                                string2 = t2.AsString();
-                                stype2 = t2.Element.Type;
-
-                                t1 = await SolveIfVar(false);
-                                string1 = t1.AsString();
-                                stype1 = t1.Element.Type;
-
-                                // TODO - What happens when we compare
-                                // objects?  JAX should throw an error
-                                // Only compare if types are compatible
-                                if (JAXLib.InListC(stype1 + stype2, "NN", "DD", "CC", "TT", "LL", "DT", "TD", "OO") == false)
-                                    throw new Exception($"11||Attempting to compare {stype1 + stype2}");
-
-                                if (stype1.Equals("O"))
+                                if ((stype1 + stype2).Equals("NN"))
                                 {
-                                    JAXObjectWrapper jow1 = (JAXObjectWrapper)t1.Element.Value;
-                                    JAXObjectWrapper jow2 = (JAXObjectWrapper)t2.Element.Value;
-
-                                    // Comparing objects
-                                    // we're comparing strings
+                                    // Numeric math
                                     switch (_rpn[..1])
                                     {
-                                        case "?":   // pointing at the same object
-                                            string1 = jow1.ClassID == jow1.ClassID ? "L.T." : "L.F.";
+                                        case "+":
+                                            val1 += val2;
+                                            DecWidth = DecWidth > dec1 ? DecWidth : dec1;
+                                            DecWidth = DecWidth > dec2 ? DecWidth : dec2;
                                             break;
-
-                                        case "#":
-                                            string1 = jow1.ClassID == jow1.ClassID ? "L.F." : "L.T.";
+                                        case "-":
+                                            val1 -= val2;
+                                            DecWidth = DecWidth > dec1 ? DecWidth : dec1;
+                                            DecWidth = DecWidth > dec2 ? DecWidth : dec2;
                                             break;
-
-                                        case "=":   // Ojbect properties match
-                                            if (jow1.ClassID == jow2.ClassID)
-                                                string1 = "L.T.";
-                                            else
-                                                string1 = await MathFuncsC.CompObj(jow1, jow2) ? "L.T." : "L.F.";
+                                        case "*":
+                                            val1 *= val2;
+                                            DecWidth = DecWidth > dec1 + dec2 ? DecWidth : dec1 + dec2;
                                             break;
-
-                                        case ">":
-                                            string1 = String.Compare(jow1.ClassID, jow1.ClassID) > 0 ? "L.T." : "L.F.";
+                                        case "/":
+                                            if (val2 == 0) throw new Exception("1307|");
+                                            val1 /= val2;
+                                            DecWidth = DecWidth > dec1 + dec2 ? DecWidth : dec1 + dec2;
                                             break;
-
-                                        case "<":
-                                            string1 = String.Compare(jow1.ClassID, jow1.ClassID) < 0 ? "L.T." : "L.F.";
+                                        case "^":
+                                            val1 = System.Math.Pow(val1, val2);
+                                            DecWidth = DecWidth > decimalPlaces ? DecWidth : decimalPlaces;
+                                            DecWidth = DecWidth > dec1 ? DecWidth : dec1;
                                             break;
-
-                                        default:
-                                            throw new Exception("9|");
-                                    }
-
-                                }
-                                else if (stype1.Equals("C"))
-                                {
-                                    int slen1 = string1.Length;
-                                    int slen2 = string2.Length;
-                                    bool slenAll = slen1 == slen2;
-                                    bool slenZero = slen1 == 0 || slen2 == 0;
-
-                                    // we're comparing strings - I'm getting the correct results
-                                    // but I'm definitely not doing it the same way as VFP.
-                                    // TODO - Play around with space and zero filling like VFP
-                                    // to see if it makes better sense and/or takes less code
-                                    switch (_rpn[..1])
-                                    {
-                                        case "?":   // Exact match
-                                            boolAnswer = string1 == string2;
-                                            break;
-
-                                        case "=":
-                                            if (App.CurrentDS.JaxSettings.ANSI && slenZero == false)
-                                            {
-                                                // Compares up to shortest string as long
-                                                // both of them are at least 1 char long
-                                                if (slen1 > slen2)
-                                                    string1 = string1[..slen2];
-                                                else if (slen2 > slen1)
-                                                    string2 = string1[..slen1];
-                                            }
-
-                                            if (exactMatch)
-                                                boolAnswer = string1 == string2;
-                                            else
-                                                boolAnswer = string1.StartsWith(string2);
-                                            break;
-
-
-                                        case "@":  // !=
-                                        case "#":   // <>
-                                            if (App.CurrentDS.JaxSettings.ANSI && slenZero == false)
-                                            {
-                                                // Compares up to shortest string
-                                                if (slen1 > slen2)
-                                                    string1 = string1[..slen2];
-                                                else if (slen2 > slen1)
-                                                    string2 = string1[..slen1];
-                                            }
-
-                                            if (exactMatch)
-                                                boolAnswer = string1 == string2;
-                                            else
-                                                boolAnswer = string1.StartsWith(string2);
-                                            break;
-
-                                        case ">":
-                                            if (slenAll == false && slenZero)
-                                                string1 = "L.F.";    // one but not both are empty string
-                                            else if (exactMatch)
-                                                boolAnswer = string1.CompareTo(string2) > 0;
-                                            else
-                                            {
-                                                if (string1.Length > string2.Length)
-                                                    string1 = string1[..string2.Length];
-                                                else if (string2.Length > string1.Length)
-                                                    string2 = string2[..string1.Length];
-
-                                                boolAnswer = string1.CompareTo(string2) > 0;
-                                            }
-                                            break;
-
-                                        case "<":
-                                            if (slenAll == false && slen1 == 0)
-                                                string1 = "L.T.";    // one but not both are empty string
-                                            else if (exactMatch)
-                                                boolAnswer = string1.CompareTo(string2) < 0;
-                                            else
-                                            {
-                                                if (string1.Length > string2.Length)
-                                                    string1 = string1[..string2.Length];
-
-                                                boolAnswer = string1.CompareTo(string2) < 0;
-                                            }
-                                            break;
-
-                                        case "}":
-                                            if (exactMatch)
-                                                boolAnswer = string1.CompareTo(string2) >= 0;
-                                            else
-                                                boolAnswer = string1.CompareTo(string2) >= 0;
-                                            break;
-
-                                        case "{":
-                                            if (exactMatch)
-                                                boolAnswer = string1.CompareTo(string2) <= 0;
-                                            else
-                                            {
-
-                                                if (slen1 > slen2)
-                                                    string1 = string1[..slen2];
-                                                else if (slen2 > slen1)
-                                                    string2 = string2[..slen1];
-
-                                                boolAnswer = string1.CompareTo(string2) <= 0;
-                                            }
-                                            break;
-
-                                        case "&":
-                                        case "|":   // Invalid
-                                            throw new Exception("11|");
-
-                                        case "$":
-                                            boolAnswer = (string2.IndexOf(string1) + 1) > 0;
+                                        case "%":
+                                            val1 %= val2;   // modulus always returns an int/long value
+                                            val1 = System.Math.Truncate(val1);
+                                            DecWidth = DecWidth > dec1 ? DecWidth : dec1;
                                             break;
                                     }
-                                }
-                                else if (stype1.Equals("L"))
-                                {
-                                    // we're comparing T/F
-                                    switch (_rpn[..1])
-                                    {
-                                        case "=":
-                                            boolAnswer = string1 == string2;
-                                            break;
-                                        case "@":
-                                        case "#":
-                                            boolAnswer = string1 != string2;
-                                            break;
-                                        case ">":
-                                            boolAnswer = string1.CompareTo(string2) > 0;
-                                            break;
-                                        case "<":
-                                            boolAnswer = string1.CompareTo(string2) < 0;
-                                            break;
-                                        case "}":
-                                            boolAnswer = string1.CompareTo(string2) >= 0;
-                                            break;
-                                        case "{":
-                                            boolAnswer = string1.CompareTo(string2) <= 0;
-                                            break;
-                                        case "&":
-                                            boolAnswer = string1.Equals(".T.") && string2.Equals(".T.");
-                                            break;
-                                        case "|":
-                                            boolAnswer = string1.Equals(".T.") || string2.Equals(".T.");
-                                            break;
-                                        default:
-                                            throw new Exception("11|");
-                                    }
-                                }
-                                else if (JAXLib.InListC(stype1, "D", "T"))
-                                {
-                                    // we're comparing date/datetime strings
-                                    switch (_rpn[..1])
-                                    {
-                                        case "=":
-                                            boolAnswer = string1 == string2;
-                                            break;
-                                        case "@":
-                                        case "#":
-                                            boolAnswer = string1 != string2;
-                                            break;
-                                        case ">":
-                                            boolAnswer = string1.CompareTo(string2) > 0;
-                                            break;
-                                        case "<":
-                                            boolAnswer = string1.CompareTo(string2) < 0;
-                                            break;
-                                        case "}":
-                                            boolAnswer = string1.CompareTo(string2) >= 0;
-                                            break;
-                                        case "{":
-                                            boolAnswer = string1.CompareTo(string2) <= 0;
-                                            break;
-                                        default:
-                                            throw new Exception("11|");
-                                    }
+
+                                    mathStack.SetValue(val1, DecWidth);
                                 }
                                 else
-                                {
-                                    // We're comparing numbers
-                                    val1 = t1.AsDouble();
-                                    val2 = t2.AsDouble();
-
-                                    switch (_rpn[..1])
-                                    {
-                                        case "=":
-                                            boolAnswer = val1 == val2;
-                                            break;
-                                        case "@":
-                                        case "#":
-                                            boolAnswer = val1 != val2;
-                                            break;
-                                        case ">":
-                                            boolAnswer = val1 > val2;
-                                            break;
-                                        case "<":
-                                            boolAnswer = val1 < val2;
-                                            break;
-                                        case "}":
-                                            boolAnswer = val1 >= val2;
-                                            break;
-                                        case "[":
-                                            boolAnswer = val1 <= val2;
-                                            break;
-                                        default:
-                                            throw new Exception("11|");
-                                    }
-                                }
-
-                                mathStack.SetValue(boolAnswer);
+                                    throw new Exception("9|");
                             }
                         }
                         else
                         {
-                            inVar = false;
+                            // We have a problem with the math
+                            // since there is an operator but
+                            // only one item to work on
+                            AppErrorHandling.SetError(1231, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        }
+                    }
+                    else if (" @=#><{}&|$?".IndexOf(_rpn) > 0)
+                    {
+                        inVar = false;
 
-                            // We're left with functions - handle the array based functions separately
-                            if (JAXLib.InList(_rpn, "`ACLASS", "`ACLASS", "`ACOPY", "`ADATABASES", "`ADBOBJECTS", "`ADDBS", "`ADDPROPERTY", "`ADEL", "`ADIR", "`ADLLS", "`ADOCKSTATE", "`AELEMENT", "`AERROR", "`AEVENTS",
-                                "`AFIELDS", "`AFONT", "`AGETCLASS", "`AGETFILEVERSION", "`AINS", "`AINSTANCE", "`ALEN", "`ALINES", "`AMEMBERS", "`AMOUSEOBJ", "`ANETRECOURCES", "`APRINTERS", "`APROCINFO", "`ASCAN",
-                                "`ASELOBJ", "`ASESSIONS", "`ASORT", "`ASQLHANDLES", "`ASTACKINFO", "`ASUBSCRIPT", "`ATAGINFO", "`AUSED", "`AVCXCLASSES", "`REMOVEPROPERTY"))
+                        // We are comparing
+                        if (mathStack.Count > 1)
+                        {
+                            bool boolAnswer = false;
+
+                            t2 = await SolveIfVar(true);
+                            string2 = t2.AsString();
+                            stype2 = t2.Element.Type;
+
+                            t1 = await SolveIfVar(false);
+                            string1 = t1.AsString();
+                            stype1 = t1.Element.Type;
+
+                            // TODO - What happens when we compare
+                            // objects?  JAX should throw an error
+                            // Only compare if types are compatible
+                            if (JAXLib.InListC(stype1 + stype2, "NN", "DD", "CC", "TT", "LL", "DT", "TD", "OO") == false)
+                                throw new Exception($"11||Attempting to compare {stype1 + stype2}");
+
+                            if (stype1.Equals("O"))
                             {
-                                // Functions that deal with arrays need
-                                // special handling
-                                pop = PopStackItems(100);
+                                JAXObjectWrapper jow1 = (JAXObjectWrapper)t1.Element.Value;
+                                JAXObjectWrapper jow2 = (JAXObjectWrapper)t2.Element.Value;
 
-                                // Most array functions start with an A
-                                if (JAXLib.InList(_rpn, "`REMOVEPROPERTY"))
-                                    mathStack.Token = await MathFuncsR.R(App, _rpn, pop);
-                                else
-                                    mathStack.Token = await MathFuncsA.A0(App, _rpn, pop);
-                            }
-                            else
-                            {
-                                List<JAXObjects.Token> popTokens = await PopStackTokens(100);
-
-                                pop = [];
-                                for (int i = 0; i < popTokens.Count; i++)
-                                    pop.Add(popTokens[i].Element.Type + popTokens[i].AsString());
-
-                                stype1 = (pop.Count > 0 ? pop[0][..1] : string.Empty);
-                                string1 = (pop.Count > 0 ? pop[0][1..] : string.Empty);
-
-                                switch (_rpn[1].ToString())
+                                // Comparing objects
+                                // we're comparing strings
+                                switch (_rpn[..1])
                                 {
-                                    case "A":
-                                        mathStack.Token = MathFuncsA.A1(App, _rpn, pop);
+                                    case "?":   // pointing at the same object
+                                        string1 = jow1.ClassID == jow1.ClassID ? "L.T." : "L.F.";
                                         break;
 
-                                    case "B":
-                                        mathStack.Token = MathFuncsB.B(App, _rpn, pop);
+                                    case "#":
+                                        string1 = jow1.ClassID == jow1.ClassID ? "L.F." : "L.T.";
                                         break;
 
-                                    case "C":
-                                        mathStack.Token = await MathFuncsC.C(App, _rpn, pop);
+                                    case "=":   // Ojbect properties match
+                                        if (jow1.ClassID == jow2.ClassID)
+                                            string1 = "L.T.";
+                                        else
+                                            string1 = await MathFuncsC.CompObj(jow1, jow2) ? "L.T." : "L.F.";
                                         break;
 
-                                    case "D":
-                                    case "E":
-                                        mathStack.Token = await MathFuncsD.D(App, _rpn, pop);
+                                    case ">":
+                                        string1 = String.Compare(jow1.ClassID, jow1.ClassID) > 0 ? "L.T." : "L.F.";
                                         break;
 
-                                    case "F":
-                                        mathStack.Token = MathFuncsF.F(App, _rpn, pop);
-                                        break;
-
-                                    case "G":
-                                        mathStack.Token = await MathFuncsG.G(App, _rpn, pop);
-                                        break;
-
-                                    case "H":
-                                    case "I":
-                                        mathStack.Token = MathFuncsH.H(App, _rpn, pop);
-                                        break;
-
-                                    case "J":
-                                    case "K":
-                                    case "L":
-                                        mathStack.Token = MathFuncsL.L(App, _rpn, pop);
-                                        break;
-
-                                    case "M":
-                                    case "N":
-                                        mathStack.Token = await MathFuncsM.M(App, _rpn, pop);
-                                        break;
-
-                                    case "O":
-                                    case "P":
-                                    case "Q":
-                                        mathStack.Token = MathFuncsP.P(App, _rpn, pop);
-                                        break;
-
-                                    case "R":
-                                        mathStack.Token = await MathFuncsR.R(App, _rpn, pop);
-                                        break;
-
-                                    case "S":
-                                        mathStack.Token = await MathFuncsS.S(App, _rpn, pop);
-                                        break;
-
-                                    case "T":
-                                        mathStack.Token = await MathFuncsT.T(App, _rpn, pop);
-                                        break;
-
-                                    case "U":
-                                    case "V":
-                                    case "W":
-                                    case "X":
-                                    case "Y":
-                                    case "Z":
-                                        mathStack.Token = MathFuncsU.U(App, _rpn, pop);
+                                    case "<":
+                                        string1 = String.Compare(jow1.ClassID, jow1.ClassID) < 0 ? "L.T." : "L.F.";
                                         break;
 
                                     default:
-                                        // Some form of var to resolve
-                                        JAXObjects.Token v = new();
-                                        v.Element.Value = _rpn;
-                                        popTokens.Insert(0, v);
-                                        mathStack.Token = await GetVar(popTokens);
+                                        throw new Exception("9|");
+                                }
+
+                            }
+                            else if (stype1.Equals("C"))
+                            {
+                                int slen1 = string1.Length;
+                                int slen2 = string2.Length;
+                                bool slenAll = slen1 == slen2;
+                                bool slenZero = slen1 == 0 || slen2 == 0;
+
+                                // we're comparing strings - I'm getting the correct results
+                                // but I'm definitely not doing it the same way as VFP.
+                                // TODO - Play around with space and zero filling like VFP
+                                // to see if it makes better sense and/or takes less code
+                                switch (_rpn[..1])
+                                {
+                                    case "?":   // Exact match
+                                        boolAnswer = string1 == string2;
+                                        break;
+
+                                    case "=":
+                                        if (App.CurrentDS.JaxSettings.ANSI && slenZero == false)
+                                        {
+                                            // Compares up to shortest string as long
+                                            // both of them are at least 1 char long
+                                            if (slen1 > slen2)
+                                                string1 = string1[..slen2];
+                                            else if (slen2 > slen1)
+                                                string2 = string1[..slen1];
+                                        }
+
+                                        if (exactMatch)
+                                            boolAnswer = string1 == string2;
+                                        else
+                                            boolAnswer = string1.StartsWith(string2);
+                                        break;
+
+
+                                    case "@":  // !=
+                                    case "#":   // <>
+                                        if (App.CurrentDS.JaxSettings.ANSI && slenZero == false)
+                                        {
+                                            // Compares up to shortest string
+                                            if (slen1 > slen2)
+                                                string1 = string1[..slen2];
+                                            else if (slen2 > slen1)
+                                                string2 = string1[..slen1];
+                                        }
+
+                                        if (exactMatch)
+                                            boolAnswer = string1 == string2;
+                                        else
+                                            boolAnswer = string1.StartsWith(string2);
+                                        break;
+
+                                    case ">":
+                                        if (slenAll == false && slenZero)
+                                            string1 = "L.F.";    // one but not both are empty string
+                                        else if (exactMatch)
+                                            boolAnswer = string1.CompareTo(string2) > 0;
+                                        else
+                                        {
+                                            if (string1.Length > string2.Length)
+                                                string1 = string1[..string2.Length];
+                                            else if (string2.Length > string1.Length)
+                                                string2 = string2[..string1.Length];
+
+                                            boolAnswer = string1.CompareTo(string2) > 0;
+                                        }
+                                        break;
+
+                                    case "<":
+                                        if (slenAll == false && slen1 == 0)
+                                            string1 = "L.T.";    // one but not both are empty string
+                                        else if (exactMatch)
+                                            boolAnswer = string1.CompareTo(string2) < 0;
+                                        else
+                                        {
+                                            if (string1.Length > string2.Length)
+                                                string1 = string1[..string2.Length];
+
+                                            boolAnswer = string1.CompareTo(string2) < 0;
+                                        }
+                                        break;
+
+                                    case "}":
+                                        if (exactMatch)
+                                            boolAnswer = string1.CompareTo(string2) >= 0;
+                                        else
+                                            boolAnswer = string1.CompareTo(string2) >= 0;
+                                        break;
+
+                                    case "{":
+                                        if (exactMatch)
+                                            boolAnswer = string1.CompareTo(string2) <= 0;
+                                        else
+                                        {
+
+                                            if (slen1 > slen2)
+                                                string1 = string1[..slen2];
+                                            else if (slen2 > slen1)
+                                                string2 = string2[..slen1];
+
+                                            boolAnswer = string1.CompareTo(string2) <= 0;
+                                        }
+                                        break;
+
+                                    case "&":
+                                    case "|":   // Invalid
+                                        throw new Exception("11|");
+
+                                    case "$":
+                                        boolAnswer = (string2.IndexOf(string1) + 1) > 0;
                                         break;
                                 }
+                            }
+                            else if (stype1.Equals("L"))
+                            {
+                                // we're comparing T/F
+                                switch (_rpn[..1])
+                                {
+                                    case "=":
+                                        boolAnswer = string1 == string2;
+                                        break;
+                                    case "@":
+                                    case "#":
+                                        boolAnswer = string1 != string2;
+                                        break;
+                                    case ">":
+                                        boolAnswer = string1.CompareTo(string2) > 0;
+                                        break;
+                                    case "<":
+                                        boolAnswer = string1.CompareTo(string2) < 0;
+                                        break;
+                                    case "}":
+                                        boolAnswer = string1.CompareTo(string2) >= 0;
+                                        break;
+                                    case "{":
+                                        boolAnswer = string1.CompareTo(string2) <= 0;
+                                        break;
+                                    case "&":
+                                        boolAnswer = string1.Equals(".T.") && string2.Equals(".T.");
+                                        break;
+                                    case "|":
+                                        boolAnswer = string1.Equals(".T.") || string2.Equals(".T.");
+                                        break;
+                                    default:
+                                        throw new Exception("11|");
+                                }
+                            }
+                            else if (JAXLib.InListC(stype1, "D", "T"))
+                            {
+                                // we're comparing date/datetime strings
+                                switch (_rpn[..1])
+                                {
+                                    case "=":
+                                        boolAnswer = string1 == string2;
+                                        break;
+                                    case "@":
+                                    case "#":
+                                        boolAnswer = string1 != string2;
+                                        break;
+                                    case ">":
+                                        boolAnswer = string1.CompareTo(string2) > 0;
+                                        break;
+                                    case "<":
+                                        boolAnswer = string1.CompareTo(string2) < 0;
+                                        break;
+                                    case "}":
+                                        boolAnswer = string1.CompareTo(string2) >= 0;
+                                        break;
+                                    case "{":
+                                        boolAnswer = string1.CompareTo(string2) <= 0;
+                                        break;
+                                    default:
+                                        throw new Exception("11|");
+                                }
+                            }
+                            else
+                            {
+                                // We're comparing numbers
+                                val1 = t1.AsDouble();
+                                val2 = t2.AsDouble();
+
+                                switch (_rpn[..1])
+                                {
+                                    case "=":
+                                        boolAnswer = val1 == val2;
+                                        break;
+                                    case "@":
+                                    case "#":
+                                        boolAnswer = val1 != val2;
+                                        break;
+                                    case ">":
+                                        boolAnswer = val1 > val2;
+                                        break;
+                                    case "<":
+                                        boolAnswer = val1 < val2;
+                                        break;
+                                    case "}":
+                                        boolAnswer = val1 >= val2;
+                                        break;
+                                    case "[":
+                                        boolAnswer = val1 <= val2;
+                                        break;
+                                    default:
+                                        throw new Exception("11|");
+                                }
+                            }
+
+                            mathStack.SetValue(boolAnswer);
+                        }
+                    }
+                    else
+                    {
+                        inVar = false;
+
+                        // We're left with functions - handle the array based functions separately
+                        if (JAXLib.InList(_rpn, "`ACLASS", "`ACLASS", "`ACOPY", "`ADATABASES", "`ADBOBJECTS", "`ADDBS", "`ADDPROPERTY", "`ADEL", "`ADIR", "`ADLLS", "`ADOCKSTATE", "`AELEMENT", "`AERROR", "`AEVENTS",
+                            "`AFIELDS", "`AFONT", "`AGETCLASS", "`AGETFILEVERSION", "`AINS", "`AINSTANCE", "`ALEN", "`ALINES", "`AMEMBERS", "`AMOUSEOBJ", "`ANETRECOURCES", "`APRINTERS", "`APROCINFO", "`ASCAN",
+                            "`ASELOBJ", "`ASESSIONS", "`ASORT", "`ASQLHANDLES", "`ASTACKINFO", "`ASUBSCRIPT", "`ATAGINFO", "`AUSED", "`AVCXCLASSES", "`REMOVEPROPERTY"))
+                        {
+                            // Functions that deal with arrays need
+                            // special handling
+                            pop = PopStackItems(100);
+
+                            // Most array functions start with an A
+                            if (JAXLib.InList(_rpn, "`REMOVEPROPERTY"))
+                                mathStack.Token = await MathFuncsR.R(App, _rpn, pop);
+                            else
+                                mathStack.Token = await MathFuncsA.A0(App, _rpn, pop);
+                        }
+                        else
+                        {
+                            List<JAXObjects.Token> popTokens = await PopStackTokens(100);
+
+                            pop = [];
+                            for (int i = 0; i < popTokens.Count; i++)
+                                pop.Add(popTokens[i].Element.Type + popTokens[i].AsString());
+
+                            stype1 = (pop.Count > 0 ? pop[0][..1] : string.Empty);
+                            string1 = (pop.Count > 0 ? pop[0][1..] : string.Empty);
+
+                            switch (_rpn[1].ToString())
+                            {
+                                case "A":
+                                    mathStack.Token = MathFuncsA.A1(App, _rpn, pop);
+                                    break;
+
+                                case "B":
+                                    mathStack.Token = MathFuncsB.B(App, _rpn, pop);
+                                    break;
+
+                                case "C":
+                                    mathStack.Token = await MathFuncsC.C(App, _rpn, pop);
+                                    break;
+
+                                case "D":
+                                case "E":
+                                    mathStack.Token = await MathFuncsD.D(App, _rpn, pop);
+                                    break;
+
+                                case "F":
+                                    mathStack.Token = MathFuncsF.F(App, _rpn, pop);
+                                    break;
+
+                                case "G":
+                                    mathStack.Token = await MathFuncsG.G(App, _rpn, pop);
+                                    break;
+
+                                case "H":
+                                case "I":
+                                    mathStack.Token = MathFuncsH.H(App, _rpn, pop);
+                                    break;
+
+                                case "J":
+                                case "K":
+                                case "L":
+                                    mathStack.Token = MathFuncsL.L(App, _rpn, pop);
+                                    break;
+
+                                case "M":
+                                case "N":
+                                    mathStack.Token = await MathFuncsM.M(App, _rpn, pop);
+                                    break;
+
+                                case "O":
+                                case "P":
+                                case "Q":
+                                    mathStack.Token = MathFuncsP.P(App, _rpn, pop);
+                                    break;
+
+                                case "R":
+                                    mathStack.Token = await MathFuncsR.R(App, _rpn, pop);
+                                    break;
+
+                                case "S":
+                                    mathStack.Token = await MathFuncsS.S(App, _rpn, pop);
+                                    break;
+
+                                case "T":
+                                    mathStack.Token = await MathFuncsT.T(App, _rpn, pop);
+                                    break;
+
+                                case "U":
+                                case "V":
+                                case "W":
+                                case "X":
+                                case "Y":
+                                case "Z":
+                                    mathStack.Token = MathFuncsU.U(App, _rpn, pop);
+                                    break;
+
+                                default:
+                                    // Some form of var to resolve
+                                    JAXObjects.Token v = new();
+                                    v.Element.Value = _rpn;
+                                    popTokens.Insert(0, v);
+                                    mathStack.Token = await GetVar(popTokens);
+                                    break;
                             }
                         }
                     }
                 }
-
-                // Should have just one thing left on the stack
-                if (mathStack.Count > 0)
-                {
-                    if (inArray > 0) throw new Exception("10|");
-
-                    if (mathStack.Count > 1)
-                    {
-                        int iii = 0;
-                    }
-
-                    await SolveIfVar(false);
-
-                    tAnswer = mathStack.PopToken();
-                }
-                else
-                    throw new Exception("9989||Math");
             }
-            catch (Exception ex)
+
+            // Should have just one thing left on the stack
+            if (mathStack.Count > 0)
             {
-                App.SetError(9995, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (inArray > 0) throw new Exception("10|");
+
+                await SolveIfVar(false);
+                tAnswer = mathStack.PopToken();
             }
+            else
+                throw new Exception("9989||Math");
 
             return tAnswer;
         }
@@ -1241,29 +1231,6 @@ namespace JAXBase.Math
             return pop;
         }
 
-        /***************************************************************
-         * Used to grab one or more items off the stack with and return
-         * them in a List<string>.  Includes a hard stop count.  The 
-         * tilde char (~) is also a hard stop. Variables are 
-         * automatically processed as they are found.
-         ***************************************************************/
-        //private List<string> PopStack(int iHardStop)
-        //{
-        //    List<string> pop = [];
-
-        //    while (mathStack.Count > 0 && iHardStop-- > 0 && mathStack.GetString().Equals("~", StringComparison.OrdinalIgnoreCase) == false)
-        //    {
-        //        if (mathStack.GetString().Equals("~", StringComparison.OrdinalIgnoreCase) || mathStack.Token.TType.Equals("c", StringComparison.OrdinalIgnoreCase))
-        //            _ = mathStack.PopString();  // Get rid of ~ and comma delimeters
-        //        else
-        //        {
-        //            //UNDELETE IF USED -> JAXObjects.Token t = SolveIfVar(true);
-        //            //                    pop.Insert(0, t.Element.Type + t.Element.Value);  // we want them left to right
-        //        }
-        //    }
-
-        //    return pop;
-        //}
 
 
         /***************************************************************
@@ -1343,9 +1310,9 @@ namespace JAXBase.Math
             }
 
             if (MathAux.err > 0)
-                App.SetError(MathAux.err, MathAux.errmsg, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(MathAux.err, MathAux.errmsg, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
-            gc.Error = App.LastErrorNo();
+            gc.Error = AppErrorHandling.LastErrorNo();
             return gc;
         }
 
@@ -1465,13 +1432,13 @@ namespace JAXBase.Math
         //        {
         //            // Plain var or object reference
         //            sVar = tk.AsString();
-        //            tk = App.GetVarToken(sVar, true);
+        //            tk = AppVars.GetVarToken(sVar, true);
         //            if (tk.TType.Equals("U", StringComparison.OrdinalIgnoreCase))
         //            {
         //                // Clear the stack and display the error
         //                mathStack.Clear();
         //                inError = true;
-        //                App.SetError(9999, "12|" + sVar, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+        //                AppErrorHandling.SetError(9999, "12|" + sVar, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
         //            }
         //        }
         //        else
@@ -1491,13 +1458,13 @@ namespace JAXBase.Math
         //                tk = varInfo[0];
         //                varInfo.RemoveAt(0);
         //                sVar += "." + tk.AsString();
-        //                tk = App.GetVarToken(sVar, true);
+        //                tk = AppVars.GetVarToken(sVar, true);
         //                if (tk.TType.Equals("U", StringComparison.OrdinalIgnoreCase))
         //                {
         //                    // Clear the stack and display the error
         //                    mathStack.Clear();
         //                    inError = true;
-        //                    App.SetError(9999, "12|" + sVar, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+        //                    AppErrorHandling.SetError(9999, "12|" + sVar, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
         //                }
         //            }
         //            else
@@ -1568,73 +1535,66 @@ namespace JAXBase.Math
             int row = -1;
             int col = -1;
 
-            try
+            string sVar = rpn[0].AsString().TrimStart('_');
+            tk = await AppVars.GetVarToken(sVar, true);
+
+            if (tk.TType.Equals("U"))
+                throw new Exception($"12|{sVar}");
+
+            // Get the parameters
+            for (int i = 1; i < rpn.Count; i++)
             {
-                string sVar = rpn[0].AsString().TrimStart('_');
-                tk = await App.GetVarToken(sVar, true);
+                string pString = rpn[i].AsString();
+                if ("[](),".Contains(pString) == false) parms.Add(rpn[i]);
+            }
 
-                if (tk.TType.Equals("U"))
-                    throw new Exception($"12|{sVar}");
 
-                // Get the parameters
-                for (int i = 1; i < rpn.Count; i++)
+            if (tk.TType.Equals("U", StringComparison.OrdinalIgnoreCase) || parms.Count > 2)
+            {
+                // It must be a User Defined Function
+                int iii = 0;
+            }
+            else
+            {
+                if (tk.TType.Equals("A", StringComparison.OrdinalIgnoreCase))
                 {
-                    string pString = rpn[i].AsString();
-                    if ("[](),".Contains(pString) == false) parms.Add(rpn[i]);
-                }
-
-
-                if (tk.TType.Equals("U", StringComparison.OrdinalIgnoreCase) || parms.Count > 2)
-                {
-                    // It must be a User Defined Function
-                    int iii = 0;
-                }
-                else
-                {
-                    if (tk.TType.Equals("A", StringComparison.OrdinalIgnoreCase))
+                    if (parms.Count > 0)
                     {
-                        if (parms.Count > 0)
-                        {
-                            if (parms[0].Element.Type.Equals("N", StringComparison.OrdinalIgnoreCase))
-                                row = parms[0].AsInt();
-                            else
-                                throw new Exception("11|");
-                        }
-
-                        if (parms.Count > 1)
-                        {
-                            if (parms[1].Element.Type.Equals("N", StringComparison.OrdinalIgnoreCase))
-                                col = parms[1].AsInt();
-                            else
-                                throw new Exception("11|");
-                        }
-
-                        // Make 1D if col < 1
-                        if (col < 1 && row > 0)
-                        {
-                            col = row;
-                            row = 0;
-                        }
-                        else if (parms.Count == 0)
-                        {
-                            col = 1;
-                            row = 1;
-                        }
-
-                        if (row < 0 || col < 1) throw new Exception("1234|");               // 1 based array check
-                        if (row == 0 && col > tk._avalue.Count) throw new Exception("1234|"); // 1D array check
-                        if (row > 0 && col > tk.Col) throw new Exception("1234|");          // 2D array check
-                        if (row > 1 && row > tk.Row) throw new Exception("1234|");          // 2D array check
-                        tk.SetElement(row, col);
+                        if (parms[0].Element.Type.Equals("N", StringComparison.OrdinalIgnoreCase))
+                            row = parms[0].AsInt();
+                        else
+                            throw new Exception("11|");
                     }
 
-                    // Get the var element's value
-                    sResult.Element.Value = tk.Element.Value;
+                    if (parms.Count > 1)
+                    {
+                        if (parms[1].Element.Type.Equals("N", StringComparison.OrdinalIgnoreCase))
+                            col = parms[1].AsInt();
+                        else
+                            throw new Exception("11|");
+                    }
+
+                    // Make 1D if col < 1
+                    if (col < 1 && row > 0)
+                    {
+                        col = row;
+                        row = 0;
+                    }
+                    else if (parms.Count == 0)
+                    {
+                        col = 1;
+                        row = 1;
+                    }
+
+                    if (row < 0 || col < 1) throw new Exception("1234|");               // 1 based array check
+                    if (row == 0 && col > tk._avalue.Count) throw new Exception("1234|"); // 1D array check
+                    if (row > 0 && col > tk.Col) throw new Exception("1234|");          // 2D array check
+                    if (row > 1 && row > tk.Row) throw new Exception("1234|");          // 2D array check
+                    tk.SetElement(row, col);
                 }
-            }
-            catch (Exception ex)
-            {
-                App.SetError(9994, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+
+                // Get the var element's value
+                sResult.Element.Value = tk.Element.Value;
             }
 
             return sResult;
@@ -1689,10 +1649,9 @@ namespace JAXBase.Math
             int inLiteralSpace = 0;
             bool notField = true;
 
-            try
-            {
                 // Last sVar element is the head variable - It has to be an object or table alias
-                string sVar = vInfo[^1].AsString().TrimStart('_');
+                string sVar = vInfo[^1].AsString();
+                //if (sVar[0] == '_') sVar = sVar[1..];
 
                 // Is it an alias.field?
                 if (vInfo.Count == 2 && App.CurrentDS.IsWorkArea(sVar))
@@ -1711,7 +1670,7 @@ namespace JAXBase.Math
                 if (notField)
                 {
                     // Not a table.field so look for an object
-                    CurrentPart = await App.GetVarFromExpression(sVar, null);
+                    CurrentPart = await AppVars.GetVarFromExpression(sVar, null);
 
 
                     // Is it an object?
@@ -1788,8 +1747,26 @@ namespace JAXBase.Math
                             }
                             else
                             {
+                                // Is this an array or UDF?
+                                if (i > 0 && "([".Contains(vInfo[i - 1].AsString()))
+                                {
+                                    // Add each parameter to the oPart comma-delimited var string
+                                    string endPart = vInfo[i - 1].AsString() == "(" ? ")" : "]";
+                                    oPart += vInfo[i - 1].AsString();
+                                    i--;
+
+                                    while (i > 0 && vInfo[--i].AsString().Equals(endPart) == false)
+                                        oPart += vInfo[i].AsString() + ",";
+
+                                    // Clear out the trailing comma and add the closing paren/bracket
+                                    if (i >= 0)
+                                        oPart = oPart.Trim(',') + vInfo[i].AsString();
+                                    else
+                                        throw new Exception("3014|");
+                                }
+
                                 // It's a property or object
-                                tk = await App.GetVarFromExpression(oPart, thisObject);
+                                tk = await AppVars.GetVarFromExpression(oPart, thisObject);
                             }
 
                             if (i > 0)
@@ -1819,81 +1796,8 @@ namespace JAXBase.Math
                     // Can't leave parms dangling
                     if (parms.Count > 0) throw new Exception("10|");
                 }
-            }
-            catch (Exception ex)
-            {
-                App.SetError(9994, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-            }
 
             return sResult;
         }
-
-
-        ///***************************************************************
-        // * Resolve a W.X.Y.Z template and return the requested object
-        // * which in this case is Y.  Z is a property of Y
-        // ***************************************************************/
-        //public async Task<Token> ObjectPartResolve(JAXObjectWrapper thisObject, string objPart, List<JAXObjects.Token> parms)
-        //{
-        //    JAXObjects.Token token = new();
-        //    JAXObjectWrapper? thisObj = null;
-
-        //    // The following are all nested objects
-        //    string PartType = await thisObject.IsMember(objPart);
-
-        //    if (PartType.Equals("X", StringComparison.OrdinalIgnoreCase))
-        //        throw new Exception("1559|" + objPart);
-
-        //    int j = await thisObject.FindObjectByName(objPart);
-        //    thisObj = await thisObject.GetObject(j);
-
-        //    if (thisObj is null)
-        //        throw new Exception("1901|");
-        //    else
-        //        thisObject = thisObj;
-
-        //    if (PartType.Equals("P", StringComparison.OrdinalIgnoreCase))
-        //    {
-        //        // Get the property value
-        //        switch (parms.Count)
-        //        {
-        //            case 0:
-        //                token = await thisObject.GetProperty(objPart, 0);
-        //                if (token.TType.Equals("O") == false)
-        //                    throw new Exception($"{thisObject.GetErrorNo()}|");
-        //                break;
-
-        //            case 1:
-        //                if (parms[0].Element.Type.Equals("N", StringComparison.OrdinalIgnoreCase))
-        //                {
-        //                    if (await thisObject.GetProperty(objPart, parms[0].AsInt(), out token) < 0)
-        //                        throw new Exception($"{thisObject.GetErrorNo()}|");
-        //                }
-        //                else
-        //                    throw new Exception("11|");
-        //                break;
-
-        //            case 2:
-        //                // Must be an array 
-        //                break;
-
-        //            default:
-        //                throw new Exception("31|");
-
-        //        }
-        //    }
-        //    else
-        //    {
-        //        // Set up the parameters
-
-        //        // Execute the object or method
-        //        await thisObject.MethodCall(objPart);
-
-        //        // Get the return value and put it into the token
-
-        //    }
-
-        //    return token!;
-        //}
     }
 }

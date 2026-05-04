@@ -10,7 +10,7 @@
  *------------------------------------------------------------------------------------------*/
 using Avalonia.Media;
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using ZXing;
 
 namespace JAXBase.XBase
@@ -93,7 +93,7 @@ namespace JAXBase.XBase
                                         CreateFromMarkupString(objtk.AsString());
                                     else
                                     {
-                                        objtk = await App.GetVarFromExpression(objtk.AsString(), null);
+                                        objtk = await AppVars.GetVarFromExpression(objtk.AsString(), null);
 
                                         // TODO - Convert the array
                                         if (objtk.TType.Equals("A") && objtk.Row > 0 && objtk.Col > 1)
@@ -355,10 +355,10 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
             }
@@ -422,7 +422,7 @@ namespace JAXBase.XBase
             }
             catch (Exception ex)
             {
-                throw new Exception($"9104||Invalid parse data {svg}");
+                throw new Exception($"9104||Invalid parse data {svg} - {ex.Message}");
             }
         }
 
@@ -791,9 +791,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|", string.Empty);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
             }

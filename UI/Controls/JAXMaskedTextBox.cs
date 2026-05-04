@@ -6,7 +6,7 @@
  */
 using Avalonia.Input;
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using System.Globalization;
 using System.Text;
 
@@ -25,8 +25,8 @@ namespace JAXBase.UI.Controls
 
         private bool _textIsNull = false;
         private bool _isDisplayingNull = false;
-        private bool _maskSkip = true;
-        private char _maskFillChar = '0';
+        private bool _maskSkip = false;         // Don't skip by default
+        private char _maskFillChar = '\0';      // Don't fill if \0
         private string NullDisplayText = "";
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace JAXBase.UI.Controls
         {
             string result = "";
 
-            if (string.IsNullOrEmpty(inputString))
+            if (string.IsNullOrEmpty(inputString) || _maskFillChar=='\0')
                 return inputString;
 
             // Split into sections by period
@@ -234,7 +234,7 @@ namespace JAXBase.UI.Controls
         /// </summary>
         private void OnTextChanged(object? sender, EventArgs e)
         {
-            JAXApp.MainWindowInstance!.App.DebugLog($"OnTextChanged has {Text}");
+            AppIO.DebugLog($"OnTextChanged has {Text}");
 
             if (_isDisplayingNull)
                 return;   // protect the .NULL. display

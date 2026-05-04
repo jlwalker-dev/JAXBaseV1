@@ -13,7 +13,7 @@ namespace JAXBase.Executer
          */
         public static string Begin(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
@@ -22,7 +22,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -36,7 +36,7 @@ namespace JAXBase.Executer
          */
         public static string Blank(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
@@ -45,7 +45,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -66,7 +66,7 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Browse(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
@@ -103,12 +103,12 @@ namespace JAXBase.Executer
 
                 JAXObjects.Token bwin = new();
                 bwin.Element.Value = jow;
-                jbe.App.SetVarOrMakePrivate(NameExpr, bwin);
+                AppVars.SetVarOrMakePrivate(NameExpr, bwin);
                 await jow.MethodCall("show");
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -122,7 +122,7 @@ namespace JAXBase.Executer
          */
         public static string Build(AppClass app, string cmdLine)
         {
-            app.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
@@ -131,7 +131,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

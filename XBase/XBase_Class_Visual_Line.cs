@@ -12,6 +12,10 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Line : XBase_Class_Visual_ShapeBase
     {
+        public new string MyBaseClass { get; } = "Line";
+        public new string MyDefaultName { get; } = "line";
+
+
         public XBase_Class_Visual_Line(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             SetVisualObject(null, "Line", "line", false, UserObject.urw);

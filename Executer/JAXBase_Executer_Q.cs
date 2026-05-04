@@ -13,7 +13,7 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Quit(AppClass app, ExecuterCodes? eCodes)
         {
-            app.DebugLog("QUIT command received");
+            AppIO.DebugLog("QUIT command received");
 
             JAXObjects.Token answer = new();
             answer.Element.Value = 0;
@@ -25,31 +25,28 @@ namespace JAXBase.Executer
                     answer = await app.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                     if (answer.Element.Type.Equals("N"))
                     {
-                        app.DebugLog($"QUIT evaluated to {answer.AsString()}");
+                        AppIO.DebugLog($"QUIT evaluated to {answer.AsString()}");
                         app.ReturnValue.Element.Value = answer.AsInt();
                     }
                     else
                     {
-                        app.DebugLog($"QUIT evaluated to {answer.AsString()} type {answer.Element.Type}");
+                        AppIO.DebugLog($"QUIT evaluated to {answer.AsString()} type {answer.Element.Type}");
                         answer.Element.Value = 11;
                     }
                 }
             }
 
-            app.DebugLog("Releasing all applevels and cache");
+            AppIO.DebugLog("Releasing all applevels and cache");
             app.AppLevels = [];
             app.CodeCache = [];
             app.PRGCache = [];
 
-            app.DebugLog("Releasing all consoles");
-            // Release all consoles
-            //foreach (KeyValuePair<string, JAXConsole> c in app.JAXConsoles)
-            //    c.Value.Release();
-
             // Exit the application with the given return code
-            app.DebugLog($"Requesting application exit with return code {app.ReturnValue.AsString()}");
-            Application.Exit();
-            return string.Empty;
+            AppIO.DebugLog($"Requesting application exit with return code {app.ReturnValue.AsInt()}");
+            System.Environment.Exit(answer.AsInt());
+
+            AppIO.DebugLog("System.Environment.Exit failed to terminate the program");
+            return "";
         }
     }
 }

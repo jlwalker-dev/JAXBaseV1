@@ -4,7 +4,7 @@
 using JAXBase.Core;
 using Newtonsoft.Json;
 using System.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Data
 {

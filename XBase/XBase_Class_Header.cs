@@ -5,6 +5,9 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_Header : XBase_Avalonia
     {
+        public new string MyBaseClass = "Header";
+        public new string MyDefaultName = "header";
+
         public XBase_Class_Header(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             SetVisualObject(null, "empty", string.Empty, false, UserObject.urw);

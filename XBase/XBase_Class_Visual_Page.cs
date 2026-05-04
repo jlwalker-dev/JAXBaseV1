@@ -2,12 +2,16 @@
  * Required in order to make the PageFrame work with the system
  */
 using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.XBase
 {
     internal class XBase_Class_Visual_Page : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Page";
+        public new string MyDefaultName { get; } = "page";
+
+
         public Avalonia.Controls.TabItem pfPage => (Avalonia.Controls.TabItem)me.avaloniaObject!;
         public Avalonia.Controls.TabControl? pgFrame => me.parent is null ? null : (Avalonia.Controls.TabControl?)me.parent.avaloniaObject;
         private Avalonia.Controls.Canvas InnerCanvas;
@@ -79,39 +83,21 @@ namespace JAXBase.XBase
             {
                 // Add valid controls to the canvas
                 if (value.avaloniaObject is not null)
-                {
                     InnerCanvas.Children.Add(value.avaloniaObject!);
-
-                    // Does it have an anchor property?
-                    if (value.thisObject!.UserProperties.ContainsKey("anchor"))
-                    {
-                        JAXObjects.Token answer = await value.GetProperty("anchor");
-                        XClass_AuxCode.ApplyVFPAnchor(value.avaloniaObject!, InnerCanvas, answer.AsInt());
-                    }
-                }
-                else
+                else if (value.nvObject is Avalonia.Controls.Shapes.Path)
+                    InnerCanvas.Children.Add((Avalonia.Controls.Shapes.Path)value.nvObject!);
+                else if (value.nvObject is not null)
                 {
-                    // ---------------------------------------------------------------------
-                    // Certain objects have to be handled differently
-                    // ---------------------------------------------------------------------
-                    if (value.nvObject is Avalonia.Controls.Shapes.Path)
-                    {
-                        // Handle Shapes.Path (for JAXBase Shape and Line class)
-                        InnerCanvas.Children.Add((Avalonia.Controls.Shapes.Path)value.nvObject!);
-
-                        // Does it have an anchor property?
-                        if (value.thisObject!.UserProperties.ContainsKey("anchor"))
-                        {
-                            JAXObjects.Token answer = await value.GetProperty("anchor");
-                            XClass_AuxCode.ApplyVFPAnchor(value.avaloniaObject!, InnerCanvas, answer.AsInt());
-                        }
-                    }
+                    // It's something else then add it to the form's objects collection
+                    UserProperties["objects"].Add(value);
+                    UserProperties["controlcount"].Element.Value = UserProperties["controlcount"].AsInt() + 1;
+                    value.SetParent(me);
                 }
             }
             catch (Exception ex)
             {
                 msg = ex.Message;
-                err = 9999;
+                err = 1980;
             }
 
             if (err == 0)
@@ -127,10 +113,10 @@ namespace JAXBase.XBase
             else
             {
                 // Something went wrong
-                _AddError(err, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(err, $"{err}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(err, $"{err}|{value.JOWName}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
@@ -209,10 +195,10 @@ namespace JAXBase.XBase
 
                 if (result > 0)
                 {
-                    _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                    _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                    if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                        App.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                        AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     result = -1;
                 }
@@ -259,7 +245,7 @@ namespace JAXBase.XBase
                 {
                     if (result < 9)
                         returnToken.CopyFrom(UserProperties[propertyName]); //returnToken.Element.Value = UserProperties[propertyName].Element.Value;
-                    
+
                     result = 0;
                 }
 
@@ -269,10 +255,10 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[^1].Procedure);
+                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[^1].Procedure))
-                    App.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 returnToken.Element.MakeNull();
             }

@@ -173,7 +173,7 @@
  *      
  *      
  ******************************************************************************************************************************************/
-using JAXBase.XBase.JAXBase.XBase;
+using JAXBase.Core;
 
 namespace JAXBase.XBase
 {
@@ -194,6 +194,7 @@ namespace JAXBase.XBase
                     "barcode" => new XBase_Class_Visual_BarCode(jow, name),
                     //"browser" => new XBase_Class_Visual_FormBrowser(jow, name),
                     "checkbox" => new XBase_Class_Visual_CheckBox(jow, name),
+                    "codebox" => new XBase_Class_Visual_CodeBox(jow, name),
                     "collection" => new XBase_Class_Collection(jow, name),
                     "column" => new XBase_Class_Visual_Column(jow, name),
                     "combobox" => new XBase_Class_Visual_ComboBox(jow, name),
@@ -211,6 +212,8 @@ namespace JAXBase.XBase
                     "grid" => new XBase_Class_Visual_Grid(jow, name),
                     //"http" => new XBase_Class_HttpClient(jow, name),
                     "image" => new XBase_Class_Visual_Image(jow, name),
+                    "jax" => new XBase_Class_JAX(jow, name),
+                    "jaxedit" => new XBase_Class_Visual_JAXEdit(jow, name),
                     //"irc" => new XBase_Class_IRCClient(jow, name),
                     "label" => new XBase_Class_Visual_Label(jow, name),
                     "line" => new XBase_Class_Visual_Line(jow, name),
@@ -225,6 +228,7 @@ namespace JAXBase.XBase
                     //"pipe" => new XClass_Pipe(jow, name),
                     //"pop3" => new XBase_Class_POP3(jow, name),
                     //"printer" => new XClass_Printer(jow, name),
+                    "screen" => new XBase_Class_Screen(jow, name),
                     "separator" => new XBase_Class_Visual_Separator(jow, name),
                     "shape" => new XBase_Class_Visual_Shape(jow, name),
                     //"sms" => new XClass_SMS(jow, name),
@@ -235,7 +239,7 @@ namespace JAXBase.XBase
                     //"tcp" => new XBase_Class_TCPClient(jow, name),
                     "textbox" => new XBase_Class_Visual_TextBox(jow, name),
                     //-->"timer" => new XClass_Timer(jow, name),
-                    "toolbar"=> new XBase_Class_Visual_ToolBar(jow, name),
+                    "toolbar" => new XBase_Class_Visual_ToolBar(jow, name),
                     "toolbutton" => new XBase_Class_Visual_ToolButton(jow, name),
                     //"udp" => new XBase_Class_UDPClient(jow, name),
                     "video" => new XBase_Class_Visual_Video(jow, name),
@@ -247,7 +251,7 @@ namespace JAXBase.XBase
                 // Something went wrong during initialization.  If it's not a JAX exception, make
                 // it into a 1902 and include the original exception information for the log file.
                 string msg = ex.Message.Contains('|') ? ex.Message : $"1902|{className}|{ex.Message}";
-                jow.App.SetError(1901, msg, $"JAXObjectsAux.GetClass() for {className} instantiation");
+                AppErrorHandling.SetError(1901, msg, $"JAXObjectsAux.GetClass() for {className} instantiation");
             }
 
             return stoken;
@@ -267,10 +271,10 @@ namespace JAXBase.XBase
             public string Comment = string.Empty;
             public string Type = string.Empty;  // [M]ethod or [E]vent
             public string Tag = "U";            // Used to mark as [U]ser (default), [N]ative, or [I]nherited Native, In[H]erited User
-            public bool Protected=false;
+            public bool Protected = false;
             public bool Hidden = false;
             public bool Inherited = false;
-            public bool Changed=false;
+            public bool Changed = false;
         }
 
         public class MemberList

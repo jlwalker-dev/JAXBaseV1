@@ -1,5 +1,5 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
@@ -11,12 +11,12 @@ namespace JAXBase.Executer
          */
         public static async Task<string> QPrint(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = await SolveQPrint(jbe, eCodes);
 
-            if (jbe.App.ErrorCount() == 0)
+            if (AppErrorHandling.ErrorCount() == 0)
             {
-                jbe.App.SendToIDE(System.Environment.NewLine+result);
+                AppIO.SendToIDE(System.Environment.NewLine+result);
 
                 if (jbe.App.CurrentDS.JaxSettings.Alternate && string.IsNullOrWhiteSpace(jbe.App.CurrentDS.JaxSettings.Alternate_Name) == false)
                     JAXLib.StrToFile(result, jbe.App.CurrentDS.JaxSettings.Alternate_Name, 1);
@@ -31,12 +31,12 @@ namespace JAXBase.Executer
          */
         public static async Task<string> QQPrint(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = await SolveQPrint(jbe, eCodes);
 
-            if (jbe.App.ErrorCount() == 0)
+            if (AppErrorHandling.ErrorCount() == 0)
             {
-                jbe.App.SendToIDE(result);
+                AppIO.SendToIDE(result);
 
                 if (jbe.App.CurrentDS.JaxSettings.Alternate && string.IsNullOrWhiteSpace(jbe.App.CurrentDS.JaxSettings.Alternate_Name) == false)
                     JAXLib.StrToFile(result, jbe.App.CurrentDS.JaxSettings.Alternate_Name, 1);
@@ -58,12 +58,17 @@ namespace JAXBase.Executer
                 if (string.IsNullOrEmpty(rpn.RNPExpr))
                     continue;
 
-                if (rpn.RNPExpr.Contains("propertyinfo",StringComparison.OrdinalIgnoreCase))
+                if (rpn.RNPExpr.Contains("listitem",StringComparison.OrdinalIgnoreCase))
                 {
                     int iii = 0;
                 }
 
                 JAXObjects.Token answer = await jbe.App.SolveFromRPNString(rpn.RNPExpr);
+
+                // M and E types get converted to blank string
+                if ("EM".Contains(answer.TType))
+                    answer = new("");
+
                 result += answer.AsString() + " ";
             }
 
@@ -76,7 +81,7 @@ namespace JAXBase.Executer
          */
         public static string SourceCode(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.AppLevels[^1].CurrentLineOfCode = eCodes.COMMAND;
+            jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = eCodes.COMMAND;
             return string.Empty;
         }
     }

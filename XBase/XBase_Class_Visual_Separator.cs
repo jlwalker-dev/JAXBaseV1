@@ -14,6 +14,10 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Separator : XBase_Class_Avalonia
     {
+        public new string MyBaseClass { get; } = "Separator";
+        public new string MyDefaultName { get; } = "separator";
+
+
         public Avalonia.Controls.Separator separator => (Avalonia.Controls.Separator)me.avaloniaObject!;
 
         public XBase_Class_Visual_Separator(JAXObjectWrapper jow, string name) : base(jow, name)

@@ -13,7 +13,7 @@ using JAXBase.Core;
 using JAXBase.Data;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.Language;
 
 namespace JAXBase.XBase
@@ -127,6 +127,7 @@ namespace JAXBase.XBase
         public int CreateIndex(string tableName, string indexinfo)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -140,11 +141,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -154,6 +156,7 @@ namespace JAXBase.XBase
         public int CreateSP(string procName, string procCode)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -167,11 +170,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(9999, string.Empty, "CreateSP");
+                SetError(9999, "||" + msg, "CreateSP");
                 result = -1;
             }
 
@@ -206,6 +210,7 @@ namespace JAXBase.XBase
         public int CreateTable(string tableName, List<JAXTables.FieldInfo> Fields)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -338,11 +343,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -352,6 +358,7 @@ namespace JAXBase.XBase
         public int DeleteIndex(string tableName, string indexinfo)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -365,11 +372,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -379,6 +387,7 @@ namespace JAXBase.XBase
         public int Disconnect()
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -393,11 +402,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -410,6 +420,7 @@ namespace JAXBase.XBase
         public int DropTable(string tableName)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -423,6 +434,13 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
+            }
+
+            if (result > 0)
+            {
+                SetError(result, "||" + msg, "ExecuteSelect");
+                result = -1;
             }
 
             return result;
@@ -434,6 +452,7 @@ namespace JAXBase.XBase
         public int GetTableStructure(string tableName, out List<JAXTables.FieldInfo> Fields)
         {
             int result = 0;
+            string msg = string.Empty;
             Fields = [];
 
             try
@@ -448,11 +467,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -466,6 +486,7 @@ namespace JAXBase.XBase
         public int Execute(string sql, out object? returnObject)
         {
             int result = 0;
+            string msg = string.Empty;
             sql = sql.Trim();
 
             using var cmd = new SqlCommand(sql, SQLCon) { CommandType = CommandType.Text };
@@ -492,6 +513,7 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
 
                 ErrorLine = kind switch
                 {
@@ -505,7 +527,7 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
             return result;
@@ -515,6 +537,7 @@ namespace JAXBase.XBase
         {
             DataTable dt = new();
             result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -589,12 +612,13 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 dt.Clear();
-                result =9999;
+                result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -614,11 +638,12 @@ namespace JAXBase.XBase
         public int ExecuteSP(string procName, List<xParameters> parameters)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
                 if (SQLCon is null || SQLCon.State != ConnectionState.Open)
-                    result =  6001;
+                    result = 6001;
                 else
                 {
 
@@ -627,11 +652,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -650,6 +676,7 @@ namespace JAXBase.XBase
         public int GetSPCode(string procName)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -663,11 +690,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 
@@ -677,6 +705,7 @@ namespace JAXBase.XBase
         public int Setup(List<xParameters> parameters)
         {
             int result = 0;
+            string msg = string.Empty;
 
             try
             {
@@ -689,11 +718,12 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
+                msg = ex.Message;
             }
 
             if (result > 0)
             {
-                SetError(result, string.Empty, "ExecuteSelect");
+                SetError(result, "||" + msg, "ExecuteSelect");
                 result = -1;
             }
 

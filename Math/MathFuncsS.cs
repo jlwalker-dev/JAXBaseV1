@@ -15,7 +15,7 @@ using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Executer;
 using JAXBase.XBase;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 
 namespace JAXBase.Math
 {
@@ -50,7 +50,7 @@ namespace JAXBase.Math
             {
                 case "`SAVEPICTURE":        // TODO NOW
                     // --------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SEC":
@@ -62,7 +62,7 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = dtVal.Second;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SECONDS":                                    // Since midnight
@@ -192,28 +192,28 @@ namespace JAXBase.Math
 
                 case "`SETFLDSTATE":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SIGN":                            // Returns -1 if negative, 0 if zero, 1 if positive
                     if (stype1.Equals("N"))
                         tAnswer._avalue[0].Value = val1.CompareTo(0);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SIN":
                     if (stype1.Equals("N"))
                         tAnswer.Element.Value = System.Math.Sin(val1);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SOUNDEX":
                     if (stype1.Equals("C"))
                         tAnswer.Element.Value = JAXUtilities.Soundex(string1);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
@@ -221,7 +221,7 @@ namespace JAXBase.Math
                     if (stype1.Equals("N"))
                         tAnswer._avalue[0].Value = new string(' ', intval1);
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SQRT":                               // Square root
@@ -243,13 +243,13 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = val1.ToString();
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     break;
 
                 case "`STRCONV":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`STREXTRACT": // Extract substrings using tokens
@@ -260,7 +260,7 @@ namespace JAXBase.Math
                         tAnswer._avalue[0].Value = JAXLib.StrExtract(string1, string2, string3, intval4).Trim();
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`STRFORMAT":
@@ -270,7 +270,7 @@ namespace JAXBase.Math
 
                 case "`STRTOFILE":
                     if ("UX".Contains(stype1) || stype2.Equals("C") == false || (string.IsNullOrWhiteSpace(stype3) == false && "UXDTLC".Contains(stype3)))
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     else
                     {
                         string2 = JAXLib.FixFilePath(string2, App.CurrentDS.JaxSettings.Default);
@@ -293,12 +293,12 @@ namespace JAXBase.Math
 
                 case "`STUFF":  // TODO
                                 // --------------------------------------------------------------- TODO
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`STUFFC":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SUBSTR":  // Get a substring from a string
@@ -307,7 +307,7 @@ namespace JAXBase.Math
                         if (pop.Count > 2)
                         {
                             if (stype3.Equals("N") == false)
-                                App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
                         else
                             intval3 = string1.Length;
@@ -320,12 +320,12 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = string1.Substring(intval2 - 1, intval3); // grab just part
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SUBSTRC":
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`SYSID":

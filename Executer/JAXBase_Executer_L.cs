@@ -1,6 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
@@ -18,30 +18,30 @@ namespace JAXBase.Executer
             {
                 // Is this the first executed command of the program?
                 if (jbe.App.AppLevels.Count == 0) throw new Exception("2|");
-                if (JAXLib.InList(jbe.App.AppLevels[^1].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+                if (JAXLib.InList(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
 
                 // Break out the var expressions
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
                     JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
 
-                    VarRef var = await jbe.App.SolveVariableReference(answer.AsString());
-                    jbe.App.MakeLocalVar(var.varName, var.row, var.col, true);
-                    jbe.App.SetVarOrMakePrivate(var.varName, var.row, var.col, false);
+                    VarRef var = await AppVars.SolveVariableReference(answer.AsString());
+                    AppVars.MakeLocalVar(var.varName, var.row, var.col, true);
+                    AppVars.SetVarOrMakePrivate(var.varName, var.row, var.col, false);
 
                     string type = eCodes.As[i];
 
                     // Set the var as this type
                     if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
-                        await jbe.App.SetAsType(var.varName, type);
+                        await AppVars.SetAsType(var.varName, type);
 
                     if (jbe.App.ParameterClassList.Count > 0)
                     {
-                        JAXObjects.Token tk = await jbe.App.GetParameterToken(null);
+                        JAXObjects.Token tk = await AppHelper.GetParameterToken(null);
                         if (string.IsNullOrWhiteSpace(type) || tk.Element.Type.Equals(type))
                         {
-                            jbe.App.DebugLog($"LPARAMETER created {var.varName} = {tk.AsString()} via type {type}");
-                            jbe.App.SetVar(var.varName, tk);
+                            AppIO.DebugLog($"LPARAMETER created {var.varName} = {tk.AsString()} via type {type}");
+                            AppVars.SetVar(var.varName, tk);
                         }
                         else
                             throw new Exception("1732|");
@@ -51,7 +51,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             jbe.App.ParameterClassList.Clear();
@@ -77,14 +77,14 @@ namespace JAXBase.Executer
 
                     if (answer.Element.Type.Equals("C"))
                     {
-                        VarRef var = await jbe.App.SolveVariableReference(answer.AsString());
-                        jbe.App.MakeLocalVar(var.varName, var.row, var.col, true);
+                        VarRef var = await AppVars.SolveVariableReference(answer.AsString());
+                        AppVars.MakeLocalVar(var.varName, var.row, var.col, true);
 
                         string type = eCodes.As[i];
 
                         // Set the var as this type
                         if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
-                            await jbe.App.SetAsType(var.varName, type);
+                            await AppVars.SetAsType(var.varName, type);
                     }
                     else
                         throw new Exception("11|");
@@ -92,7 +92,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -181,7 +181,7 @@ namespace JAXBase.Executer
             catch (Exception ex)
             {
                 result = string.Empty;
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             // Return to the starting workarea
@@ -202,10 +202,10 @@ namespace JAXBase.Executer
             {
                 if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
 
-                string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[^1].PRGCacheIdx] : string.Empty;
+                string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
 
                 // What loop are we currently in?
-                string loopType = jbe.App.PopLoopStack();
+                string loopType = AppLoop.PopLoopStack();
                 string loop = string.Empty;
 
                 switch (loopType[0])
@@ -255,7 +255,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
 
@@ -277,7 +277,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
 

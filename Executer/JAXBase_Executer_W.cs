@@ -1,5 +1,5 @@
 ﻿using JAXBase.XBase;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.Core;
 
 namespace JAXBase.Executer
@@ -13,7 +13,7 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Wait(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
@@ -49,11 +49,11 @@ namespace JAXBase.Executer
                 jbe.App.WaitWindow = JAXLib.WaitWindow(jbe.App, msg, eCodes.At.row, eCodes.At.col, Array.IndexOf(eCodes.Flags, "clear") > 0, wait4, eCodes.TIME, out string retval);
 
                 if (string.IsNullOrWhiteSpace(varName) == false)
-                    await jbe.App.SetVarFromExpression(varName, retval, true);
+                    await AppVars.SetVarFromExpression(varName, retval, true);
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -69,7 +69,7 @@ namespace JAXBase.Executer
          */
         public static async Task<string> With(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            jbe.App.ClearErrors();
+            AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
@@ -84,18 +84,18 @@ namespace JAXBase.Executer
 
                 // now look for the variable
                 string varName = tk.AsString();
-                jbe.App.DebugLog($"With -> {varName}");
+                AppIO.DebugLog($"With -> {varName}");
 
                 JAXObjectWrapper? parent = null;
 
-                if (varName[0] == '.' && jbe.App.AppLevels[^1].WithStack.Count > 0)
+                if (varName[0] == '.' && jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count > 0)
                 {
                     // TODO - this could be layered many deep
                     // With obj
                     //    with .obj
                     //        with .obj ...
-                    string parentVar = jbe.App.AppLevels[^1].WithStack[^1];
-                    JAXObjects.Token ptk = await jbe.App.GetVarFromExpression(parentVar, null);
+                    string parentVar = jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack[^1];
+                    JAXObjects.Token ptk = await AppVars.GetVarFromExpression(parentVar, null);
 
                     if (ptk.Element.Type.Equals("O") == false)
                         throw new Exception("11||WRONG! Parent in stack was not an object!");
@@ -104,16 +104,16 @@ namespace JAXBase.Executer
                 }
 
                 // Make sure it's an object
-                tk = await jbe.App.GetVarFromExpression(varName, parent);
+                tk = await AppVars.GetVarFromExpression(varName, parent);
 
                 if (tk.Element.Type.Equals("O") == false)
                     throw new Exception($"11||With variable {varName} is not an object");
 
-                jbe.App.AppLevels[^1].WithStack.Add(varName);
+                jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Add(varName);
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

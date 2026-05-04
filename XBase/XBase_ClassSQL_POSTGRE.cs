@@ -13,7 +13,7 @@ using JAXBase.Core;
 using JAXBase.Data;
 using Npgsql;
 using System.Data;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.Language;
 
 namespace JAXBase.XBase

@@ -1,5 +1,5 @@
 ﻿using JAXBase.Core;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using System.Text;
 
 namespace JAXBase.Math
@@ -33,7 +33,7 @@ namespace JAXBase.Math
 
                 case "`BINDEVENT":  // Bind to an event
                     // ---------------------------------------------------------------
-                    App.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BINTOC":     // Binary to Character
@@ -57,7 +57,7 @@ namespace JAXBase.Math
                             if (string.IsNullOrWhiteSpace(stype2))
                                 string2 = "4I";
                             else
-                                App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         }
 
                         switch (string2[0])
@@ -72,10 +72,10 @@ namespace JAXBase.Math
                                     }
 
                                     else
-                                        App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
+                                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
                                 }
                                 else
-                                    App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
+                                    AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
 
                                 break;
 
@@ -93,7 +93,7 @@ namespace JAXBase.Math
                                     rc = Convert.FromBase64String(Field);
                                 }
                                 else
-                                    App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
+                                    AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
 
                                 break;
 
@@ -125,7 +125,7 @@ namespace JAXBase.Math
                                 break;
 
                             default:
-                                App.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
+                                AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name); // TODO ***********
                                 break;
                         }
 
@@ -144,7 +144,7 @@ namespace JAXBase.Math
                     if ((stype1 + stype2).Equals("NN"))
                         tAnswer._avalue[0].Value = (intval1 & (1 << intval2)) > 0;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BITAND":                             // Bit And
@@ -183,7 +183,7 @@ namespace JAXBase.Math
             string string3 = (pop.Count > 2 ? pop[2][1..] : string.Empty);
 
             if ((stype1.Equals(stype2) && stype1.Equals(stype3)) == false)
-                App.SetError(9, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(9, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             switch (stype1)
             {
@@ -228,7 +228,7 @@ namespace JAXBase.Math
                     if ((stype1 + stype2).Equals("NN"))
                         result = intval1 & intval2;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BITCLEAR":                           // Bit to 0 - TODO
@@ -238,14 +238,14 @@ namespace JAXBase.Math
                         result = intval1;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BITLSHIFT":                          // Bit left shift
                     if ((stype1 + stype2).Equals("NN"))
                         result = intval1 << intval2;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BITOR":                             // Bit or - TODO
@@ -263,14 +263,14 @@ namespace JAXBase.Math
                         }
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BITRSHIFT":                          // Bit right shift
                     if ((stype1 + stype2).Equals("NN"))
                         result = intval1 >> intval2;
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BITSET":                             // Bit to 1 - TODO
@@ -280,7 +280,7 @@ namespace JAXBase.Math
                         result = intval1;
                     }
                     else
-                        App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`BITXOR":                             // Bit XOR  - TODO
@@ -297,7 +297,7 @@ namespace JAXBase.Math
                             }
                         }
                     }
-                    App.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
             }
 

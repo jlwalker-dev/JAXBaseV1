@@ -3,7 +3,7 @@ using Microsoft.VisualBasic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace JAXBase.Utilities.Utilities
+namespace JAXBase.Utilities
 {
     public class JAXLib
     {
@@ -1178,7 +1178,7 @@ namespace JAXBase.Utilities.Utilities
                     {
                         sResult = StrExtract(aText[j], "", lDelim, i);
                         string var = StrExtract(aText[j], lDelim, rDelim, i++);
-                        sResult += app.GetVarToken(var[1..]);
+                        sResult += AppVars.GetVarToken(var[1..]);
                     }
 
                     if (i > 1)
@@ -1189,7 +1189,7 @@ namespace JAXBase.Utilities.Utilities
             }
 
             if (string.IsNullOrEmpty(assing2var) == false)
-                app.SetVar(assing2var, sResult, 1, 1);
+                AppVars.SetVar(assing2var, sResult, 1, 1);
 
             return sResult;
         }

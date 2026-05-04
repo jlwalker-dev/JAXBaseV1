@@ -1,4 +1,14 @@
-﻿namespace JAXBase.Language
+﻿/*
+ * This is the JAXErrorList class which contains a static method for retrieving error 
+ * messages based on error numbers.  A secondary argument can be passed to insert into 
+ * the error message if the message contains a placeholder.
+ * 
+ * Most of the error messages below 2300 are based on Visual FoxPro error numbers and 
+ * messages, but there are many custom error numbers and messages that are specific 
+ * to the JAXBase system.
+ * 
+ */
+namespace JAXBase.Language
 {
     public class JAXErrorList
     {
@@ -38,7 +48,8 @@
                 67 => "Invalid color string - expecting 'r,g,b' format",
                 94 => "Must specify additional parameters",
                 95 => "Must specify at least {0} parameter(s)",
-
+                97 => "Invalid parameter {!}",
+                98 => "Too many parameters recieved",
 
                 // 100
                 107 => "Operator/operand type mismatch {0}",
@@ -95,6 +106,7 @@
                 // 1300
                 1300 => "Value must be greater than 0",
                 1301 => "Value must be less than {0}",
+                1307 => "Divide by 0 error",
 
                 // 1400
                 1400 => "Invalid or unknown SQL statement",
@@ -171,10 +183,13 @@
                 1940 => "Expression must be inside WITH/ENDWITH structure.",
                 1960 => "Illegal redefinition of variable {!}",
                 1963 => "Directory {0} does not exist",
+                1880 => "Object {0} could not be attached to parent",
                 1992 => "{!} is not a function, procedure, or program",
                 1999 => "Feature not implemented {0}",
 
                 // 2000
+                2020 => "File save error {*}",
+                2021 => "Unauthorized access to path or file {0}",
                 2022 => "Path or file name was not found {0}",
                 2058 => "Mismatched Try/Catch/Finally/Endtry structure",
                 2080 => "Cannot open a file when one is in use",
@@ -195,8 +210,8 @@
 
                 2300 => "WITH stack underflow",
                 2301 => "Empty WITH stack",
-                2305 => "Unhandled Try/Catch error",
-                
+                2305 => "Unhandled exception error",
+
                 2400 => "THIS can only be associated with an object",
                 2401 => "THISFORM does not point to a form",
                 2402 => "THISFORMSET does not point to a formset",
@@ -207,7 +222,7 @@
                 // 2500 - JSON related errors
                 2500 => "Invalid JSON string",
 
-                // 2600 - JAXVariable errors
+                // 2600 - JAXEdit errors
                 2600 => "Editor program is not set",
                 2601 => "Editor program {0} not found",
                 2602 => "Append program is not set",
@@ -249,7 +264,7 @@
 
                 3300 => "Child/Parent conflict detected: {!}",
                 3301 => "A visual class cannot have a non-visual class as a parent: {!}",
-                
+
                 3400 => "Color value conversion error {0}",
                 3401 => "Data conversion error",
 
@@ -289,13 +304,19 @@
                 //6500 Method/Event errors
                 6500 => "Method {!} requires a parameter",
                 6501 => "Method {!} does not exist",
-                
+
                 6598 => "This class does not support methods/events",
                 6599 => "Error in event or method",
 
 
+                
                 // 6600 AI Connectivity
                 6600 => "Setting for AIAGENT is OFF",
+
+
+                // 6700 User related errors/warnings
+                6700 => "User canceled the operation",
+
 
                 // 7000 block is reserved for user created errors
 
@@ -324,13 +345,21 @@
                 8021 => "CDX read exception",
                 8025 => "Memo/General write exception",
                 8026 => "Memo/General read exception",
-                
+
                 8030 => "Alter table exception",
                 8031 => "Append/Import exception",
                 8032 => "Copy exception",
 
                 8090 => "Work area overflow",
                 8091 => "Session overflow",
+
+                // 8100 Dictionary/List errors
+                8100 => "Dictionary is not initialized",
+                8101 => "Dictionary does not contain key {0}",
+                8102 => "Variable or property is not a dictionary (Data Type S)",
+                8110 => "List requires dictionary reference during initialization",
+                8111 => "A lists is a read only reference to a dictionary",
+                8112 => "List is not initalized",
 
                 // 9000
                 9000 => "ERROR: {0}",
@@ -366,6 +395,8 @@
                 // 9720 - CommandButton/CommandGroup Errors
                 9810 => "Caption property cannot be set to empty string",
                 9811 => "Must have at least one button in a CommandGroup object",
+
+
                 // 9730 - ComboBox Errors
 
                 // 9740 - Container Errors
@@ -378,6 +409,9 @@
                 9762 => "Grid colum {0} setup is invalid",
 
                 // 9770 - Image Errors
+
+                // 9780 - Monitor Errors
+                9780 => "Invalid monitor reference",
 
                 // 9790 - Label Errors
 
@@ -398,6 +432,11 @@
                 9851 => "No media loaded",
                 9852 => "Invalid status command {0}",
 
+                // 9860 - Menu Errors
+                9860 => "Invalid hotkey expression",
+
+
+
                 // 9900 - JAXBase Errors
                 9900 => "JAXBase Class error - check the class AError array for more information",
                 9901 => "Private property system error",
@@ -405,9 +444,16 @@
                 9903 => "Compiler exception",
                 9904 => "Process exception",
                 9905 => "Loading exceptiong",
+
+                // 9960 - Runtime exceptions
+                9960 => "StorageProvider exception",
+
+                // 9980 Math errors
                 9987 => "Macro expansion error",
                 9988 => "System Math: Stack overflow",
                 9989 => "System Math: Stack underflow",
+
+                // 9990 Code errors or exceptions
                 9990 => "System error - check system debug log for more information",
                 9992 => "Bad or corrupted object code",
                 9993 => "Bad or corrupted executable code",
@@ -417,7 +463,7 @@
                 9997 => "Error compiling source for {0}",
                 9998 => "Fatal runtime exception: {0}",
                 9999 => "System Exception: {0}",
-                _ => $"Unhandled System {errNo}: {0}"
+                _ => $"Unhandled system error {errNo}: {0}"
             };
 
             if (sErr.Contains("{*}"))

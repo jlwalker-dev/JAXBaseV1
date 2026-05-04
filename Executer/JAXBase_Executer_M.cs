@@ -1,7 +1,8 @@
 ﻿using JAXBase.Core;
 using JAXBase.Math;
-using JAXBase.Utilities.Utilities;
+using JAXBase.Utilities;
 using JAXBase.XBase;
+using System.Windows.Annotations;
 
 namespace JAXBase.Executer
 {
@@ -21,7 +22,7 @@ namespace JAXBase.Executer
         }
 
 
-        
+
         /* ---------------------------------------------------------------------------------------------------*
          * PURPOSE:
          *      This routine is used to grab an expression from the command string and return the remaining
@@ -107,7 +108,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             // If there is more to the expression, then there better be
@@ -155,7 +156,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -185,9 +186,9 @@ namespace JAXBase.Executer
         public static async Task<string> Modify(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            string editor = string.Empty;
-            string type = string.Empty;
-            string name = string.Empty;
+            string editor, fPath, fName, fExt, name;
+            List<ParameterClass> pList;
+            ParameterClass p;
 
             try
             {
@@ -197,111 +198,144 @@ namespace JAXBase.Executer
                 else
                     throw new Exception("11|");
 
-                switch (eCodes.SUBCMD.ToLower())
+                fPath = JAXLib.JustFullPath(name);
+                fName = JAXLib.JustStem(name);
+                fExt = JAXLib.JustExt(name);
+
+                fPath = string.IsNullOrWhiteSpace(fPath) ? jbe.App.CurrentDS.JaxSettings.Default : fPath;
+
+                if (string.IsNullOrWhiteSpace(fExt))
                 {
-                    case "class":
-                    case "clas":
+                    fExt = eCodes.SUBCMD switch
+                    {
+                        "C" => "clx",
+                        "V" => "vcx",
+                        "P" => "prg",
+                        "M" => "scx",
+                        "L" => "lbx",
+                        "U" => "mnx",
+                        "J" => "pjx",
+                        "Q" => "qpr",
+                        "R" => "rpx",
+                        _ => ""
+                    };
+                }
+
+                // Set up the startcommand for the editor
+                pList = [];
+                p = new() { PName = "startcommand", token = new("open," + name) };
+                pList.Add(p);
+
+
+                switch (eCodes.SUBCMD.ToUpper())
+                {
+                    case "C":
                         // Look for the JAX Class editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_classeditor");
-                        type = "MODIFY CLASS";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.classeditor");
                         break;
 
-                    case "classlib":
+                    case "V":
                         // Look for the JAX Class libary editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_objectbrowser");
-                        type = "MODIFY CLASSLIBRARY";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.libraryeditor");
+
+                        if (answer.Element.Type.Equals("C") && File.Exists(answer.AsString()))
+                        {
+                            // TODO - Call the ClassLib editor
+                        }
                         break;
 
-                    case "command":
-                    case "comm":
-                        // Look for the JAX PRG Editor application and
-                        // load it if you find it, else give error
-                        //editor = jbe.App.JAXPrtObj.GetValue("_prgeditor");
-                        //type = "MODIFY COMMAND";
+                    case "P":
+                        answer = await AppVars.GetVarToken("_JAX.programeditor");
+                        name = fPath + fName + "." + fExt;
 
-                        string fPath = JAXLib.JustFullPath(name);
-                        string fName = JAXLib.JustStem(name);
-                        string fExt = JAXLib.JustExt(name);
+                        // Send the File parameter to the editor
+                        pList = [];
+                        p = new() { PName = "startcommand", token = new("open," + name) };
+                        pList.Add(p);
+
+                        if (File.Exists(answer.AsString()))
+                        {
+                            // TODO - Call this (assumed) JAXBase program
+                        }
+                        else
+                        {
+                            JAXObjectWrapper prgEditor = new(jbe.App, "jaxedit", "", pList);
+                            await prgEditor.MethodCall("show");
+                        }
+                        break;
+
+                    case "F":
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.programeditor");
+                        fPath = JAXLib.JustFullPath(name);
+                        fName = JAXLib.JustStem(name);
+                        fExt = JAXLib.JustExt(name);
 
                         fPath = string.IsNullOrWhiteSpace(fPath) ? jbe.App.CurrentDS.JaxSettings.Default : fPath;
-                        fExt = string.IsNullOrWhiteSpace(fExt) ? "prg" : fExt;
 
                         name = fPath + fName + "." + fExt;
 
-                        string fInfo = string.Empty;
-                        if (File.Exists(name)) fInfo = JAXLib.FileToStr(name);
-
-                        PrgEdit prgEdit = new(jbe.App, "F", name, fInfo);
-                        prgEdit.Show();
+                        if (File.Exists(answer.AsString()))
+                        {
+                            // TODO - Call this (assumed) JAXBase program
+                        }
+                        else
+                        {
+                            JAXObjectWrapper prgEditor = new(jbe.App, "jaxedit", "", pList);
+                            await prgEditor.MethodCall("show");
+                        }
                         break;
 
-                    case "file":
-                        // Look for the JAX Hex File Editor application and
-                        // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_hexeditor");
-                        type = "MODIFY FILE";
-                        break;
-
-                    case "form":
+                    case "M":
                         // Look for the JAX Form Editor application and
                         // load it if you find it, else give error
                         editor = jbe.App.JAXPrtObj.GetValue("_formeditor");
-                        type = "MODIFY FORM";
                         break;
 
-                    case "label":
-                    case "labe":
+                    case "L":
                         // Look for the JAXTableDesigner application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_labeleditor");
-                        type = "MODIFY LABEL";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.labeleditor");
                         break;
 
-                    case "menu":
+                    case "U":
                         // Look for the JAXTableDesigner application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_hexeditor");
-                        type = "MODIFY MEMu";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.menueditor");
                         break;
 
-                    case "project":
-                    case "proj":
+                    case "J":
                         // Look for the JAX Project Editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_projecteditor");
-                        type = "MODIFY PROJECT";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.projecteditor");
                         break;
 
-                    case "query":
-                    case "quer":
+                    case "Q":
                         // Look for the JAX Query Editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_queryeditor");
-                        type = "MODIFY QUERY";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.queryeditor");
                         break;
 
-                    case "report":
-                    case "repo":
+                    case "R":
                         // Look for the JAX Report Editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_reporteditor");
-                        type = "MODIFY REPORT";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.reporteditor");
                         break;
 
-                    case "structure":
-                    case "stru":
+                    case "S":
                         // Look for the JAXTableDesigner application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_tableeditor");
-                        type = "MODIFY STRUCTURE";
+                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.tableeditor");
                         break;
+
+                    default:
+                        throw new Exception($"1099||modify type {eCodes.SUBCMD.ToUpper()}");
                 }
             }
             catch (Exception ex)
             {
-                jbe.App.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -322,7 +356,7 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                app.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;

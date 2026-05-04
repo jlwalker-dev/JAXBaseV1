@@ -56,11 +56,25 @@
  *      I could open up a console or a (better) teminal window, and deal with the
  *      screen manipulation that way, but I'm not ready to go that route.
  *      
- * 
+ * 2025.04.10 - JLW
+ *      First major upgrade to this code which will allow the support of the
+ *      LIST and LISTITEM properties in ListBox and ComboBox classes.  In
+ *      addition, making it possible to very straight forward to support the 
+ *      JAXBase Collection class.
+ *      
+ *      New var types are S for SortedDictionary (Collection class support) and
+ *      M for MappedList (for ListItem property).  The ObservableSortedDictioary
+ *      is required in the ComboBox and ListBox classes to support the ListItem
+ *      property.
+ *      
+ *      Removed a lot of extra code that I thought would be needed when I first
+ *      built this class, but in the long run found I over engineered by a country
+ *      mile, as I have been known to do from time to time.
+ *      
  ******************************************************************************************************************************************/
 
+using JAXBase.Utilities;
 using JAXBase.XBase;
-using JAXBase.Utilities.Utilities;
 
 namespace JAXBase.Core
 {
@@ -120,7 +134,6 @@ namespace JAXBase.Core
             public string PropertyProtection { get; private set; } = string.Empty;  // H=hidden, P=protected, U=public
             public string Type { get; private set; } = "L";
 
-
             public bool ReadOnly { get; private set; } = false;
             public int Dec { get; set; } = 0;                               // Number of decimal places for float/numeric/double/currency
 
@@ -128,6 +141,10 @@ namespace JAXBase.Core
 
             public object? DefaultValue { get; private set; } = null;
             public bool HasChanged { get; private set; } = false;
+            public object? oldValue { get; private set; } = false;
+
+            // Fired whenever the Value property is successfully written to (after type handling)
+            public event EventHandler? ValueChanged;
 
             // Set up a simple token with read only and user property values
             public SimpleToken(string propertyName, bool readOnly, object? value, bool userProperty)
@@ -169,20 +186,6 @@ namespace JAXBase.Core
             }
 
 
-            // Update with value and readonly flag
-            public SimpleToken(bool readOnly, object? value)
-            {
-                if (!ReadOnly)
-                {
-                    if (value is null)
-                        MakeNull();
-                    else
-                        Value = value;
-
-                    ReadOnly = readOnly;
-                }
-            }
-
             public SimpleToken() { }
 
 
@@ -216,9 +219,11 @@ namespace JAXBase.Core
                     {
                         case "N": Value = 0; break;
                         case "D": Value = DateOnly.MinValue; break;
+                        case "E": Value = 0; Dec = 0; break;
                         case "I": { Value = 0; Dec = 0; break; }
                         case "T": Value = DateTime.MinValue; break;
                         case "L": Value = false; break;
+                        case "M": Value = 0; Dec = 0; break;
                         case "C": Value = string.Empty; break;
                         case "O":
                         case "*": Value = string.Empty; _setAsType = "O"; MakeNull(); break;
@@ -441,6 +446,7 @@ namespace JAXBase.Core
                     try
                     {
                         DevDebugMsg = string.Empty;
+                        oldValue = (IsNull()) ? null : _value;   // capture before change (optional but useful)
 
                         if (value is null)
                         {
@@ -548,6 +554,9 @@ namespace JAXBase.Core
                                     break;
                             }
                         }
+
+                        // === MINIMAL ADDITION: Fire the event after successful assignment ===
+                        ValueChanged?.Invoke(this, EventArgs.Empty);
                     }
                     catch (Exception ex)
                     {
@@ -559,24 +568,29 @@ namespace JAXBase.Core
         }
 
 
-        // ======================================================================================
-        // The token is the value holder and can contain a single simple token, a list
-        // of simple tokens (an array), or a dictionary of simple tokens (an object).
-        //
-        // Not so hard to create an Array variable when you think about how to do it.
-        // I'm pretty sure that in VFP, all arrays are one dimensional, but you can set
-        // up two dimensions which then calculates which element you are referencing, then
-        // just work with that element.  VFP may do a bit more than what is done here, but
-        // this is designed to work with syntactically correct code so we don't need to
-        // add all of the extra code to catch issues.
-        //
-        // ======================================================================================
+        /* ======================================================================================
+         * The token is the value holder and can contain a single simple token, a list
+         * of simple tokens (an array), or a dictionary of simple tokens (an object).
+         *
+         * Not so hard to create an Array variable when you think about how to do it.
+         * I'm pretty sure that in VFP, all arrays are one dimensional, but you can set
+         * up two dimensions which then calculates which element you are referencing, then
+         * just work with that element.  VFP may do a bit more than what is done here, but
+         * this is designed to work with syntactically correct code so we don't need to
+         * add all of the extra code to catch issues.
+         * ====================================================================================== */
         public class Token
         {
-            public readonly List<SimpleToken> _avalue = [];                  // Needed for variables and Arrays
+            public readonly List<SimpleToken> _avalue = [];                     // Needed for variables and Arrays
+            public ObservableSortedDictionary<int, Token>? _dictionary = null;
+            public List<int>? _mappedList = null;
+
+            // used for the dictionary key if not provided
+            public int ListItemID { get; private set; } = 0;
 
             // S - Simple Token
             // A - Array Token
+            // D - Dictionary (MAP) variable
             // O - Object Token
             // U - Unknown Token
             public string TType = "O";
@@ -587,6 +601,8 @@ namespace JAXBase.Core
             public int Row = 1;                 // row * col = total number of elements
             public int Col = 1;
             public int ElementNumber = 0;
+            public int ListNumber = 0;
+            public int KeyNumber = 0;
             public string elementName = string.Empty;
             public string DevDebugMsg = string.Empty;
 
@@ -610,38 +626,58 @@ namespace JAXBase.Core
 
             // Shortcut to create a Token with a specific value
             // and lock it as that type.
-            public Token(string val, string setOnlyAsType)
+            public Token(object val, string setOnlyAsType)
             {
                 SimpleToken tk = new();
 
-                if ("CDLNTOP*".Contains(setOnlyAsType) == false) throw new Exception("1732|");
+                if ("CDELMNTOP*".Contains(setOnlyAsType) == false) throw new Exception("1732|");
                 if (setOnlyAsType.Equals("P") == false)
                     tk.SetAsType(setOnlyAsType);
                 TType = "S";
 
+
+                string sval = (val is Dictionary<int, Token>) ? "" : val.ToString() ?? "";
+
                 switch (setOnlyAsType)
                 {
                     case "C":   // Character
-                        tk.Value = val;
+                        tk.Value = sval;
                         break;
 
                     case "D":   // DateOnly
-                        if (DateOnly.TryParse(val, out DateOnly ddo) == false) ddo = DateOnly.MinValue;
+                        if (DateOnly.TryParse(sval, out DateOnly ddo) == false) ddo = DateOnly.MinValue;
                         tk.Value = ddo;
                         break;
 
                     case "I":   // Integer
-                        if (int.TryParse(val, out int ii) == false) ii = 0;
+                        if (int.TryParse(sval, out int ii) == false) ii = 0;
                         tk.Dec = 0;
                         tk.Value = ii;
                         break;
 
                     case "L":   // Logical
-                        tk.Value = JAXLib.InListC(val, ".t.", "true");
+                        tk.Value = JAXLib.InListC(sval, ".t.", "true");
+                        break;
+
+                    case "M":   // Mapped List tied to ObservableSortedDictionary
+                        if (val is ObservableSortedDictionary<int, Token>)
+                        {
+                            _dictionary = (ObservableSortedDictionary<int, Token>)val;
+
+                            _mappedList = [];
+                            foreach (KeyValuePair<int, Token> dic in _dictionary)
+                                _mappedList.Add(dic.Key);
+
+                            // Not sure we need both of these
+                            _dictionary.CollectionChanged += (sender, e) => { UpdateList(); };
+                            TType = "M";
+                        }
+                        else
+                            throw new Exception("8010|");
                         break;
 
                     case "N":   // Numeric
-                        if (double.TryParse(val, out double dd) == false) dd = 0D;
+                        if (double.TryParse(sval, out double dd) == false) dd = 0D;
                         tk.Dec = 2;
                         tk.Value = dd;
                         break;
@@ -652,8 +688,15 @@ namespace JAXBase.Core
                         Protected = true;
                         break;
 
+                    case "E":   // Sorted Dictionary
+                        TType = "E";
+                        Row = 0;
+                        Col = 0;
+                        _dictionary = val is ObservableSortedDictionary<int, Token> ? (ObservableSortedDictionary<int, Token>)val : [];   // A dictionary uses a lot more RAM, so only instantiate when needed
+                        break;
+
                     case "T":   // DateTime
-                        if (DateTime.TryParse(val, out DateTime dt) == false) dt = DateTime.MinValue;
+                        if (DateTime.TryParse(sval, out DateTime dt) == false) dt = DateTime.MinValue;
                         tk.Value = dt;
                         break;
 
@@ -702,6 +745,11 @@ namespace JAXBase.Core
                             _avalue[i].Value = false;
                             break;
 
+                        case "E":   // Sorted Dictionary
+                            if (_avalue[i].Value is not JAXObjectWrapper)
+                                _avalue[i].MakeNull();
+                            break;
+
                         case "T":   // DateTime
                             _avalue[i].Value = DateTime.MinValue;
                             break;
@@ -713,10 +761,50 @@ namespace JAXBase.Core
                 }
             }
 
-            // Initially set up the Array with one element
-            // because the first element is used by
-            // non-array variables. An array of SimpleTokens
-            // is controlled in this class.
+            /// <summary>
+            /// When a change to the observable dictionary occurs, control is sent
+            /// here to update the list, making as few changes as possible.
+            /// </summary>
+            private void UpdateList()
+            {
+                if (_dictionary is null || _mappedList is null)
+                {
+                    // create a new list
+                    _mappedList = [];
+                    _dictionary = [];
+
+                    foreach (KeyValuePair<int, Token> dic in _dictionary)
+                        _mappedList.Add(dic.Key);
+                }
+                else
+                {
+                    // reorganize the list
+                    int i = 0;
+                    foreach (KeyValuePair<int, Token> dic in _dictionary)
+                    {
+                        if (i == _mappedList.Count)         // Need to add a key
+                        {
+                            _mappedList.Add(dic.Key);
+                            i++;
+                        }
+                        else if (_mappedList[i] > dic.Key)  // Need to insert the key
+                            _mappedList.Insert(i, dic.Key);
+                        else if (_mappedList[i] < dic.Key)  // Need to remove obsolete keys
+                        {
+                            while (_mappedList[i] < dic.Key)
+                                _mappedList.Remove(i);
+                        }
+                        else
+                            i++;    // MappedList == key    // Same so do nothing
+                    }
+                }
+            }
+
+            /*
+             * Initially set up the Array with one element because the 
+             * first element is used by non-array variables. An array 
+             * of SimpleTokens is controlled in this class.
+             */
             public Token()
             {
                 // Token element value defaults to FALSE
@@ -724,6 +812,7 @@ namespace JAXBase.Core
                 _avalue.Add(tk);
                 TType = "S";
             }
+
 
             // Shortcut to set up a token with a value
             public Token(object? val)
@@ -738,12 +827,199 @@ namespace JAXBase.Core
                 TType = "S";
             }
 
+
+            /*
+             * Remove a key from the sorted dictionarly
+             */
+            public void RemoveItem(int rowKey)
+            {
+                if (TType.Equals("E"))
+                {
+                    // Do we have a valid dictionary object?
+                    if (_dictionary is null)
+                        throw new Exception("8000|");
+
+                    // Does this key already exist?
+                    if (_dictionary.ContainsKey(rowKey))
+                        _dictionary.Remove(rowKey);
+                    else
+                        throw new Exception("8001|");    // Key does not exist
+                }
+                else
+                    throw new Exception("8102|");        // Not a sorted dictionary
+            }
+
+
+            /*
+             * Clear the TOKEN depending on type
+             */
+            public void Clear()
+            {
+                if ("EM".Contains(TType))
+                {
+                    _dictionary!.Clear();
+                    _mappedList!.Clear();
+                    ListItemID = 0;
+                }
+                else if (TType.Equals("S"))
+                {
+                    switch (Element.Type)
+                    {
+                        case "N": Element.Value = 0; break;
+                        case "D": Element.Value = DateOnly.MinValue; break;
+                        case "E": Element.Value = 0; Element.Dec = 0; break;
+                        case "I": { Element.Value = 0; Element.Dec = 0; break; }
+                        case "T": Element.Value = DateTime.MinValue; break;
+                        case "L": Element.Value = false; break;
+                        case "M": Element.Value = 0; Element.Dec = 0; break;
+                        case "C": Element.Value = ""; break;
+                        case "O": Element.MakeNull(); break;
+                    }
+                }
+                else if (TType.Equals("A"))
+                {
+                    for (int i = 0; i < _avalue.Count; i++)
+                        _avalue[i].Value = false;
+                }
+            }
+
+
+            /*
+             * Add a new itemID to the dictionary and set the token value as an array if appropriate
+             */
+            public void AddItemID(string cItem, int rowKey, int Column)
+            {
+                if (TType.Equals("E"))
+                {
+                    // If the row key is not provided, create the next available
+                    if (rowKey < 1)
+                        while (_dictionary!.ContainsKey(++ListItemID)) ;
+
+                    // Do we have a valid dictionary object?
+                    if (_dictionary is null)
+                        throw new Exception("8100|");
+
+                    // Does this key already exist?
+                    if (_dictionary.ContainsKey(rowKey))
+                        throw new Exception("8101|");
+
+                    // Create the token with dimension if appropriate
+                    JAXObjects.Token tk = new();
+
+                    if (Column != Col)
+                        tk.SetDimension(1, Col, true);
+
+
+                    if (_dictionary.ContainsKey(rowKey))
+                    {
+                        // Update the key/token pair
+                        _dictionary[rowKey].SetElement(1, Column);
+                        _dictionary[rowKey].Element.Value = cItem;
+                    }
+                    else
+                    {
+                        // Add the new key/token pair
+                        tk.SetElement(1, Column);
+                        tk.Element.Value = cItem;
+                        _dictionary.Add(rowKey, tk);
+                    }
+                }
+                else
+                    throw new Exception("8102|");    // Not a sorted dictionary
+            }
+
+
+
+            /*
+             * Add or insert a new item to the dictionary and array. If index==0 or is greater than the 
+             * count, it adds to the end of the list, otherwise it inserts at the index and moves the 
+             * rest of the items down. Column indicates which column of the token value to set.
+             */
+            public void AddItem(string cItem, int Index, int Column, int rowKey)
+            {
+                if (TType.Equals("M"))
+                {
+                    // If the row key is not provided, create the next available
+                    if (rowKey < 1)
+                    {
+                        while (_dictionary!.ContainsKey(++ListItemID)) ;
+                        rowKey = ListItemID;
+                    }
+
+                    // Do we have a valid dictionary object?
+                    if (_dictionary is null)
+                        throw new Exception("8100|");
+
+                    // Does this key already exist?
+                    if (_dictionary.ContainsKey(rowKey))
+                        throw new Exception("8101|");
+
+                    // Create the token with dimension if appropriate
+                    JAXObjects.Token tk = new();
+
+                    if (Column != Col)
+                        tk.SetDimension(1, Col, true);
+
+
+                    // Add the new key/token pair
+                    tk.SetElement(1, Column);
+                    tk.Element.Value = cItem;
+                    _dictionary.Add(rowKey, tk);
+
+                    // If index < count, insert the new key into the mapped list at the appropriate
+                    // spot, otherwise add to the end
+                    if (Index > 0 && Index < _mappedList!.Count)
+                    {
+                        int pos = _mappedList[^1];
+                        _mappedList.RemoveAt(_mappedList.Count - 1);
+                        _mappedList.Insert(Index, pos);
+                    }
+                }
+                else
+                    throw new Exception("8102|");    // Not a sorted dictionary
+            }
+
+            public void InsertItemAt(int pos, int rowkey, JAXObjects.Token tk)
+            {
+                _dictionary!.Add(rowkey, tk);
+                _mappedList!.RemoveAt(_mappedList.Count - 1);
+                _mappedList.Insert(pos, rowkey);
+            }
+
             public void SetDimension(int row, int col, bool makeArray)
             {
+                if (TType.Equals("M"))
+                {
+                    // Type M (Mapped List) is completely dependent on
+                    // the dictionary, so changes only occur when the
+                    // dictionary is updated
+                    throw new Exception("8111|");
+                }
+                else if (TType.Equals("E"))
+                {
+                    // Dictionary
+                    if (_dictionary is null)
+                        throw new Exception("8100|");
+
+                    if (_dictionary.ContainsKey(row))
+                    {
+                        // We're changing all elements of the dictionary
+                        // to a 1D array with Col elements
+                        Col = col;
+                        foreach (KeyValuePair<int, Token> tk in _dictionary)
+                            tk.Value.SetDimension(1, col, true);
+                    }
+                    else
+                        throw new Exception("8101|");
+                }
                 if (TType.Equals("A") || makeArray)
                 {
                     Row = row;
                     Col = col;
+
+                    if (row < 0 || col < 0)
+                        throw new Exception("31|");
+
                     while (_avalue.Count < (row < 1 ? 1 : Row) * col)
                         _avalue.Add(new SimpleToken());
 
@@ -763,12 +1039,39 @@ namespace JAXBase.Core
                     // Copy the value(s)
                     if (sourceTK.TType.Equals("A"))
                     {
+                        // Get the array
                         SetDimension(sourceTK.Row, sourceTK.Col, true);
                         for (int i = 0; i < _avalue.Count; i++)
                             _avalue[i].Value = sourceTK._avalue[i].Value;
                     }
+                    else if (sourceTK.TType.Equals("E"))
+                    {
+                        // Get the dictionary
+                        _dictionary = [];
+
+                        if (sourceTK._dictionary is not null)
+                        {
+                            foreach (KeyValuePair<int, Token> source in sourceTK._dictionary)
+                                _dictionary.Add(source.Key, source.Value);
+                        }
+                    }
+                    else if (sourceTK.TType.Equals("M"))
+                    {
+                        _dictionary = [];
+
+                        // Copy the mapped list
+                        if (sourceTK._mappedList is not null && sourceTK._dictionary is not null)
+                        {
+                            _mappedList = [.. sourceTK._mappedList!];
+                            foreach (KeyValuePair<int, Token> source in sourceTK._dictionary)
+                                _dictionary.Add(source.Key, source.Value);
+                        }
+                        else
+                            _mappedList = [];
+                    }
                     else
                     {
+                        // Get the 1 simple token
                         TType = sourceTK.TType;
                         _avalue[0].Value = sourceTK._avalue[0].Value;
                     }
@@ -796,12 +1099,6 @@ namespace JAXBase.Core
                     {
                         DevDebugMsg = string.Empty;
 
-                        //if ("SA".Contains(TType))
-                        //{
-                        //    if (elementNumber < _avalue.Count)
-                        //        tResult = _avalue[elementNumber];
-                        //}
-                        //else
                         if (TType.Equals("O"))
                         {
                             // Does the propertyname exist?
@@ -867,6 +1164,15 @@ namespace JAXBase.Core
                         {
                             throw new Exception("Did not set");
                         }
+                        else
+                        {
+                            // Optional: propagate ValueChanged from the inner SimpleToken
+                            if (value != null)
+                            {
+                                value.ValueChanged += (sender, args) =>
+                                this.ElementValueChanged?.Invoke(this, EventArgs.Empty);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -875,6 +1181,9 @@ namespace JAXBase.Core
 
                 }
             }
+
+            // Optional event on Token that fires when its current Element's Value changes
+            public event EventHandler? ElementValueChanged;
 
             // Special internal methods for 1D object arrays
             // used by the system, such as the Objects property
@@ -911,8 +1220,8 @@ namespace JAXBase.Core
             // Return token value as a string
             public string AsString()
             {
-                string sVal = Element.Value.ToString() ?? "";
-                string sType = Element.Type;
+                string sVal = "EM".Contains(TType) ? "" : Element.Value.ToString() ?? "";
+                string sType = "EM".Contains(TType) ? "C" : Element.Type;
 
                 string sResult = sVal;
 
@@ -1052,7 +1361,7 @@ namespace JAXBase.Core
                     }
                 }
                 else
-                    throw new Exception("JAXERR:1924");         // not an object
+                    throw new Exception("1924|");         // not an object
 
                 return lSet;
             }
@@ -1061,13 +1370,54 @@ namespace JAXBase.Core
             // This is 1 based so that it's easier to implement with JAX
             public void SetElement(int r, int c)
             {
-                //int iElement = TType.Equals("A") || r * c == 1 ? (r - 1) * Col + c : r;
-                int iElement = TType.Equals("A") ? ((r == 0 ? 0 : r - 1) * Col + c) : 1;
-                if (iElement < 1 || iElement > (Row < 1 ? 1 : Row) * Col)
-                    throw new Exception("31|");
+                if ("ME".Contains(TType))
+                {
+                    // Mapped List?
+                    if (TType.Equals("M"))
+                    {
+                        if (_mappedList is null)
+                            throw new Exception("8112|");
+                        else
+                        {
+                            if (_mappedList.Count <= r)
+                            {
+                                ListNumber = r;
+                                r = _mappedList[r]; // Set the dictionary key
+                            }
+                            else
+                                throw new Exception("31|");
+                        }
+                    }
+
+                    // Sorted Dictionary
+                    if (_dictionary is null)
+                        throw new Exception(TType == "E" ? "8100|" : "8112");
+                    else
+                    {
+                        if (_dictionary.ContainsKey(r))
+                        {
+                            // Found key, now check columns
+                            if (c > 0 && _dictionary[r].Col <= c)
+                            {
+                                KeyNumber = r;
+                                ElementNumber = c - 1;
+                            }
+                        }
+                        else
+                            throw new Exception("8101|");
+                    }
+                }
                 else
-                    ElementNumber = iElement - 1;
+                {
+                    // Var or Array
+                    int iElement = TType.Equals("A") ? ((r == 0 ? 0 : r - 1) * Col + c) : 1;
+                    if (iElement < 1 || iElement > (Row < 1 ? 1 : Row) * Col)
+                        throw new Exception("31|");
+                    else
+                        ElementNumber = iElement - 1;
+                }
             }
+
 
             public int AsInt()
             {
@@ -1125,14 +1475,20 @@ namespace JAXBase.Core
                 return dtResult;
             }
         }
+        // ----- End of Token definition ------------------------------------------------------------
 
-
+        /* ------------------------------------------------------------------------------------------
+         * This section is used for Private/Public variable addressing
+         * 
+         * Public and Private tokens do not support type M or S variables
+         * ------------------------------------------------------------------------------------------*/
         public void SetAllowNew(bool allow)
         {
             AllowNew = allow;
         }
 
 
+        // Set an existing variable with a token
         public void SetToken(string varName, Token tk)
         {
             if (jaxObject.ContainsKey(varName.ToLower()))
@@ -1180,27 +1536,8 @@ namespace JAXBase.Core
             }
         }
 
-        // Add a variable to the dictionary
-        private void AddSystemVar(string varName, object? value)
-        {
-            if (jaxObject.ContainsKey(varName.ToLower()) == false && AllowNew)
-            {
-                SimpleToken st = new();
-                if (value is null)
-                    st.MakeNull();
-                else
-                    st.Value = value;
 
-                Token tk = new();
-                if (value is null)
-                    tk.Element.MakeNull();
-                else
-                    tk.Element.Value = value;
-
-                jaxObject.Add(varName.ToLower(), tk);
-            }
-        }
-
+        // Position the pointer in the variable
         public void SetDimension(string varName, int rows, int col, bool alterArray)
         {
             if (jaxObject.ContainsKey(varName.ToLower()) == false)
@@ -1214,7 +1551,9 @@ namespace JAXBase.Core
             if (alterArray)
             {
                 SetDimension(varName.ToLower(), rows, col);
-                jaxObject[varName.ToLower()].TType = (rows < 1 ? 1 : rows) * col > 1 ? "A" : "S";
+
+                if (jaxObject[varName.ToLower()].TType.Equals("E") == false)
+                    jaxObject[varName.ToLower()].TType = (rows < 1 ? 1 : rows) * col > 1 ? "A" : "S";
             }
         }
 
@@ -1231,6 +1570,7 @@ namespace JAXBase.Core
 
             SetDimension(jaxObject[varName.ToLower()], r, c);
         }
+
 
         // Initialize the dimensions for the array
         public void SetDimension(Token tk, int r, int c)
@@ -1313,36 +1653,12 @@ namespace JAXBase.Core
             }
         }
 
-        // Get the value of element 1
-        public string GetValue(string varName) { return GetValue(varName, 1); }
-
-        // Get the value of a 2D element
-        public string GetValue(string varName, int row, int col)
+        // Get the value of current element
+        public string GetValue(string varName)
         {
-            string sResult = string.Empty;
-
-            if (jaxObject.ContainsKey(varName.ToLower()))
-            {
-                SetElement(jaxObject[varName.ToLower()], row, col);
-                sResult = jaxObject[varName.ToLower()].Element.Value.ToString() ?? string.Empty;
-            }
-
-            return sResult;
+            return jaxObject[varName.ToLower()].Element.Value.ToString() ?? string.Empty;
         }
 
-        // Get the value of a 1D element
-        public string GetValue(string varName, int e)
-        {
-            string sResult = string.Empty;
-
-            if (jaxObject.ContainsKey(varName.ToLower()))
-            {
-                SetElement(jaxObject[varName.ToLower()], e);
-                sResult = jaxObject[varName.ToLower()].Element.Value.ToString() ?? string.Empty;
-            }
-
-            return sResult;
-        }
 
         // Set up which element is going to be referenced based on 1 dimension
         public void SetElement(Token tk, int e)
@@ -1446,42 +1762,6 @@ namespace JAXBase.Core
             return oResult;
         }
 
-        // Get the simple token of a element in 1 dimension
-        public SimpleToken GetElement(string varName, int e)
-        {
-            SimpleToken oResult;
-
-            if (jaxObject.ContainsKey(varName.ToLower()))
-            {
-                SetElement(jaxObject[varName.ToLower()], e);
-                oResult = GetElement(varName);
-            }
-            else
-            {
-                throw new Exception(string.Format("Runtime Error #9915 - Variable or Object '{0}' does not exist", varName.ToLower()));
-            }
-
-            return oResult;
-        }
-
-        // Get the simple token of a element in 2 dimensions
-        public SimpleToken GetElement(string varName, int r, int c)
-        {
-            SimpleToken oResult;
-
-            if (jaxObject.ContainsKey(varName.ToLower()))
-            {
-                SetElement(jaxObject[varName.ToLower()], r, c);
-                oResult = GetElement(varName);
-            }
-            else
-            {
-                throw new Exception(string.Format("Runtime Error #9915 - Variable or Object '{0}' does not exist", varName.ToLower()));
-            }
-
-            return oResult;
-        }
-
 
         // Get the token of a variable name
         public Token GetToken(string varName)
@@ -1532,36 +1812,6 @@ namespace JAXBase.Core
             }
 
             return oToken;
-        }
-
-
-        // ---------------------------------------------------------------------
-        // Get the VarType of this named object
-        // ---------------------------------------------------------------------
-        public string VarType(string varName)
-        {
-            string sType = string.Empty;
-
-            if (string.IsNullOrEmpty(varName))
-            {
-                // Toss a runtime error
-                Console.WriteLine("Runtime error #1221: No variable name provided");
-            }
-            else
-            {
-                if (jaxObject.ContainsKey(varName.ToLower()))
-                {
-                    // Found it, return the type
-                    sType = jaxObject[varName.ToLower()].Element.Type;
-                }
-                else
-                {
-                    // Unknown variable
-                    sType = "U";
-                }
-            }
-
-            return sType;
         }
 
 
