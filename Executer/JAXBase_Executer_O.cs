@@ -76,7 +76,7 @@ namespace JAXBase.Executer
          * OPEN DATABASE
          * 
          */
-        public static string Open(AppClass app, string CmdString)
+        public static string Open(string CmdString)
         {
             return string.Empty;
         }
@@ -93,22 +93,22 @@ namespace JAXBase.Executer
          * it finds another case statement, otherwise or an end case.
          * 
          */
-        public static string Otherwise(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static string Otherwise( ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
-                string cEndCase = AppClass.cmdByte.ToString() + jbe.App.MiscInfo["endcasecmd"] + eCodes.SUBCMD;
+                string cEndCase = AppClass.cmdByte.ToString() + Program.CurrentApp.MiscInfo["endcasecmd"] + eCodes.SUBCMD;
 
                 // Find the endcase
-                int pos = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx].IndexOf(cEndCase);
+                int pos = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx].IndexOf(cEndCase);
 
                 if (pos < 0)
                     throw new Exception("1211|");   // If/Else/Endif stmt is missing
                 else
                 {
-                    jbe.App.utl.Conv64(pos, 3, out string pos2);
+                    Program.CurrentApp.utl.Conv64(pos, 3, out string pos2);
                     result = "Y" + pos2; // Return the position of the endcase
                 }
             }

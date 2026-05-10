@@ -1,44 +1,148 @@
-﻿using JAXBase.Core;
+﻿/* -------------------------------------------------------------------------------------------------*
+ * JAXBase Compiler
+ * 
+ * Accepts a line or block of code and processes it down to a tokenized form.
+ * Returns the tokenized block for storing or execution.
+ * 
+ * Since I know nothing about lexers, I expect this code could probably be 
+ * optimized quite a bit.
+ * 
+ * -------------------------------------------------------------------------------------------------*/
+using JAXBase.Core;
+using JAXBase.Language;
 using JAXBase.Math;
-using System.Text;
-using System.Text.RegularExpressions;
 using JAXBase.Utilities;
 using JAXBase.XBase;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace JAXBase.Compiler
 {
     public class JAXBase_Compiler
     {
-        public readonly AppClass App;
         public readonly Dictionary<string, string> CompilerCodes = [];      // Compiler Code / Dictionary Code translation
         public readonly List<string> CodeDictionary = [];                   // Compiler Code Dictionary
         public readonly Dictionary<string, char> CompilerXRef = [];         // Convert compiler code to byte
         public readonly Dictionary<string, string> KeyLabels = [];          // Holds the code to execute for active key handlers
+
+        private int lineNo = 0;
+
         /* -----------------------------------------------------------------------------------------*
          * Instantiate the compiler class
          * -----------------------------------------------------------------------------------------*/
         public JAXBase_Compiler(AppClass app)
         {
-            App = app;
-
-            for (int i = 0; i < app.lists.JAXCompilerDictionary.Length; i++)
+            // TODO - Move this all to AppClass
+            for (int i = 0; i < JAXLanguageLists.JAXCompilerDictionary.Length; i++)
             {
-                string[] jcp = app.lists.JAXCompilerDictionary[i].Split('|');
+                string[] jcp = JAXLanguageLists.JAXCompilerDictionary[i].Split('|');
                 CompilerCodes.Add(jcp[0], jcp[1]);
                 CodeDictionary.Add(jcp[1]);
 
 
                 char k = Convert.ToChar(Convert.ToInt32(jcp[2], 16));
 
-                CompilerXRef.Add(jcp[0], k);         // Use these codes building runtime statements
-                App.XRef4Runtime.Add(k, jcp[0]);    // Convert statementcodes back to human readable codes
-
-                App.RunTimeCodes.Add(jcp[0], jcp[1]); // Human readable runtime statement elements
+                CompilerXRef.Add(jcp[0], k);            // Use these codes building runtime statements
+                app.XRef4Runtime.Add(k, jcp[0]);        // Convert statementcodes back to human readable codes
+                app.RunTimeCodes.Add(jcp[0], jcp[1]);   // Human readable runtime statement elements
             }
         }
 
         /* -----------------------------------------------------------------------------------------*
          * Parse the rest of a normal command
+         *
+         * 000 - Empty location
+         * AS0 - AS expr
+         * AS1 - AS Lit/Expr
+         * AT0 - AT row,col
+         * BK0 - Blank
+         * BR0 - BAR name
+         * CL0 - CLASS lit/(expr)
+         * CM0 - command
+         * CO0 - COLLATE Lit/Expr
+         * CP0 - CODEPAGE Lit/Expr
+         * DA0 - DATA expr
+         * DB0 - DATABASE Lit/(expr)
+         * DF0 - DEFAULT expr
+         * DG0 - DRAG TO row2,col2,row3,col3...
+         * FG0 - FLAGS expr
+         * FG1 - Flags place holder
+         * FM0 - FROM Lit/(Expr)
+         * FM1 - FROM [Array name][Memvar][Name objName][JSON var]
+         * FM2 - FROM AT row,col
+         * FR0 - FOR lExpression
+         * FR1 - start expr of FOR after =
+ 	     * FR* - FOR "expression as string"
+         * FV0 - FIELD Var Literal
+         * FV1 - FIELDS Var Literal List
+         * FV2 - FIELDS Var Literal List starting with (
+         * FV3 - FIELDS Literal list, FIELDS LIKE skeleton | FIELDS EXCEPT skeleton
+         * IN0 - IN WorkArea | Alias
+         * IT0 - INTO filename
+         * IT1 - 
+         * LK0 - LIKE expression
+         * LK1 - LIKE Lit/(Expr)
+         * LK2 - LIKE varlist
+         * MS0 - MESSAGE expression
+         * NM0 - NAME lit/(expr)
+         * OF0 - OF filename
+         * ON0 - ON expression4
+         * ON1 - ON Lit/Expr
+         * OR0 - ORDER Lit/(Expr)
+         * PD0 - PAD name
+         * PT0 - PRETEXT expr
+         * RC0 - RECORD expr
+         * SI0 - SIZE AT row,col
+         * SC0 - Scope (All/Rest/Record/Next/Top)
+         * SS0 - SESSION nSession
+         * SH0 - SHEET lit/(expr)
+         * TG0 - 
+         * TG3 - TO/TAG Lit/(Expr)
+         * TB0 - table expression (field x(n,n),...)
+         * TI0 - TIMEOUT expr
+         * TI1 - TIME expr
+         * TO0 - TO VarLiteral
+         * TO1 - TO VarList
+         * TO2 - TO [ARRAY] VarLiteral
+         * TO3 - TO Literal | (expr)
+         * TO4 - TO nExpression
+         * TO5 - TO PRINTER [PROMPT] | FILE Lit/(Expr)
+         * TO6 - TO MEMVAR | NAME objName | ARRAY varname
+         * TO7 - 
+         * TO8 - TO DEBUG | TO FILE filename
+         * TO9 - TO row,col
+         * TO* - TO expr,expr
+         * TO# - TO literal to EOL
+         * TY0 - TYPE C|D|T|N|F|I|B|Y|L
+         * TY1 - TYPE XLS|XL5|XLSX|CALC
+         * TY2 - TYPE XLS|XL5|XLSX|CALC or SDF|CSV DELIMITED WITH Delimiter | WITH blank | WITH TAB | WITH CHARACTER literal
+         * VL0 - Values (varlist)
+         * WI0 - WINDOW [AT rowExpr, colExpr]
+         * WI1 - WINDOW Name
+         * WI2 - WINDOW namelist
+         * WH0 - When lExpression
+         * WL0 - While lExpression
+         * WT0 - With prop=expr
+         * WT1 - With litExpr
+         * WT2 - WITH litExpr1, litExpr2,...
+         * XX0 - Lit/(Expr)
+         * XX1 - Expression list for Calc command
+         * XX2 - TOP|BOTTOM|expression
+         * XX3 - Expression list
+         * XX4 - Expression list starting with (
+         * XX5 - Var array list with AS option
+         * XX6 - List of Literals 
+         * XX7 - Var Literal
+         * XX8 - Var & Var Array list with AS option
+         * XX9 - Literal to End of Line
+         * XX* - Expression
+         * XX# - Var list starting with (
+         * XX@ - Lit/Expr List
+         * XX! - FOR variable literal
+         * XX: - Directory literal or expression
+         * XX$ - Get entire expression
+         * XF0 - Path template
+         * 
          * -----------------------------------------------------------------------------------------*/
         private string ParseRest(string cmd, string cmdRest)
         {
@@ -63,7 +167,7 @@ namespace JAXBase.Compiler
             {
                 "activate" => JAXBase_Compiler_A.Activate(this, cmdRest),
                 "add" => JAXBase_Compiler_A.Add(this, cmdRest),
-                "alter" => JAXBase_Compiler_A.Alter(App, cmdRest),
+                "alter" => JAXBase_Compiler_A.Alter(cmdRest),
                 "aparameters" => Generic_Parser(cmdRest, "XX7", []),
                 "append" => JAXBase_Compiler_A.Append(this, cmdRest),
                 "assert" => Generic_Parser(cmdRest, "XX*,MS0,TO8", ["nodialog"]),
@@ -172,7 +276,7 @@ namespace JAXBase.Compiler
                 "scatter" => Generic_Parser(cmdRest, "FV3,TO6", ["memo", "blank", "default"]),
                 "seek" => Generic_Parser(cmdRest, "XX*,OR0,IN0,SS0", ["ascending|descending"]),
                 "select" => JAXBase_Compiler_S.Select(this, cmdRest),
-                "set" => Key_Parser(cmdRest, App.lists.SetCommands, "XX0,SI0,IN0,SS0,AT0,TO3,WT2", []),
+                "set" => Key_Parser(cmdRest, JAXLanguageLists.SetCommands, "XX0,SI0,IN0,SS0,AT0,TO3,WT2", []),
                 "skip" => Generic_Parser(cmdRest, "XX*,IN0,SS0", []),
                 "sort" => JAXBase_Compiler_S.Sort(this, cmdRest),
                 "store" => BreakStoreStatement(cmdRest),
@@ -212,8 +316,8 @@ namespace JAXBase.Compiler
             StringBuilder cmpBlock = new();
             StringBuilder cmpLine = new();
             errorCount = 0;
-            int lineNo = 0;
-            bool includeSource = App.CurrentDS.JaxSettings.IncludeSource && App.InCompile;
+            lineNo = 0;
+            bool includeSource = Program.CurrentApp.CurrentDS.JaxSettings.IncludeSource && Program.CurrentApp.InCompile;
 
 
             string[] block = cmdBlock.Replace("\n", "").Split('\r');
@@ -248,17 +352,16 @@ namespace JAXBase.Compiler
                     else
                     {
                         cmpLine.Append(ln);
-
-                        AppIO.DebugLog(ln);
+                        AppIO.DebugLog($"{lineNo}: {ln}");
 
                         string cLine = cmpLine.ToString().Trim();
                         string cmdLine = CompileLine(cLine, inCompile).Trim();
 
-                        App.utl.Conv64(lineNo, 2, out string lnNo);
+                        Program.CurrentApp.utl.Conv64(lineNo, 2, out string lnNo);
 
                         // Process the command
-                        if (App.InCompile && includeSource && cLine.Length > 0)
-                            cmpBlock.Append(AppClass.cmdByte + App.MiscInfo["sourcecode"] + CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
+                        if (Program.CurrentApp.InCompile && includeSource && cLine.Length > 0)
+                            cmpBlock.Append(AppClass.cmdByte + Program.CurrentApp.MiscInfo["sourcecode"] + CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
 
                         // Only append line number if there is something returned
                         if (cmdLine.Length > 0) cmpBlock.Append(cmdLine + lnNo);
@@ -268,7 +371,7 @@ namespace JAXBase.Compiler
                 }
             }
 
-            AppIO.DebugLog($"{cmpBlock.Length} bytes in block");
+            //AppIO.DebugLog($"{cmpBlock.Length} bytes in block");
 
             // If there is something in the loop stack, we have a problem
             string lp = AppLoop.GetLoopStack();
@@ -335,7 +438,7 @@ namespace JAXBase.Compiler
 
             if (string.IsNullOrWhiteSpace(cmdLine) == false)
             {
-                App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = cmdLine;
+                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = cmdLine;
 
                 // Get the leading token or variable/object name
                 string c = GetNextToken(cmdLine, " )]=", out string cmd);
@@ -375,7 +478,7 @@ namespace JAXBase.Compiler
                     // it's a variable and make it into a store command
                     // The variable could also be an object.property,
                     // object.object.property, and so on.
-                    iCmd = App.CmdList.IndexOf("store");
+                    iCmd = Program.CurrentApp.CmdList.IndexOf("store");
 
                     if (cmd.Length > 0)
                         cmdRest = cmdRest[1..].Trim() + " to " + cmd;
@@ -392,43 +495,26 @@ namespace JAXBase.Compiler
                     if (cmdRest[0] == '.')
                     {
                         // Definitely an object call and should be inside a with
-                        if (App.WithHold.Count == 0)
+                        if (Program.CurrentApp.WithHold.Count == 0)
                             throw new Exception("1940||Empty WITH stack");
                     }
 
                     cmd = "~~~";    // Command for an object.method call, but is unpublished and won't parse from source code
-                    iCmd = App.CmdList.FindIndex(a => a.StartsWith(cmd, StringComparison.OrdinalIgnoreCase));
+                    iCmd = Program.CurrentApp.CmdList.FindIndex(a => a.StartsWith(cmd, StringComparison.OrdinalIgnoreCase));
                 }
                 else
                 {
                     switch (cmd.ToLower())
                     {
-                        case "act": cmd = "activate"; break;
-                        case "alt": cmd = "alter"; break;
-
-                        case "apar":
-                        case "aparameter":
-                            cmd = "aparameters";
-                            break;
-
-                        case "aver": cmd = "average"; break;
-                        case "beg": cmd = "begin"; break;
+                        case "aparameter": cmd = "aparameters"; break;
                         case "brow": cmd = "browse"; break;
                         case "calc": cmd = "calculate"; break;
                         case "comp": cmd = "compile"; break;
-                        case "cont": cmd = "continue"; break;
-                        case "crea": cmd = "create"; break;
-                        case "deac": cmd = "deactivate"; break;
                         case "def": cmd = "define"; break;
                         case "del": cmd = "delete"; break;
                         case "dim": cmd = "dimension"; break;
                         case "dir": cmd = "directory"; break;
-
-                        case "doev":
-                        case "doevent":
-                            cmd = "doevents";
-                            break;
-
+                        case "doevent": cmd = "doevents"; break;
                         case "enddef": cmd = "enddefine"; break;
                         case "endfunc": cmd = "endfunction"; break;
                         case "endproc": cmd = "endprocedure"; break;
@@ -437,33 +523,20 @@ namespace JAXBase.Compiler
                         case "gath": cmd = "gather"; break;
                         case "keyb": cmd = "keyboard"; break;
                         case "loc": cmd = "locate"; break;
-
-                        case "lparameter":
-                        case "lpar":
-                            cmd = "lparameters";
-                            break;
-
+                        case "lparameter": cmd = "lparameters"; break;
                         case "lproc": cmd = "lprocedure"; break;
                         case "modi": cmd = "modify"; break;
-                        case "nodef": cmd = "nodefault"; break;
-
-                        case "param":
-                        case "parameter":
-                            cmd = "parameters";
-                            break;
-
+                        case "parameter": cmd = "parameters"; break;
                         case "proc": cmd = "procedure"; break;
-                        case "reind": cmd = "reindex"; break;
                         case "repl": cmd = "replace"; break;
                         case "scat": cmd = "scatter"; break;
-                        case "sel": cmd = "select"; break;
                     }
 
                     // Expecting a command to parse here
-                    iCmd = App.CmdList.IndexOf(cmd.ToLower());
+                    iCmd = Program.CurrentApp.CmdList.IndexOf(cmd.ToLower());
                     if (iCmd < 0 && cmd.Length > 2)
                     {
-                        iCmd = App.CmdList.FindIndex(a => a.StartsWith(cmd, StringComparison.OrdinalIgnoreCase)); // TODO - Needs work to deal with (
+                        iCmd = Program.CurrentApp.CmdList.FindIndex(a => a.StartsWith(cmd, StringComparison.OrdinalIgnoreCase)); // TODO - Needs work to deal with (
                     }
 
                     if (iCmd < 0)
@@ -481,10 +554,10 @@ namespace JAXBase.Compiler
                     if (iCmd < 999)
                     {
                         // Got the command, so convert to 2 char token!
-                        App.utl.Conv64(iCmd, 2, out b64);
+                        Program.CurrentApp.utl.Conv64(iCmd, 2, out b64);
 
                         // Process the command
-                        result += AppClass.cmdByte + b64 + ParseRest(App.lists.JAXCommands[iCmd], cmdRest) + AppClass.cmdEnd;
+                        result += AppClass.cmdByte + b64 + ParseRest(JAXLanguageLists.JAXCommands[iCmd], cmdRest) + AppClass.cmdEnd;
                     }
                 }
                 else
@@ -500,415 +573,6 @@ namespace JAXBase.Compiler
             // Command is in format <command begin byte><2 digit Base36>[<parameter1 string><parameter end byte>[<parameter2 string>...]<command end byte>
             return result;
         }
-
-
-        /* -----------------------------------------------------------------------------------------*
-         * 000 - Empty location
-         * 
-         * AS0 - AS expr
-         * AS1 - AS Lit/Expr
-         * 
-         * AT0 - AT row,col
-         * 
-         * BK0 - Blank
-         * BR0 - BAR name
-         * 
-         * CL0 - CLASS lit/(expr)
-         * 
-         * CM0 - command
-         * 
-         * CO0 - COLLATE Lit/Expr
-         * 
-         * CP0 - CODEPAGE Lit/Expr
-         * 
-         * DA0 - DATA expr
-         * 
-         * DB0 - DATABASE Lit/(expr)
-         * 
-         * DF0 - DEFAULT expr
-         * 
-         * DG0 - DRAG TO row2,col2,row3,col3...
-         * 
-         * FG0 - FLAGS expr
-         * FG1 - Flags place holder
-         * 
-         * FM0 - FROM Lit/(Expr)
-         * FM1 - FROM [Array name][Memvar][Name objName][JSON var]
-         * FM2 - FROM AT row,col
-         * 
-         * FR0 - FOR lExpression
-         * FR1 - start expr of FOR after =
- 	     * FR* - FOR "expression as string"
- 	     * 
-         * FV0 - FIELD Var Literal
-         * FV1 - FIELDS Var Literal List
-         * FV2 - FIELDS Var Literal List starting with (
-         * FV3 - FIELDS Literal list, FIELDS LIKE skeleton | FIELDS EXCEPT skeleton
-         * 
-         * IN0 - IN WorkArea | Alias
-         * 
-         * IT0 - INTO filename
-         * IT1 - 
-         * 
-         * LK0 - LIKE expression
-         * LK1 - LIKE Lit/(Expr)
-         * LK2 - LIKE varlist
-         * 
-         * MS0 - MESSAGE expression
-         * 
-         * NM0 - NAME lit/(expr)
-         * 
-         * OF0 - OF filename
-         * 
-         * ON0 - ON expression4
-         * ON1 - ON Lit/Expr
-         * 
-         * OR0 - ORDER Lit/(Expr)
-         * 
-         * PD0 - PAD name
-         * 
-         * PT0 - PRETEXT expr
-         * 
-         * RC0 - RECORD expr
-         * 
-         * SI0 - SIZE AT row,col
-         * SC0 - Scope (All/Rest/Record/Next/Top)
-         * 
-         * SS0 - SESSION nSession
-         * 
-         * SH0 - SHEET lit/(expr)
-         * 
-         * TG0 - 
-         * TG3 - TO/TAG Lit/(Expr)
-         * 
-         * TB0 - table expression (field x(n,n),...)
-         * 
-         * TI0 - TIMEOUT expr
-         * TI1 - TIME expr
-         * 
-         * TO0 - TO VarLiteral
-         * TO1 - TO VarList
-         * TO2 - TO [ARRAY] VarLiteral
-         * TO3 - TO Literal | (expr)
-         * TO4 -  
-         * TO5 - TO PRINTER [PROMPT] | FILE Lit/(Expr)
-         * TO6 - TO MEMVAR | NAME objName | ARRAY varname
-         * TO7 - TO expression
-         * TO8 - TO DEBUG | TO FILE filename
-         * TO9 - TO row,col
-         * TO* - TO expr,expr
-         * TO# - TO literal to EOL
-         * 
-         * TY0 - TYPE C|D|T|N|F|I|B|Y|L
-         * TY1 - TYPE XLS|XL5|XLSX|CALC
-         * TY2 - TYPE XLS|XL5|XLSX|CALC or SDF|CSV DELIMITED WITH Delimiter | WITH blank | WITH TAB | WITH CHARACTER literal
-         * 
-         * VL0 - Values (varlist)
-         * 
-         * WI0 - WINDOW [AT rowExpr, colExpr]
-         * WI1 - WINDOW Name
-         * WI2 - WINDOW namelist
-         * 
-         * WH0 - When lExpression
-         * 
-         * WL0 - While lExpression
-         * 
-         * WT0 - With prop=expr
-         * WT1 - With litExpr
-         * WT2 - WITH litExpr1, litExpr2,...
-         * 
-         * XX0 - Lit/(Expr)
-         * XX1 - Expression list for Calc command
-         * XX2 - TOP|BOTTOM|expression
-         * XX3 - Expression list
-         * XX4 - Expression list starting with (
-         * XX5 - Var array list with AS option
-         * XX6 - List of Literals 
-         * XX7 - Var Literal
-         * XX8 - Var & Var Array list with AS option
-         * XX9 - Literal to End of Line
-         * XX* - Expression
-         * XX# - Var list starting with (
-         * XX@ - Lit/Expr List
-         * XX! - FOR variable literal
-         * XX: - Directory literal or expression
-         * XX$ - Get entire expression
-         * 
-         * XF0 - Path template
-         * 
-         * 
-         * -----------------------------------------------------------------------------------------*/
-        public Dictionary<string, string> Lexer(string cmdRest, string allowed, string[] flagsSent, bool strict)
-        {
-            string HoldMe = cmdRest;            // holds original cmdRest string for debugging
-            string[] cOrder = allowed.Split(','); // get the code order
-
-            // Create an empty code list
-            Dictionary<string, string> code = [];
-            for (int i = 0; i < App.lists.JAXCompilerDictionary.Length; i++)
-                code.Add(CodeDictionary[i], string.Empty);
-
-            List<string> Flags = [];
-            List<string> FlagChecks = [];
-
-            for (int i = 0; i < flagsSent.Length; i++)
-            {
-                if (flagsSent[i].Contains('|'))
-                {
-                    FlagChecks.Add("|" + flagsSent[i].ToLower() + "|");
-
-                    string[] fsent = flagsSent[i].Split('|');
-                    for (int j = 0; j < flagsSent.Length; j++)
-                        Flags.Add(flagsSent[j].ToLower());
-                }
-                else
-                    Flags.Add(flagsSent[i].ToLower());
-            }
-
-            string cmdOut = string.Empty;
-            string lastKey = string.Empty;
-            int kwPos;
-            string kwrdKey = string.Empty;
-            string fullKey = string.Empty;
-
-            code["flags"] = AppClass.expDelimiter.ToString();
-
-            while (string.IsNullOrWhiteSpace(cmdRest) == false)
-            {
-                int i = 0;
-                while (i < cmdRest.Length)
-                {
-                    kwPos = -1;
-                    kwrdKey = string.Empty;
-                    fullKey = string.Empty;
-
-                    if ("\"'".Contains(cmdRest[i]))
-                    {
-                        // get past the quoted material
-                        char c = cmdRest[i];
-                        i++;
-
-                        while (i < cmdRest.Length && cmdRest[i] != c)
-                            i++;
-
-                        if (i >= cmdRest.Length || cmdRest[i] != c)
-                            throw new Exception("10||Missing closing quote in Lexer");
-
-                        i++;
-                    }
-
-                    if (i < cmdRest.Length && "([".Contains(cmdRest[i]))
-                    {
-                        // get past bracketed information
-                        char c = cmdRest[i];
-                        char e = c == '(' ? ')' : ']';
-                        int cCount = 1;
-                        i++;
-
-                        while (i < cmdRest.Length && cCount > 0)
-                        {
-                            if (cmdRest[i] == e) cCount--;
-                            if (cmdRest[i] == c) cCount++;
-                        }
-
-                        if (cCount > 0)
-                            throw new Exception("10||Missing closing braket in Lexer");
-                        else
-                            i++;
-                    }
-
-                    int kwrdLen = 0;
-
-                    if (i < cmdRest.Length - 2)
-                    {
-                        foreach (KeyValuePair<string, string> cd in CompilerCodes)
-                        {
-                            string keyword = cd.Value;
-                            if (i + keyword.Length <= cmdRest.Length && keyword.Equals(cmdRest[i..keyword.Length], StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Found the next keyword in the command
-                                kwPos = i;
-                                kwrdKey = cd.Key;
-                                kwrdLen = keyword.Length;
-                            }
-                        }
-                    }
-
-                    if (kwPos >= 0)
-                    {
-                        // do we have an expression to deal with?
-                        for (int j = 0; j < cOrder.Length; j++)
-                        {
-                            if (kwrdKey.Equals(cOrder[j][..2]))
-                            {
-                                fullKey = cOrder[j];
-                                break;
-                            }
-                        }
-
-                        if (string.IsNullOrWhiteSpace(lastKey) == false)
-                        {
-                            string exprInfo = cmdRest[..kwPos];
-
-                            if (string.IsNullOrWhiteSpace(code[kwrdKey]))
-                                code[kwrdKey] = ProcessKey(lastKey, exprInfo);
-                            else
-                                throw new Exception($"10||Duplicate key use {kwrdKey}");
-                        }
-
-                        cmdRest = cmdRest[(i + kwrdLen)..];  // Eat everthing up to and including the keyword
-                        lastKey = fullKey;
-                    }
-                }
-
-                // Is there something to process?
-                if (string.IsNullOrWhiteSpace(lastKey) == false)
-                {
-                    string exprInfo = cmdRest;
-                    cmdRest = string.Empty;
-
-                    if (string.IsNullOrWhiteSpace(code[kwrdKey]))
-                        code[kwrdKey] = ProcessKey(lastKey, exprInfo);
-                    else
-                        throw new Exception($"10||Duplicate key use {kwrdKey}");
-                }
-            }
-
-            return code;
-        }
-
-        public string ProcessKey(string lastKey, string keyInfo)
-        {
-            string result = string.Empty;
-
-            // Get whatever goes with the last keyword
-            switch (lastKey)
-            {
-                case "000":     // Blank entry
-                    break;
-
-                case "AS1":     // Expression
-                case "DA0":
-                case "DF0":
-                case "FG0":
-                case "FR0":
-                case "FR*":
-                case "ON0":
-                case "PT0":
-                case "RC0":
-                case "TI0":
-                case "TI1":
-                case "TO7":
-                case "WL0":
-                case "WH0":
-                case "XX*":
-                    break;
-
-                case "AS2":     // Literal ending with space/(Expression)
-                case "CL0":
-                case "CO0":
-                case "CP0":
-                case "DB0":
-                case "FM0":
-                case "LK1":
-                case "NM0":
-                case "ON1":
-                case "OR0":
-                case "SH0":
-                case "TG3": // ??
-                case "TO3":
-                case "XX0":
-                    break;
-
-                case "FV0":     // Var Literal  - just a valid var, no expression, ending in space
-                case "TO0":
-                case "XX7":
-                case "XX!":
-                    break;
-
-                case "FV1":     // Var Literal comma delimited List
-                    break;
-
-                case "FV2":     // Var Literal List in (,,,)
-                    break;
-
-                default:
-                    throw new Exception($"10||Unknown full key {lastKey}");
-            }
-            return result;
-        }
-
-
-        public string PreLexer(string cmdRest, string ParseInfo, string[] Flags, string mustFill)
-        {
-            string result = string.Empty;
-            List<string> thisParse = [];
-
-            try
-            {
-                string[] ParsingParts = ParseInfo.Split(',');
-                string[] mustFillParts = mustFill.Split(',');
-
-                // Get the CompilerCodes translated to the CompilerDictionary Keys
-                // The FW code is ignored as it's a combination of FIELDS and WITH
-                if (ParsingParts[0].Length > 0)
-                {
-                    for (int i = 0; i < ParsingParts.Length; i++)
-                    {
-                        //if (JAXLib.InListC(ParsingParts[i][..2], "fw") == false)
-                        thisParse.Add(CompilerCodes[ParsingParts[i][..2]]);
-
-                        if (JAXLib.InListC(ParsingParts[i], "XX8", "XX5"))
-                            thisParse.Add(CompilerCodes["AS"]);
-                    }
-
-                    Dictionary<string, string> code = StatementBreak(cmdRest, ParseInfo, Flags);
-
-                    // Put the codes that have information in them
-                    // together with their XREF code into the statement
-                    foreach (string pCode in ParsingParts)
-                    {
-                        string p = pCode[..2].ToString();
-                        if (JAXLib.InListC(pCode, "XX8", "XX5"))
-                        {
-                            result += CompilerXRef["XX"].ToString() + code["expressions"] + AppClass.stmtDelimiter + CompilerXRef["AS"].ToString() + code["as"] + AppClass.stmtDelimiter;
-                        }
-                        else if (JAXLib.InListC(p, "fw"))
-                        {
-                            // FW is FIELDS and WITH
-                            result += CompilerXRef["FV"].ToString() + code["fields"] + AppClass.stmtDelimiter + CompilerXRef["WT"].ToString() + code["with"] + AppClass.stmtDelimiter;
-                        }
-                        else
-                        {
-                            if (code[CompilerCodes[p]].Length > 0)
-                                result += CompilerXRef[p].ToString() + code[CompilerCodes[p]] + AppClass.stmtDelimiter;
-                        }
-                    }
-
-                    if (code["flags"].Length > 0)
-                        result += CompilerXRef["FG"].ToString() + AppClass.literalStart + code["flags"].ToString() + AppClass.literalEnd + AppClass.stmtDelimiter;
-
-                    // Make sure the must fill parts are there
-                    foreach (string mCode in mustFillParts)
-                    {
-                        string m = mCode[..2];
-                        if (string.IsNullOrWhiteSpace(code[CompilerCodes[m]]))
-                            throw new Exception($"10||Missing information for code {m}");
-                    }
-
-
-                    result = result.TrimEnd(AppClass.stmtDelimiter);
-                }
-            }
-            catch (Exception ex)
-            {
-                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
-                result = string.Empty;
-            }
-
-            return result;
-        }
-
 
 
         public string Generic_Parser(string cmdRest, string ParseInfo, string[] Flags)
@@ -1027,17 +691,17 @@ namespace JAXBase.Compiler
 
                         // Add a WITH statement - save the object name in
                         // case we need it in the future
-                        App.WithHold.Add(cmdRest);
+                        Program.CurrentApp.WithHold.Add(cmdRest);
                         cmdRest = GetNameLiteralOrExpression(cmdRest, string.Empty, out string withExpr);
                         result = CompilerXRef["XX"].ToString() + withExpr;
                     }
                     else
                     {
-                        if (App.WithHold.Count > 0)
+                        if (Program.CurrentApp.WithHold.Count > 0)
                         {
                             // Pop the most recent one off.  We do this just to make
                             // sure there is an EndWith for every With statement
-                            App.WithHold.RemoveAt(App.WithHold.Count - 1);
+                            Program.CurrentApp.WithHold.RemoveAt(Program.CurrentApp.WithHold.Count - 1);
                             result = "  ";
                         }
                     }
@@ -1163,9 +827,7 @@ namespace JAXBase.Compiler
 
 
         /* -----------------------------------------------------------------------------------------*
-         * 
          * The ON command requires it's own parsing routine
-         * 
          * -----------------------------------------------------------------------------------------*/
         public string ON_Parser(string cmdRest)
         {
@@ -1194,7 +856,7 @@ namespace JAXBase.Compiler
                                 else
                                 {
                                     cmdRest = GetNextLiteralOrExpression(cmdRest, "", out onCmd);
-                                    
+
                                     // Get the key label
                                     KeyClass key = AppIO.KeyLabel(onCmd);
 
@@ -1237,11 +899,8 @@ namespace JAXBase.Compiler
         }
 
         /* -----------------------------------------------------------------------------------------*
-         * 
-         * The keyword is expected to be the first token and then the rest
-         * is passed onto the generic parser. The key array must hold 
-         * lower case keys.
-         * 
+         * The keyword is expected to be the first token and then the rest is passed onto the 
+         * generic parser. The key array must hold lower case keys.
          * -----------------------------------------------------------------------------------------*/
         public string Key_Parser(string cmdRest, string[] keys, string ParseInfo, string[] Flags)
         {
@@ -1307,10 +966,6 @@ namespace JAXBase.Compiler
             return result;
         }
 
-
-        // ====================================================================================================
-        // Static code
-        // ====================================================================================================
 
         /* -----------------------------------------------------------------------------------------*
          * This routine is used to grab the next name or expression, where the next thing
@@ -1586,162 +1241,6 @@ namespace JAXBase.Compiler
             return result;
         }
 
-        // Start of GROK's STORE code --------------------------------------------------------------
-        // I may decide to take it apart at some point and modify it.  Like not having
-        // STORE to be the a requirment :D would be a first step.
-        public class FormulaExtractor
-        {
-            private static readonly Regex StorePattern = new Regex(
-                @"^store\s+(.+?)\s+to\s+([^\s]+(?:\s+[^\s]+)*?)(?:\s|$)",
-                RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-            // Token patterns for formula analysis
-            private static readonly Dictionary<string, string> TokenPatterns = new Dictionary<string, string>
-            {
-                { "identifier", @"[a-zA-Z_][a-zA-Z0-9_]*" },
-                { "array", @"\w+(?:\[[^\]]*\])+" },
-                { "function", @"\w+\(\d+\)" },
-                { "number", @"\d+" },
-                { "boolean", @"\.(T|F)\." },
-                { "operator", @"[\+\-\*\/\(\)]" }
-            };
-
-            public static FormulaAnalysis AnalyzeFormula(string statement)
-            {
-                var (formula, target, isValid) = ExtractFormula(statement);
-
-                if (!isValid)
-                    return new FormulaAnalysis { IsValid = false };
-
-                var tokens = TokenizeFormula(formula);
-
-                return new FormulaAnalysis
-                {
-                    OriginalStatement = statement,
-                    Formula = formula,
-                    Target = target,
-                    IsValid = true,
-                    Tokens = tokens,
-                    TokenCount = tokens.Count,
-                    HasArrays = tokens.Any(t => t.Type == "array"),
-                    HasFunctions = tokens.Any(t => t.Type == "function"),
-                    HasBooleans = tokens.Any(t => t.Type == "boolean")
-                };
-            }
-
-            private static List<FormulaToken> TokenizeFormula(string formula)
-            {
-                var tokens = new List<FormulaToken>();
-                var remaining = formula;
-
-                // Simple tokenization - this is a basic implementation
-                while (!string.IsNullOrEmpty(remaining))
-                {
-                    bool matched = false;
-
-                    foreach (var pattern in TokenPatterns)
-                    {
-                        var regex = new Regex(pattern.Value);
-                        var match = regex.Match(remaining);
-
-                        if (match.Success && match.Index == 0)
-                        {
-                            tokens.Add(new FormulaToken
-                            {
-                                Type = pattern.Key,
-                                Value = match.Value,
-                                Position = formula.Length - remaining.Length
-                            });
-
-                            remaining = remaining.Substring(match.Length);
-                            matched = true;
-                            break;
-                        }
-                    }
-
-                    if (!matched)
-                    {
-                        // If no pattern matches, take the first character
-                        tokens.Add(new FormulaToken
-                        {
-                            Type = "unknown",
-                            Value = remaining[0].ToString(),
-                            Position = formula.Length - remaining.Length
-                        });
-                        remaining = remaining.Substring(1);
-                    }
-                }
-
-                return tokens;
-            }
-
-            private static (string formula, string target, bool isValid) ExtractFormula(string statement)
-            {
-                // Implementation same as before...
-                if (string.IsNullOrWhiteSpace(statement))
-                    return (string.Empty, string.Empty, false);
-
-                statement = statement.Trim();
-                Match match = StorePattern.Match(statement);
-
-                if (!match.Success)
-                    return (string.Empty, string.Empty, false);
-
-                string rawFormula = match.Groups[1].Value.Trim();
-                string rawTarget = match.Groups[2].Value.Trim();
-                string formula = Regex.Replace(rawFormula, @"\s+", " ").Trim();
-
-                return (formula, rawTarget, !string.IsNullOrWhiteSpace(formula) &&
-                        !string.IsNullOrWhiteSpace(rawTarget));
-            }
-        }
-
-        public class FormulaToken
-        {
-            public string Type { get; set; } = string.Empty;
-            public string Value { get; set; } = string.Empty;
-            public int Position { get; set; } = 0;
-
-            public override string ToString()
-            {
-                return $"[{Type}:{Value}]";
-            }
-        }
-
-        public class FormulaAnalysis
-        {
-            public string OriginalStatement { get; set; } = string.Empty;
-            public string Formula { get; set; } = string.Empty;
-            public string Target { get; set; } = string.Empty;
-            public bool IsValid { get; set; } = false;
-            public List<FormulaToken> Tokens { get; set; } = new List<FormulaToken>();
-            public int TokenCount { get; set; } = 0;
-            public bool HasArrays { get; set; } = false;
-            public bool HasFunctions { get; set; } = false;
-            public bool HasBooleans { get; set; } = false;
-
-            public override string ToString()
-            {
-                var sb = new System.Text.StringBuilder();
-                sb.AppendLine($"Statement: '{OriginalStatement}'");
-                sb.AppendLine($"{Formula}");
-                sb.AppendLine($"{Target}");
-                sb.AppendLine($"Tokens: {TokenCount}");
-                sb.AppendLine($"Features: Arrays={HasArrays}, Functions={HasFunctions}, Booleans={HasBooleans}");
-                if (Tokens.Any())
-                {
-                    sb.AppendLine("Token breakdown:");
-                    foreach (var token in Tokens.Take(10)) // Show first 10 tokens
-                    {
-                        sb.AppendLine($"  {token}");
-                    }
-                    if (Tokens.Count > 10)
-                        sb.AppendLine($"  ... and {Tokens.Count - 10} more tokens");
-                }
-                return sb.ToString();
-            }
-        }
-        // End of GROK's STORE code ----------------------------------------------------------------
 
         /* -----------------------------------------------------------------------------------------*
          * Get an expression from the string.
@@ -2030,7 +1529,7 @@ namespace JAXBase.Compiler
 
             try
             {
-                JAXMath jaxMath = new(app);
+                JAXMath jaxMath = new();
                 result = jaxMath.ReturnRPN(cmdRest);
                 for (int i = 0; i < result.Count; i++)
                     sb.Append(result[i] + AppClass.expParam);
@@ -2058,7 +1557,7 @@ namespace JAXBase.Compiler
 
             // Create the codes dictionary
             Dictionary<string, string> codes = [];
-            for (int i = 0; i < App.lists.JAXCompilerDictionary.Length; i++)
+            for (int i = 0; i < JAXLanguageLists.JAXCompilerDictionary.Length; i++)
                 codes.Add(CodeDictionary[i], string.Empty);
 
             // Split the parsing information
@@ -2198,7 +1697,7 @@ namespace JAXBase.Compiler
             string HoldMe = cmdRest;
 
             Dictionary<string, string> code = [];
-            for (int i = 0; i < App.lists.JAXCompilerDictionary.Length; i++)
+            for (int i = 0; i < JAXLanguageLists.JAXCompilerDictionary.Length; i++)
                 code.Add(CodeDictionary[i], string.Empty);
 
             List<string> Flags = [];
@@ -2241,7 +1740,7 @@ namespace JAXBase.Compiler
                     if (allowed.Equals("CM0"))
                     {
                         // ON x Command Exception
-                        string cmd = App.JaxCompiler.CompileLine(cmdRest, false);
+                        string cmd = Program.CurrentApp.JaxCompiler.CompileLine(cmdRest, false);
                         code["command"] = cmd.TrimStart(AppClass.cmdByte).TrimEnd(AppClass.cmdEnd);
                         cmdRest = string.Empty;
                         continue;
@@ -3439,8 +2938,8 @@ namespace JAXBase.Compiler
                         field = GetNextToken(field[1..], ",)", out fWidth);
                         if (field.Length > 0 && field[0] == ',') field = field[1..];
                         field = GetNextToken(field, ")", out fDec);
-                        fWidth = GetRPNString(App, fWidth);
-                        fDec = GetRPNString(App, fDec.Length > 0 ? fDec : "0");
+                        fWidth = GetRPNString(Program.CurrentApp, fWidth);
+                        fDec = GetRPNString(Program.CurrentApp, fDec.Length > 0 ? fDec : "0");
 
                         if (fWidth[1] != 'N' || fDec[1] != 'N')
                             throw new Exception("10|");
@@ -3475,7 +2974,7 @@ namespace JAXBase.Compiler
                                     if (fInfo.Equals("nextvalue"))
                                     {
                                         fRest = GetNextToken(field, string.Empty, out fAutoVal);
-                                        fAutoVal = GetRPNString(App, fAutoVal);
+                                        fAutoVal = GetRPNString(Program.CurrentApp, fAutoVal);
                                         if (fAutoVal[1] != 'N')
                                             throw new Exception("10|");
                                     }
@@ -3488,7 +2987,7 @@ namespace JAXBase.Compiler
                                         // Eat STEP
                                         fRest = GetNextToken(field, string.Empty, out _);
                                         fRest = GetNextToken(field, string.Empty, out fAutoStep);
-                                        fAutoStep = GetRPNString(App, fAutoStep);
+                                        fAutoStep = GetRPNString(Program.CurrentApp, fAutoStep);
                                         if (fAutoStep[1] != 'N')
                                             throw new Exception("10|");
                                     }
@@ -3499,7 +2998,7 @@ namespace JAXBase.Compiler
 
                                 case "collate":
                                     fRest = GetNextToken(field, string.Empty, out fColl);
-                                    fColl = GetRPNString(App, fColl);
+                                    fColl = GetRPNString(Program.CurrentApp, fColl);
                                     if (fColl[1] != 'N')
                                         throw new Exception("10|");
                                     break;
@@ -3519,7 +3018,6 @@ namespace JAXBase.Compiler
                         + fAutoStep + AppClass.expParam
                         + fColl + AppClass.expDelimiter;
 
-
                     if (cmdRest.Length < 1) throw new Exception("10||Missing closing parentheses of table definition ')'");
                 }
 
@@ -3533,6 +3031,5 @@ namespace JAXBase.Compiler
 
             return cmdRest;
         }
-
     }
 }

@@ -562,7 +562,7 @@ namespace JAXBase.Math
                                     }
 
                                     string header = AppHelper.CreateHeader(string2, MD5, jfType, fStem);
-                                    string pmap = AppHelper.CreateProcedureMap(App, cCode, fStem);
+                                    string pmap = AppHelper.CreateProcedureMap(cCode, fStem);
                                     cCode = header + pmap + cCode;
                                 }
                                 else
@@ -584,7 +584,7 @@ namespace JAXBase.Math
                                     cCode = cCode[f..];
 
                                     FileHeader fileHeader = AppHelper.BreakHeader(string2, headerstring);
-                                    CCodeCache cc = AppHelper.BreakHeaderMap(App, jfType, fileHeader, cCode);
+                                    CCodeCache cc = AppHelper.BreakHeaderMap(jfType, fileHeader, cCode);
 
                                     // Fill the array
                                     AppVars.SetVarOrMakePrivate(string1, cc.Procedures.Count + cc.Classes.Count, 4, true);

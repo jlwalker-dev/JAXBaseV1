@@ -12,20 +12,20 @@ namespace JAXBase.Executer
          * IF lexpr
          * 
          */
-        public static async Task<string> If(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> If(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                string PrgCode = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
 
                 if (eCodes.Expressions.Count < 1) throw new Exception("10|");
                 if (string.IsNullOrWhiteSpace(eCodes.SUBCMD)) 
                     throw new Exception("9999|Missing IF identifier");
 
-                JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
 
                 if (answer.TType.Equals("U") || answer.Element.Type.Equals("L") == false)
                     throw new Exception("11|");
@@ -33,9 +33,9 @@ namespace JAXBase.Executer
                 {
                     if (answer.AsBool() == false)
                     {
-                        string elseCmd = jbe.App.MiscInfo["elsecmd"];
-                        string endCmd = jbe.App.MiscInfo["endifcmd"];
-                        string elseifCmd = jbe.App.MiscInfo["elseifcmd"];
+                        string elseCmd = Program.CurrentApp.MiscInfo["elsecmd"];
+                        string endCmd = Program.CurrentApp.MiscInfo["endifcmd"];
+                        string elseifCmd = Program.CurrentApp.MiscInfo["elseifcmd"];
 
                         // Look for an else
                         int elsePos = PrgCode.IndexOf(elseCmd + eCodes.SUBCMD);           // look for else
@@ -55,7 +55,7 @@ namespace JAXBase.Executer
                             int e = PrgCode.IndexOf(AppClass.cmdEnd, p);
                             if (e < 0) throw new Exception("10||No command end in ElseIf statement");
                             string rpn = PrgCode.Substring(p + 1, e - p - 2);
-                            answer = await jbe.App.SolveFromRPNString(rpn);
+                            answer = await Program.CurrentApp.SolveFromRPNString(rpn);
 
                         }
 
@@ -64,7 +64,7 @@ namespace JAXBase.Executer
 
                         if (f > 0)
                         {
-                            jbe.App.utl.Conv64(f, 3, out elseCmd);
+                            Program.CurrentApp.utl.Conv64(f, 3, out elseCmd);
                             result = "Y" + elseCmd;
                         }
                         else
@@ -86,7 +86,7 @@ namespace JAXBase.Executer
          * IMPORT
          * 
          */
-        public static string Import(AppClass app, string cmdRest)
+        public static string Import(string cmdRest)
         {
             string result = string.Empty;
 
@@ -107,18 +107,18 @@ namespace JAXBase.Executer
          * INDEX ON eExpression TO cFile [COLLATE cCollateSequence] [FOR lExpression] [ASCENDING | DESCENDING] [UNIQUE | CANDIDATE] [NOCASE]
          * 
          */
-        public static async Task<string> Index(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Index(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
-                JAXDirectDBF Table = jbe.App.CurrentDS.CurrentWA;
+                JAXDirectDBF Table = Program.CurrentApp.CurrentDS.CurrentWA;
                 if (Table.DbfInfo is null || Table.DbfInfo.DBFStream is null) throw new Exception("52|");
 
                 // Get the index name
                 JAXObjects.Token answer = new();
-                answer = eCodes.To.Count > 0 ? await jbe.App.SolveFromRPNString(eCodes.To[0].Name) : throw new Exception("10");
+                answer = eCodes.To.Count > 0 ? await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name) : throw new Exception("10");
                 if (answer.Element.Type.Equals("C") == false) throw new Exception("11|");
 
                 string FQFN = answer.AsString();
@@ -138,7 +138,7 @@ namespace JAXBase.Executer
 
                 // Get the for expression
                 string forExpr = string.Empty;
-                answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.ForExpr) ? string.Empty : (await jbe.App.SolveFromRPNString(eCodes.ForExpr)).Element.Value;
+                answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.ForExpr) ? string.Empty : (await Program.CurrentApp.SolveFromRPNString(eCodes.ForExpr)).Element.Value;
                 if (answer.Element.Type.Equals("C"))
                     forExpr = answer.AsString();
                 else
@@ -178,7 +178,7 @@ namespace JAXBase.Executer
          *      result = JAXDataHandler.AppendArray(jbe, eCodes)
          *      result = JAXDataHandler.AppendValues(jbe, eCodes)
          */
-        public static async Task<string> Insert(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Insert(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
@@ -188,14 +188,14 @@ namespace JAXBase.Executer
 
                 List<string> fieldList = [];
                 List<List<JAXObjects.Token>> valueList = [];
-                JAXDirectDBF.DBFInfo dbfInfo = jbe.App.CurrentDS.CurrentWA.DbfInfo;
+                JAXDirectDBF.DBFInfo dbfInfo = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo;
 
                 // Get the fields
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
                     if (string.IsNullOrWhiteSpace(eCodes.Expressions[i].RNPExpr) == false)
                     {
-                        JAXObjects.Token val = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+                        JAXObjects.Token val = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
                         fieldList.Add(val.AsString());
                     }
                 }
@@ -223,7 +223,7 @@ namespace JAXBase.Executer
                     {
                         if (string.IsNullOrWhiteSpace(eCodes.Values[i].RNPExpr) == false)
                         {
-                            JAXObjects.Token val = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+                            JAXObjects.Token val = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
                             valueList[0].Add(val);
                         }
                     }
@@ -312,24 +312,24 @@ namespace JAXBase.Executer
 
                 // Add a record and update the table/cursor
                 if (dbfInfo.DBFStream is null)
-                    throw new Exception(string.Format("52|{0}", jbe.App.CurrentDS.CurrentWorkArea()));
+                    throw new Exception(string.Format("52|{0}", Program.CurrentApp.CurrentDS.CurrentWorkArea()));
 
                 if (dbfInfo.NoUpdate)
                     throw new Exception(string.Format("2088|{0}", dbfInfo.TableName));           // File is read only
 
                 // Is this a buffered table?
-                bool buffered = jbe.App.CurrentDS.CurrentWA.DbfInfo.Buffered;
+                bool buffered = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Buffered;
 
                 // For each valueList row, add a new record to the table
                 for (int v = 0; v < valueList.Count; v++)
                 {
                     // Add a blank record
-                    await jbe.App.CurrentDS.CurrentWA.DBFAppendRecord(null);
+                    await Program.CurrentApp.CurrentDS.CurrentWA.DBFAppendRecord(null);
 
                     // TODO - if there is an autoincrement field, it can't be in the
                     // list of fields unless SET AUTOINCERROR is OFF
                     for (int i = 0; i < fieldList.Count; i++)
-                        await jbe.App.CurrentDS.CurrentWA.DBFReplaceField(fieldList[i], valueList[v][i], !buffered);
+                        await Program.CurrentApp.CurrentDS.CurrentWA.DBFReplaceField(fieldList[i], valueList[v][i], !buffered);
                 }
             }
             catch (Exception ex)

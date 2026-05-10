@@ -8,6 +8,7 @@
 using JAXBase.Core;
 using JAXBase.UI.Controls;
 using JAXBase.Utilities;
+using System.Globalization;
 
 namespace JAXBase.XBase
 {
@@ -31,6 +32,10 @@ namespace JAXBase.XBase
             // ----------------------------------------
             // Final setup of properties
             // ----------------------------------------
+
+            txt.Padding = new(2);
+            txt.TextAlignment = Avalonia.Media.TextAlignment.Left;
+            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center;
 
             if (InInit)
             {
@@ -86,6 +91,78 @@ namespace JAXBase.XBase
                     // Intercept property handling
                     switch (propertyName.ToLower())
                     {
+                        case "alignment":
+                            if (tk.Element.Type.Equals("N"))
+                            {
+                                int align = tk.AsInt();
+                                if (JAXLib.Between(align, 0, 9))
+                                {
+                                    objValue = align;
+                                    switch (align)
+                                    {
+                                        case 0:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 1:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            break;
+
+                                        case 2:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Center;
+                                            break;
+
+                                        case 3:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center;
+
+                                            // TODO - get the value to determine alignment.  L for numeric, right for other
+                                            if (UserProperties["value"].Element.Type.Equals("N"))
+                                                txt.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            else
+                                                txt.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 4:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Top;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 5:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Top;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            break;
+
+                                        case 6:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Top;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Center;
+                                            break;
+
+                                        case 7:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Bottom;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 8:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Bottom;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            break;
+
+                                        case 9:
+                                            txt.VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Bottom;
+                                            txt.TextAlignment = Avalonia.Media.TextAlignment.Center;
+                                            break;
+                                    }
+                                }
+                                else
+                                    result = 41;
+                            }
+                            else
+                                result = 11;
+                            break;
+
                         case "format":
                             if (tk.Element.Type.Equals("C"))
                                 txt.JAXFormat = tk.AsString();
@@ -174,7 +251,6 @@ namespace JAXBase.XBase
                             result = result == 0 ? 9 : result;
                             break;
                     }
-
 
                     // Did we process it?
                     if (JAXLib.Between(result, 0, 10))
@@ -331,7 +407,7 @@ namespace JAXBase.XBase
                 "height,n,21",
                 "inputmask,c,","inputmaskskip,l,.F.","inputmaskfillchar,c,",
                 "left,N,0",
-                "margin,n,2","maxlength,n,0","maxheight,n,-1","maxwidth,n,-1","minheight,n,-1","minwidth,n,-1",
+                "margin,n,0","maxlength,n,0","maxheight,n,-1","maxwidth,n,-1","minheight,n,-1","minwidth,n,-1",
                 "name,c,",
                 "originalvalue,,",
                 "parent,o!,","parentclass,C!,","passwordchar,c,",

@@ -1,4 +1,5 @@
 ﻿using Avalonia.Input;
+using JAXBase.Language;
 using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Runtime.CompilerServices;
@@ -205,7 +206,7 @@ namespace JAXBase.Core
             }
             else
             {
-                int splkey = Program.CurrentApp.lists.SpecialKeys.IndexOf(key) + 1;
+                int splkey = JAXLanguageLists.SpecialKeys.IndexOf(key) + 1;
                 result.keyLabel = key;
 
                 if (splkey > 0)

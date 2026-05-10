@@ -11,7 +11,7 @@ namespace JAXBase.Executer
          * QUIT (nExpression)
          * 
          */
-        public static async Task<string> Quit(AppClass app, ExecuterCodes? eCodes)
+        public static async Task<string> Quit(ExecuterCodes? eCodes)
         {
             AppIO.DebugLog("QUIT command received");
 
@@ -22,11 +22,11 @@ namespace JAXBase.Executer
             {
                 if (eCodes.Expressions.Count > 0)
                 {
-                    answer = await app.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                     if (answer.Element.Type.Equals("N"))
                     {
                         AppIO.DebugLog($"QUIT evaluated to {answer.AsString()}");
-                        app.ReturnValue.Element.Value = answer.AsInt();
+                        Program.CurrentApp.ReturnValue.Element.Value = answer.AsInt();
                     }
                     else
                     {
@@ -37,12 +37,12 @@ namespace JAXBase.Executer
             }
 
             AppIO.DebugLog("Releasing all applevels and cache");
-            app.AppLevels = [];
-            app.CodeCache = [];
-            app.PRGCache = [];
+            Program.CurrentApp.AppLevels = [];
+            Program.CurrentApp.CodeCache = [];
+            Program.CurrentApp.PRGCache = [];
 
             // Exit the application with the given return code
-            AppIO.DebugLog($"Requesting application exit with return code {app.ReturnValue.AsInt()}");
+            AppIO.DebugLog($"Requesting application exit with return code {Program.CurrentApp.ReturnValue.AsInt()}");
             System.Environment.Exit(answer.AsInt());
 
             AppIO.DebugLog("System.Environment.Exit failed to terminate the program");

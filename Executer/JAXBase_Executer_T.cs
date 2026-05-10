@@ -13,7 +13,7 @@ namespace JAXBase.Executer
          * TEXT
          * 
          */
-        public static string Text(AppClass app, string cmdRest)
+        public static string Text(string cmdRest)
         {
             string result = string.Empty;
 
@@ -34,14 +34,14 @@ namespace JAXBase.Executer
          * THROW nError, cMessage
          * 
          */
-        public static async Task<string> Throw(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Throw(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
 
-                JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                 if (answer.Element.Type.Equals("N"))
                 {
                     // Only throw the error if a positive non-zero value

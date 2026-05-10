@@ -28,12 +28,13 @@
  * 
  */
 using JAXBase.Data;
+using JAXBase.Language;
 using JAXBase.Math;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Data;
 using System.Text;
 using static JAXBase.Core.AppClass;
-using JAXBase.Utilities;
 
 namespace JAXBase.Core
 {
@@ -76,7 +77,7 @@ namespace JAXBase.Core
         /* --------------------------------------------------------------------------------------------------*
          * Return a string value as a token of the requested type
          * --------------------------------------------------------------------------------------------------*/
-        public static JAXObjects.Token ReturnStringAsTokenOfType(AppClass app, string val, string setAsType)
+        public static JAXObjects.Token ReturnStringAsTokenOfType(string val, string setAsType)
         {
             JAXObjects.Token tk = new();
             setAsType = setAsType[..1].ToUpper();
@@ -109,7 +110,7 @@ namespace JAXBase.Core
                     break;
 
                 case "O":   // JAXObjectWrapper - defaulted to O=.NULL. and *= empty array.
-                    JAXObjectWrapper jow = new(app, val, string.Empty, []);
+                    JAXObjectWrapper jow = new(Program.CurrentApp, val, string.Empty, []);
                     tk.Element.Value = jow;
                     break;
             }
@@ -121,7 +122,7 @@ namespace JAXBase.Core
          * Get an RPN or literal expression string and return the value
          * as an JAXObjects Token
          * --------------------------------------------------------------------------------------------------*/
-        public static async Task<JAXObjects.Token> ProcessExpression(AppClass app, string expr)
+        public static async Task<JAXObjects.Token> ProcessExpression(string expr)
         {
             JAXObjects.Token answer = new();
 
@@ -153,7 +154,7 @@ namespace JAXBase.Core
                     if (rpnList.Count == 0)
                         throw new Exception("10||Empty expression List");
 
-                    JAXMath jaxMath = new(app);
+                    JAXMath jaxMath = new();
                     answer = await jaxMath.MathSolve(rpnList);
                 }
                 else
@@ -189,7 +190,7 @@ namespace JAXBase.Core
         /// <param name="fName"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static async Task<int> LoadFileIntoCache(AppClass app, string type, string fName)
+        public static async Task<int> LoadFileIntoCache(string type, string fName)
         {
             string ext = JAXLib.JustExt(fName);
             string path = JAXLib.JustFullPath(fName);
@@ -202,13 +203,13 @@ namespace JAXBase.Core
             if (path.Length == 0 && ext.Length == 0)
             {
                 // Just have a stem and type.  Is it already loaded?
-                loaded = IsStemLoaded(app, type, stem);
+                loaded = IsStemLoaded(type, stem);
             }
             else if (path.Length > 0 && ext.Length > 0)
             {
                 // Check to see if the FQFN is loaded.  If it doesn't have
                 // a compiled file extension, it won't ever be true
-                loaded = IsFileLoaded(app, fName);
+                loaded = IsFileLoaded(fName);
             }
 
             // Is it already loaded?
@@ -226,7 +227,7 @@ namespace JAXBase.Core
                     if (ext.Length > 0 && xTypes.IsJAXCodeExtension(ext) == false)
                     {
                         // Non-standard extension - look for the file as written
-                        path = FindPathForFile(app, stem + "." + ext);
+                        path = FindPathForFile(stem + "." + ext);
 
                         if (path.Length > 0)
                             FinalFileName = path + stem + "." + ext;
@@ -240,13 +241,13 @@ namespace JAXBase.Core
                         if (path.Length == 0)
                         {
                             // Look for the compiled code name
-                            cCodePath = FindPathForFile(app, stem + "." + xTypes.CompiledCode);
+                            cCodePath = FindPathForFile(stem + "." + xTypes.CompiledCode);
 
                             // Look for the source code name
-                            sCodePath = FindPathForFile(app, stem + "." + xTypes.SourceCode);
+                            sCodePath = FindPathForFile(stem + "." + xTypes.SourceCode);
 
                             // Look for the table source name
-                            tCodePath = FindPathForFile(app, stem + "." + xTypes.SourceTable);
+                            tCodePath = FindPathForFile(stem + "." + xTypes.SourceTable);
                         }
 
                         if (path.Length == 0)
@@ -295,7 +296,7 @@ namespace JAXBase.Core
                         {
                             // We have the source code name so compile it
                             // and then pass the compiled file name
-                            string cCode = CompileModule(app, FinalFileName, type);
+                            string cCode = CompileModule(FinalFileName, type);
 
                             // Attempt to compile it
                             if (JAXLib.StrToFile(cCode, cFileName, 0) >= 0)
@@ -316,7 +317,7 @@ namespace JAXBase.Core
                                 "D" => throw new Exception("1999| - Can't convert class definition"),
 
                                 // Form
-                                "F" => await ConvertFormTable(app, FinalFileName),
+                                "F" => await ConvertFormTable(FinalFileName),
 
                                 // Label
                                 "L" => throw new Exception("1999| - Can't convert label definition"),
@@ -339,7 +340,7 @@ namespace JAXBase.Core
                                 // Unknown
                                 _ => throw new Exception("1999| - Unknown definition type " + type),
                             };
-                            FinalFileName = CompileModule(app, FinalFileName, type);
+                            FinalFileName = CompileModule(FinalFileName, type);
                         }
                         else
                         {
@@ -363,7 +364,7 @@ namespace JAXBase.Core
                         if (ext.Equals("app", StringComparison.OrdinalIgnoreCase))
                         {
                             // Load the app file
-                            loaded = LoadAppIntoCache(app, FinalFileName);
+                            loaded = LoadAppIntoCache(FinalFileName);
                         }
                         else if (ext.Equals(xTypes.CompiledCode, StringComparison.OrdinalIgnoreCase))
                         {
@@ -371,13 +372,13 @@ namespace JAXBase.Core
                             switch (type)
                             {
                                 case "D":       // Class definition
-                                    loaded = LoadClassDefIntoCache(app, fName);
+                                    loaded = LoadClassDefIntoCache(fName);
                                     break;
 
                                 case "P":       // Compiled code
                                 case "Q":       // Query
                                 case "V":       // View
-                                    loaded = LoadPRGIntoCache(app, type, FinalFileName);
+                                    loaded = LoadPRGIntoCache(type, FinalFileName);
                                     break;
 
                                 case "C":       // Class Library
@@ -405,21 +406,21 @@ namespace JAXBase.Core
         /*
          * Look for a loaded codecache file based on stem and type
          */
-        public static int IsStemLoaded(AppClass app, string type, string stem)
+        public static int IsStemLoaded(string type, string stem)
         {
             int result = -1;
 
-            for (int i = 0; i < app.CodeCache.Count; i++)
+            for (int i = 0; i < Program.CurrentApp.CodeCache.Count; i++)
             {
-                if (app.CodeCache[i].Name.Equals(stem, StringComparison.OrdinalIgnoreCase) && app.CodeCache[i].Type.Equals(type))
+                if (Program.CurrentApp.CodeCache[i].Name.Equals(stem, StringComparison.OrdinalIgnoreCase) && Program.CurrentApp.CodeCache[i].Type.Equals(type))
                 {
-                    result = app.CodeCache[i].Procedures[stem.ToLower()];
+                    result = Program.CurrentApp.CodeCache[i].Procedures[stem.ToLower()];
                     break;
                 }
 
-                if (app.CodeCache[i].Procedures.ContainsKey(stem.ToLower()))
+                if (Program.CurrentApp.CodeCache[i].Procedures.ContainsKey(stem.ToLower()))
                 {
-                    result = app.CodeCache[i].Procedures[stem.ToLower()];
+                    result = Program.CurrentApp.CodeCache[i].Procedures[stem.ToLower()];
                     break;
                 }
             }
@@ -431,13 +432,13 @@ namespace JAXBase.Core
         /*
          * Look for a loaded codecache file by compiled file name
          */
-        public static int IsFileLoaded(AppClass app, string cFileName)
+        public static int IsFileLoaded(string cFileName)
         {
             int result = -1;
 
-            for (int i = 0; i < app.CodeCache.Count; i++)
+            for (int i = 0; i < Program.CurrentApp.CodeCache.Count; i++)
             {
-                if (app.CodeCache[i].FQFN.Equals(cFileName, StringComparison.OrdinalIgnoreCase))
+                if (Program.CurrentApp.CodeCache[i].FQFN.Equals(cFileName, StringComparison.OrdinalIgnoreCase))
                 {
                     result = i;
                     break;
@@ -450,7 +451,7 @@ namespace JAXBase.Core
         /* --------------------------------------------------------------------------------------------------*
          * This routine loads a compiled Program, View, or Query file into the codecache
          * --------------------------------------------------------------------------------------------------*/
-        private static int LoadPRGIntoCache(AppClass app, string type, string fName)
+        private static int LoadPRGIntoCache(string type, string fName)
         {
             int result = -1;
 
@@ -472,8 +473,8 @@ namespace JAXBase.Core
                 AppIO.DebugLog("Breaking Header");
                 FileHeader fileHeader = BreakHeader(fName, header);
 
-                app.CodeCache.Add(BreakHeaderMap(app, type, fileHeader, cCode));        // Add the new definition to CodeCache
-                result = app.CodeCache[^1].Procedures[app.CodeCache[^1].Name.ToLower()];
+                Program.CurrentApp.CodeCache.Add(BreakHeaderMap(type, fileHeader, cCode));        // Add the new definition to CodeCache
+                result = Program.CurrentApp.CodeCache[^1].Procedures[Program.CurrentApp.CodeCache[^1].Name.ToLower()];
             }
 
             return result;
@@ -483,7 +484,7 @@ namespace JAXBase.Core
          * Break out the procedures using the ProcedureMap and put
          * each procedure into it's own PRGCache.
          */
-        public static CCodeCache BreakHeaderMap(AppClass app, string type, FileHeader fileHeader, string cCode)
+        public static CCodeCache BreakHeaderMap(string type, FileHeader fileHeader, string cCode)
         {
             // Get the map
             int f = cCode.IndexOf(headerMapEndByte) + 1;
@@ -521,7 +522,7 @@ namespace JAXBase.Core
                 if (string.IsNullOrWhiteSpace(maps[i]) == false)
                 {
                     string b64 = maps[i][..4];
-                    int loc = app.utl.Conv64ToInt(b64);
+                    int loc = Program.CurrentApp.utl.Conv64ToInt(b64);
                     string name = maps[i][4..].Trim().ToLower();
 
                     string proc;
@@ -537,14 +538,14 @@ namespace JAXBase.Core
                     }
 
                     AppIO.DebugLog($"Adding {name.ToUpper()} to cache with length of {loc} bytes");
-                    app.PRGCache.Add(proc);                             // Add the procedure to the PRGCache
+                    Program.CurrentApp.PRGCache.Add(proc);                             // Add the procedure to the PRGCache
 
                     // TODO - We overwrite duplicates, which we'll need to double
                     // check to see if it can happen during compile
                     cc.Procedures.Remove(name);
 
                     // Add to the CoceCache PROCEDURES dictionary
-                    cc.Procedures.Add(name, app.PRGCache.Count - 1);    // Add the record to the Procedures Dictionary
+                    cc.Procedures.Add(name, Program.CurrentApp.PRGCache.Count - 1);    // Add the record to the Procedures Dictionary
                 }
             }
 
@@ -553,7 +554,7 @@ namespace JAXBase.Core
         /* --------------------------------------------------------------------------------------------------*
          * This routine loads an application file into the codecache
          * --------------------------------------------------------------------------------------------------*/
-        private static int LoadAppIntoCache(AppClass app, string fName)
+        private static int LoadAppIntoCache(string fName)
         {
             int result = -1;
             return result;
@@ -563,7 +564,7 @@ namespace JAXBase.Core
         /* --------------------------------------------------------------------------------------------------*
          * Load a DEFINE CLASS name AS ParentClass of ClassLibrary
          * --------------------------------------------------------------------------------------------------*/
-        public static int LoadClassDefIntoCache(AppClass app, string cCode)
+        public static int LoadClassDefIntoCache(string cCode)
         {
             int result = -1;
             string[] DCode = cCode.Replace(((char)10).ToString(), "").Split((char)13);
@@ -669,15 +670,15 @@ namespace JAXBase.Core
          * Look for a named object in the PRGCache using the CodeCache to find it
          * If found, return the index else -1
          */
-        public static int GetCachedCodeIDX(AppClass app, string type, string name)
+        public static int GetCachedCodeIDX(string type, string name)
         {
             int cCode = -1;
 
-            for (int i = app.CodeCache.Count - 1; i >= 0; i--)
+            for (int i = Program.CurrentApp.CodeCache.Count - 1; i >= 0; i--)
             {
-                if (app.CodeCache[i].Type.Equals(type))
+                if (Program.CurrentApp.CodeCache[i].Type.Equals(type))
                 {
-                    if (app.CodeCache[i].Procedures.TryGetValue(name, out int idx))
+                    if (Program.CurrentApp.CodeCache[i].Procedures.TryGetValue(name, out int idx))
                     {
                         cCode = idx;
                         break;
@@ -700,7 +701,7 @@ namespace JAXBase.Core
         /// <param name="prgFileName"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static async Task<bool> LoadForExecute(AppClass app, string pType, string prgParent, string prgFileName)
+        public static async Task<bool> LoadForExecute(string pType, string prgParent, string prgFileName)
         {
             bool result = true;
 
@@ -708,7 +709,7 @@ namespace JAXBase.Core
             // into a variable as an object, so nothing happens here
             if ("PQV".Contains(pType))
             {
-                int ccIDX = await LoadPrgIntoCache(app, pType, prgParent, prgFileName);
+                int ccIDX = await LoadPrgIntoCache(pType, prgParent, prgFileName);
 
                 if (ccIDX < 0)
                     throw new Exception("1|" + prgFileName);
@@ -719,14 +720,14 @@ namespace JAXBase.Core
                 AppLevel alvl = new()
                 {
                     CodeCacheIDX = ccIDX,
-                    CodeCacheName = app.CodeCache[ccIDX].Name,
-                    PRGCacheIdx = app.CodeCache[ccIDX].Procedures[prgStem],
-                    PrgName = app.CodeCache[ccIDX].FQFN,
+                    CodeCacheName = Program.CurrentApp.CodeCache[ccIDX].Name,
+                    PRGCacheIdx = Program.CurrentApp.CodeCache[ccIDX].Procedures[prgStem],
+                    PrgName = Program.CurrentApp.CodeCache[ccIDX].FQFN,
                     Procedure = prgStem
                 };
 
-                app.AppLevels.Add(alvl);
-                Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count();
+                Program.CurrentApp.AppLevels.Add(alvl);
+                Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count;
             }
             else
                 throw new Exception("9990||Illegal call in LoadForExecute: pType=" + pType);   // Bad Call
@@ -749,7 +750,7 @@ namespace JAXBase.Core
         /// <param name="prgParent"></param>
         /// <param name="prgFileName"></param>
         /// <returns></returns>
-        public static async Task<int> LoadPrgIntoCache(AppClass app, string pType, string prgParent, string prgFileName)
+        public static async Task<int> LoadPrgIntoCache(string pType, string prgParent, string prgFileName)
         {
             int ccIDX = -1;
 
@@ -760,9 +761,9 @@ namespace JAXBase.Core
                 {
                     // First check to make sure it's already loaded
                     if (prgParent.Length > 0)
-                        await LoadFileIntoCache(app, pType, prgParent);
+                        await LoadFileIntoCache(pType, prgParent);
                     else
-                        await LoadFileIntoCache(app, pType, prgFileName);
+                        await LoadFileIntoCache(pType, prgFileName);
 
                     if (string.IsNullOrWhiteSpace(prgFileName) == false)
                     {
@@ -775,16 +776,16 @@ namespace JAXBase.Core
                         // -----------------------------------------------------------------
                         // Look for it in the App Levels
                         // -----------------------------------------------------------------
-                        for (int i = app.AppLevels.Count - 1; i > 0; i--)
+                        for (int i = Program.CurrentApp.AppLevels.Count - 1; i > 0; i--)
                         {
-                            var alv = app.AppLevels[i];
+                            var alv = Program.CurrentApp.AppLevels[i];
                             if (pType.Equals(alv.PrgType, StringComparison.OrdinalIgnoreCase) &&
                                 alv.CodeCacheName.Equals(prgParent, StringComparison.OrdinalIgnoreCase))
                             {
-                                if (app.CodeCache[app.AppLevels[i].CodeCacheIDX].Procedures.ContainsKey(prgStem))
+                                if (Program.CurrentApp.CodeCache[Program.CurrentApp.AppLevels[i].CodeCacheIDX].Procedures.ContainsKey(prgStem))
                                 {
                                     // Found it!
-                                    ccIDX = app.AppLevels[i].CodeCacheIDX;
+                                    ccIDX = Program.CurrentApp.AppLevels[i].CodeCacheIDX;
                                     break;
                                 }
                             }
@@ -795,14 +796,14 @@ namespace JAXBase.Core
                         // -----------------------------------------------------------------
                         if (ccIDX < 0)
                         {
-                            for (int i = app.CodeCache.Count - 1; i >= 0; i--)
+                            for (int i = Program.CurrentApp.CodeCache.Count - 1; i >= 0; i--)
                             {
-                                var ccd = app.CodeCache[i];
+                                var ccd = Program.CurrentApp.CodeCache[i];
                                 if (ccd.Procedures.ContainsKey(prgStem)
                                     && ccd.Type.Equals(pType, StringComparison.OrdinalIgnoreCase))
                                 {
                                     // Found it!
-                                    ccIDX = app.AppLevels[i].CodeCacheIDX;
+                                    ccIDX = Program.CurrentApp.AppLevels[i].CodeCacheIDX;
                                     break;
                                 }
                             }
@@ -839,7 +840,7 @@ namespace JAXBase.Core
         /*-------------------------------------------------------------------------------------------------*
          * Look for this class definition to load into the cache
          *-------------------------------------------------------------------------------------------------*/
-        public static async Task<bool> LoadClassIntoCache(AppClass app, string pType, string prgParent, string prgFileName)
+        public static async Task<bool> LoadClassIntoCache(string pType, string prgParent, string prgFileName)
         {
             bool result;
 
@@ -847,9 +848,9 @@ namespace JAXBase.Core
             {
                 // First check to make sure it's already loaded
                 if (prgParent.Length > 0)
-                    await LoadFileIntoCache(app, pType, prgParent);
+                    await LoadFileIntoCache(pType, prgParent);
                 else
-                    await LoadFileIntoCache(app, pType, prgFileName);
+                    await LoadFileIntoCache(pType, prgFileName);
 
                 string prgStem = JAXLib.JustStem(prgFileName);
                 int idx = -1;
@@ -857,9 +858,9 @@ namespace JAXBase.Core
                 // -----------------------------------------------------------------
                 // Look for it in the Class Defs
                 // -----------------------------------------------------------------
-                for (int i = app.ClassDefinitions.Count - 1; i >= 0; i--)
+                for (int i = Program.CurrentApp.ClassDefinitions.Count - 1; i >= 0; i--)
                 {
-                    if (app.ClassDefinitions[i].Name.Equals(prgStem, StringComparison.OrdinalIgnoreCase))
+                    if (Program.CurrentApp.ClassDefinitions[i].Name.Equals(prgStem, StringComparison.OrdinalIgnoreCase))
                     {
                         idx = i;
                         break;
@@ -892,7 +893,7 @@ namespace JAXBase.Core
         /* ------------------------------------------------------------------*
          *  Compile and save a source file which is expected to exist
          * ------------------------------------------------------------------*/
-        public static string CompileModule(AppClass app, string fName, string type)
+        public static string CompileModule(string fName, string type)
         {
             string fResult;
             string fStem = JAXLib.JustStem(fName);
@@ -903,8 +904,8 @@ namespace JAXBase.Core
                 // Compile it
                 // ------------------------------------------------------------------
                 string code = JAXLib.FileToStr(fName).Trim();
-                string MD5 = app.utl.GetFileCheckSum_MD5(code);
-                string compiledCode = app.JaxCompiler.CompileBlock(code, false, out int errCount);
+                string MD5 = Program.CurrentApp.utl.GetFileCheckSum_MD5(code);
+                string compiledCode = Program.CurrentApp.JaxCompiler.CompileBlock(code, false, out int errCount);
 
                 if (errCount > 0) throw new Exception("9997|" + fName);
 
@@ -915,7 +916,7 @@ namespace JAXBase.Core
                 string header = CreateHeader(fName, MD5, type, fStem);
 
                 AppIO.DebugLog("Creating Procedure Map");
-                string pmap = CreateProcedureMap(app, compiledCode, fStem);
+                string pmap = CreateProcedureMap(compiledCode, fStem);
 
                 // ------------------------------------------------------------------
                 // Save the file
@@ -955,7 +956,7 @@ namespace JAXBase.Core
         /// <param name="fName"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static async Task<string> ConvertFormTable(AppClass app, string fName)
+        public static async Task<string> ConvertFormTable(string fName)
         {
             ExtensionTypes Extension = AppHelper.GetCodeFileExtensions("F");
 
@@ -971,7 +972,7 @@ namespace JAXBase.Core
 
             // If it's not here, look for it in the path list
             if (File.Exists(fName) == false)
-                fName = FindPathForFile(app, fName) + JAXLib.JustFName(fName);
+                fName = FindPathForFile(fName) + JAXLib.JustFName(fName);
 
             // Is it available?
             if (File.Exists(fName))
@@ -979,16 +980,16 @@ namespace JAXBase.Core
                 // Create a table instance
 
                 // Open up the scx
-                if (await app.CurrentDS.OpenTable(fName, "thisscx") == 0)
+                if (await Program.CurrentApp.CurrentDS.OpenTable(fName, "thisscx") == 0)
                 {
                     // find record where platform="COMMENT" and UniqueID="RESERVED" and load
                     // Properties for font information
-                    JAXDirectDBF jdbf = app.CurrentDS.CurrentWA;
+                    JAXDirectDBF jdbf = Program.CurrentApp.CurrentDS.CurrentWA;
 
                     // 2025-07-07 - Added ability to autoload memo info when reading record(s)
                     DataTable dt = await jdbf.DBFSelect("properties", "top 1", "platform='COMMENT' and uniqueid='RESERVED'", true);
                     if (dt.Rows.Count == 0) throw new Exception("8000|Missing 'RESERVED' record");
-                    string FormFontInfo = GetFieldToken(app, dt.Rows[0], "properties").AsString().Replace(((char)10).ToString(), "");
+                    string FormFontInfo = GetFieldToken(dt.Rows[0], "properties").AsString().Replace(((char)10).ToString(), "");
                     string[] FormFonts = FormFontInfo.Split((char)13);
                     FormFile = JAXLib.JustFullPath(fName) + JAXLib.JustStem(fName) + "." + Extension.SourceCode; // Intermediate prg for form
                     FilerLib.DeleteFile(FormFile);
@@ -1020,8 +1021,8 @@ namespace JAXBase.Core
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
-                        string parent = GetFieldToken(app, dt.Rows[i], "parent").AsString().Trim();
-                        string objname = GetFieldToken(app, dt.Rows[i], "objname").AsString().Trim();
+                        string parent = GetFieldToken(dt.Rows[i], "parent").AsString().Trim();
+                        string objname = GetFieldToken(dt.Rows[i], "objname").AsString().Trim();
 
                         if (ParentChild.ContainsKey(parent.ToLower()) == false)
                             ParentChild.Add(parent.ToLower(), objname);
@@ -1031,7 +1032,7 @@ namespace JAXBase.Core
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
-                        ProcessSCXClassEntry(app, dt.Rows[i], ParentChild, FormFile, FormFonts);
+                        ProcessSCXClassEntry(dt.Rows[i], ParentChild, FormFile, FormFonts);
                     }
                 }
                 else
@@ -1051,7 +1052,7 @@ namespace JAXBase.Core
          * is not already loaded into the row. Memo fields return just the 
          * value part of the JAXMemo object.
          * ------------------------------------------------------------------*/
-        public static JAXObjects.Token GetFieldToken(AppClass app, DataRow row, string fieldname)
+        public static JAXObjects.Token GetFieldToken(DataRow row, string fieldname)
         {
             JAXObjects.Token tk = new();
 
@@ -1078,15 +1079,14 @@ namespace JAXBase.Core
             return tk;
         }
 
-        public static void ProcessSCXClassEntry(AppClass app, DataRow row,
-            Dictionary<string, string> ParentChild, string formFile, string[] formFontInfo)
+        public static void ProcessSCXClassEntry(DataRow row, Dictionary<string, string> ParentChild, string formFile, string[] formFontInfo)
         {
             string crlf = ((char)13).ToString() + ((char)10).ToString();
             string cr = ((char)13).ToString();
 
-            string className = GetFieldToken(app, row, "class").AsString().Trim();
-            string objName = GetFieldToken(app, row, "objName").AsString().Trim();
-            string baseName = GetFieldToken(app, row, "baseclass").AsString().Trim();
+            string className = GetFieldToken(row, "class").AsString().Trim();
+            string objName = GetFieldToken(row, "objName").AsString().Trim();
+            string baseName = GetFieldToken(row, "baseclass").AsString().Trim();
 
             if (className.Equals("dataenvironment", StringComparison.OrdinalIgnoreCase))
             {
@@ -1125,7 +1125,7 @@ namespace JAXBase.Core
                 JAXLib.StrToFile("* -------------------------------------------------" + crlf, formFile, 1);
 
                 // Reserved3 holds user defined property definitions
-                string[] r3Props = GetFieldToken(app, row, "reserved3").AsString().Replace(((char)10).ToString(), "").Split((char)13);
+                string[] r3Props = GetFieldToken(row, "reserved3").AsString().Replace(((char)10).ToString(), "").Split((char)13);
                 for (int i = 0; i < r3Props.Length; i++)
                 {
                     string r3p = r3Props[i].Trim();
@@ -1136,7 +1136,7 @@ namespace JAXBase.Core
                 }
 
                 // Load properties
-                string[] props = (GetFieldToken(app, row, "properties").AsString()).Replace(((char)10).ToString(), "").Split((char)13);
+                string[] props = (GetFieldToken(row, "properties").AsString()).Replace(((char)10).ToString(), "").Split((char)13);
                 for (int i = 0; i < props.Length; i++)
                 {
                     JAXLib.StrToFile(props[i] + crlf, formFile, 1);
@@ -1175,7 +1175,7 @@ namespace JAXBase.Core
                 }
 
                 // Load methods
-                string mCode = GetFieldToken(app, row, "methods").AsString();
+                string mCode = GetFieldToken(row, "methods").AsString();
 
                 if (mCode.Length > 0)
                 {
@@ -1290,7 +1290,7 @@ namespace JAXBase.Core
         /// </summary>
         /// <param name="app"></param>
         /// <param name="val"></param>
-        public static void PushParameterValue(AppClass app, object? val)
+        public static void PushParameterValue(object? val)
         {
             ParameterClass p = new() { Type = "T" };
 
@@ -1299,7 +1299,7 @@ namespace JAXBase.Core
             else
                 p.token.Element.Value = val;
 
-            app.ParameterClassList.Add(p);
+            Program.CurrentApp.ParameterClassList.Add(p);
         }
 
 
@@ -1387,7 +1387,7 @@ namespace JAXBase.Core
         /// <returns>String of statement delimited procedures in format: 4 digit base 64 location 
         /// followed by name of procedure</returns>
         /// <exception cref="Exception"></exception>
-        public static string CreateProcedureMap(AppClass app, string compiledCode, string fStem)
+        public static string CreateProcedureMap(string compiledCode, string fStem)
         {
             // ------------------------------------------------------------------
             // Create the procedures map which will create a list of all
@@ -1407,8 +1407,8 @@ namespace JAXBase.Core
             //byte[] code = Encoding.UTF8.GetBytes(compiledCode);
 
             // Procedure command byte
-            int ibyte = Array.IndexOf(app.lists.JAXCommands, "PROCEDURE");
-            app.utl.Conv64(ibyte, 2, out string p64);
+            int ibyte = Array.IndexOf(JAXLanguageLists.JAXCommands, "PROCEDURE");
+            Program.CurrentApp.utl.Conv64(ibyte, 2, out string p64);
             p64 = AppClass.cmdByte + p64;
 
             string procName = fStem;
@@ -1416,7 +1416,7 @@ namespace JAXBase.Core
             // Look for each instance in the compiled code
             while (b < compiledCode.Length)
             {
-                b = app.utl.FindByteSequence(compiledCode, p64, b);
+                b = Program.CurrentApp.utl.FindByteSequence(compiledCode, p64, b);
 
                 // Is this the start of a new procedure?
                 if (b >= 0)
@@ -1445,7 +1445,7 @@ namespace JAXBase.Core
 
                     // Get the length of the code for this procedure
                     int plen = b - procStart;
-                    app.utl.Conv64(plen, 4, out string bp64);
+                    Program.CurrentApp.utl.Conv64(plen, 4, out string bp64);
 
                     // Add it to the map
                     AppIO.DebugLog($"Adding procedure {procName} - length of {plen} bytes");
@@ -1482,7 +1482,7 @@ namespace JAXBase.Core
             {
                 // Get the length of the code
                 b = compiledCode.Length - procStart;
-                app.utl.Conv64(b, 4, out string bp64);
+                Program.CurrentApp.utl.Conv64(b, 4, out string bp64);
 
                 // Add it to the map
                 AppIO.DebugLog($"Adding procedure {procName} - length of {b} bytes");
@@ -1504,7 +1504,7 @@ namespace JAXBase.Core
         /// <param name="fileName"></param>
         /// <param name="type"></param>
         /// <returns>FQFN of compiled program, empty string if not found or an error was returned</returns>
-        public static string ReturnCompiledFileName(AppClass app, string fileName, string type)
+        public static string ReturnCompiledFileName(string fileName, string type)
         {
             string result = string.Empty;
             string jxpFileName = string.Empty;
@@ -1516,7 +1516,7 @@ namespace JAXBase.Core
                 // Now compare source to compiled for date/time
                 if (File.Exists(fileName))
                 {
-                    if (app.lists.RunTimeExtensions.Contains(fileExt))
+                    if (JAXLanguageLists.RunTimeExtensions.Contains(fileExt))
                     {
                         // It's a valid runtime extension so load and check
                         string cCode = JAXLib.FileToStr(fileName);
@@ -1602,7 +1602,7 @@ namespace JAXBase.Core
         /// <returns>Name string if valid, empty string indicates name exists and 
         /// can't be overwritten</returns>
         /// <exception cref="Exception"></exception>
-        public static async Task<string> CheckObjectName(AppClass app, string objName, string shortName)
+        public static async Task<string> CheckObjectName(string objName, string shortName)
         {
             objName = objName.Trim();
             shortName = shortName.Trim();
@@ -1742,7 +1742,7 @@ namespace JAXBase.Core
         /// <param name="baseClass"></param>
         /// <param name="className"></param>
         /// <returns>Objects position in SysObjects list</returns>
-        public static string RegisterObject(AppClass app, string name, string className)
+        public static string RegisterObject(string name, string className)
         {
             string result = string.Empty;
             int nameid = 0;
@@ -1755,12 +1755,12 @@ namespace JAXBase.Core
             name = name.ToLower().Trim();
 
             // Look for an open slot
-            while (app.SysObjects.ContainsKey(name + (nameid == 0 ? string.Empty : nameid.ToString())))
+            while (Program.CurrentApp.SysObjects.ContainsKey(name + (nameid == 0 ? string.Empty : nameid.ToString())))
                 nameid++;
 
             // Save it & return it
             result = name + (nameid == 0 ? string.Empty : nameid.ToString());
-            app.SysObjects.Add(result, className);
+            Program.CurrentApp.SysObjects.Add(result, className);
             return result;
         }
 
@@ -1771,18 +1771,18 @@ namespace JAXBase.Core
         /// <param name="app"></param>
         /// <param name="fileName"></param>
         /// <returns>Path where file was found</returns>
-        public static string FindPathForFile(AppClass app, string fileName)
+        public static string FindPathForFile(string fileName)
         {
             string result = string.Empty;
             string fName = JAXLib.JustFName(fileName);
 
-            string[] pathList = (app.CurrentDS.JaxSettings.Default + ";" + app.CurrentDS.JaxSettings.Path).Split(';');
+            string[] pathList = (Program.CurrentApp.CurrentDS.JaxSettings.Default + ";" + Program.CurrentApp.CurrentDS.JaxSettings.Path).Split(';');
             for (int i = 0; i < pathList.Length; i++)
             {
                 if (pathList[i].Length > 0)
                 {
                     string path = JAXLib.Addbs(pathList[i]);
-                    string fName2 = FixFileCase(path, fName, app.CurrentDS.JaxSettings.Naming, app.CurrentDS.JaxSettings.NamingAll);
+                    string fName2 = FixFileCase(path, fName, Program.CurrentApp.CurrentDS.JaxSettings.Naming, Program.CurrentApp.CurrentDS.JaxSettings.NamingAll);
 
                     if (File.Exists(fName2))
                     {
@@ -1801,13 +1801,13 @@ namespace JAXBase.Core
         /// <param name="app"></param>
         /// <param name="userClassName"></param>
         /// <returns>JAXObjectWrapper instance</returns>
-        public static JAXObjectWrapper? FindUserClass(AppClass app, string userClassName)
+        public static JAXObjectWrapper? FindUserClass(string userClassName)
         {
             JAXObjectWrapper? jow = null;
 
-            for (int i = app.AppLevels.Count - 1; i >= 0; i--)
+            for (int i = Program.CurrentApp.AppLevels.Count - 1; i >= 0; i--)
             {
-                if (app.AppLevels[i].UserObjects.TryGetValue(userClassName, out jow))
+                if (Program.CurrentApp.AppLevels[i].UserObjects.TryGetValue(userClassName, out jow))
                     break;
             }
 
@@ -1889,9 +1889,9 @@ namespace JAXBase.Core
          * All validation is done after element is pulled from list
          * 
          */
-        public static void ClearParameters(AppClass app)
+        public static void ClearParameters()
         {
-            app.ParameterClassList.Clear();
+            Program.CurrentApp.ParameterClassList.Clear();
         }
 
 
@@ -1900,7 +1900,7 @@ namespace JAXBase.Core
         /// </summary>
         /// <param name="app"></param>
         /// <param name="RPNString"></param>
-        public static async Task LoadDOParameters(AppClass app, string RPNString)
+        public static async Task LoadDOParameters(string RPNString)
         {
             // A DO/WITH always sends arrays and objects by reference and
             // everything else is sent by value.
@@ -1914,13 +1914,13 @@ namespace JAXBase.Core
                 if (p[0] == AppClass.literalStart)
                 {
                     AppIO.DebugLog($"DO literal adding {p} to Parameter stack");
-                    await LoadVarByRefToParameters(app, p);
+                    await LoadVarByRefToParameters(p);
                 }
                 else
                 {
                     // It's an RPN expression
                     AppIO.DebugLog($"DO expression adding {p} to Parameter stack");
-                    await LoadRPNStringToParameters(app, p);
+                    await LoadRPNStringToParameters(p);
                 }
             }
         }
@@ -1930,11 +1930,11 @@ namespace JAXBase.Core
         /// </summary>
         /// <param name="app"></param>
         /// <param name="rpnExpr"></param>
-        public static async Task LoadRPNStringToParameters(AppClass app, string rpnExpr)
+        public static async Task LoadRPNStringToParameters(string rpnExpr)
         {
             List<string> rpnList = [];
             rpnList.Add(rpnExpr);
-            await LoadRPNListToParameters(app, rpnList, false);
+            await LoadRPNListToParameters(rpnList, false);
         }
 
         /// <summary>
@@ -1942,9 +1942,9 @@ namespace JAXBase.Core
         /// </summary>
         /// <param name="app"></param>
         /// <param name="tk"></param>
-        public static void LoadTokenValToParameters(AppClass app, JAXObjects.Token tk)
+        public static void LoadTokenValToParameters(JAXObjects.Token tk)
         {
-            LoadNamedTokenToParameters(app, tk, string.Empty);
+            LoadNamedTokenToParameters(tk, string.Empty);
         }
 
         /// <summary>
@@ -1953,7 +1953,7 @@ namespace JAXBase.Core
         /// <param name="app"></param>
         /// <param name="tk"></param>
         /// <param name="ParamName"></param>
-        public static void LoadNamedTokenToParameters(AppClass app, JAXObjects.Token tk, string ParamName)
+        public static void LoadNamedTokenToParameters(JAXObjects.Token tk, string ParamName)
         {
             ParameterClass p = new() { PName = ParamName };
             p.token.CopyFrom(tk);
@@ -1963,16 +1963,16 @@ namespace JAXBase.Core
             else
                 AppIO.DebugLog($"adding parameter {ParamName} with value {tk.AsString()} to Parameter stack");
 
-            app.ParameterClassList.Add(p);
+            Program.CurrentApp.ParameterClassList.Add(p);
         }
 
 
-        public static async Task LoadRPNToParameters(AppClass app, string rpnElement)
+        public static async Task LoadRPNToParameters(string rpnElement)
         {
-            await LoadRPNToParameters(app, rpnElement, null);
+            await LoadRPNToParameters(rpnElement, null);
         }
 
-        public static async Task LoadRPNToParameters(AppClass app, string rpnElement, JAXObjectWrapper? jow)
+        public static async Task LoadRPNToParameters(string rpnElement, JAXObjectWrapper? jow)
         {
             ParameterClass parm = new();
             JAXObjects.Token tk = new();
@@ -1981,7 +1981,7 @@ namespace JAXBase.Core
             if (rpnElement[0] == AppClass.expByte)
             {
                 // RPN Expression
-                tk = await app.SolveFromRPNString(rpnElement);
+                tk = await Program.CurrentApp.SolveFromRPNString(rpnElement);
                 parm.token.CopyFrom(tk);
             }
             else if (rpnElement[0] == AppClass.literalStart)
@@ -1994,7 +1994,7 @@ namespace JAXBase.Core
             else if (rpnElement[0] == '=')
             {
                 // It's a Math String that needs to be solved
-                GenericClass gc = await app.JaxMath.SolveMath(rpnElement);
+                GenericClass gc = await Program.CurrentApp.JaxMath.SolveMath(rpnElement);
                 parm.token.CopyFrom(gc.Value);
             }
             else
@@ -2005,7 +2005,7 @@ namespace JAXBase.Core
             }
 
             AppIO.DebugLog($"adding type {parm.Type} from rpnElement {rpnElement} for value {tk.AsString()} to Parameter stack");
-            app.ParameterClassList.Add(parm);
+            Program.CurrentApp.ParameterClassList.Add(parm);
 
         }
 
@@ -2015,7 +2015,7 @@ namespace JAXBase.Core
         /// </summary>
         /// <param name="app"></param>
         /// <param name="rpnList"></param>
-        public static async Task LoadRPNListToParameters(AppClass app, List<string> rpnList, bool byRef)
+        public static async Task LoadRPNListToParameters(List<string> rpnList, bool byRef)
         {
             try
             {
@@ -2049,7 +2049,7 @@ namespace JAXBase.Core
                                             if (tk.TType.Equals("A") || tk.Element.Type.Equals("O"))
                                             {
                                                 // Loading ByRef
-                                                await LoadVarByRefToParameters(app, v.varName);
+                                                await LoadVarByRefToParameters(v.varName);
                                                 continue;
                                             }
                                         }
@@ -2059,7 +2059,7 @@ namespace JAXBase.Core
                         }
 
                         // Dropped through to here?  Just send by value.
-                        await LoadRPNToParameters(app, rpnElement);
+                        await LoadRPNToParameters(rpnElement);
                     }
                 }
             }
@@ -2074,7 +2074,7 @@ namespace JAXBase.Core
         /// </summary>
         /// <param name="app"></param>
         /// <param name="rpnElement"></param>
-        public static async Task LoadVarByRefToParameters(AppClass app, string rpnElement)
+        public static async Task LoadVarByRefToParameters(string rpnElement)
         {
             try
             {
@@ -2099,13 +2099,13 @@ namespace JAXBase.Core
                     v = oref[0];
                 }
                 List<string> varList = AppVars.BreakVar(v);
-                level = AppHelper.GetVar(app, varList[0], out string varType);
+                level = AppHelper.GetVar(varList[0], out string varType);
 
                 JAXObjects.Token vTest = new();
                 if (varType.Equals("L"))
-                    vTest = app.AppLevels[level].LocalVars.GetToken(v);
+                    vTest = Program.CurrentApp.AppLevels[level].LocalVars.GetToken(v);
                 else
-                    vTest = app.AppLevels[level].PrivateVars.GetToken(v);
+                    vTest = Program.CurrentApp.AppLevels[level].PrivateVars.GetToken(v);
 
                 if (vTest.TType.Equals('U'))
                     throw new Exception("12|" + v.ToUpper());
@@ -2117,7 +2117,7 @@ namespace JAXBase.Core
                 if ("AO".Contains(refType) == false)
                 {
                     // Send by value
-                    await LoadRPNStringToParameters(app, rpn);
+                    await LoadRPNStringToParameters(rpn);
                 }
                 else
                 {
@@ -2137,7 +2137,7 @@ namespace JAXBase.Core
                     }
 
                     AppIO.DebugLog($"adding {rpn} to Parameter stack by ref");
-                    app.ParameterClassList.Add(parm);
+                    Program.CurrentApp.ParameterClassList.Add(parm);
                 }
             }
             catch (Exception ex)
@@ -2379,7 +2379,7 @@ namespace JAXBase.Core
          * Out      P = Private
          *          L = Local
          *-------------------------------------------------------------*/
-        public static int GetVar(AppClass app, string varName, out string varType)
+        public static int GetVar(string varName, out string varType)
         {
             int level = -1;
             JAXObjects.Token tk = new();
@@ -2389,14 +2389,14 @@ namespace JAXBase.Core
             {
                 // First check the current AppLevel becuase a local var
                 // will have precidence over a public var of same name
-                tk = app.AppLevels[Program.CurrentApp.CurrentAppLevel].LocalVars.GetToken(varName);
+                tk = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LocalVars.GetToken(varName);
 
                 if (tk.TType.Equals("U"))
                 {
                     // Look for private var of this name
-                    for (int i = app.AppLevels.Count - 1; i >= 0; i--)
+                    for (int i = Program.CurrentApp.AppLevels.Count - 1; i >= 0; i--)
                     {
-                        tk = app.AppLevels[i].PrivateVars.GetToken(varName);
+                        tk = Program.CurrentApp.AppLevels[i].PrivateVars.GetToken(varName);
                         level = 0;
 
                         if (tk.TType.Equals("U") == false)
@@ -2409,7 +2409,7 @@ namespace JAXBase.Core
                 }
                 else
                 {
-                    level = app.AppLevels.Count - 1;
+                    level = Program.CurrentApp.AppLevels.Count - 1;
                     varType = "L";
                 }
             }
@@ -2424,7 +2424,7 @@ namespace JAXBase.Core
         }
 
 
-        public static async Task<JAXObjects.Token> GetParameterClassToken(AppClass app, ParameterClass pc)
+        public static async Task<JAXObjects.Token> GetParameterClassToken(ParameterClass pc)
         {
             string rpn = pc.RefVal.ToLower();
             int level = pc.Level;
@@ -2434,20 +2434,20 @@ namespace JAXBase.Core
             switch (type)
             {
                 case "P":
-                    tk = app.AppLevels[level].PrivateVars.jaxObject[rpn];
+                    tk = Program.CurrentApp.AppLevels[level].PrivateVars.jaxObject[rpn];
                     break;
 
                 case "L":
-                    tk = app.AppLevels[level].PrivateVars.jaxObject[rpn];
+                    tk = Program.CurrentApp.AppLevels[level].PrivateVars.jaxObject[rpn];
                     break;
 
                 case "M":
-                    GenericClass gc = await app.JaxMath.SolveMath(rpn);
+                    GenericClass gc = await Program.CurrentApp.JaxMath.SolveMath(rpn);
                     tk.CopyFrom(gc.Value);
                     break;
 
                 case "R":
-                    tk = await app.SolveFromRPNString(rpn);
+                    tk = await Program.CurrentApp.SolveFromRPNString(rpn);
                     break;
 
                 case "V":

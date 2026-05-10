@@ -867,7 +867,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         public async Task<List<string>> DBCGetTables()
         {
-            JAXMath jaxMath = new(App);
+            JAXMath jaxMath = new();
             List<string> dbcFiles = [];
 
             try
@@ -2117,7 +2117,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         public async Task<bool> DBFWriteRecord(DataRow row, bool appendRec)
         {
-            JAXMath jaxMath = new(App);
+            JAXMath jaxMath = new();
             //StringBuilder Record;
             byte[] Data = new byte[DbfInfo.RecordLen];
             long recPos = DbfInfo.HeaderLen + (DbfInfo.RecNo - 1) * DbfInfo.RecordLen;
@@ -2446,7 +2446,7 @@ namespace JAXBase.Data
             DataTable dt = new();
             int goRec = 0;
             bool goRecOK = true;
-            JAXMath jaxMath = new(App);
+            JAXMath jaxMath = new();
             IDXCommand idxCmd = new();
 
             // Look for a record position
@@ -2533,7 +2533,7 @@ namespace JAXBase.Data
             // Update the indexes
             if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.IDX.Count > 0)
             {
-                JAXMath jaxMath = new(App);
+                JAXMath jaxMath = new();
 
                 // Look at every index and update it's position
                 for (int i = 0; i < DbfInfo.IDX.Count; i++)
@@ -3023,7 +3023,7 @@ namespace JAXBase.Data
         public async Task<DataTable> DBFSelect(string fields, string scope, string whereFor) { return await DBFSelect(fields, scope, whereFor, false); }
         public async Task<DataTable> DBFSelect(string fields, string scope, string whereFor, bool loadMemoFields)
         {
-            JAXMath jaxMath = new(App);
+            JAXMath jaxMath = new();
             JAXTables.JAXMemo mInfo;
             int CurrentRow = DbfInfo.CurrentRecNo;
             string tablePart = DbfInfo.Alias + ".";
@@ -4075,7 +4075,7 @@ namespace JAXBase.Data
         public async Task<bool> IDXCreate(string FullFileName, string keyExpr, bool isdesc, bool isunique, string forExpr)
         {
             bool llSuccess = true;
-            JAXMath jaxMath = new(App);
+            JAXMath jaxMath = new();
             GenericClass gc;
 
             // Get the stem name of the index file name
@@ -4714,7 +4714,7 @@ namespace JAXBase.Data
             bool success = true;
 
             bool OK2Add = true;
-            JAXMath jaxMath = new(App);
+            JAXMath jaxMath = new();
             int recNo = DbfInfo.RecNo;
             int keyLen = DbfInfo.IDX[idx].KeyLen;
             byte[] keyBytes;

@@ -1,30 +1,32 @@
-﻿using JAXBase.Core;
+﻿/*
+ * This helper class primarily deals with loading files for execution
+ * into the APP and handling AppLevel creation
+ */
+using JAXBase.Core;
+using JAXBase.Language;
 using JAXBase.XBase;
 
 namespace JAXBase.Executer
 {
     public class JAXBase_Executer
     {
-        public AppClass App;
         readonly private Dictionary<string, string> Code = [];
         //JAXObjectWrapper? CallingObject = null;
         bool ContainsSource = false;
 
         public Dictionary<string, int> CmdNum = [];
 
-        public JAXBase_Executer(AppClass app)
+        public JAXBase_Executer()
         {
-            App = app;
-
             // Load up the code dictionary
-            for (int i = 0; i < App.lists.JAXCompilerDictionary.Length; i++)
+            for (int i = 0; i < JAXLanguageLists.JAXCompilerDictionary.Length; i++)
             {
-                string[] jcd = App.lists.JAXCompilerDictionary[i].Split('|');
+                string[] jcd = JAXLanguageLists.JAXCompilerDictionary[i].Split('|');
                 Code.Add(jcd[1], string.Empty);
             }
 
-            for (int i = 0; i < App.lists.JAXCommands.Length; i++)
-                CmdNum.Add(app.lists.JAXCommands[i].ToLower(), i);
+            for (int i = 0; i < JAXLanguageLists.JAXCommands.Length; i++)
+                CmdNum.Add(JAXLanguageLists.JAXCommands[i].ToLower(), i);
         }
 
         /*
@@ -33,20 +35,20 @@ namespace JAXBase.Executer
         public async Task<bool> LoadAndExecuteProgram(string type, string prgToLoad, string prgToRun, JAXObjectWrapper? parent, bool obeyReadEvents)
         {
             AppIO.DebugLog($"LoadAndExecuteProgram: type={type}, prgToLoad={prgToLoad}, prgToRun={prgToRun}");
-            App.RuntimeFlag = true;
+            Program.CurrentApp.RuntimeFlag = true;
             bool result = true;
 
             // If prgToLoad is empty then fill it with prgToRun value
             prgToLoad = string.IsNullOrWhiteSpace(prgToLoad) ? prgToRun : prgToLoad;
 
             // Is this program already loaded into the cache?
-            int i = await AppHelper.LoadFileIntoCache(App, type, prgToLoad);
+            int i = await AppHelper.LoadFileIntoCache(type, prgToLoad);
 
             // Look in APP levels to see if it's here
             // and get the index if it is.  This allows
             // us to make sure that the last loaded name
             // is the one that is called first
-            //for (int jj = App.AppLevels.Count - 1; jj >= 0; jj--)
+            //for (int jj =Program.CurrentApp.AppLevels.Count - 1; jj >= 0; jj--)
             //{
             //    // TODO - needs thought
             //}
@@ -54,11 +56,11 @@ namespace JAXBase.Executer
             if (i < 0)
             {
                 // It's not a program, so is it a procedure that's already loaded?
-                for (int j = 0; j < App.CodeCache.Count; j++)
+                for (int j = 0; j < Program.CurrentApp.CodeCache.Count; j++)
                 {
-                    if (App.CodeCache[i].Procedures.ContainsKey(prgToRun.ToLower()))
+                    if (Program.CurrentApp.CodeCache[i].Procedures.ContainsKey(prgToRun.ToLower()))
                     {
-                        i = App.CodeCache[i].Procedures[prgToRun.ToLower()];
+                        i = Program.CurrentApp.CodeCache[i].Procedures[prgToRun.ToLower()];
                         break;
                     }
                 }
@@ -66,7 +68,7 @@ namespace JAXBase.Executer
 
             if (i >= 0)
             {
-                string cCode = App.PRGCache[i];
+                string cCode = Program.CurrentApp.PRGCache[i];
 
                 // TODO - check to make sure we have what we need
                 // Create a new app level and execute the code
@@ -78,7 +80,7 @@ namespace JAXBase.Executer
                     CodeCacheName = prgToRun.ToLower(),
                     ThisObject = parent,
                     ThisObjectMethod = parent is null ? string.Empty : prgToRun,
-                    Instance = App.SystemCounter()
+                    Instance = Program.CurrentApp.SystemCounter()
                 };
 
                 Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count;
@@ -97,7 +99,7 @@ namespace JAXBase.Executer
                 }
                 else
                 {
-                    AppIO.DebugLog($"Program {prgToRun} found in cache at index {i} running under instance {appLevel.Instance}/{App.AppLevels.Count - 1}");
+                    AppIO.DebugLog($"Program {prgToRun} found in cache at index {i} running under instance {appLevel.Instance}/{Program.CurrentApp.AppLevels.Count - 1}");
                     // Not an object so set to null
                     AppVars.MakeLocalVar("this", 1, 1, false);
                     AppVars.MakeLocalVar("thisform", 1, 1, false);
@@ -120,7 +122,7 @@ namespace JAXBase.Executer
 
         /*
          * 
-         * Create a new App.AppLevels and call ExecuteBlock
+         * Create a newProgram.CurrentApp.AppLevels and call ExecuteBlock
          * 
          * 
          */
@@ -159,11 +161,11 @@ namespace JAXBase.Executer
                 ThisObject = thisObject,
                 ThisObjectMethod = methodName,
                 PrgCode = ccBlock,
-                Instance = App.SystemCounter()
+                Instance = Program.CurrentApp.SystemCounter()
             };
 
             Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count();
-            App.AppLevels.Add(appLevel);
+            Program.CurrentApp.AppLevels.Add(appLevel);
 
 
             _ = ExecuteBlock(ccBlock);
@@ -171,14 +173,14 @@ namespace JAXBase.Executer
 
         /*
          * Execute the compiled code block 
-         * Create a new App.AppLevels
+         * Create a newProgram.CurrentApp.AppLevels
          * 
          */
         public async Task ExecuteBlock(string compCodeBlock)
         {
             string ccBlock = compCodeBlock;
 
-            App.ReturnValue.Element.Value = true;   // Set the default return value
+            Program.CurrentApp.ReturnValue.Element.Value = true;   // Set the default return value
             AppErrorHandling.ClearErrors();
             JAXObjectWrapper? thisObject = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ThisObject;
 
@@ -194,31 +196,35 @@ namespace JAXBase.Executer
 
             if (ccBlock.Length > 0)
             {
-                ContainsSource = App.utl.FindByteSequence(ccBlock, AppClass.cmdByte.ToString() + App.MiscInfo["sourcecode"], 0) >= 0;
+                ContainsSource = Program.CurrentApp.utl.FindByteSequence(ccBlock, AppClass.cmdByte.ToString() + Program.CurrentApp.MiscInfo["sourcecode"], 0) >= 0;
 
                 string PrgCode = ccBlock;
-                App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = 0;
+                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = 0;
 
                 while (true)
                 {
-                    int thisCmd = App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
+                    int thisCmd = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos;
                     int nextCmd = PrgCode.IndexOf(AppClass.cmdByte, thisCmd + 1);
 
-                    // End of block
-                    if (nextCmd < 0)
-                        break;
-
                     string prgCode = nextCmd > 0 ? PrgCode[thisCmd..nextCmd] : PrgCode[thisCmd..];
+                    //AppIO.DebugLog($" Code length is {prgCode.Length}, nextCmd is {nextCmd}");
+
+                    // End of block
+                    if (prgCode.Length < 1)
+                        break;
 
                     // Strip out the line number                
                     string lineNo = prgCode[^2..];
 
-                    int ln = App.utl.Conv64ToInt(lineNo);
-                    if (App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine < 0)
-                        App.AppLevels[Program.CurrentApp.CurrentAppLevel].StartLine = ln;
+                    int ln = Program.CurrentApp.utl.Conv64ToInt(lineNo);
+                    int lv = Program.CurrentApp.CurrentAppLevel;
+                    string pr = Program.CurrentApp.AppLevels[lv].Procedure;
 
-                    App.AppLevels[Program.CurrentApp.CurrentAppLevel].FileLine = ln;
-                    App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine = ln - App.AppLevels[Program.CurrentApp.CurrentAppLevel].StartLine + 1;
+                    if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine < 0)
+                        Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].StartLine = ln;
+
+                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].FileLine = ln;
+                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine = ln - Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].StartLine + 1;
 
                     // Clean up the line of code
                     prgCode = prgCode[..^2];
@@ -228,7 +234,7 @@ namespace JAXBase.Executer
                     // ---------------------------------------------------
                     // READ EVENTS HOOK
                     // ---------------------------------------------------
-                    while (App.AppLevels[Program.CurrentApp.CurrentAppLevel].InReadEvents || App.OpenDialogCount > 0)
+                    while (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].InReadEvents || Program.CurrentApp.OpenDialogCount > 0)
                     {
                         await Task.Delay(1);  // now properly awaited
                     }
@@ -242,6 +248,7 @@ namespace JAXBase.Executer
                         switch (Program.CurrentApp.InError)
                         {
                             case 1:     // Try/Catch
+                                AppIO.DebugLog($">>> TRY/CATCH");
                                 Program.CurrentApp.InError = 0;
 
                                 // Move to the correct applevel and position for the catch
@@ -250,6 +257,7 @@ namespace JAXBase.Executer
                                 break;
 
                             case 2:     // On Error
+                                AppIO.DebugLog($">>> ON ERROR");
                                 Program.CurrentApp.InError = 0;
 
                                 // Compile the OnError code
@@ -262,17 +270,17 @@ namespace JAXBase.Executer
                             default:    // Unhandled error
                                 // Quit, suspend, or ignore?
                                 Program.CurrentApp.InError = 0;
+                                AppIO.DebugLog($">>> UNHANDLED ERROR DROPOUT");
                                 break;
                         }
 
                     }
                     else
                     {
-
                         switch (respCmd)
                         {
                             case 'N':   // Next command in this level
-                                App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = nextCmd;
+                                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = nextCmd;
                                 break;
 
                             case 'I':
@@ -309,11 +317,11 @@ namespace JAXBase.Executer
                                 break;
 
                             case 'X':   // Go to this command position
-                                nextCmd = App.utl.Conv64ToInt(respRest);
+                                nextCmd = Program.CurrentApp.utl.Conv64ToInt(respRest);
                                 break;
 
                             case 'Y':   // Go to the command after the indicated position
-                                nextCmd = App.utl.Conv64ToInt(respRest);
+                                nextCmd = Program.CurrentApp.utl.Conv64ToInt(respRest);
 
                                 if (nextCmd > 0)  // Find the command after this one (or end of file)
                                     nextCmd = PrgCode.IndexOf(AppClass.cmdByte, nextCmd + 1);
@@ -327,7 +335,8 @@ namespace JAXBase.Executer
                                 break;
                         }
 
-                        App.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = nextCmd;
+                        AppIO.DebugLog($"Processed line {lineNo} level {lv} procedure {pr} - Received {respCmd} nextCmd = {nextCmd}");
+                        Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = nextCmd;
 
 
                         // Might be given end of block at this point
@@ -338,15 +347,15 @@ namespace JAXBase.Executer
                 }
 
                 // Now remove the level we created to run this code
-                if (App.AppLevels.Count > 1)
+                if (Program.CurrentApp.AppLevels.Count > 1)
                 {
-                    App.AppLevels.RemoveAt(App.AppLevels.Count - 1);
+                    Program.CurrentApp.AppLevels.RemoveAt(Program.CurrentApp.AppLevels.Count - 1);
                     Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count - 1;
 
-                    if (App.AppLevels.Count == 1)
+                    if (Program.CurrentApp.AppLevels.Count == 1)
                     {
                         // We're done!
-                        App.RuntimeFlag = false;
+                        Program.CurrentApp.RuntimeFlag = false;
                         if (AppErrorHandling.ErrorCount() > 0)
                         {
                             JAXErrors err = AppErrorHandling.GetCurrentError();
@@ -377,12 +386,12 @@ namespace JAXBase.Executer
             string result = string.Empty;
             string cmd = command.Substring(1, 2);
             string cmdRest = command[3..].TrimEnd(AppClass.cmdEnd);
-            int cmdCode = (int)App.utl.Conv64ToLong(cmd);
+            int cmdCode = (int)Program.CurrentApp.utl.Conv64ToLong(cmd);
 
             string cmdString;
 
-            if (cmdCode < App.lists.JAXCommands.Length)
-                cmdString = App.lists.JAXCommands[cmdCode];
+            if (cmdCode < JAXLanguageLists.JAXCommands.Length)
+                cmdString = JAXLanguageLists.JAXCommands[cmdCode];
             else
             {
                 cmdString = cmdCode switch
@@ -395,7 +404,7 @@ namespace JAXBase.Executer
             // Send out debug of what's executing
             string byteDisp = string.Empty;
             for (int i = 0; i < cmdRest.Length; i++)
-                byteDisp += cmdRest[i] < 32 ? App.lists.PRGByteCodes[cmdRest[i]] : cmdRest[i];
+                byteDisp += cmdRest[i] < 32 ? JAXLanguageLists.PRGByteCodes[cmdRest[i]] : cmdRest[i];
 
             AppIO.DebugLog(cmdString + " " + byteDisp);
             ExecuterCodes eCodes;
@@ -403,14 +412,14 @@ namespace JAXBase.Executer
             try
             {
                 if (ContainsSource == false)
-                    App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = cmdString + " ...";
+                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = cmdString + " ...";
 
                 // Chop off the excess statement delimiters
                 cmdRest = cmdRest.Trim(AppClass.stmtDelimiter);
                 string[] mProc = cmdRest.Split(AppClass.stmtDelimiter);
 
                 // Are we in a class definition
-                if (App.InDefine.Length > 0 && App.InDefine[0] == 'C')
+                if (Program.CurrentApp.InDefine.Length > 0 && Program.CurrentApp.InDefine[0] == 'C')
                 {
                     // --------------------------------------------------
                     // A class definition is a loading process and
@@ -421,25 +430,25 @@ namespace JAXBase.Executer
                     {
                         if (mProc.Length > 1)
                         {
-                            GenericClass gc = await JAXBase_Executer_M.SolveFromRPNString(App, mProc[0]);
-                            string mName = gc.Value.AsString().ToLower().Trim();
+                            JAXObjects.Token gc = await Program.CurrentApp.SolveFromRPNString(mProc[0]);
+                            string mName = gc.AsString().ToLower().Trim();
                             AppIO.DebugLog($"Defining class method: {mName}");
 
-                            gc = await JAXBase_Executer_M.SolveFromRPNString(App, mProc[1]);
-                            bool mProtected = gc.Value.AsString().Length > 0 && gc.Value.AsString().ToUpper()[0].Equals('P');
+                            gc = await Program.CurrentApp.SolveFromRPNString(mProc[1]);
+                            bool mProtected = gc.AsString().Length > 0 && gc.AsString().ToUpper()[0].Equals('P');
 
-                            if (App.ClassDefinitions[^1].methods.ContainsKey(mName) == false)
+                            if (Program.CurrentApp.ClassDefinitions[^1].methods.ContainsKey(mName) == false)
                             {
                                 // Start the method
                                 ClassMethod m = new() { Protected = mProtected };
-                                App.ClassDefinitions[^1].methods.Add(mName, m);
-                                App.CurrentClassMethod = mName;
+                                Program.CurrentApp.ClassDefinitions[^1].methods.Add(mName, m);
+                                Program.CurrentApp.CurrentClassMethod = mName;
                             }
                             else
                             {
                                 // TODO - Already exists.  Perhaps throwing an error would be better?
-                                App.ClassDefinitions[^1].methods[mName].ObjectCode = string.Empty;
-                                App.ClassDefinitions[^1].methods[mName].Protected = mProtected;
+                                Program.CurrentApp.ClassDefinitions[^1].methods[mName].ObjectCode = string.Empty;
+                                Program.CurrentApp.ClassDefinitions[^1].methods[mName].Protected = mProtected;
                             }
                         }
                         else
@@ -448,15 +457,15 @@ namespace JAXBase.Executer
                     else if (cmdString.ToLower().Equals("endproc"))
                     {
                         // End the current method
-                        App.CurrentClassMethod = string.Empty;
+                        Program.CurrentApp.CurrentClassMethod = string.Empty;
                     }
                     else
                     {
                         // Load the command into the class definition
-                        if (App.ClassDefinitions[^1].methods.Count > 0)
-                            App.ClassDefinitions[^1].methods[App.CurrentClassMethod].ObjectCode += command;
+                        if (Program.CurrentApp.ClassDefinitions[^1].methods.Count > 0)
+                            Program.CurrentApp.ClassDefinitions[^1].methods[Program.CurrentApp.CurrentClassMethod].ObjectCode += command;
                         else
-                            App.ClassDefinitions[^1].PropertyCode += command;
+                            Program.CurrentApp.ClassDefinitions[^1].PropertyCode += command;
                     }
                 }
                 else
@@ -483,7 +492,7 @@ namespace JAXBase.Executer
 
                         case "display":
                         case "list":
-                            result = await JAXBase_Executer_D.Display(this, eCodes, cmdString.ToLower().Equals("display"));
+                            result = await JAXBase_Executer_D.Display(eCodes, cmdString.ToLower().Equals("display"));
                             break;
 
                         default:
@@ -491,41 +500,41 @@ namespace JAXBase.Executer
                             {
                                 "activate" => JAXBase_Executer_A.Activate(this, eCodes),
                                 "add" => await JAXBase_Executer_A.Add(this, eCodes),            // Version 0.6
-                                "alter" => JAXBase_Executer_A.Alter(App, cmdRest),              // Version 0.6
+                                "alter" => JAXBase_Executer_A.Alter(cmdRest),              // Version 0.6
                                 "aparameters" => await JAXBase_Executer_A.AParameters(this, eCodes),
                                 "append" => await JAXBase_Executer_A.Append(this, eCodes),
                                 "assert" => await JAXBase_Executer_A.Assert(this, eCodes),
-                                "begin" => JAXBase_Executer_B.Begin(App, cmdRest),              // Version 0.6
-                                "blank" => JAXBase_Executer_B.Blank(App, cmdRest),              // Version 0.8
-                                "browse" => await JAXBase_Executer_B.Browse(this, eCodes),            // Version 1
-                                "build" => JAXBase_Executer_B.Build(App, cmdRest),              // Version 1
+                                "begin" => JAXBase_Executer_B.Begin(cmdRest),              // Version 0.6
+                                "blank" => JAXBase_Executer_B.Blank(cmdRest),              // Version 0.8
+                                "browse" => await JAXBase_Executer_B.Browse(eCodes),            // Version 1
+                                "build" => JAXBase_Executer_B.Build(cmdRest),              // Version 1
                                 "cancel" => await JAXBase_Executer_C.Cancel(this, eCodes),
                                 "calculate" => await JAXBase_Executer_C.Calculate(this, eCodes),
                                 "case" => JAXBase_Executer_C.Case(this, eCodes),
                                 "catch" => await JAXBase_Executer_C.Catch(this, eCodes),
                                 "cd" => await JAXBase_Executer_C.CD(this, eCodes),
-                                "clear" => await JAXBase_Executer_C.Clear(this, eCodes),
-                                "close" => await JAXBase_Executer_C.Close(this, eCodes),
-                                "compile" => await JAXBase_Executer_C.Compile(this, eCodes),
-                                "continue" => JAXBase_Executer_C.Continue(this, eCodes),        //Version 0.6
-                                "copy" => JAXBase_Executer_C.Copy(App, cmdRest),                // Version 1
-                                "create" => await JAXBase_Executer_C.Create(this, eCodes),      // Version 1
-                                "debug" => JAXBase_Executer_D.Debug(App, cmdRest),              // Version 1
-                                "debugout" => JAXBase_Executer_D.DebugOut(App, cmdRest),        // Version 1
-                                "define" => await JAXBase_Executer_D.Define(App, cmdRest),            // Version 1
-                                "delete" => await JAXBase_Executer_D.Delete(this, eCodes),            // Version 1
-                                "dimension" => await JAXBase_Executer_D.Dimension(this, eCodes),
-                                "directory" => await JAXBase_Executer_D.Directory(this, eCodes),
-                                "do" => await JAXBase_Executer_D.Do(this, eCodes),              // Version 1
-                                "dodefault" => JAXBase_Executer_D.DoDefault(this, eCodes),
-                                "doevents" => JAXBase_Executer_D.DoEvents(App, cmdRest),        // Version 1
-                                "drop" => JAXBase_Executer_D.Drop(App, cmdRest),                // Version 1
-                                "edit" => await JAXBase_Executer_E.Edit(this, eCodes),          // Version 1
+                                "clear" => await JAXBase_Executer_C.Clear(eCodes),
+                                "close" => await JAXBase_Executer_C.Close(eCodes),
+                                "compile" => await JAXBase_Executer_C.Compile(eCodes),
+                                "continue" => JAXBase_Executer_C.Continue(eCodes),        //Version 0.6
+                                "copy" => JAXBase_Executer_C.Copy(cmdRest),                // Version 1
+                                "create" => await JAXBase_Executer_C.Create(eCodes),      // Version 1
+                                "debug" => JAXBase_Executer_D.Debug( cmdRest),              // Version 1
+                                "debugout" => JAXBase_Executer_D.DebugOut(cmdRest),        // Version 1
+                                "define" => await JAXBase_Executer_D.Define(cmdRest),            // Version 1
+                                "delete" => await JAXBase_Executer_D.Delete(eCodes),            // Version 1
+                                "dimension" => await JAXBase_Executer_D.Dimension(eCodes),
+                                "directory" => await JAXBase_Executer_D.Directory(eCodes),
+                                "do" => await JAXBase_Executer_D.Do(eCodes),              // Version 1
+                                "dodefault" => JAXBase_Executer_D.DoDefault(eCodes),
+                                "doevents" => JAXBase_Executer_D.DoEvents(cmdRest),        // Version 1
+                                "drop" => JAXBase_Executer_D.Drop(cmdRest),                // Version 1
+                                "edit" => await JAXBase_Executer_E.Edit(eCodes),          // Version 1
                                 "else" => JAXBase_Executer_E.Else(this, eCodes),
                                 "elseif" => JAXBase_Executer_E.Else(this, eCodes),              // Same action as else
                                 "end" => JAXBase_Executer_E.End(this, eCodes),
                                 "endcase" => JAXBase_Executer_E.EndCase(this, eCodes),
-                                "enddefine" => await JAXBase_Executer_E.EndDefine(App, cmdRest),      // Version 1
+                                "enddefine" => await JAXBase_Executer_E.EndDefine(cmdRest),      // Version 1
                                 "enddo" => JAXBase_Executer_E.EndDo(this, eCodes),
                                 "endfor" => JAXBase_Executer_E.EndFor(this, eCodes),
                                 "endif" => JAXBase_Executer_E.EndIf(this, eCodes),
@@ -540,70 +549,69 @@ namespace JAXBase.Executer
                                 "finally" => JAXBase_Executer_F.Finally(eCodes),
                                 "for" => await JAXBase_Executer_F.For(eCodes),
                                 "foreach" => JAXBase_Executer_F.ForEach(this, eCodes),          // Version 1
-                                "gather" => JAXBase_Executer_G.Gather(App, cmdRest),            // Version 0.8
-                                "getexp" => JAXBase_Executer_G.GetExpr(App, cmdRest),           // Version 1
-                                "goto" => await JAXBase_Executer_G.Goto(this, eCodes),
+                                "gather" => JAXBase_Executer_G.Gather(cmdRest),            // Version 0.8
+                                "getexp" => JAXBase_Executer_G.GetExpr(cmdRest),           // Version 1
+                                "goto" => await JAXBase_Executer_G.Goto(eCodes),
                                 "help" => JAXBase_Executer_H.Help(this, eCodes),
-                                "if" => await JAXBase_Executer_I.If(this, eCodes),
-                                "import" => JAXBase_Executer_I.Import(App, cmdRest),            // Version 2
-                                "index" => await JAXBase_Executer_I.Index(this, eCodes),
-                                "insert" => await JAXBase_Executer_I.Insert(this, eCodes),
+                                "if" => await JAXBase_Executer_I.If(eCodes),
+                                "import" => JAXBase_Executer_I.Import(cmdRest),            // Version 2
+                                "index" => await JAXBase_Executer_I.Index(eCodes),
+                                "insert" => await JAXBase_Executer_I.Insert(eCodes),
                                 "keyboard" => JAXBase_Executer_K.Keyboard(this, eCodes),        // Version 1
-                                "local" => await JAXBase_Executer_L.Local(this, eCodes),
-                                "locate" => await JAXBase_Executer_L.Locate(this, eCodes),
-                                "loop" => JAXBase_Executer_L.Loop(this, eCodes),
+                                "local" => await JAXBase_Executer_L.Local( eCodes),
+                                "locate" => await JAXBase_Executer_L.Locate( eCodes),
+                                "loop" => JAXBase_Executer_L.Loop( eCodes),
                                 "lparameters" => await JAXBase_Executer_L.LParameters(this, eCodes),
-                                "lprocedure" => JAXBase_Executer_L.LProcedure(App, cmdRest),
-                                "md" => await JAXBase_Executer_M.MD(this, eCodes),
-                                "modify" => await JAXBase_Executer_M.Modify(this, eCodes),      // Version 1
-                                "mouse" => JAXBase_Executer_M.Mouse(App, cmdRest),              // Version 1
+                                "lprocedure" => JAXBase_Executer_L.LProcedure(cmdRest),
+                                "md" => await JAXBase_Executer_M.MD(eCodes),
+                                "modify" => await JAXBase_Executer_M.Modify(eCodes),      // Version 1
+                                "mouse" => JAXBase_Executer_M.Mouse(cmdRest),              // Version 1
                                 "on" => JAXBase_Executer_O.On(eCodes),                          // Version 1
-                                "open" => JAXBase_Executer_O.Open(App, cmdRest),                // Version 0.6
-                                "otherwise" => JAXBase_Executer_O.Otherwise(this, eCodes),
-                                "pack" => await JAXBase_Executer_P.Pack(this, eCodes),
+                                "open" => JAXBase_Executer_O.Open(cmdRest),                // Version 0.6
+                                "otherwise" => JAXBase_Executer_O.Otherwise(eCodes),
+                                "pack" => await JAXBase_Executer_P.Pack(eCodes),
                                 "parameters" => await JAXBase_Executer_P.Parameters(this, eCodes),
-                                "play" => JAXBase_Executer_P.Play(App, cmdRest),                // Version 1
-                                "private" => await JAXBase_Executer_P.Private(this, eCodes),
+                                "play" => JAXBase_Executer_P.Play(cmdRest),                // Version 1
+                                "private" => await JAXBase_Executer_P.Private(eCodes),
                                 "procedure" => string.Empty,
-                                "public" => await JAXBase_Executer_P.Public(this, eCodes),
-                                "quit" => await JAXBase_Executer_Q.Quit(App, eCodes),
-                                "rd" => await JAXBase_Executer_R.RD(this, eCodes),
-                                "read" => JAXBase_Executer_R.Read(this, eCodes),                // Version 1
-                                "recall" => await JAXBase_Executer_R.Recall(this, eCodes),
-                                "register" => await JAXBase_Executer_R.Register(this, eCodes),
-                                "reindex" => JAXBase_Executer_R.Reindex(App, cmdRest),          // Version 1
-                                "release" => JAXBase_Executer_R.Release(App, cmdRest),          // Version 0.6/1
-                                "remove" => JAXBase_Executer_R.Remove(App, cmdRest),            // Version 1
-                                "rename" => await JAXBase_Executer_R.Rename(this, eCodes),      // Version 1
-                                "replace" => await JAXBase_Executer_R.Replace(this, eCodes),    // Version 0.4/0.6
-                                "restore" => JAXBase_Executer_R.Restore(App, cmdRest),          // Version 1
-                                "resume" => JAXBase_Executer_R.Resume(App, cmdRest),            // Version 1
-                                "retry" => JAXBase_Executer_R.Retry(App, cmdRest),              // Version 1
-                                "return" => await JAXBase_Executer_R.Return(this, eCodes),
-                                "save" => JAXBase_Executer_S.Save(App, cmdRest),                // Version 1
-                                "scan" => await JAXBase_Executer_S.Scan(this, eCodes),
-                                "scatter" => JAXBase_Executer_S.Scatter(App, cmdRest),          // Version 0.8
-                                "seek" => await JAXBase_Executer_S.Seek(App, cmdRest),                // Version 0.6
-                                "select" => await JAXBase_Executer_S.Select(this, eCodes),
-                                "set" => await JAXBase_Executer_Settings.Settings(this, eCodes),
-                                "skip" => await JAXBase_Executer_S.Skip(this, eCodes),
-                                "sort" => JAXBase_Executer_S.Sort(App, cmdRest),                // Version 1
-                                "store" => await JAXBase_Executer_S.Store(this, eCodes),
-                                "suspend" => JAXBase_Executer_S.Suspend(App, cmdRest),          // Version 1
-                                "text" => JAXBase_Executer_T.Text(App, cmdRest),                // Version 1
-                                "throw" => await JAXBase_Executer_T.Throw(this, eCodes),              // Version 1
+                                "public" => await JAXBase_Executer_P.Public(eCodes),
+                                "quit" => await JAXBase_Executer_Q.Quit(eCodes),
+                                "rd" => await JAXBase_Executer_R.RD(eCodes),
+                                "read" => JAXBase_Executer_R.Read(eCodes),                // Version 1
+                                "recall" => await JAXBase_Executer_R.Recall(eCodes),
+                                "register" => await JAXBase_Executer_R.Register(eCodes),
+                                "reindex" => JAXBase_Executer_R.Reindex(cmdRest),          // Version 1
+                                "release" => JAXBase_Executer_R.Release(cmdRest),          // Version 0.6/1
+                                "remove" => JAXBase_Executer_R.Remove(cmdRest),            // Version 1
+                                "rename" => await JAXBase_Executer_R.Rename(eCodes),      // Version 1
+                                "replace" => await JAXBase_Executer_R.Replace(eCodes),    // Version 0.4/0.6
+                                "restore" => JAXBase_Executer_R.Restore( cmdRest),          // Version 1
+                                "resume" => JAXBase_Executer_R.Resume(cmdRest),            // Version 1
+                                "retry" => JAXBase_Executer_R.Retry(cmdRest),              // Version 1
+                                "return" => await JAXBase_Executer_R.Return(eCodes),
+                                "save" => JAXBase_Executer_S.Save(cmdRest),                // Version 1
+                                "scan" => await JAXBase_Executer_S.Scan(eCodes),
+                                "scatter" => JAXBase_Executer_S.Scatter(cmdRest),          // Version 0.8
+                                "seek" => await JAXBase_Executer_S.Seek(cmdRest),                // Version 0.6
+                                "select" => await JAXBase_Executer_S.Select(eCodes),
+                                "set" => await JAXBase_Executer_Settings.Settings(eCodes),
+                                "skip" => await JAXBase_Executer_S.Skip(eCodes),
+                                "sort" => JAXBase_Executer_S.Sort(cmdRest),                // Version 1
+                                "store" => await JAXBase_Executer_S.Store(eCodes),
+                                "suspend" => JAXBase_Executer_S.Suspend(cmdRest),          // Version 1
+                                "text" => JAXBase_Executer_T.Text(cmdRest),                // Version 1
+                                "throw" => await JAXBase_Executer_T.Throw(eCodes),              // Version 1
                                 "try" => JAXBase_Executer_T.Try(eCodes),
-                                "unlock" => JAXBase_Executer_U.Unlock(App, cmdRest),            // Version 0.8
-                                "unpdate" => JAXBase_Executer_U.Update(App, cmdRest),           // Version 1
-                                "until" => await JAXBase_Executer_U.Until(this, eCodes),
-                                "use" => await JAXBase_Executer_U.Use(this, eCodes),                  // Version 0.6/0.8/1
-                                "wait" => await JAXBase_Executer_W.Wait(this, eCodes),                // Version 1
-                                "with" => await JAXBase_Executer_W.With(this, eCodes),                // Version 1
-                                "zap" => await JAXBase_Executer_Z.Zap(this, eCodes),
+                                "unlock" => JAXBase_Executer_U.Unlock(cmdRest),            // Version 0.8
+                                "unpdate" => JAXBase_Executer_U.Update(cmdRest),           // Version 1
+                                "until" => await JAXBase_Executer_U.Until(eCodes),
+                                "use" => await JAXBase_Executer_U.Use(eCodes),                  // Version 0.6/0.8/1
+                                "wait" => await JAXBase_Executer_W.Wait(eCodes),                // Version 1
+                                "with" => await JAXBase_Executer_W.With(eCodes),                // Version 1
+                                "zap" => await JAXBase_Executer_Z.Zap(eCodes),
                                 "~~~" => await AppVars.ObjectCall(eCodes, false) is null ? "N" : "N",
-                                "?" => await JAXBase_Executer_Legacy.QPrint(this, eCodes),
-                                "??" => await JAXBase_Executer_Legacy.QQPrint(this, eCodes),
-                                "*sc" => JAXBase_Executer_Legacy.SourceCode(this, eCodes),
+                                "?" => await JAXBase_Executer_Legacy.QPrint(eCodes),
+                                "??" => await JAXBase_Executer_Legacy.QQPrint(eCodes),
                                 _ => throw new Exception(string.Format("Execute command {0} is not implemented", cmdString)),
                             };
                             break;
@@ -612,13 +620,13 @@ namespace JAXBase.Executer
             }
             catch (Exception ex)
             {
-                AppErrorHandling.HandleException(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure, ex.Message);
+                AppErrorHandling.HandleException(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure, ex.Message);
                 AppIO.DebugLog($"Error executing command {cmdString}: {ex.Message} in ExecuteCommand");
                 result = ex.Message;
             }
 
-            if (Program.CurrentApp.CurrentAppLevel < App.AppLevels.Count && App.AppLevels.Count > 1 && cmdCode != 129)
-                App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand = cmdCode;
+            if (Program.CurrentApp.CurrentAppLevel < Program.CurrentApp.AppLevels.Count && Program.CurrentApp.AppLevels.Count > 1 && cmdCode != 129)
+                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand = cmdCode;
 
 
             return result;
@@ -658,22 +666,22 @@ namespace JAXBase.Executer
             try
             {
                 string[] varInfo = varExpr.Split(AppClass.expParam);               // Break the variable expression
-                GenericClass gc = await JAXBase_Executer_M.SolveFromRPNString(app, varInfo[0]);     // Get the variable name
-                string varName = gc.Value.Element.ValueAsString;
+                JAXObjects.Token gc = await Program.CurrentApp.SolveFromRPNString(varInfo[0]);     // Get the variable name
+                string varName = gc.Element.ValueAsString;
 
                 int r = 1;
                 int c = 1;
 
                 if (varInfo.Length > 1)
                 {
-                    gc = await JAXBase_Executer_M.SolveFromRPNString(app, varInfo[1]);                  // Get the row value if it exists
-                    r = gc.Value.AsInt() > 0 ? gc.Value.AsInt() : 1;
+                    gc = await Program.CurrentApp.SolveFromRPNString(varInfo[1]);                  // Get the row value if it exists
+                    r = gc.AsInt() > 0 ? gc.AsInt() : 1;
                 }
 
                 if (varInfo.Length > 2)
                 {
-                    gc = await JAXBase_Executer_M.SolveFromRPNString(app, varInfo[2]);                  // Get the col value if it exists
-                    c = gc.Value.AsInt() > 0 ? gc.Value.AsInt() : 1;
+                    gc = await Program.CurrentApp.SolveFromRPNString(varInfo[2]);                  // Get the col value if it exists
+                    c = gc.AsInt() > 0 ? gc.AsInt() : 1;
                 }
 
                 // Make sure the varName exits
@@ -698,9 +706,9 @@ namespace JAXBase.Executer
                 v = await AppVars.GetVarToken(varName);
 
                 if (v.TType.Equals("A"))
-                    AppIO.DebugLog(string.Format("Storing {0} ({1}) into {2}[{3},{4}]", v.Element.ValueAsString, v.Element.Type, varName, r, c), app.CurrentDS.JaxSettings.Talk == false);
+                    AppIO.DebugLog(string.Format("Storing {0} ({1}) into {2}[{3},{4}]", v.Element.ValueAsString, v.Element.Type, varName, r, c), Program.CurrentApp.CurrentDS.JaxSettings.Talk == false);
                 else
-                    AppIO.DebugLog(string.Format("Storing {0} ({1}) into {2}", v.Element.ValueAsString, v.Element.Type, varName), app.CurrentDS.JaxSettings.Talk == false);
+                    AppIO.DebugLog(string.Format("Storing {0} ({1}) into {2}", v.Element.ValueAsString, v.Element.Type, varName), Program.CurrentApp.CurrentDS.JaxSettings.Talk == false);
             }
             catch (Exception ex)
             {

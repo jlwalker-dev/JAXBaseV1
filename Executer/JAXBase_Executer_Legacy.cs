@@ -9,17 +9,17 @@ namespace JAXBase.Executer
         /*
          * ? statement
          */
-        public static async Task<string> QPrint(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> QPrint(ExecuterCodes eCodes)
         {
             AppErrorHandling.ClearErrors();
-            string result = await SolveQPrint(jbe, eCodes);
+            string result = await SolveQPrint(eCodes);
 
             if (AppErrorHandling.ErrorCount() == 0)
             {
                 AppIO.SendToIDE(System.Environment.NewLine+result);
 
-                if (jbe.App.CurrentDS.JaxSettings.Alternate && string.IsNullOrWhiteSpace(jbe.App.CurrentDS.JaxSettings.Alternate_Name) == false)
-                    JAXLib.StrToFile(result, jbe.App.CurrentDS.JaxSettings.Alternate_Name, 1);
+                if (Program.CurrentApp.CurrentDS.JaxSettings.Alternate && string.IsNullOrWhiteSpace(Program.CurrentApp.CurrentDS.JaxSettings.Alternate_Name) == false)
+                    JAXLib.StrToFile(result, Program.CurrentApp.CurrentDS.JaxSettings.Alternate_Name, 1);
             }
 
             return string.Empty;
@@ -29,17 +29,17 @@ namespace JAXBase.Executer
         /*
          * ?? statement
          */
-        public static async Task<string> QQPrint(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> QQPrint(ExecuterCodes eCodes)
         {
             AppErrorHandling.ClearErrors();
-            string result = await SolveQPrint(jbe, eCodes);
+            string result = await SolveQPrint(eCodes);
 
             if (AppErrorHandling.ErrorCount() == 0)
             {
                 AppIO.SendToIDE(result);
 
-                if (jbe.App.CurrentDS.JaxSettings.Alternate && string.IsNullOrWhiteSpace(jbe.App.CurrentDS.JaxSettings.Alternate_Name) == false)
-                    JAXLib.StrToFile(result, jbe.App.CurrentDS.JaxSettings.Alternate_Name, 1);
+                if (Program.CurrentApp.CurrentDS.JaxSettings.Alternate && string.IsNullOrWhiteSpace(Program.CurrentApp.CurrentDS.JaxSettings.Alternate_Name) == false)
+                    JAXLib.StrToFile(result, Program.CurrentApp.CurrentDS.JaxSettings.Alternate_Name, 1);
             }
 
             return string.Empty;
@@ -49,7 +49,7 @@ namespace JAXBase.Executer
         /*
          * Resolve the ? and ?? statement body
          */
-        public static async Task<string> SolveQPrint(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> SolveQPrint(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
@@ -63,7 +63,7 @@ namespace JAXBase.Executer
                     int iii = 0;
                 }
 
-                JAXObjects.Token answer = await jbe.App.SolveFromRPNString(rpn.RNPExpr);
+                JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(rpn.RNPExpr);
 
                 // M and E types get converted to blank string
                 if ("EM".Contains(answer.TType))
@@ -79,9 +79,9 @@ namespace JAXBase.Executer
         /*
          * Place source code into the current AppLevel
          */
-        public static string SourceCode(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static string SourceCode(ExecuterCodes eCodes)
         {
-            jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = eCodes.COMMAND;
+            Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = eCodes.COMMAND;
             return string.Empty;
         }
     }

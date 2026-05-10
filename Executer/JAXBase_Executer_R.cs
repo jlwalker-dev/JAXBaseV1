@@ -13,9 +13,9 @@ namespace JAXBase.Executer
          * RD path
          * 
          */
-        public static async Task<string> RD(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> RD(ExecuterCodes eCodes)
         {
-            JAXObjects.Token answer = eCodes.Expressions.Count > 0 ? await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr) : throw new Exception("10|");
+            JAXObjects.Token answer = eCodes.Expressions.Count > 0 ? await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr) : throw new Exception("10|");
             if (answer.Element.Type.Equals("C") == false) throw new Exception("11|");
             string dirName = answer.AsString();
             FilerLib.RemoveDir(dirName);
@@ -27,10 +27,10 @@ namespace JAXBase.Executer
          * Read Events
          * 
          */
-        public static string Read(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static string Read(ExecuterCodes eCodes)
         {
             // We're performing a read events without attaching to a form
-            jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].InReadEvents = true;
+            Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].InReadEvents = true;
             return string.Empty;
         }
 
@@ -40,9 +40,9 @@ namespace JAXBase.Executer
          * RECALL [Scope] [FOR lExpression1] [WHILE lExpression2] [NOOPTIMIZE] [IN nWorkArea | cTableAlias]
          * 
          */
-        public static async Task<string> Recall(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Recall( ExecuterCodes eCodes)
         {
-            return await JAXBase_Executer_D.DeleteFor(jbe, eCodes, false);
+            return await JAXBase_Executer_D.DeleteFor(eCodes, false);
         }
 
 
@@ -51,13 +51,13 @@ namespace JAXBase.Executer
          * REGISTER [IMAGE|SOUND|VIDEO] cFileName AS cMediaName
          * 
          */
-        public static async Task<string> Register(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Register(ExecuterCodes eCodes)
         {
             JAXObjects.Token answer = new("");
 
             // Get the media name
             if (eCodes.As.Count == 1)
-                answer = await jbe.App.SolveFromRPNString(eCodes.As[0]);
+                answer = await Program.CurrentApp.SolveFromRPNString(eCodes.As[0]);
             else if (eCodes.As.Count > 1)
                 throw new Exception("10|");
 
@@ -65,7 +65,7 @@ namespace JAXBase.Executer
 
             // Get the file name
             if (eCodes.Expressions.Count == 1)
-                answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
             else
                 throw new Exception("10|");
 
@@ -75,17 +75,17 @@ namespace JAXBase.Executer
             if (string.IsNullOrWhiteSpace(eCodes.SUBCMD) || eCodes.SUBCMD.Equals("Image", StringComparison.OrdinalIgnoreCase))
             {
                 // Image
-                jbe.App.JaxImages!.RegisterMedia(fileName, "I", mediaName, out _);
+                Program.CurrentApp.JaxImages!.RegisterMedia(fileName, "I", mediaName, out _);
             }
             else if (eCodes.SUBCMD.Equals("Sound", StringComparison.OrdinalIgnoreCase))
             {
                 // Sound
-                jbe.App.JaxImages!.RegisterMedia(fileName, "S", mediaName, out _);
+                Program.CurrentApp.JaxImages!.RegisterMedia(fileName, "S", mediaName, out _);
             }
             else if (eCodes.SUBCMD.Equals("Video", StringComparison.OrdinalIgnoreCase))
             {
                 // Video
-                jbe.App.JaxImages!.RegisterMedia(fileName, "V", mediaName, out _);
+                Program.CurrentApp.JaxImages!.RegisterMedia(fileName, "V", mediaName, out _);
             }
 
             return "";
@@ -96,7 +96,7 @@ namespace JAXBase.Executer
          * Reindex
          * 
          */
-        public static string Reindex(AppClass app, string cmdRest)
+        public static string Reindex(string cmdRest)
         {
             return string.Empty;
         }
@@ -108,7 +108,7 @@ namespace JAXBase.Executer
          * RELEASE
          * 
          */
-        public static string Release(AppClass app, string cmdRest)
+        public static string Release(string cmdRest)
         {
             return string.Empty;
         }
@@ -120,7 +120,7 @@ namespace JAXBase.Executer
          * REMOVE
          * 
          */
-        public static string Remove(AppClass app, string cmdRest)
+        public static string Remove(string cmdRest)
         {
             return string.Empty;
         }
@@ -131,7 +131,7 @@ namespace JAXBase.Executer
          * RENAME 
          * 
          */
-        public static async Task<string> Rename(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Rename(ExecuterCodes eCodes)
         {
             int err = 0;
             string msg = string.Empty;
@@ -140,11 +140,11 @@ namespace JAXBase.Executer
             if (string.IsNullOrWhiteSpace(eCodes.SUBCMD))
             {
                 // RENAME file1 TO file2
-                JAXObjects.Token sourceFile = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
-                JAXObjects.Token targetFile = await jbe.App.SolveFromRPNString(eCodes.To[0].Name);
+                JAXObjects.Token sourceFile = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                JAXObjects.Token targetFile = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name);
 
                 // Get the source file location
-                string sFile = AppHelper.FindPathForFile(jbe.App, sourceFile.AsString()) + sourceFile.AsString();
+                string sFile = AppHelper.FindPathForFile(sourceFile.AsString()) + sourceFile.AsString();
                 string sPath = JAXLib.JustFullPath(sFile);
 
                 // Set the target file location if not specified
@@ -212,7 +212,7 @@ namespace JAXBase.Executer
          * REPLACE FROM Array|JSON [Scope] [FOR lExpression1] [WHILE lExpression2] [IN nWorkArea | cTableAlias] [NOOPTIMIZE]
          * 
          */
-        public static async Task<string> Replace(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Replace(ExecuterCodes eCodes)
         {
             string result = string.Empty;
             JAXObjects.Token answer = new();
@@ -220,34 +220,34 @@ namespace JAXBase.Executer
             try
             {
                 // Starting workarea
-                int wa = jbe.App.CurrentDS.CurrentWorkArea();
+                int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
                 if (string.IsNullOrWhiteSpace(eCodes.InExpr) == false)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.InExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
 
                     if (answer.Element.Type.Equals("C"))
-                        jbe.App.CurrentDS.SelectWorkArea(answer.AsString());
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(answer.AsString());
                     else if (answer.Element.Type.Equals("N"))
-                        jbe.App.CurrentDS.SelectWorkArea(answer.AsInt());
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(answer.AsInt());
                     else
                         throw new Exception("11|");
                 }
 
-                JAXDirectDBF WorkArea = jbe.App.CurrentDS.CurrentWA;
+                JAXDirectDBF WorkArea = Program.CurrentApp.CurrentDS.CurrentWA;
 
-                int MaxCount = jbe.App.CurrentDS.CurrentWA.DbfInfo.RecCount;
+                int MaxCount = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.RecCount;
 
                 JAXScope jaxScope = new();
-                await jaxScope.Setup(eCodes.Scope, jbe.App.CurrentDS.CurrentWA, false);  // Don't fix rec pos if blank scope
+                await jaxScope.Setup(eCodes.Scope, Program.CurrentApp.CurrentDS.CurrentWA, false);  // Don't fix rec pos if blank scope
 
-                while (jbe.App.CurrentDS.CurrentWA.DbfInfo.DBFEOF == false)
+                while (Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFEOF == false)
                 {
                     // Is there a WHILE clause?
                     if (string.IsNullOrWhiteSpace(eCodes.WhileExpr) == false)
                     {
                         // Get the value of the while clause
-                        answer = await jbe.App.SolveFromRPNString(eCodes.WhileExpr);
+                        answer = await Program.CurrentApp.SolveFromRPNString(eCodes.WhileExpr);
 
                         // Is it a logical value?
                         if (answer.Element.Type.Equals("L"))
@@ -265,7 +265,7 @@ namespace JAXBase.Executer
                     if (string.IsNullOrWhiteSpace(eCodes.ForExpr))
                         answer.Element.Value = true;                        // Nothing to parse, assume true
                     else
-                        answer = await jbe.App.SolveFromRPNString(eCodes.ForExpr);    // Parse the for expression
+                        answer = await Program.CurrentApp.SolveFromRPNString(eCodes.ForExpr);    // Parse the for expression
 
                     // If the answer is a logical
                     if (answer.Element.Type.Equals("L"))
@@ -278,11 +278,11 @@ namespace JAXBase.Executer
                                 // REPLACE FieldName1 WITH eExpression1
                                 for (int i = 0; i < eCodes.Fields.Count; i++)
                                 {
-                                    answer = await jbe.App.SolveFromRPNString(eCodes.Fields[i].Name);
+                                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Fields[i].Name);
                                     if (answer.Element.Type.Equals("C"))
                                     {
                                         string fieldName = answer.AsString();
-                                        answer = await jbe.App.SolveFromRPNString(eCodes.With[i].RNPExpr);
+                                        answer = await Program.CurrentApp.SolveFromRPNString(eCodes.With[i].RNPExpr);
 
                                         // Put the expression into the field name respecting the buffering flag
                                         await WorkArea.DBFReplaceField(fieldName, answer, WorkArea.DbfInfo.Buffered == false);
@@ -294,7 +294,7 @@ namespace JAXBase.Executer
                             else
                             {
                                 // REPLACE FROM
-                                answer = await jbe.App.SolveFromRPNString(eCodes.From.Name);
+                                answer = await Program.CurrentApp.SolveFromRPNString(eCodes.From.Name);
                                 if (answer.Element.Type.Equals("C"))
                                 {
                                     // If ( or [ appears in the variable name, it's just an array element
@@ -324,7 +324,7 @@ namespace JAXBase.Executer
                             if (jaxScope.IsDone()) break;
 
                             // If we're still processing, go to the next record
-                            await jbe.App.CurrentDS.CurrentWA.DBFSkipRecord(1);
+                            await Program.CurrentApp.CurrentDS.CurrentWA.DBFSkipRecord(1);
 
                             if (string.IsNullOrEmpty(eCodes.WhileExpr + eCodes.ForExpr))
                                 break;
@@ -334,7 +334,7 @@ namespace JAXBase.Executer
                         throw new Exception("11|"); // FOR expression was not logical
                 }
 
-                jbe.App.CurrentDS.SelectWorkArea(wa);
+                Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
 
                 result = string.Format("{0} records replaced", jaxScope.RecordsRead);
             }
@@ -352,7 +352,7 @@ namespace JAXBase.Executer
          * RESTORE
          * 
          */
-        public static string Restore(AppClass app, string cmdRest)
+        public static string Restore(string cmdRest)
         {
             return string.Empty;
         }
@@ -363,7 +363,7 @@ namespace JAXBase.Executer
          * RESUME
          * 
          */
-        public static string Resume(AppClass app, string cmdRest)
+        public static string Resume(string cmdRest)
         {
             return string.Empty;
         }
@@ -375,7 +375,7 @@ namespace JAXBase.Executer
          * RETRY
          * 
          */
-        public static string Retry(AppClass app, string cmdRest)
+        public static string Retry(string cmdRest)
         {
             return string.Empty;
         }
@@ -386,21 +386,21 @@ namespace JAXBase.Executer
          * RETURN [Expression]
          * 
          */
-        public static async Task<string> Return(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Return(ExecuterCodes eCodes)
         {
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
                 JAXObjects.Token answer = new();
 
                 // Load expression to return stack
                 if (eCodes.Expressions.Count > 0)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                     if (answer.TType.Equals("A"))
-                        jbe.App.ReturnValue = answer;   // Returning an array
+                        Program.CurrentApp.ReturnValue = answer;   // Returning an array
                     else
-                        jbe.App.ReturnValue.Element.Value = answer.Element.Value;   // Returning a value or object
+                        Program.CurrentApp.ReturnValue.Element.Value = answer.Element.Value;   // Returning a value or object
                 }
 
                 // Search for the return location
@@ -408,14 +408,14 @@ namespace JAXBase.Executer
 
                 if (eCodes.To.Count == 1)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.To[0].Name);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name);
                     if (answer.Element.Type.Equals("C"))
                         prg = answer.AsString();
                     else
                         throw new Exception("11|");
                 }
                 else if (eCodes.Expressions.Count == 0)
-                    jbe.App.ReturnValue.Element.Value = true;
+                    Program.CurrentApp.ReturnValue.Element.Value = true;
                 else
                     if (eCodes.Expressions.Count > 1)
                         throw new Exception("10|");
@@ -429,9 +429,9 @@ namespace JAXBase.Executer
                         j = 1;
                     else
                     {
-                        for (int i = jbe.App.AppLevels.Count; i > 0; i++)
+                        for (int i = Program.CurrentApp.AppLevels.Count; i > 0; i++)
                         {
-                            if (jbe.App.AppLevels[i].PrgName.Equals(prg, StringComparison.OrdinalIgnoreCase))
+                            if (Program.CurrentApp.AppLevels[i].PrgName.Equals(prg, StringComparison.OrdinalIgnoreCase))
                             {
                                 j = i;
                                 break;
@@ -445,8 +445,8 @@ namespace JAXBase.Executer
                     if (j > 0)
                     {
                         // Remove everything higher than this AppLevel location
-                        while (jbe.App.AppLevels.Count > j)
-                            jbe.App.AppLevels.RemoveAt(j + 1);
+                        while (Program.CurrentApp.AppLevels.Count > j)
+                            Program.CurrentApp.AppLevels.RemoveAt(j + 1);
 
                         Program.CurrentApp.CurrentAppLevel = j - 1;
                     }

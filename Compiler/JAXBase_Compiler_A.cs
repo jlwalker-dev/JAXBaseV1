@@ -85,7 +85,7 @@ namespace JAXBase.Compiler
          * SQL ALTER
          *      
          */
-        public static string Alter(AppClass app, string cmdRest)
+        public static string Alter(string cmdRest)
         {
             string result = string.Empty;
 

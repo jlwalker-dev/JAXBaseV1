@@ -366,10 +366,10 @@ namespace JAXBase.Core
 
             // Set up runtime vars
             AppLevels.Add(new AppLevel());
-            JaxExecuter = new(this);
+            JaxExecuter = new();
             JaxCompiler = new(this);
-            JaxMath = new(this);
-            PrivateJaxMath = new(this);
+            JaxMath = new();
+            PrivateJaxMath = new();
             MyInstance = SystemCounter();
 
             // Perform the App Startup

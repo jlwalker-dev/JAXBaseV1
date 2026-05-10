@@ -17,13 +17,13 @@ namespace JAXBase.Executer
             try
             {
                 // Is this the first executed command of the program?
-                if (jbe.App.AppLevels.Count == 0) throw new Exception("2|");
-                if (JAXLib.InList(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+                if (Program.CurrentApp.AppLevels.Count == 0) throw new Exception("2|");
+                if (JAXLib.InList(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
 
                 // Break out the var expressions
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
-                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+                    JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
 
                     VarRef var = await AppVars.SolveVariableReference(answer.AsString());
                     AppVars.MakeLocalVar(var.varName, var.row, var.col, true);
@@ -35,7 +35,7 @@ namespace JAXBase.Executer
                     if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
                         await AppVars.SetAsType(var.varName, type);
 
-                    if (jbe.App.ParameterClassList.Count > 0)
+                    if (Program.CurrentApp.ParameterClassList.Count > 0)
                     {
                         JAXObjects.Token tk = await AppHelper.GetParameterToken(null);
                         if (string.IsNullOrWhiteSpace(type) || tk.Element.Type.Equals(type))
@@ -54,7 +54,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            jbe.App.ParameterClassList.Clear();
+            Program.CurrentApp.ParameterClassList.Clear();
             return string.Empty;
         }
 
@@ -64,7 +64,7 @@ namespace JAXBase.Executer
          * LOCAL var1 [AS Type1][, var2 AS Type...]
          * 
          */
-        public static async Task<string> Local(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Local(ExecuterCodes eCodes)
         {
             JAXObjects.Token answer = new();
             string result = string.Empty;
@@ -73,7 +73,7 @@ namespace JAXBase.Executer
             {
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
 
                     if (answer.Element.Type.Equals("C"))
                     {
@@ -104,11 +104,11 @@ namespace JAXBase.Executer
          * LOCATE [FOR lExpression1] [Scope] [WHILE lExpression2] [IN nExpr | cAlias [SESSION nDataSession]] [NOOPTIMIZE]
          * 
          */
-        public static async Task<string> Locate(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Locate(ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            int cwa = jbe.App.CurrentDS.CurrentWorkArea();   // Starting workarea
-            int cds = jbe.App.CurrentDataSession;
+            int cwa = Program.CurrentApp.CurrentDS.CurrentWorkArea();   // Starting workarea
+            int cds = Program.CurrentApp.CurrentDataSession;
             JAXObjects.Token answer = new();
 
             try
@@ -116,23 +116,23 @@ namespace JAXBase.Executer
                 if (eCodes.SESSION > 0)
                 {
                     // Set the new data session
-                    jbe.App.SetDataSession(eCodes.SESSION);
+                    Program.CurrentApp.SetDataSession(eCodes.SESSION);
                 }
 
                 // Go to the desired workarea
                 JAXObjects.Token workarea = new();
-                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? cwa : (await jbe.App.SolveFromRPNString(eCodes.InExpr)).Element.Value;
+                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? cwa : (await Program.CurrentApp.SolveFromRPNString(eCodes.InExpr)).Element.Value;
                 if (workarea.Element.Type.Equals("N"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.AsInt());
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.AsInt());
                 else if (workarea.Element.Type.Equals("C"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
                 else
                     throw new Exception("11|");
 
-                if (jbe.App.CurrentDS.CurrentWA is null || jbe.App.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
-                    throw new Exception(string.Format("52|{0}", jbe.App.CurrentDS.CurrentWorkArea()));
+                if (Program.CurrentApp.CurrentDS.CurrentWA is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
+                    throw new Exception(string.Format("52|{0}", Program.CurrentApp.CurrentDS.CurrentWorkArea()));
 
-                JAXDirectDBF Table = jbe.App.CurrentDS.CurrentWA;
+                JAXDirectDBF Table = Program.CurrentApp.CurrentDS.CurrentWA;
 
                 JAXScope jaxScope = new();
                 await jaxScope.Setup(eCodes.Scope, Table, true);
@@ -145,13 +145,13 @@ namespace JAXBase.Executer
                 while (Table.DbfInfo.DBFEOF == false && scopeCount != 0)
                 {
                     // Solve the WHILE expresion and exit if false
-                    answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.WhileExpr) ? true : (await jbe.App.SolveFromRPNString(eCodes.WhileExpr)).Element.Value;
+                    answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.WhileExpr) ? true : (await Program.CurrentApp.SolveFromRPNString(eCodes.WhileExpr)).Element.Value;
                     if (answer.Element.Type.Equals("L") == false) throw new Exception("11|");
                     if (answer.AsBool() == false)
                         break;
 
                     // Solve the FOR expresion & skip if false, break if true (found)
-                    answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.ForExpr) ? true : (await jbe.App.SolveFromRPNString(eCodes.ForExpr)).Element.Value;
+                    answer.Element.Value = string.IsNullOrWhiteSpace(eCodes.ForExpr) ? true : (await Program.CurrentApp.SolveFromRPNString(eCodes.ForExpr)).Element.Value;
                     if (answer.Element.Type.Equals("L") == false) throw new Exception("11|");
                     if (answer.AsBool())
                     {
@@ -185,7 +185,7 @@ namespace JAXBase.Executer
             }
 
             // Return to the starting workarea
-            jbe.App.CurrentDS.SelectWorkArea(cwa);
+            Program.CurrentApp.CurrentDS.SelectWorkArea(cwa);
             return result;
         }
 
@@ -194,15 +194,15 @@ namespace JAXBase.Executer
          * LOOP
          * 
          */
-        public static string Loop(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static string Loop( ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
 
-                string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
+                string PrgCode = Program.CurrentApp.PRGCache.Count > 0 ? Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
 
                 // What loop are we currently in?
                 string loopType = AppLoop.PopLoopStack();
@@ -211,19 +211,19 @@ namespace JAXBase.Executer
                 switch (loopType[0])
                 {
                     case 'S':   // SCAN
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["endscancmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endscancmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     case 'W':   // WHILE
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["enddocmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["enddocmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     case 'F':   // FOR
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["endforcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endforcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     case 'U':   // UNTIL
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["untilcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["untilcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     default:    // ERROR
@@ -249,7 +249,7 @@ namespace JAXBase.Executer
                     }
                 else
                 {
-                    jbe.App.utl.Conv64(++pos, 3, out result);
+                    Program.CurrentApp.utl.Conv64(++pos, 3, out result);
                     result = "X" + result;
                 }
             }
@@ -268,7 +268,7 @@ namespace JAXBase.Executer
          * LPROCEDURE
          * 
          */
-        public static string LProcedure(AppClass app, string cmdRest)
+        public static string LProcedure(string cmdRest)
         {
             string result = string.Empty;
 

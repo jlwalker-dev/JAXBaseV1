@@ -292,7 +292,7 @@ namespace JAXBase.Math
                 else
                 {
                     // Create a new Math process
-                    JAXMath Math2 = new(App);
+                    JAXMath Math2 = new();
 
                     // Get the simple type of the result
                     JAXBase.XBase.GenericClass gc = await Math2.SolveMath(string1);

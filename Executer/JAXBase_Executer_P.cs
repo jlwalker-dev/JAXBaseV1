@@ -12,28 +12,28 @@ namespace JAXBase.Executer
          * PACK
          * 
          */
-        public static async Task<string> Pack(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Pack( ExecuterCodes eCodes)
         {
             try
             {
-                int wa = jbe.App.CurrentDS.CurrentWorkArea();
+                int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
                 // Go to the desired workarea
                 JAXObjects.Token workarea = new();
-                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : jbe.App.SolveFromRPNString(eCodes.InExpr);
+                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
                 if (workarea.Element.Type.Equals("N"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.AsInt());
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.AsInt());
                 else if (workarea.Element.Type.Equals("C"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
                 else
                     throw new Exception("11|");
 
-                if (jbe.App.CurrentDS.CurrentWA is null || jbe.App.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
-                    throw new Exception(string.Format("52|{0}", jbe.App.CurrentDS.CurrentWorkArea()));
+                if (Program.CurrentApp.CurrentDS.CurrentWA is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
+                    throw new Exception(string.Format("52|{0}", Program.CurrentApp.CurrentDS.CurrentWorkArea()));
 
                 // now pack if it's a table
-                if (jbe.App.CurrentDS.CurrentWA.DbfInfo.TableType.Equals("T"))
-                    await jbe.App.CurrentDS.CurrentWA.DBFPack();
+                if (Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.TableType.Equals("T"))
+                    await Program.CurrentApp.CurrentDS.CurrentWA.DBFPack();
                 else
                     throw new Exception("1115|");
             }
@@ -56,13 +56,13 @@ namespace JAXBase.Executer
             try
             {
                 // Is this the first executed command of the program?
-                if (jbe.App.AppLevels.Count == 0) throw new Exception("2|");
-                if (JAXLib.InList(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+                if (Program.CurrentApp.AppLevels.Count == 0) throw new Exception("2|");
+                if (JAXLib.InList(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
 
                 // Break out the var expressions
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
-                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+                    JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
 
                     VarRef var = await AppVars.SolveVariableReference(answer.AsString());
                     AppVars.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
@@ -73,7 +73,7 @@ namespace JAXBase.Executer
                     if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
                         await AppVars.SetAsType(var.varName, type);
 
-                    if (jbe.App.ParameterClassList.Count > 0)
+                    if (Program.CurrentApp.ParameterClassList.Count > 0)
                     {
                         JAXObjects.Token tk = await AppHelper.GetParameterToken(null);
                         if (string.IsNullOrWhiteSpace(type) || tk.Element.Type.Equals(type))
@@ -88,7 +88,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            jbe.App.ParameterClassList.Clear();
+            Program.CurrentApp.ParameterClassList.Clear();
             return string.Empty;
         }
 
@@ -98,7 +98,7 @@ namespace JAXBase.Executer
          * PLAY
          * 
          */
-        public static string Play(AppClass app, string cmdRest)
+        public static string Play(string cmdRest)
         {
             try
             {
@@ -117,7 +117,7 @@ namespace JAXBase.Executer
          * PRIVATE var1 [AS Type1][, var2 AS Type...]
          *
          */
-        public static async Task<string> Private(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Private( ExecuterCodes eCodes)
         {
             JAXObjects.Token answer = new();
             string result = string.Empty;
@@ -126,7 +126,7 @@ namespace JAXBase.Executer
             {
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
 
                     if (answer.Element.Type.Equals("C"))
                     {
@@ -157,7 +157,7 @@ namespace JAXBase.Executer
          * PUBLIC var1 [AS Type1][, var2 AS Type...]
          *
          */
-        public static async Task<string> Public(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Public(ExecuterCodes eCodes)
         {
             JAXObjects.Token answer = new();
             string result = string.Empty;
@@ -166,7 +166,7 @@ namespace JAXBase.Executer
             {
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[i].RNPExpr);
 
                     if (answer.Element.Type.Equals("C"))
                     {

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using JAXBase.Language;
+using System.Runtime.InteropServices;
 using System.Security.Policy;
 
 namespace JAXBase.Core
@@ -12,8 +13,8 @@ namespace JAXBase.Core
             // -------------------------------------------------------------------------
             app.CmdList = [];
 
-            for (int i = 0; i < app.lists.JAXCommands.Length; i++)
-                app.CmdList.Add(app.lists.JAXCommands[i].ToLower());
+            for (int i = 0; i < JAXLanguageLists.JAXCommands.Length; i++)
+                app.CmdList.Add(JAXLanguageLists.JAXCommands[i].ToLower());
 
             // -------------------------------------------------------------------------
             // Create the jump point markers

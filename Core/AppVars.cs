@@ -332,13 +332,18 @@ namespace JAXBase.Core
                         break;  // FOUND IT!
 
 
-                    if (i > Program.CurrentApp.AppLevels[i].CallingLevel)
-                        i = Program.CurrentApp.AppLevels[i].CallingLevel;
-                    else
+                    if (Program.CurrentApp.AppLevels[i].CallingLevel >= 0)
                     {
-                        AppIO.DebugLog($"***ERROR*** GETVARTOKEN - Current level is {i} and calling level is {Program.CurrentApp.AppLevels[i].CallingLevel}");
-                        i = 0;
+                        if (i > Program.CurrentApp.AppLevels[i].CallingLevel)
+                            i = Program.CurrentApp.AppLevels[i].CallingLevel;
+                        else
+                        {
+                            AppIO.DebugLog($"***ERROR*** GETVARTOKEN - Current level is {i} and calling level is {Program.CurrentApp.AppLevels[i].CallingLevel}");
+                            i = 0;
+                        }
                     }
+                    else
+                        i--;
                 }
 
                 //// Check all the private vars
@@ -1307,10 +1312,6 @@ namespace JAXBase.Core
             GenericClass result = new();
             result.Result.Element.Value = "U";
 
-            if (eCodes.Expressions.Count > 0 && eCodes.Expressions[0].RNPExpr.Contains(".prgEdit.fileload", StringComparison.OrdinalIgnoreCase))
-            {
-                int iii = 0;
-            }
 
             try
             {
@@ -1324,6 +1325,11 @@ namespace JAXBase.Core
                 if (answer.Element.Type.Equals("C") == false) throw new Exception("11|");
 
                 string expr = answer.AsString().Trim();
+
+                if (expr.Contains("addlist"))
+                {
+                    int iii = 0;
+                }
 
                 // Macro expansion
                 if (expr.Contains('&'))
@@ -1365,6 +1371,11 @@ namespace JAXBase.Core
                         }
                         else
                             throw new Exception($"2301|There is nothing on the with stack for .{objList[1]}");
+                    }
+
+                    if (eCodes.Expressions.Count > 0 && eCodes.Expressions[0].RNPExpr.Contains(".refresh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int iii = 0;
                     }
 
                     // We have the object broken down by list so let's start processing it

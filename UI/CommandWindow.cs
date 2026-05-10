@@ -171,6 +171,8 @@ namespace JAXBase.UI
                         txt.Focus();
                         ResetCursor(txt);   // also moves caret to end — usually what you want after execution
                     }
+
+                    // TODO - Set the focus to the active window (if there is one)
                 }
             }
         }

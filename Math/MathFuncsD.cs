@@ -226,7 +226,7 @@ namespace JAXBase.Math
                     break;
 
                 case "`EVALUATE":                   // Evaluate string
-                    JAXMath jxm = new(App);
+                    JAXMath jxm = new();
                     GenericClass gc = await jxm.SolveMath(string1);
                     if (gc.Value.TType.Equals("A"))
                     {

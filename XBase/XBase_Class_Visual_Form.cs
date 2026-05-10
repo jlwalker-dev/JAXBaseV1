@@ -114,7 +114,8 @@ namespace JAXBase.XBase
             propertyName = propertyName.ToLower();
             JAXObjects.Token objtk = new() { Element = { Value = objValue } };
 
-            AppIO.DebugLog($"FORM.{propertyName}={objtk.AsString()}");
+            if (InInit == false)
+                AppIO.DebugLog($"FORM.{propertyName}={objtk.AsString()}");
 
             if (UserProperties.ContainsKey(propertyName))
             {
@@ -405,10 +406,15 @@ namespace JAXBase.XBase
             int result = 0;
             methodName = methodName.ToLower();
 
+            if (methodName.Equals("refresh"))
+            {
+                int iii = 0;
+            }
+
             switch (methodName)
             {
                 case "show":
-                    if (fakeWindow.ShowWindow == 1)
+                     if (fakeWindow.ShowWindow == 1)
                     {
                         if (parentForm == null || fakeWindow.Parent == null)
                         {
@@ -436,8 +442,8 @@ namespace JAXBase.XBase
 
                         case 2:  // Independent real Window
                             me.ParentAvaloniaWindow = fakeWindow._realWindow;             // private, but you can expose it
-                                                                                   // or better:
-                                                                                   // visualForDialogs = (Avalonia.Visual)fakeWindow._realWindow;
+                                                                                          // or better:
+                                                                                          // visualForDialogs = (Avalonia.Visual)fakeWindow._realWindow;
                             break;
                     }
 

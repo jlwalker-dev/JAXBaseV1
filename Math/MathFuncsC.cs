@@ -2,6 +2,7 @@
  * --------------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
 using JAXBase.Data;
+using JAXBase.Language;
 using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Text;
@@ -171,7 +172,7 @@ namespace JAXBase.Math
                 case "`CREATEOBJECT":                   // Create an object of specified class
                     string1 = string1.ToLower().Trim();
 
-                    var cType = Array.Find(App.lists.JAXObjects, s => s.Equals(string1, StringComparison.OrdinalIgnoreCase));
+                    var cType = Array.Find(JAXLanguageLists.JAXObjects, s => s.Equals(string1, StringComparison.OrdinalIgnoreCase));
                     if (cType is not null)
                     {
                         List<ParameterClass>? plist=new();
@@ -220,7 +221,7 @@ namespace JAXBase.Math
                     }
                     else
                     {
-                        JAXObjectWrapper? jow = AppHelper.FindUserClass(App, string1);
+                        JAXObjectWrapper? jow = AppHelper.FindUserClass(string1);
                         if (jow is not null)
                             tAnswer._avalue[0].Value = JAXUtilities.CloneJson(jow)!;
                         else

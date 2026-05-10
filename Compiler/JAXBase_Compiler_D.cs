@@ -47,17 +47,17 @@ namespace JAXBase.Compiler
 
             try
             {
-                if (jbc.App.InDefine.Length > 0)
+                if (Program.CurrentApp.InDefine.Length > 0)
                     throw new Exception("1926||");
 
-                jbc.App.InDefine = "C";
+                Program.CurrentApp.InDefine = "C";
 
                 result = jbc.Key_Parser(cmdLine, ["class"], "XX0,AS1", []);
             }
             catch (Exception ex)
             {
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
-                jbc.App.InDefine = string.Empty;
+                Program.CurrentApp.InDefine = string.Empty;
             }
             return AppErrorHandling.ErrorCount() > 0 ? string.Empty : result;
         }
@@ -290,7 +290,7 @@ namespace JAXBase.Compiler
 
                     case "while":   // DO WHILE lExpression 
                         cmdLine = jbc.GetNextToken(cmdLine, string.Empty, out nextToken);
-                        expression = jbc.GetRPNString(jbc.App, cmdLine);
+                        expression = jbc.GetRPNString(Program.CurrentApp, cmdLine);
                         result = jbc.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("W") + AppClass.stmtDelimiter +jbc.CompilerXRef["XX"].ToString()+ expression;
                         break;
 

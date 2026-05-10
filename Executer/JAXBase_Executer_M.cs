@@ -14,115 +14,13 @@ namespace JAXBase.Executer
          * like A+B*3
          * 
          */
-        public static async Task<JAXObjects.Token> RawMath(AppClass app, string expression)
+        public static async Task<JAXObjects.Token> RawMath( string expression)
         {
-            JAXMath jaxMath = new(app);
+            JAXMath jaxMath = new();
             GenericClass gc = await jaxMath.SolveMath(expression);
             return gc.Value;
         }
 
-
-
-        /* ---------------------------------------------------------------------------------------------------*
-         * PURPOSE:
-         *      This routine is used to grab an expression from the command string and return the remaining
-         *      command string along with the expression value as a token.  This command is expected to
-         *      be used in cases where a literal is expected but may be replaced by an expression in
-         *      parenthisis.
-         * 
-         *      Source examples:
-         * 
-         *          USE (tablename)
-         *      
-         *          AVERAGE (exprString) ALL TO ARRAY (arrayName)
-         *      
-         *      This allows us to extend the XBase language by putting in (experession) instead of
-         *      having to perform marco substituion all the time, which will be faster since we you
-         *      need to compile macro supstitution results during execution.
-         * 
-         * 
-         * 
-         * PROCESS DESCRIPTION:
-         *      Get the next expression value from the command and send out the
-         *      value found as an object token and return the rest of the string
-         * 
-         *      Literals are in the form of:
-         *          <literalStart>literalstring<literalEnd>
-         *      
-         *      Expressions are in the form:
-         *          <expByte>expstring1<expParam>exprstring2<exprParam>exprstring3...<expEnd>
-         * 
-         *      Grab the string between the start and end then process accordingly.  A literal
-         *      is passed back as a string, while an expression is broken into a list by <expParam> 
-         *      byte and returned, typically, as a string.
-         * 
-         * ---------------------------------------------------------------------------------------------------*/
-        public static async Task<GenericClass> SolveFromRPNString(AppClass app, string Command)
-        {
-            GenericClass gc = new();
-            List<string> rpnList = [];
-
-            try
-            {
-                if (Command[0] == AppClass.literalStart)
-                {
-                    // Process a literal, returning as a string
-                    int f = Command.IndexOf(AppClass.literalEnd);
-                    if (f < 0)
-                        throw new Exception("10|SyntaxError|Mismatched literal expression");
-
-                    gc.Value.Element.Value = Command[1..f];
-
-                    // Remove the literal
-                    if (f < Command.Length - 1)
-                        gc.cmdRest = Command[++f..];
-                    else
-                        gc.cmdRest = string.Empty;
-                }
-                else if (Command[0] == AppClass.expByte)
-                {
-                    // Process the next expression
-                    int f = Command.IndexOf(AppClass.expEnd);
-
-                    if (f < 0) throw new Exception("10|SyntaxError|Mismatched literal expression");
-                    if (f < 1) throw new Exception("10|SyntaxError|Missing expression");
-
-                    // Break out the expressions
-                    string[] r = Command[1..f].Split(AppClass.expParam);
-                    for (int i = 0; i < r.Length; i++)
-                    {
-                        if (r[i].Length > 0)
-                            rpnList.Add(r[i]);
-                    }
-
-                    gc.cmdRest = Command[++f..];
-
-                    if (rpnList.Count == 0)
-                        throw new Exception("10||Empty expression List");
-
-                    JAXMath jaxMath = new(app);
-                    gc.Value = await jaxMath.MathSolve(rpnList);
-                }
-                else
-                    throw new Exception(string.Format("10||Unknown command byte {0}", Command[0]));
-            }
-            catch (Exception ex)
-            {
-                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
-            }
-
-            // If there is more to the expression, then there better be
-            // an expression delimiter in the next byte
-            if (gc.cmdRest.Length > 0)
-            {
-                if (gc.cmdRest[0] == AppClass.expDelimiter)
-                    gc.cmdRest = gc.cmdRest[1..];
-                else
-                    throw new Exception(string.Format("10||Unexpected byte '{0}'", gc.cmdRest[0]));
-            }
-
-            return gc;
-        }
 
 
         /* TODO
@@ -130,7 +28,7 @@ namespace JAXBase.Executer
          * MD
          * 
          */
-        public static async Task<string> MD(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> MD( ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
@@ -138,7 +36,7 @@ namespace JAXBase.Executer
             {
                 if (eCodes.Expressions.Count > 0)
                 {
-                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                    JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
 
                     if (answer.Element.Type.Equals("C") == false)
                         throw new Exception("10|");
@@ -183,7 +81,7 @@ namespace JAXBase.Executer
          * MODIFY VIEW ViewName
          * 
          */
-        public static async Task<string> Modify(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Modify( ExecuterCodes eCodes)
         {
             string result = string.Empty;
             string editor, fPath, fName, fExt, name;
@@ -192,7 +90,7 @@ namespace JAXBase.Executer
 
             try
             {
-                JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                 if (answer.Element.Type.Equals("C"))
                     name = answer.AsString();
                 else
@@ -202,7 +100,7 @@ namespace JAXBase.Executer
                 fName = JAXLib.JustStem(name);
                 fExt = JAXLib.JustExt(name);
 
-                fPath = string.IsNullOrWhiteSpace(fPath) ? jbe.App.CurrentDS.JaxSettings.Default : fPath;
+                fPath = string.IsNullOrWhiteSpace(fPath) ? Program.CurrentApp.CurrentDS.JaxSettings.Default : fPath;
 
                 if (string.IsNullOrWhiteSpace(fExt))
                 {
@@ -232,13 +130,13 @@ namespace JAXBase.Executer
                     case "C":
                         // Look for the JAX Class editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.classeditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.classeditor");
                         break;
 
                     case "V":
                         // Look for the JAX Class libary editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.libraryeditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.libraryeditor");
 
                         if (answer.Element.Type.Equals("C") && File.Exists(answer.AsString()))
                         {
@@ -261,18 +159,18 @@ namespace JAXBase.Executer
                         }
                         else
                         {
-                            JAXObjectWrapper prgEditor = new(jbe.App, "jaxedit", "", pList);
+                            JAXObjectWrapper prgEditor = new(Program.CurrentApp, "jaxedit", "", pList);
                             await prgEditor.MethodCall("show");
                         }
                         break;
 
                     case "F":
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.programeditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.programeditor");
                         fPath = JAXLib.JustFullPath(name);
                         fName = JAXLib.JustStem(name);
                         fExt = JAXLib.JustExt(name);
 
-                        fPath = string.IsNullOrWhiteSpace(fPath) ? jbe.App.CurrentDS.JaxSettings.Default : fPath;
+                        fPath = string.IsNullOrWhiteSpace(fPath) ? Program.CurrentApp.CurrentDS.JaxSettings.Default : fPath;
 
                         name = fPath + fName + "." + fExt;
 
@@ -282,7 +180,7 @@ namespace JAXBase.Executer
                         }
                         else
                         {
-                            JAXObjectWrapper prgEditor = new(jbe.App, "jaxedit", "", pList);
+                            JAXObjectWrapper prgEditor = new(Program.CurrentApp, "jaxedit", "", pList);
                             await prgEditor.MethodCall("show");
                         }
                         break;
@@ -290,43 +188,43 @@ namespace JAXBase.Executer
                     case "M":
                         // Look for the JAX Form Editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_formeditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_formeditor");
                         break;
 
                     case "L":
                         // Look for the JAXTableDesigner application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.labeleditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.labeleditor");
                         break;
 
                     case "U":
                         // Look for the JAXTableDesigner application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.menueditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.menueditor");
                         break;
 
                     case "J":
                         // Look for the JAX Project Editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.projecteditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.projecteditor");
                         break;
 
                     case "Q":
                         // Look for the JAX Query Editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.queryeditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.queryeditor");
                         break;
 
                     case "R":
                         // Look for the JAX Report Editor application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.reporteditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.reporteditor");
                         break;
 
                     case "S":
                         // Look for the JAXTableDesigner application and
                         // load it if you find it, else give error
-                        editor = jbe.App.JAXPrtObj.GetValue("_JAX.tableeditor");
+                        editor = Program.CurrentApp.JAXPrtObj.GetValue("_JAX.tableeditor");
                         break;
 
                     default:
@@ -347,7 +245,7 @@ namespace JAXBase.Executer
          * MOUSE
          * 
          */
-        public static string Mouse(AppClass app, string cmdRest)
+        public static string Mouse(string cmdRest)
         {
             string result = string.Empty;
 

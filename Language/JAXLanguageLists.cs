@@ -19,7 +19,7 @@ namespace JAXBase.Language
         /// <summary>
         /// Array containing all valid JAXBase functions
         /// </summary>
-        public string[] MathFunctions = ["ABS(", "ACLASS(", "ACOPY(", "ACOS(", "ADATABASES(", "ADBOBJECTS(", "ADDBS(",
+        public static string[] MathFunctions = ["ABS(", "ACLASS(", "ACOPY(", "ACOS(", "ADATABASES(", "ADBOBJECTS(", "ADDBS(",
                 "ADDPROPERTY(", "ADEL(", "ADIR(", "ADLLS(", "ADOCKSTATE(", "AELEMENT(", "AERROR(", "AEVENTS(",
                 "AFIELDS(", "AFONT(", "AGETCLASS(", "AGETFILEVERSION(", "AINS(", "AINSTANCE(", "ALEN(",
                 "ALIAS(", "ALINE(", "ALLTRIM(", "AMEMBERS(",  "ANETRECOURCES(",
@@ -80,7 +80,7 @@ namespace JAXBase.Language
         /// <summary>
         /// Array containing all valid JAXBase commands including hidden commands
         /// </summary>
-        public string[] JAXCommands = [
+        public static string[] JAXCommands = [
             "ACTIVATE","ADD","ALTER","APARAMETERS","APPEND",
             "ASSERT","AVERAGE","BEGIN","BLANK","BROWSE","CALCULATE",
             "CANCEL","CASE","CATCH","CD","CLEAR","CLOSE","COMPILE","CONTINUE",
@@ -103,7 +103,7 @@ namespace JAXBase.Language
         /// <summary>
         /// List of all supported SET commands
         /// </summary>
-        public string[] SetCommands = [
+        public static string[] SetCommands = [
             "alternate", "appinit", "asserts", "autoincerror","autosave",
             "bell", "blocksize",
             "carry","century", "classlib", "collate","confirm","console","coverage","cpcompile","cpialog","currency","cursor",
@@ -129,7 +129,7 @@ namespace JAXBase.Language
         // Language code is abreviated in the lexxer AS0, AT3, etc
         // Language component is the name used for the dictionary
         // Byte code is what's written into the tokenized code identifying the statement component
-        public string[] JAXCompilerDictionary = ["AL|alias|0x80","AS|as|0x82", "AT|at|0x84", "CS|subcmd|0x88", "CM|command|0x8A", "CO|collate|0x8C",
+        public static string[] JAXCompilerDictionary = ["AL|alias|0x80","AS|as|0x82", "AT|at|0x84", "CS|subcmd|0x88", "CM|command|0x8A", "CO|collate|0x8C",
             "CP|codepage|0x90", "DB|database|0x94", "FG|flags|0x96", "FM|from|0x98", "FN|fname|0x9C",
             "FR|for|0xA0", "FV|fields|0xA4", "IN|in|0xA8", "IT|into|0xAC","IX|index|0xAE",
             "LK|like|0xB0", "MS|message|0xB4","xx|xxxx|0xB8","NM|name|0xBC",
@@ -141,7 +141,7 @@ namespace JAXBase.Language
         /// <summary>
         /// Array containing all valid JAXBase object types
         /// </summary>
-        public string[] JAXObjects = ["barcode","browser","checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container",
+        public static string[] JAXObjects = ["barcode","browser","checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container",
             "custom","editbox","empty","file","form","formset","ftp","grid","http","hyperlink","image","jax","jaxedit","ipc","irc","label","line","listbox",
             "menu","menuitem","optionbutton","optiongroup","page","pageframe","pgp","pipe","pop3","printer","screen","separator","shape","sms",
             "smtp","sound","spinner","sql","textbox","toolbar","toolbutton","tcp","timer","udp","video"];
@@ -149,21 +149,21 @@ namespace JAXBase.Language
         /// <summary>
         /// Debug array that is used to translate characters under x20 with their related AppClass code abbreviations or hex values
         /// </summary>
-        public string[] PRGByteCodes = ["x00", "x01", " <ls>", "<le> ", "x04", "x05", " <HS>", "<HE> ", " <Hms>", "<Hme> ", "x0A", "x0B", "x0C","x0D",
+        public static string[] PRGByteCodes = ["x00", "x01", " <ls>", "<le> ", "x04", "x05", " <HS>", "<HE> ", " <Hms>", "<Hme> ", "x0A", "x0B", "x0C","x0D",
             " <Xb>","<Xp>","<Xe> ","<Xd>","<pe>"," x13"," <Stmt> ","x15","x16","x17","x18"," <Ab>","<Ae> ","x1B"," <Cb>","<Ce> ","x1E","x1F"];
 
         /// <summary>
         /// Source filename extensions
         /// </summary>
-        public string[] SourceExtensions = ["scx", "vcx", "def", "mnu", "prg", "qry"];
+        public static string[] SourceExtensions = ["scx", "vcx", "def", "mnu", "prg", "qry"];
 
         /// <summary>
         /// Run time filename extensions
         /// </summary>
-        public string[] RunTimeExtensions = ["jxs", "jxv", "jxd", "jxm", "jxp", "jxq"];
+        public static string[] RunTimeExtensions = ["jxs", "jxv", "jxd", "jxm", "jxp", "jxq"];
 
 
-        public List<string> SpecialKeys = ["TAB","BACKTAB","LBRACE","RBRACE","ENTER","SPACEBAR","ESC","DEL",
+        public static List<string> SpecialKeys = ["TAB","BACKTAB","LBRACE","RBRACE","ENTER","SPACEBAR","ESC","DEL",
             "LEFTARROW","RIGHTARROW","UPARROW","DNARROW","HOME","END","PGUP","PGDN",
            "INS","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","BACKSPACE",
         "RIGHTMOUSE","LEFTMOUSE","MOUSE"];
@@ -171,12 +171,12 @@ namespace JAXBase.Language
         /*-------------------------------------------------------------------------------------------*
          * DEBUG ROUTINE
          *-------------------------------------------------------------------------------------------*/
-        public void Decompile(AppClass app, string fileStem, string block)
+        public static void Decompile(string fileStem, string block)
         {
             int f;
 
             // Clear the file
-            JAXLib.StrToFile(string.Empty, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 0);
+            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 0);
 
             // Strip the header and map
             char cmdByte = block[0];
@@ -220,10 +220,10 @@ namespace JAXBase.Language
                 // Start of a new command?cd c:\
                 if (b == AppClass.cmdByte && i > 0)
                 {
-                    JAXLib.StrToFile("      " + c, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile("      " + d, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile(bt.ToString("D4") + ": " + h, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile(string.Empty, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+                    JAXLib.StrToFile("      " + c, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+                    JAXLib.StrToFile("      " + d, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+                    JAXLib.StrToFile(bt.ToString("D4") + ": " + h, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+                    JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
 
                     c = string.Empty;
                     d = string.Empty;
@@ -236,9 +236,9 @@ namespace JAXBase.Language
                 c += b > 32 && b < 127 ? " " + (char)b + "  " : "    ";
             }
 
-            JAXLib.StrToFile(string.Empty, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-            JAXLib.StrToFile(string.Empty, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-            JAXLib.StrToFile(string.Empty, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
 
             // Line by line decompilation
             while (block.Length > 0)
@@ -268,17 +268,17 @@ namespace JAXBase.Language
                     }
 
                     // Write the line
-                    JAXLib.StrToFile(stmt, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+                    JAXLib.StrToFile(stmt, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
 
                     cmdLine = cmdLine.TrimStart(AppClass.cmdByte); // get rid of the leading/trailing Statement Delimiters
                     string[] stmts = cmdLine.Split(AppClass.stmtDelimiter, StringSplitOptions.RemoveEmptyEntries);
                     string[] estmt = stmts[^1].Split(AppClass.cmdEnd);
                     stmts[^1] = estmt[0];
 
-                    int cmdIdx = app.utl.Conv64ToInt(stmts[0][..2]);
+                    int cmdIdx = Program.CurrentApp.utl.Conv64ToInt(stmts[0][..2]);
                     stmts[0] = stmts[0][2..];
 
-                    int lineNo = app.utl.Conv64ToInt(estmt[1]);
+                    int lineNo = Program.CurrentApp.utl.Conv64ToInt(estmt[1]);
                     string cmd = JAXCommands[cmdIdx].ToString() + " ";
 
                     if (lineNo == 49) lineNo = lineNo - 0;
@@ -292,8 +292,8 @@ namespace JAXBase.Language
                             char stmtCode = stmt[0];
                             stmt = stmt[1..];
 
-                            if (app.XRef4Runtime.ContainsKey(stmtCode))
-                                cmd += app.XRef4Runtime[stmtCode] + " ";
+                            if (Program.CurrentApp.XRef4Runtime.ContainsKey(stmtCode))
+                                cmd += Program.CurrentApp.XRef4Runtime[stmtCode] + " ";
                             else
                                 cmd += "?" + stmtCode + "? ";
 
@@ -307,8 +307,8 @@ namespace JAXBase.Language
                     }
 
                     // Write the line
-                    JAXLib.StrToFile(lineNo.ToString("D5") + ": " + cmd, app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile("", app.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+                    JAXLib.StrToFile(lineNo.ToString("D5") + ": " + cmd, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
+                    JAXLib.StrToFile("", Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
                 }
                 else
                     throw new Exception(string.Format("Unknown command byte {0}", (int)cmdByte));

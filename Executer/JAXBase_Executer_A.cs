@@ -63,7 +63,7 @@ namespace JAXBase.Executer
 
                     case "object":   // Object
                         // "cla"|objName|ClassName|flags|parameters
-                        result = await AddObject(jbe, eCodes);
+                        result = await AddObject(eCodes);
                         break;
 
                     case "table":   // Table
@@ -86,22 +86,22 @@ namespace JAXBase.Executer
          * Add Object in definition
          * 
          */
-        private static async Task<string> AddObject(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        private static async Task<string> AddObject(ExecuterCodes eCodes)
         {
             string result = string.Empty;
             JAXObjectWrapper addObject;
             List<ParameterClass> xParameters = [];
 
-            if (jbe.App.InDefineObject is null)
+            if (Program.CurrentApp.InDefineObject is null)
                 throw new Exception("1928|");
 
             if (string.IsNullOrWhiteSpace(eCodes.NAME) || eCodes.As.Count != 1 || string.IsNullOrWhiteSpace(eCodes.As[0]))
                 throw new Exception("10|");
 
-            JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.CLASS);
+            JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.CLASS);
             string className = answer.AsString();
 
-            answer = await jbe.App.SolveFromRPNString(eCodes.As[0]);
+            answer = await Program.CurrentApp.SolveFromRPNString(eCodes.As[0]);
             string asClass = answer.AsString();
 
             for (int i = 0; i < eCodes.With.Count; i++)
@@ -113,16 +113,16 @@ namespace JAXBase.Executer
 
                 string propname = property[..f].Trim();
                 string propName = answer.AsString();
-                answer = await jbe.App.SolveFromRPNString(property[e..].Trim());
+                answer = await Program.CurrentApp.SolveFromRPNString(property[e..].Trim());
                 ParameterClass xProp = new() { PName = property[..f] };
                 xProp.token.Element.Value = answer;
                 xParameters.Add(xProp);
             }
 
             // Define the object
-            addObject = new(jbe.App, asClass, className, xParameters);
+            addObject = new(Program.CurrentApp, asClass, className, xParameters);
 
-            await jbe.App.InDefineObject.AddObject(addObject);
+            await Program.CurrentApp.InDefineObject.AddObject(addObject);
             return result;
         }
 
@@ -170,7 +170,7 @@ namespace JAXBase.Executer
          *      
          *
          */
-        public static string Alter(AppClass app, string cmdRest)
+        public static string Alter(string cmdRest)
         {
             string result = string.Empty;
 
@@ -195,11 +195,11 @@ namespace JAXBase.Executer
          */
         public static async Task<string> AParameters(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            if (jbe.App.AppLevels.Count == 0) throw new Exception("2|");
-            if (JAXLib.InList(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+            if (Program.CurrentApp.AppLevels.Count == 0) throw new Exception("2|");
+            if (JAXLib.InList(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
 
             // Get the parameter name
-            JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+            JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
             string aVar = string.Empty;
 
             try
@@ -209,7 +209,7 @@ namespace JAXBase.Executer
                     aVar = answer.AsString();
 
                     // Get the parameter count
-                    int j = jbe.App.ParameterClassList.Count;
+                    int j = Program.CurrentApp.ParameterClassList.Count;
 
                     // Create the array if it does not exist
                     AppVars.SetVarOrMakePrivate(aVar, 1, j, true);
@@ -219,10 +219,10 @@ namespace JAXBase.Executer
 
                     // Fill in the array
                     for (int i = 0; i < j; i++)
-                        destArray._avalue[i].Value = jbe.App.ParameterClassList[i].token.Element.Value;
+                        destArray._avalue[i].Value = Program.CurrentApp.ParameterClassList[i].token.Element.Value;
 
                     // Clear the parameter list
-                    jbe.App.ParameterClassList.Clear();
+                    Program.CurrentApp.ParameterClassList.Clear();
                 }
                 else
                     throw new Exception("11|");
@@ -232,7 +232,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return string.Format("Private array {0} created with {1} elements", aVar, jbe.App.ParameterClassList.Count);
+            return string.Format("Private array {0} created with {1} elements", aVar, Program.CurrentApp.ParameterClassList.Count);
         }
 
 
@@ -253,36 +253,36 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Append(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            int wa = jbe.App.CurrentDS.CurrentWorkArea();
-            int ds = jbe.App.CurrentDataSession;
+            int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
+            int ds = Program.CurrentApp.CurrentDataSession;
 
             try
             {
                 JAXObjects.Token workarea = new();
 
                 if (eCodes.SESSION > 0)
-                    jbe.App.SetDataSession(eCodes.SESSION);
+                    Program.CurrentApp.SetDataSession(eCodes.SESSION);
 
                 if (string.IsNullOrWhiteSpace(eCodes.InExpr) == false)
                 {
-                    workarea = await jbe.App.SolveFromRPNString(eCodes.InExpr);
+                    workarea = await Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
 
                     if (workarea.Element.Type.Equals("N"))
-                        jbe.App.CurrentDS.SelectWorkArea(workarea.AsInt());
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.AsInt());
                     else if (workarea.Element.Type.Equals("C"))
-                        jbe.App.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
                     else
                         throw new Exception("11|");
                 }
 
                 // Is the workarea valid?
-                if (jbe.App.CurrentDS.CurrentWA is null || jbe.App.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
-                    throw new Exception(string.Format("52|{0}", jbe.App.CurrentDS.CurrentWorkArea()));
+                if (Program.CurrentApp.CurrentDS.CurrentWA is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
+                    throw new Exception(string.Format("52|{0}", Program.CurrentApp.CurrentDS.CurrentWorkArea()));
 
                 if (eCodes.SUBCMD.Equals("blank", StringComparison.OrdinalIgnoreCase))
                 {
                     // Append a blank record
-                    await jbe.App.CurrentDS.CurrentWA.DBFAppendRecord(null);
+                    await Program.CurrentApp.CurrentDS.CurrentWA.DBFAppendRecord(null);
                 }
                 else if (eCodes.SUBCMD.Equals("array", StringComparison.OrdinalIgnoreCase))
                 {
@@ -314,8 +314,8 @@ namespace JAXBase.Executer
             }
 
             // Get back to the starting data session & work area
-            jbe.App.SetDataSession(ds);
-            jbe.App.CurrentDS.SelectWorkArea(wa);
+            Program.CurrentApp.SetDataSession(ds);
+            Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
             return string.Empty;
         }
 
@@ -357,13 +357,13 @@ namespace JAXBase.Executer
 
                 if (eCodes.To.Count > 0)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.To[0].Type);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Type);
                     if (answer.Element.Type.Equals("C"))
                         toType = answer.AsString();
                     else
                         throw new Exception("11|");
 
-                    answer = await jbe.App.SolveFromRPNString(eCodes.To[0].Name);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name);
                     if (answer.Element.Type.Equals("C"))
                         toName = answer.AsString();
                     else
@@ -373,10 +373,10 @@ namespace JAXBase.Executer
                 AppIO.DebugLog("ASSERT: " + result);
 
                 // Always write to debug file if DEBUG is ON
-                if (jbe.App.CurrentDS.JaxSettings.Debug && string.IsNullOrWhiteSpace(jbe.App.CurrentDS.JaxSettings.DebugOut) == false)
+                if (Program.CurrentApp.CurrentDS.JaxSettings.Debug && string.IsNullOrWhiteSpace(Program.CurrentApp.CurrentDS.JaxSettings.DebugOut) == false)
                 {
                     string filestr = "ASSERT:" + msg + Environment.NewLine + "RESPONSE: " + res.ToString() + Environment.NewLine;
-                    JAXLib.StrToFile(filestr, jbe.App.CurrentDS.JaxSettings.DebugOut, 1);
+                    JAXLib.StrToFile(filestr, Program.CurrentApp.CurrentDS.JaxSettings.DebugOut, 1);
                 }
 
                 // Optionally write to the specified destination
@@ -460,7 +460,7 @@ namespace JAXBase.Executer
 
                 bool noOptimize = false;
 
-                JAXMath jaxMath = new(jbe.App);
+                JAXMath jaxMath = new();
 
                 if (cmd.Length != 1)
                     throw new Exception("Missing command expression list");
@@ -473,25 +473,25 @@ namespace JAXBase.Executer
                 // ---------------------------------------------------------------------
                 // WorkArea|Alias
                 // ---------------------------------------------------------------------
-                int wa = jbe.App.CurrentDS.CurrentWorkArea();
+                int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
                 // Go to the desired workarea
                 JAXObjects.Token workarea = new();
-                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : jbe.App.SolveFromRPNString(eCodes.InExpr);
+                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
                 if (workarea.Element.Type.Equals("N"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.AsInt());
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.AsInt());
                 else if (workarea.Element.Type.Equals("C"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
                 else
                     throw new Exception("11|");
 
-                if (jbe.App.CurrentDS.CurrentWA is null || jbe.App.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
-                    throw new Exception(string.Format("52|{0}", jbe.App.CurrentDS.CurrentWorkArea()));
+                if (Program.CurrentApp.CurrentDS.CurrentWA is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
+                    throw new Exception(string.Format("52|{0}", Program.CurrentApp.CurrentDS.CurrentWorkArea()));
 
                 // ---------------------------------------------------------------------
                 // Prep record position and set the scope
                 // ---------------------------------------------------------------------
-                JAXDirectDBF Table = jbe.App.CurrentDS.CurrentWA;
+                JAXDirectDBF Table = Program.CurrentApp.CurrentDS.CurrentWA;
                 JAXScope jaxScope = new();
                 await jaxScope.Setup(eCodes.Scope, Table, true);
 
@@ -530,19 +530,19 @@ namespace JAXBase.Executer
                 while (Table.DbfInfo.DBFEOF == false && Table.DbfInfo.RecCount > 0)
                 {
                     // The For expression says if we use this record
-                    JAXObjects.Token temp = await jbe.App.SolveFromRPNString(ForExpr);
+                    JAXObjects.Token temp = await Program.CurrentApp.SolveFromRPNString(ForExpr);
                     if (ForExpr.Length == 0 || temp.Element.ValueAsBool)
                     {
                         // No FOR or it evaluated to true
                         // Now check the WHILE which says if we continue to process records
-                        temp = await jbe.App.SolveFromRPNString(WhileExpr);
+                        temp = await Program.CurrentApp.SolveFromRPNString(WhileExpr);
                         if (WhileExpr.Length == 0 || temp.Element.ValueAsBool)
                         {
                             // Either no while or it evaluated to true
                             // Add the values of this record to the sum values for each expression
                             for (int j = 0; j < Expr.Count; j++)
                             {
-                                answer = await jbe.App.SolveFromRPNString(Expr[j].RNPExpr);
+                                answer = await Program.CurrentApp.SolveFromRPNString(Expr[j].RNPExpr);
 
                                 if (answer.Element.Type.Equals("N"))
                                 {
@@ -604,7 +604,7 @@ namespace JAXBase.Executer
                 // ---------------------------------------------------------------------
                 // Make sure we get back to starting workarea
                 // ---------------------------------------------------------------------
-                jbe.App.CurrentDS.SelectWorkArea(wa);
+                Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
             }
             catch (Exception ex)
             {

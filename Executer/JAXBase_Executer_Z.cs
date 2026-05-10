@@ -10,24 +10,24 @@ namespace JAXBase.Executer
          * ZAP IN nWorkArea | cAlias
          * 
          */
-        public static async Task<string> Zap(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Zap(ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            int wa = jbe.App.CurrentDS.CurrentWorkArea();
+            int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
             try
             {
                 // Go to the desired workarea
                 JAXObjects.Token workarea = new();
-                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : jbe.App.SolveFromRPNString(eCodes.InExpr);
+                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
                 if (workarea.Element.Type.Equals("N"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.AsInt());
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.AsInt());
                 else if (workarea.Element.Type.Equals("C"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
                 else
                     throw new Exception("11|");
 
-                await jbe.App.CurrentDS.CurrentWA.DBFZap();
+                await Program.CurrentApp.CurrentDS.CurrentWA.DBFZap();
             }
             catch (Exception ex)
             {
@@ -35,7 +35,7 @@ namespace JAXBase.Executer
             }
             finally
             {
-                jbe.App.CurrentDS.SelectWorkArea(wa);
+                Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
             }
 
             return result;

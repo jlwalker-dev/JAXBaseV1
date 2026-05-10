@@ -12,7 +12,7 @@ namespace JAXBase.Executer
      */
     public class JAXBase_Executer_Settings
     {
-        public static async Task<string> Settings(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Settings(ExecuterCodes eCodes)
         {
             string status = string.Empty;
 
@@ -46,7 +46,7 @@ namespace JAXBase.Executer
 
                         if (string.IsNullOrWhiteSpace(eCodes.Expressions[0].RNPExpr) == false)
                         {
-                            answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                            answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                             if (answer.Element.Type.Equals("C"))
                             {
                                 Expression = answer.AsString();
@@ -71,7 +71,7 @@ namespace JAXBase.Executer
                         if (eCodes.To.Count > 1) throw new Exception("10|");
 
                         if (string.IsNullOrWhiteSpace(eCodes.To[0].Name) == false)
-                            ToExpression = await jbe.App.SolveFromRPNString(eCodes.To[0].Name);
+                            ToExpression = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name);
                     }
 
                     // SET the setting's value
@@ -82,7 +82,7 @@ namespace JAXBase.Executer
                         // -------------------------------------
                         case "aiagent":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.AIAgent = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.AIAgent = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
 
                             // If OFF, then all AI classses will disconnect the next
@@ -92,212 +92,212 @@ namespace JAXBase.Executer
 
                         case "ansi":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.ANSI = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.ANSI = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "asserts":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Asserts = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Asserts = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "autoincerror":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.AutoIncError = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.AutoIncError = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "autosave":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.AutoSave = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.AutoSave = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "confirm":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Confirm = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Confirm = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "cpdialog":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.CP_Dialog = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.CP_Dialog = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "cursor":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Cursor = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Cursor = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "debug":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Debug = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Debug = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "deleted":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Deleted = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Deleted = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "development":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Development = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Development = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "echo":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Echo = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Echo = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "exact":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Exact = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Exact = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "exclusive":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Exclusive = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Exclusive = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "fixed":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Fixed = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Fixed = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "fullpath":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.FullPath = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.FullPath = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "headings":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Headings = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Headings = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "includesource":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.IncludeSource = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.IncludeSource = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "lock":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Lock = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Lock = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "logerrors":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.LogErrors = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.LogErrors = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "multilocks":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.MultiLocks = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.MultiLocks = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "near":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Near = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Near = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "null":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Null = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Null = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "readborder":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Readborder = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Readborder = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "safety":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Safety = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Safety = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "seconds":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Seconds = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Seconds = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "space":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Space = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Space = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "sqlbuffering":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.SQLBuffering = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.SQLBuffering = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "status":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Status = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Status = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "step":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Step = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Step = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
 
-                            //if (jbe.App.CurrentDS.JaxSettings.Step == false && jbe.App.JaxDebugger is not null)
+                            //if (Program.CurrentApp.CurrentDS.JaxSettings.Step == false && Program.CurrentApp.JaxDebugger is not null)
                             //{
                             //    // Shut down the debugger and resume execution of the program
-                            //    jbe.App.JaxDebugger.EndDebugging();
-                            //    jbe.App.JaxDebugger = null;
+                            //    Program.CurrentApp.JaxDebugger.EndDebugging();
+                            //    Program.CurrentApp.JaxDebugger = null;
                             //}
                             break;
 
                         case "sysformats":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.SysFormats = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.SysFormats = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "tableprompt":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.TablePrompt = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.TablePrompt = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "trbetween":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.TRBetween = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.TRBetween = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "unique":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Unique = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.Unique = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
                         case "varcharmapping":
                             if (HasOnOff == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.VarCharMapping = IsOn;
+                            Program.CurrentApp.CurrentDS.JaxSettings.VarCharMapping = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
@@ -306,68 +306,68 @@ namespace JAXBase.Executer
                         // -------------------------------------
                         case "blocksize":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.BlockSize = JAXLib.Between(ToExpression.AsInt(), 1, 1024) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.BlockSize.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.BlockSize = JAXLib.Between(ToExpression.AsInt(), 1, 1024) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.BlockSize.ToString();
                             break;
 
                         case "datasession":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.DataSession = ToExpression.AsInt() > 0 ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.DataSession.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.DataSession = ToExpression.AsInt() > 0 ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.DataSession.ToString();
                             break;
 
                         case "fdow":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.FDOW = JAXLib.Between(ToExpression.AsInt(), 1, 7) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.FDOW.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.FDOW = JAXLib.Between(ToExpression.AsInt(), 1, 7) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.FDOW.ToString();
                             break;
 
                         case "fweek":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.FWeek = JAXLib.Between(ToExpression.AsInt(), 1, 3) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.FWeek.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.FWeek = JAXLib.Between(ToExpression.AsInt(), 1, 3) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.FWeek.ToString();
                             break;
 
                         case "hours":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Hours = JAXLib.InList(ToExpression.AsInt(), 12, 24) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.Hours.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.Hours = JAXLib.InList(ToExpression.AsInt(), 12, 24) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.Hours.ToString();
                             break;
 
                         case "memowidth":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.MemoWidth = JAXLib.Between(ToExpression.AsDouble(), 0D, 8000D) ? (uint)ToExpression.AsDouble() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.MemoWidth.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.MemoWidth = JAXLib.Between(ToExpression.AsDouble(), 0D, 8000D) ? (uint)ToExpression.AsDouble() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.MemoWidth.ToString();
                             break;
 
                         case "odometer":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Odometer = JAXLib.Between(ToExpression.AsInt(), 1, 10000) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.Odometer.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.Odometer = JAXLib.Between(ToExpression.AsInt(), 1, 10000) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.Odometer.ToString();
                             break;
 
                         case "strictdate":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.StrictDate = JAXLib.Between(ToExpression.AsInt(), 0, 2) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.StrictDate.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.StrictDate = JAXLib.Between(ToExpression.AsInt(), 0, 2) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.StrictDate.ToString();
                             break;
 
                         case "tablevalidate":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.TableValidate = JAXLib.Between(ToExpression.AsInt(), 1, 15) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.TableValidate.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.TableValidate = JAXLib.Between(ToExpression.AsInt(), 1, 15) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.TableValidate.ToString();
                             break;
 
                         case "topicid":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.Topic_ID = ToExpression.AsInt() > 0 ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.Topic_ID.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.Topic_ID = ToExpression.AsInt() > 0 ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.Topic_ID.ToString();
                             break;
 
                         case "typeahead":
                             if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
-                            jbe.App.CurrentDS.JaxSettings.TypeAhead = JAXLib.Between(ToExpression.AsInt(), 0, 255) ? ToExpression.AsInt() : throw new Exception("3003|");
-                            status += "is " + jbe.App.CurrentDS.JaxSettings.TypeAhead.ToString();
+                            Program.CurrentApp.CurrentDS.JaxSettings.TypeAhead = JAXLib.Between(ToExpression.AsInt(), 0, 255) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.TypeAhead.ToString();
                             break;
 
 
@@ -380,7 +380,7 @@ namespace JAXBase.Executer
                             if (HasOnOff)
                             {
                                 status += " is " + (IsOn ? "ON" : "OFF");
-                                jbe.App.CurrentDS.JaxSettings.Alternate = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Alternate = IsOn;
                             }
 
                             if (eCodes.To.Count > 0)
@@ -389,9 +389,9 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Alternate = false;      // Ending all output to the current file and autosetting to off
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Alternate = false;      // Ending all output to the current file and autosetting to off
 
-                                jbe.App.CurrentDS.JaxSettings.Alternate_Name = settingValue.Trim();
+                                Program.CurrentApp.CurrentDS.JaxSettings.Alternate_Name = settingValue.Trim();
                             }
                             break;
 
@@ -400,7 +400,7 @@ namespace JAXBase.Executer
                             if (HasOnOff)
                             {
                                 status += " is " + (IsOn ? "ON" : "OFF");
-                                jbe.App.CurrentDS.JaxSettings.Bell = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Bell = IsOn;
                             }
 
                             if (eCodes.To.Count > 0)
@@ -409,9 +409,9 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Bell = false;      // Ending all output to the current file and autosetting to off
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Bell = false;      // Ending all output to the current file and autosetting to off
 
-                                jbe.App.CurrentDS.JaxSettings.Bell_Name = settingValue.Trim();
+                                Program.CurrentApp.CurrentDS.JaxSettings.Bell_Name = settingValue.Trim();
                             }
                             break;
 
@@ -421,7 +421,7 @@ namespace JAXBase.Executer
                             if (HasOnOff)
                             {
                                 status += " is " + (IsOn ? "ON" : "OFF");
-                                jbe.App.CurrentDS.JaxSettings.Carry = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Carry = IsOn;
                             }
 
                             if (eCodes.To.Count > 0)
@@ -430,9 +430,9 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Carry = false;      // Ending all output to the current file and autosetting to off
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Carry = false;      // Ending all output to the current file and autosetting to off
 
-                                jbe.App.CurrentDS.JaxSettings.Carry_Name = settingValue.Trim();
+                                Program.CurrentApp.CurrentDS.JaxSettings.Carry_Name = settingValue.Trim();
                             }
                             break;
 
@@ -449,18 +449,18 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Path = string.Empty;
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Path = string.Empty;
                                 else
                                 {
                                     if (eCodes.Flags.Length == 0 || Array.IndexOf(eCodes.Flags, "additive") < 0)
                                     {
                                         // "additive" flag not included, so overwrite the file
-                                        jbe.App.CurrentDS.JaxSettings.Path = settingValue;
+                                        Program.CurrentApp.CurrentDS.JaxSettings.Path = settingValue;
                                     }
                                     else
-                                        jbe.App.CurrentDS.JaxSettings.Path += (";" + settingValue.Trim()).Trim(';');
+                                        Program.CurrentApp.CurrentDS.JaxSettings.Path += (";" + settingValue.Trim()).Trim(';');
 
-                                    AppIO.Talk("Path is " + jbe.App.CurrentDS.JaxSettings.Path);
+                                    AppIO.Talk("Path is " + Program.CurrentApp.CurrentDS.JaxSettings.Path);
                                 }
                             }
                             break;
@@ -470,14 +470,14 @@ namespace JAXBase.Executer
                             if (HasOnOff)
                             {
                                 status += " is " + (IsOn ? "ON" : "OFF");
-                                jbe.App.CurrentDS.JaxSettings.Century = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Century = IsOn;
                             }
 
                             if (eCodes.To.Count > 0)
                             {
                                 if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
 
-                                jbe.App.CurrentDS.JaxSettings.Century_Current = JAXLib.Between(ToExpression.AsInt(), 0, 99) ? ToExpression.AsInt() : throw new Exception("3031|");      // Ending all output to the current file and autosetting to off
+                                Program.CurrentApp.CurrentDS.JaxSettings.Century_Current = JAXLib.Between(ToExpression.AsInt(), 0, 99) ? ToExpression.AsInt() : throw new Exception("3031|");      // Ending all output to the current file and autosetting to off
                             }
 
                             break;
@@ -491,7 +491,7 @@ namespace JAXBase.Executer
                         case "coverage":        // ON/OFF | TO [FileName][ADDITIVE]
                             if (HasOther) throw new Exception("11|");
                             if (HasOnOff)
-                                jbe.App.CurrentDS.JaxSettings.Coverage = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage = IsOn;
 
 
                             if (eCodes.To.Count > 0)
@@ -500,7 +500,7 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Coverage = false;      // Ending all output to the current file and autosetting to off
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Coverage = false;      // Ending all output to the current file and autosetting to off
 
                                 if (eCodes.Flags.Length == 0 || Array.IndexOf(eCodes.Flags, "additive") < 0)
                                 {
@@ -508,7 +508,7 @@ namespace JAXBase.Executer
                                     JAXLib.StrToFile("", settingValue.Trim(), 0);
                                 }
 
-                                jbe.App.CurrentDS.JaxSettings.Coverage_Name = settingValue.Trim();
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage_Name = settingValue.Trim();
                             }
                             break;
 
@@ -519,7 +519,7 @@ namespace JAXBase.Executer
                             status += consoleName.ToUpper() + " to ";
 
                             //if (HasOnOff)
-                            //    jbe.App.JAXConsoles[consoleName].Visible(IsOn);
+                            //    Program.CurrentApp.JAXConsoles[consoleName].Visible(IsOn);
 
                             if (string.IsNullOrWhiteSpace(settingValue) == false)
                             {
@@ -527,12 +527,12 @@ namespace JAXBase.Executer
                                 {
                                     case "inactive":
                                         status += settingValue.ToUpper();
-                                        //jbe.App.JAXConsoles[consoleName].Active(false);
+                                        //Program.CurrentApp.JAXConsoles[consoleName].Active(false);
                                         break;
 
                                     default:
                                         status += "";
-                                        //jbe.App.JAXConsoles[consoleName].Active(true);
+                                        //Program.CurrentApp.JAXConsoles[consoleName].Active(true);
                                         break;
                                 }
                             }
@@ -548,8 +548,8 @@ namespace JAXBase.Executer
                                     if (Directory.Exists(ToExpression.AsString()))
                                     {
                                         // Set the default path
-                                        jbe.App.CurrentDS.JaxSettings.Default = JAXLib.Addbs(ToExpression.AsString());
-                                        status += "directory to " + jbe.App.CurrentDS.JaxSettings.Default;
+                                        Program.CurrentApp.CurrentDS.JaxSettings.Default = JAXLib.Addbs(ToExpression.AsString());
+                                        status += "directory to " + Program.CurrentApp.CurrentDS.JaxSettings.Default;
                                     }
                                     else
                                         throw new Exception("202|" + ToExpression.AsString());
@@ -569,9 +569,9 @@ namespace JAXBase.Executer
                         case "eventtracking":   // ON/OFF/PROMPT | TO [FileName [ADDITIVE]]
                             if (Array.IndexOf(eCodes.Flags, "on") < 0 || Array.IndexOf(eCodes.Flags, "off") < 0 || eCodes.Flags.Length == 0) throw new Exception("11|");
                             if (Array.IndexOf(eCodes.Flags, "on") >= 0)
-                                jbe.App.CurrentDS.JaxSettings.Coverage = true;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage = true;
                             else if (Array.IndexOf(eCodes.Flags, "off") >= 0 || (eCodes.Flags.Length == 0 && eCodes.To.Count == 0))
-                                jbe.App.CurrentDS.JaxSettings.Coverage = false;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage = false;
 
                             if (Array.IndexOf(eCodes.Flags, "prompt") >= 0)
                             {
@@ -584,7 +584,7 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Coverage = false;      // Ending all output to the current file and autosetting to off
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Coverage = false;      // Ending all output to the current file and autosetting to off
 
                                 if (eCodes.Flags.Length == 0 || Array.IndexOf(eCodes.Flags, "additive") < 0)
                                 {
@@ -592,7 +592,7 @@ namespace JAXBase.Executer
                                     JAXLib.StrToFile("", settingValue.Trim(), 0);
                                 }
 
-                                jbe.App.CurrentDS.JaxSettings.Coverage_Name = settingValue.Trim();
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage_Name = settingValue.Trim();
                             }
                             break;
 
@@ -606,8 +606,8 @@ namespace JAXBase.Executer
                             throw new Exception("1999|Unsupported setting " + settingName);
 
                         case "index":           // TO [IndexFileList ] [ORDER nIndexNumber | IDXIndexFileName] [IN nWorkArea|cAlias] [SESSION nSessionID]
-                            ds = jbe.App.CurrentDataSession;
-                            wa = jbe.App.CurrentDS.CurrentWorkArea();
+                            ds = Program.CurrentApp.CurrentDataSession;
+                            wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
                             nds = eCodes.SESSION;
 
@@ -617,23 +617,23 @@ namespace JAXBase.Executer
                                 if (nds != 0)
                                 {
                                     if (nds > 0)
-                                        jbe.App.SetDataSession(nds);
+                                        Program.CurrentApp.SetDataSession(nds);
                                     else
                                         throw new Exception("4016|");
                                 }
 
                                 // Workarea setting
                                 JAXObjects.Token w = new();
-                                w = await jbe.App.SolveFromRPNString(eCodes.InExpr);
+                                w = await Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
 
                                 if (w.Element.Type.Equals("C"))
-                                    jbe.App.CurrentDS.SelectWorkArea(w.AsString());
+                                    Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsString());
                                 else if (w.Element.Type.Equals("N"))
                                 {
                                     if (w.AsInt() != 0)
                                     {
                                         if (w.AsInt() > 0)
-                                            jbe.App.CurrentDS.SelectWorkArea(w.AsInt());
+                                            Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsInt());
                                         else
                                             throw new Exception("4016|");
                                     }
@@ -642,7 +642,7 @@ namespace JAXBase.Executer
                                     throw new Exception("11|");
 
                                 // Open, select, or set no order
-                                JAXDirectDBF db = jbe.App.CurrentDS.CurrentWA;
+                                JAXDirectDBF db = Program.CurrentApp.CurrentDS.CurrentWA;
                                 if (db is not null && db.DbfInfo.DBFStream is not null)
                                 {
                                     if (string.IsNullOrEmpty(eCodes.NAME))
@@ -663,8 +663,8 @@ namespace JAXBase.Executer
                             }
 
                             // Revert back to the original session and area
-                            jbe.App.SetDataSession(ds);
-                            jbe.App.CurrentDS.SelectWorkArea(wa);
+                            Program.CurrentApp.SetDataSession(ds);
+                            Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
                             break;
 
 
@@ -688,8 +688,8 @@ namespace JAXBase.Executer
                             throw new Exception("1999|Unsupported setting " + settingName);
 
                         case "order":           // TO [nIndexNumber | IDXIndexFileName] [IN nWorkArea | cTableAlias] [ASCENDING | DESCENDING]]
-                            ds = jbe.App.CurrentDataSession;
-                            wa = jbe.App.CurrentDS.CurrentWorkArea();
+                            ds = Program.CurrentApp.CurrentDataSession;
+                            wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
                             nds = eCodes.SESSION;
 
@@ -698,22 +698,22 @@ namespace JAXBase.Executer
                                 if (nds != 0)
                                 {
                                     if (nds > 0)
-                                        jbe.App.SetDataSession(nds);
+                                        Program.CurrentApp.SetDataSession(nds);
                                     else
                                         throw new Exception("4016|");
                                 }
 
                                 JAXObjects.Token w = new();
-                                w = await jbe.App.SolveFromRPNString(eCodes.InExpr);
+                                w = await Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
 
                                 if (w.Element.Type.Equals("C"))
-                                    jbe.App.CurrentDS.SelectWorkArea(w.AsString());
+                                    Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsString());
                                 else if (w.Element.Type.Equals("N"))
                                 {
                                     if (w.AsInt() != 0)
                                     {
                                         if (w.AsInt() > 0)
-                                            jbe.App.CurrentDS.SelectWorkArea(w.AsInt());
+                                            Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsInt());
                                         else
                                             throw new Exception("4016|");
                                     }
@@ -722,7 +722,7 @@ namespace JAXBase.Executer
                                     throw new Exception("11|");
 
                                 // Open, select or set no controlling index
-                                JAXDirectDBF db = jbe.App.CurrentDS.CurrentWA;
+                                JAXDirectDBF db = Program.CurrentApp.CurrentDS.CurrentWA;
                                 if (db is not null && db.DbfInfo.DBFStream is not null)
                                 {
                                     if (string.IsNullOrEmpty(eCodes.NAME))
@@ -734,7 +734,7 @@ namespace JAXBase.Executer
                                     {
                                         // WITH ASCENDING|DESCENDING
                                         if (eCodes.With.Count != 1) throw new Exception("1233||Invalid WITH clause");
-                                        JAXObjects.Token ord = await jbe.App.SolveFromRPNString(eCodes.With[0].RNPExpr);
+                                        JAXObjects.Token ord = await Program.CurrentApp.SolveFromRPNString(eCodes.With[0].RNPExpr);
                                         if (ord.Element.Type.Equals("C"))
                                             db.DbfInfo.IDX[db.DbfInfo.ControllingIDX].NaturalOrder = ord.AsString().StartsWith("desc", StringComparison.OrdinalIgnoreCase) == false;
                                         else
@@ -752,9 +752,9 @@ namespace JAXBase.Executer
                             if (eCodes.Flags.Length > 0)
                             {
                                 if (Array.IndexOf(eCodes.Flags, "on") >= 0)
-                                    jbe.App.CurrentDS.JaxSettings.Printer = jbe.App.CurrentDS.JaxSettings.Printer_Default;
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Printer = Program.CurrentApp.CurrentDS.JaxSettings.Printer_Default;
                                 else if (Array.IndexOf(eCodes.Flags, "off") >= 0)
-                                    jbe.App.CurrentDS.JaxSettings.Printer = -1;
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Printer = -1;
 
                                 if (Array.IndexOf(eCodes.Flags, "prompt") >= 0)
                                 {
@@ -762,7 +762,7 @@ namespace JAXBase.Executer
                                 }
                             }
                             else
-                                jbe.App.CurrentDS.JaxSettings.Printer = -1;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Printer = -1;
 
                             break;
 
@@ -775,10 +775,10 @@ namespace JAXBase.Executer
                             // Add the list of procedure files
                             for (int i = 0; i < eCodes.To.Count; i++)
                             {
-                                JAXObjects.Token pfile = await jbe.App.SolveFromRPNString(eCodes.To[i].Name);
+                                JAXObjects.Token pfile = await Program.CurrentApp.SolveFromRPNString(eCodes.To[i].Name);
 
                                 if (pfile.TType.Equals("S") && pfile.Element.Type.Equals("C"))
-                                    await AppHelper.LoadPrgIntoCache(jbe.App, "P", pfile.AsString(), string.Empty);
+                                    await AppHelper.LoadPrgIntoCache("P", pfile.AsString(), string.Empty);
                                 else
                                     throw new Exception("11");
                             }
@@ -799,7 +799,7 @@ namespace JAXBase.Executer
                             if (HasOnOff)
                             {
                                 status += " is " + (IsOn ? "ON" : "OFF");
-                                jbe.App.CurrentDS.JaxSettings.Resource = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Resource = IsOn;
                             }
 
 
@@ -809,9 +809,9 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Resource = false;      // Ending all output to the current file and autosetting to off
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Resource = false;      // Ending all output to the current file and autosetting to off
 
-                                jbe.App.CurrentDS.JaxSettings.Resource_Name = settingValue.Trim();
+                                Program.CurrentApp.CurrentDS.JaxSettings.Resource_Name = settingValue.Trim();
                             }
                             break;
 
@@ -830,7 +830,7 @@ namespace JAXBase.Executer
                             if (HasOnOff)
                             {
                                 status += " is " + (IsOn ? "ON" : "OFF");
-                                jbe.App.CurrentDS.JaxSettings.Talk = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.Talk = IsOn;
                             }
 
 
@@ -840,12 +840,12 @@ namespace JAXBase.Executer
 
                                 settingValue = ToExpression.AsString();
                                 if (string.IsNullOrWhiteSpace(settingValue))
-                                    jbe.App.CurrentDS.JaxSettings.Talk = false;      // Ending all output to the current file and autosetting to off
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Talk = false;      // Ending all output to the current file and autosetting to off
 
                                 if (string.IsNullOrWhiteSpace(settingValue) == false && settingValue.Trim().Equals("default", StringComparison.OrdinalIgnoreCase) == false)
                                     throw new Exception("4013|" + settingValue);
 
-                                jbe.App.CurrentDS.JaxSettings.Talk_Console = settingValue.ToLower().Trim();
+                                Program.CurrentApp.CurrentDS.JaxSettings.Talk_Console = settingValue.ToLower().Trim();
                             }
                             break;
 
@@ -859,7 +859,7 @@ namespace JAXBase.Executer
 
                         case "typeconvert":
                             if (HasOnOff)
-                                jbe.App.CurrentDS.JaxSettings.TypeConvert = IsOn;
+                                Program.CurrentApp.CurrentDS.JaxSettings.TypeConvert = IsOn;
                             break;
 
                         default:

@@ -1,4 +1,5 @@
-﻿/******************************************************************************************************************************************jaxDataSession
+﻿/*****************************************************************************************************************************************
+ * 
  * This is the variable manager for simple variables, arrays, and objectsjaxDataSession
  * A variable can hold any kind of data (or be null) and array elements
  * or object properties can each individually be of any type (or null).
@@ -893,7 +894,10 @@ namespace JAXBase.Core
                 {
                     // If the row key is not provided, create the next available
                     if (rowKey < 1)
+                    {
                         while (_dictionary!.ContainsKey(++ListItemID)) ;
+                        rowKey = ListItemID;
+                    }
 
                     // Do we have a valid dictionary object?
                     if (_dictionary is null)
@@ -906,9 +910,11 @@ namespace JAXBase.Core
                     // Create the token with dimension if appropriate
                     JAXObjects.Token tk = new();
 
-                    if (Column != Col)
-                        tk.SetDimension(1, Col, true);
+                    //if (Column != Col)
+                    //    tk.SetDimension(1, Col, true);
 
+                    if (Column > Col)
+                        tk.SetDimension(1, Column, true);
 
                     if (_dictionary.ContainsKey(rowKey))
                     {
@@ -960,14 +966,13 @@ namespace JAXBase.Core
                     if (Column != Col)
                         tk.SetDimension(1, Col, true);
 
-
                     // Add the new key/token pair
                     tk.SetElement(1, Column);
                     tk.Element.Value = cItem;
                     _dictionary.Add(rowKey, tk);
 
                     // If index < count, insert the new key into the mapped list at the appropriate
-                    // spot, otherwise add to the end
+                    // spot, otherwise leave it at the end of the array
                     if (Index > 0 && Index < _mappedList!.Count)
                     {
                         int pos = _mappedList[^1];
@@ -1001,18 +1006,13 @@ namespace JAXBase.Core
                     if (_dictionary is null)
                         throw new Exception("8100|");
 
-                    if (_dictionary.ContainsKey(row))
-                    {
-                        // We're changing all elements of the dictionary
-                        // to a 1D array with Col elements
-                        Col = col;
-                        foreach (KeyValuePair<int, Token> tk in _dictionary)
-                            tk.Value.SetDimension(1, col, true);
-                    }
-                    else
-                        throw new Exception("8101|");
+                    // We're changing all elements of the dictionary
+                    // to a 1D array with Col elements
+                    Col = col;
+                    foreach (KeyValuePair<int, Token> tk in _dictionary)
+                        tk.Value.SetDimension(1, col, true);
                 }
-                if (TType.Equals("A") || makeArray)
+                else if (TType.Equals("A") || makeArray)
                 {
                     Row = row;
                     Col = col;

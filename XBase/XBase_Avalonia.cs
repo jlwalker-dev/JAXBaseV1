@@ -602,7 +602,9 @@ namespace JAXBase.XBase
 
             JAXObjects.Token objtk = new();
             objtk.Element.Value = objValue;
-            AppIO.DebugLog($"MyObj={me.JOWName} BASE.{propertyName}={objtk.AsString()}");
+
+            if (InInit == false)
+                AppIO.DebugLog($"MyObj={me.JOWName} BASE.{propertyName}={objtk.AsString()}");
 
             propertyName = propertyName.ToLower();
 
@@ -820,6 +822,11 @@ namespace JAXBase.XBase
         {
             int result = 0;
             methodName = methodName.ToLower();
+
+            if (methodName.Equals("refresh"))
+            {
+                int iii = 0;
+            }
 
             if (Methods.ContainsKey(methodName))
             {
