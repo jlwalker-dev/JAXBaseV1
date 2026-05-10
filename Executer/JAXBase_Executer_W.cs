@@ -11,7 +11,7 @@ namespace JAXBase.Executer
          * WAIT [cMessageText] [TO VarName] [AT nRow, nColumn] [NOWAIT] [CLEAR | NOCLEAR] [TIMEOUT nSeconds]
          * 
          */
-        public static async Task<string> Wait(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Wait(ExecuterCodes eCodes)
         {
             AppErrorHandling.ClearErrors();
             string result = string.Empty;
@@ -20,14 +20,14 @@ namespace JAXBase.Executer
             {
                 JAXObjects.Token answer = new();
 
-                if (jbe.App.WaitWindow is not null)
+                if (Program.CurrentApp.WaitWindow is not null)
                 {
-                    jbe.App.WaitWindow.Close();
-                    jbe.App.WaitWindow = null;
+                    Program.CurrentApp.WaitWindow.Close();
+                    Program.CurrentApp.WaitWindow = null;
                 }
 
                 if (eCodes.Expressions.Count == 1)
-                    answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                 else if (Array.IndexOf(eCodes.Flags, "clear") > 0)
                     answer.Element.Value = "Press a key...";
                 else
@@ -38,7 +38,7 @@ namespace JAXBase.Executer
                 string varName = string.Empty;
                 if (eCodes.To.Count > 0)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.To[0].Name);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name);
                     if (answer.Element.Type.Equals("C"))
                         varName = answer.AsString();
                     else
@@ -46,7 +46,7 @@ namespace JAXBase.Executer
                 }
 
                 bool wait4 = Array.IndexOf(eCodes.Flags, "wait") > 0 || eCodes.To.Count > 0;
-                jbe.App.WaitWindow = JAXLib.WaitWindow(jbe.App, msg, eCodes.At.row, eCodes.At.col, Array.IndexOf(eCodes.Flags, "clear") > 0, wait4, eCodes.TIME, out string retval);
+                Program.CurrentApp.WaitWindow = JAXLib.WaitWindow(Program.CurrentApp, msg, eCodes.At.row, eCodes.At.col, Array.IndexOf(eCodes.Flags, "clear") > 0, wait4, eCodes.TIME, out string retval);
 
                 if (string.IsNullOrWhiteSpace(varName) == false)
                     await AppVars.SetVarFromExpression(varName, retval, true);
@@ -67,18 +67,18 @@ namespace JAXBase.Executer
          * ENDWITH
          * 
          */
-        public static async Task<string> With(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> With(ExecuterCodes eCodes)
         {
             AppErrorHandling.ClearErrors();
             string result = string.Empty;
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
                 if (eCodes.Expressions.Count != 1)
                     throw new Exception($"10||WITH variable expression has {eCodes.Expressions.Count} components");
 
-                JAXObjects.Token tk = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                JAXObjects.Token tk = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                 if (tk.Element.Type.Equals("C") == false)
                     throw new Exception($"11||Expecting variable in WITH statement");
 
@@ -88,13 +88,13 @@ namespace JAXBase.Executer
 
                 JAXObjectWrapper? parent = null;
 
-                if (varName[0] == '.' && jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count > 0)
+                if (varName[0] == '.' && Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count > 0)
                 {
                     // TODO - this could be layered many deep
                     // With obj
                     //    with .obj
                     //        with .obj ...
-                    string parentVar = jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack[^1];
+                    string parentVar = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack[^1];
                     JAXObjects.Token ptk = await AppVars.GetVarFromExpression(parentVar, null);
 
                     if (ptk.Element.Type.Equals("O") == false)
@@ -109,7 +109,7 @@ namespace JAXBase.Executer
                 if (tk.Element.Type.Equals("O") == false)
                     throw new Exception($"11||With variable {varName} is not an object");
 
-                jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Add(varName);
+                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Add(varName);
             }
             catch (Exception ex)
             {

@@ -87,7 +87,9 @@ namespace JAXBase.XBase
 
             JAXObjects.Token objtk = new();
             objtk.Element.Value = objValue;
-            AppIO.DebugLog($"MyObj={me.JOWName} BASE.{propertyName}={objtk.AsString()}");
+
+            if (InInit == false)
+                AppIO.DebugLog($"MyObj={me.JOWName} BASE.{propertyName}={objtk.AsString()}");
 
             propertyName = propertyName.ToLower();
 

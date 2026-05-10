@@ -25,20 +25,20 @@ namespace JAXBase.XBase
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
             // Do we need to add buttons?
-            if (InInit)
-            {
-                // ----------------------------------------
-                // Final setup of properties
-                // ----------------------------------------
-                await SetProperty("height", 40, 0);
-                await SetProperty("width", 174, 0);
-                await SetProperty("borderstyle", 1, 0);   // Set up the border
-                await SetProperty("borderwidth", 1, 0);   // Set up the border
-                await SetProperty("bordercolor", "100,100,100", 0);
-                await SetProperty("buttonlayout", 1, 0);  // Horizontal layout
-                await SetProperty("buttoncount", 2, 0);   // Start with 2 buttons
-                await FixSpacing();
-            }
+            //if (InInit)
+            //{
+            //    // ----------------------------------------
+            //    // Final setup of properties
+            //    // ----------------------------------------
+            //    await SetProperty("height", 40, 0);
+            //    await SetProperty("width", 174, 0);
+            //    await SetProperty("borderstyle", 1, 0);   // Set up the border
+            //    await SetProperty("borderwidth", 1, 0);   // Set up the border
+            //    await SetProperty("bordercolor", "100,100,100", 0);
+            //    await SetProperty("buttonlayout", 1, 0);  // Horizontal layout
+            //    await SetProperty("buttoncount", 2, 0);   // Start with 2 buttons
+            //    await FixSpacing();
+            //}
 
             bool result = await base.PostInit(callBack, parameterList);
 

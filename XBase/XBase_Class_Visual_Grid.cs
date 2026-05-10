@@ -1196,9 +1196,9 @@ namespace JAXBase.XBase
                 }
 
                 App.ParameterClassList.Clear();
-                AppHelper.LoadTokenValToParameters(App, new(colIdx + 1));
-                AppHelper.LoadTokenValToParameters(App, new(rowidx + 1));
-                AppHelper.LoadTokenValToParameters(App, new(value));
+                AppHelper.LoadTokenValToParameters(new(colIdx + 1));
+                AppHelper.LoadTokenValToParameters(new(rowidx + 1));
+                AppHelper.LoadTokenValToParameters(new(value));
                 //AppIO.DebugLog("Calling AfterRowColChange logic", false);
 
                 await _CallMethod("afterrowcolchange");

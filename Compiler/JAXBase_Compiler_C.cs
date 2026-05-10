@@ -62,8 +62,6 @@ namespace JAXBase.Compiler
                         };
 
                         result = Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter;
-
-                        //result = jbc.Key_Parser(cmdRest, ["all", "debug", "events", "error", "fields", "macros", "memory", "typeahead"], string.Empty, []);
                     }
                 }
             }

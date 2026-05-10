@@ -7,6 +7,7 @@ using Avalonia.Media;
 using JAXBase.Core;
 using JAXBase.Utilities;
 using System.Globalization;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace JAXBase.XBase
 {
@@ -61,7 +62,8 @@ namespace JAXBase.XBase
             tk.Element.Value = objValue;    // Now we can type it easily!
             propertyName = propertyName.ToLower();
 
-            AppIO.DebugLog($"Label: {me.JOWName.ToUpper()}.{propertyName}={tk.AsString()}");
+            if (InInit == false)
+                AppIO.DebugLog($"Label: {me.JOWName.ToUpper()}.{propertyName}={tk.AsString()}");
 
             if (UserProperties.ContainsKey(propertyName))
             {
@@ -72,6 +74,78 @@ namespace JAXBase.XBase
                     // Visual object common property handler
                     switch (propertyName.ToLower())
                     {
+                        case "alignment":
+                            if (tk.Element.Type.Equals("N"))
+                            {
+                                int align = tk.AsInt();
+                                if (JAXLib.Between(align, 0, 9))
+                                {
+                                    objValue = align;
+                                    switch (align)
+                                    {
+                                        case 0:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 1:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            break;
+
+                                        case 2:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Center;
+                                            break;
+
+                                        case 3:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+
+                                            // TODO - get the value to determine alignment.  L for numeric, right for other
+                                            if (UserProperties["value"].Element.Type.Equals("N"))
+                                                lbl.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            else
+                                                lbl.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 4:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 5:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            break;
+
+                                        case 6:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Center;
+                                            break;
+
+                                        case 7:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Left;
+                                            break;
+
+                                        case 8:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                                            break;
+
+                                        case 9:
+                                            lbl.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom;
+                                            lbl.TextAlignment = Avalonia.Media.TextAlignment.Center;
+                                            break;
+                                    }
+                                }
+                                else
+                                    result = 41;
+                            }
+                            else
+                                result = 11;
+                            break;
+
                         // Intercept special handling of properties
                         case "autosize":
                             if (tk.Element.Type.Equals("L"))
@@ -269,44 +343,6 @@ namespace JAXBase.XBase
         }
 
 
-        public override string[] JAXMethods()
-        {
-            return [
-                "addproperty","move","readexpression","readmethod","refresh","resettodefault","saveasclass","setfocus","writeexpression","writemethod","zorder"
-                ];
-        }
-
-        public override string[] JAXEvents()
-        {
-            return [
-                "click","dblclick","destroy","error","gotfocus","init","load","lostfocus",
-                "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
-                "rightclick","visiblechanged","when"
-            ];
-        }
-
-        public override string[] JAXProperties()
-        {
-            return [
-                "alignment,n,0","anchor,n,0","autosize,l,false",
-                "backcolor,R,255|255|255","backstyle,n,1","BaseClass,C!,label","bordercolor,R,0|0|0","borderwidth,n,0","borderstyle,n,0",
-                "caption,c,","Class,C!,label","ClassLibrary,C!,","Comment,C,",
-                "disabledbackcolor,R,220|220|220","disabledforecolor,R,128|128|128",
-                "Enabled,L,true",
-                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,9",
-                "forecolor,R,0|0|0",
-                "height,n,21",
-                "left,N,0",
-                "name,c,label1",
-                "parent,o!,","parentclass,C!,",
-                "righttoleft,L,false",
-                "tabindex,n,1","tabstop,l,false","tag,C,","top,N,0","tooltiptext,c,",
-                "visible,l,true",
-                "width,N,100","wordwrap,l,false"
-                ];
-        }
-
-
         /*
          * Word wrap handler for avalonia
          */
@@ -406,6 +442,46 @@ namespace JAXBase.XBase
             Avalonia.Size size = e.NewSize;
             UserProperties["width"].Element.Value = size.Width;
             UserProperties["height"].Element.Value = size.Height;
+        }
+
+
+
+
+        public override string[] JAXMethods()
+        {
+            return [
+                "addproperty","move","readexpression","readmethod","refresh","resettodefault","saveasclass","setfocus","writeexpression","writemethod","zorder"
+                ];
+        }
+
+        public override string[] JAXEvents()
+        {
+            return [
+                "click","dblclick","destroy","error","gotfocus","init","load","lostfocus",
+                "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
+                "rightclick","visiblechanged","when"
+            ];
+        }
+
+        public override string[] JAXProperties()
+        {
+            return [
+                "alignment,n,0","anchor,n,0","autosize,l,false",
+                "backcolor,R,255|255|255","backstyle,n,1","BaseClass,C!,label","bordercolor,R,0|0|0","borderwidth,n,0","borderstyle,n,0",
+                "caption,c,","Class,C!,label","ClassLibrary,C!,","Comment,C,",
+                "disabledbackcolor,R,220|220|220","disabledforecolor,R,128|128|128",
+                "Enabled,L,true",
+                "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,9",
+                "forecolor,R,0|0|0",
+                "height,n,21",
+                "left,N,0",
+                "name,c,label1",
+                "parent,o!,","parentclass,C!,",
+                "righttoleft,L,false",
+                "tabindex,n,1","tabstop,l,false","tag,C,","top,N,0","tooltiptext,c,",
+                "visible,l,true",
+                "width,N,100","wordwrap,l,false"
+                ];
         }
     }
 }

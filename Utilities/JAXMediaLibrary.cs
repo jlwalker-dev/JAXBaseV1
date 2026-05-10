@@ -120,7 +120,7 @@ namespace JAXBase.Utilities
                     if (fileName.Contains(':') == false)
                     {
                         // Look for the image in search path using naming conventions
-                        string filePath = AppHelper.FindPathForFile(App, fileName);
+                        string filePath = AppHelper.FindPathForFile(fileName);
                         fileName = filePath + AppHelper.FixFileCase(string.Empty, JAXLib.JustFName(fileName), App.CurrentDS.JaxSettings.Naming, App.CurrentDS.JaxSettings.NamingAll);
                     }
                 }

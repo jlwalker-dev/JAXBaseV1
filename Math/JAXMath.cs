@@ -143,7 +143,7 @@ using JAXBase.XBase;
 
 namespace JAXBase.Math
 {
-    public class JAXMath(AppClass app)
+    public class JAXMath()
     {
         //private int stackcount = 0;
         //private string[] stack = new string[255];
@@ -151,7 +151,6 @@ namespace JAXBase.Math
         private int inArray = 0;
         private bool inVar = false;
         private readonly JAXMathAux MathAux = new();
-        private readonly AppClass App = app;
         private int DecWidth = 0;
 
 
@@ -450,8 +449,8 @@ namespace JAXBase.Math
             string string1, string2, stype1, stype2;
             JAXObjects.Token t1, t2;
             JAXObjects.Token tAnswer = new() { TType = "U" };
-            bool exactMatch = App.CurrentDS.JaxSettings.Exact;
-            int decimalPlaces = App.CurrentDS.JaxSettings.Decimals;
+            bool exactMatch = Program.CurrentApp.CurrentDS.JaxSettings.Exact;
+            int decimalPlaces = Program.CurrentApp.CurrentDS.JaxSettings.Decimals;
 
             // Set the environment for another Solve
             mathStack.Clear();
@@ -887,7 +886,7 @@ namespace JAXBase.Math
                                         break;
 
                                     case "=":
-                                        if (App.CurrentDS.JaxSettings.ANSI && slenZero == false)
+                                        if (Program.CurrentApp.CurrentDS.JaxSettings.ANSI && slenZero == false)
                                         {
                                             // Compares up to shortest string as long
                                             // both of them are at least 1 char long
@@ -906,7 +905,7 @@ namespace JAXBase.Math
 
                                     case "@":  // !=
                                     case "#":   // <>
-                                        if (App.CurrentDS.JaxSettings.ANSI && slenZero == false)
+                                        if (Program.CurrentApp.CurrentDS.JaxSettings.ANSI && slenZero == false)
                                         {
                                             // Compares up to shortest string
                                             if (slen1 > slen2)
@@ -1094,9 +1093,9 @@ namespace JAXBase.Math
 
                             // Most array functions start with an A
                             if (JAXLib.InList(_rpn, "`REMOVEPROPERTY"))
-                                mathStack.Token = await MathFuncsR.R(App, _rpn, pop);
+                                mathStack.Token = await MathFuncsR.R(Program.CurrentApp, _rpn, pop);
                             else
-                                mathStack.Token = await MathFuncsA.A0(App, _rpn, pop);
+                                mathStack.Token = await MathFuncsA.A0(Program.CurrentApp, _rpn, pop);
                         }
                         else
                         {
@@ -1112,62 +1111,62 @@ namespace JAXBase.Math
                             switch (_rpn[1].ToString())
                             {
                                 case "A":
-                                    mathStack.Token = MathFuncsA.A1(App, _rpn, pop);
+                                    mathStack.Token = MathFuncsA.A1(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "B":
-                                    mathStack.Token = MathFuncsB.B(App, _rpn, pop);
+                                    mathStack.Token = MathFuncsB.B(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "C":
-                                    mathStack.Token = await MathFuncsC.C(App, _rpn, pop);
+                                    mathStack.Token = await MathFuncsC.C(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "D":
                                 case "E":
-                                    mathStack.Token = await MathFuncsD.D(App, _rpn, pop);
+                                    mathStack.Token = await MathFuncsD.D(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "F":
-                                    mathStack.Token = MathFuncsF.F(App, _rpn, pop);
+                                    mathStack.Token = MathFuncsF.F(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "G":
-                                    mathStack.Token = await MathFuncsG.G(App, _rpn, pop);
+                                    mathStack.Token = await MathFuncsG.G(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "H":
                                 case "I":
-                                    mathStack.Token = MathFuncsH.H(App, _rpn, pop);
+                                    mathStack.Token = MathFuncsH.H(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "J":
                                 case "K":
                                 case "L":
-                                    mathStack.Token = MathFuncsL.L(App, _rpn, pop);
+                                    mathStack.Token = MathFuncsL.L(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "M":
                                 case "N":
-                                    mathStack.Token = await MathFuncsM.M(App, _rpn, pop);
+                                    mathStack.Token = await MathFuncsM.M(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "O":
                                 case "P":
                                 case "Q":
-                                    mathStack.Token = MathFuncsP.P(App, _rpn, pop);
+                                    mathStack.Token = MathFuncsP.P(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "R":
-                                    mathStack.Token = await MathFuncsR.R(App, _rpn, pop);
+                                    mathStack.Token = await MathFuncsR.R(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "S":
-                                    mathStack.Token = await MathFuncsS.S(App, _rpn, pop);
+                                    mathStack.Token = await MathFuncsS.S(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "T":
-                                    mathStack.Token = await MathFuncsT.T(App, _rpn, pop);
+                                    mathStack.Token = await MathFuncsT.T(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "U":
@@ -1176,7 +1175,7 @@ namespace JAXBase.Math
                                 case "X":
                                 case "Y":
                                 case "Z":
-                                    mathStack.Token = MathFuncsU.U(App, _rpn, pop);
+                                    mathStack.Token = MathFuncsU.U(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 default:
@@ -1407,91 +1406,6 @@ namespace JAXBase.Math
         }
 
 
-        /***************************************************************
-         * Process a variable call as a variable, udf, or an object and 
-         * the result will be placed back onto the math stack
-         ***************************************************************/
-        //private void ProcessVarCall(List<JAXObjects.Token> varInfo)
-        //{
-        //    inVar = false;
-        //    varCount--;
-        //    inArray--;
-
-        //    // pull everything off the math stack until you find the head
-        //    string sVar = string.Empty;
-
-        //    JAXObjects.Token tk = new();
-
-        //    // Is it an object or header Variable?
-        //    if ("VO".Contains(varInfo[0].TType))
-        //    {
-        //        tk = varInfo[0];
-        //        varInfo.RemoveAt(0);
-
-        //        if (varInfo.Count == 0 && tk.TType.Equals("V"))    // Is it a Var or var part?
-        //        {
-        //            // Plain var or object reference
-        //            sVar = tk.AsString();
-        //            tk = AppVars.GetVarToken(sVar, true);
-        //            if (tk.TType.Equals("U", StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                // Clear the stack and display the error
-        //                mathStack.Clear();
-        //                inError = true;
-        //                AppErrorHandling.SetError(9999, "12|" + sVar, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // A - J are work area references for x.y references
-        //            // so if you send A.Caption where A is a form, and work
-        //            // area 1 has a table open, you are not going to 
-        //            // get the form's caption.
-        //            // 
-        //            // Also, if you you have aTest.Caption and aTest is a
-        //            // form, but aTest is also an alias... oops!  Once again
-        //            // you will not be getting the form's caption.
-        //            if (App.CurrentDS.TableUsed(tk.AsString()) > 0)
-        //            {
-        //                // Work area reference!  Go get it.
-        //                sVar = tk.AsString();
-        //                tk = varInfo[0];
-        //                varInfo.RemoveAt(0);
-        //                sVar += "." + tk.AsString();
-        //                tk = AppVars.GetVarToken(sVar, true);
-        //                if (tk.TType.Equals("U", StringComparison.OrdinalIgnoreCase))
-        //                {
-        //                    // Clear the stack and display the error
-        //                    mathStack.Clear();
-        //                    inError = true;
-        //                    AppErrorHandling.SetError(9999, "12|" + sVar, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-        //                }
-        //            }
-        //            else
-        //            {
-        //                if (tk.TType.Equals("V", StringComparison.OrdinalIgnoreCase))
-        //                {
-        //                    // Put it back in, we're going to call GetVarObject
-        //                    varInfo.Insert(0, tk);
-
-        //                    // V token is at highest element, property
-        //                    // is at elemnt 0: property/textbox/form
-        //                    varInfo.Reverse();
-        //                    //UNDELETE IF USED tk = GetVarObject(varInfo);          // Solve it and put it back into the stack
-        //                }
-        //                else
-        //                {
-        //                    // Should never get an object in this code
-        //                    throw new Exception($"11||TType={tk.TType} in JAXMath.ProcessVarCall");
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    // Put the value back onto the stack
-        //    if (inError == false)
-        //        mathStack.PushToken(tk);
-        //}
 
         /***************************************************************
          * Create and return a token representing a current element in 
@@ -1654,15 +1568,15 @@ namespace JAXBase.Math
                 //if (sVar[0] == '_') sVar = sVar[1..];
 
                 // Is it an alias.field?
-                if (vInfo.Count == 2 && App.CurrentDS.IsWorkArea(sVar))
+                if (vInfo.Count == 2 && Program.CurrentApp.CurrentDS.IsWorkArea(sVar))
                 {
                     // Found the alias
-                    int wa = App.CurrentDS.GetWorkArea(sVar);
+                    int wa = Program.CurrentApp.CurrentDS.GetWorkArea(sVar);
                     string fName = vInfo[1].AsString().Trim('.').Trim();
-                    if (App.CurrentDS.FieldExists(fName, wa))
+                    if (Program.CurrentApp.CurrentDS.FieldExists(fName, wa))
                     {
                         // Found the field
-                        sResult = await App.CurrentDS.GetFieldToken(wa, fName);
+                        sResult = await Program.CurrentApp.CurrentDS.GetFieldToken(wa, fName);
                         notField = false;
                     }
                 }
@@ -1739,11 +1653,11 @@ namespace JAXBase.Math
                                     ParameterClass c = new();
                                     c.Type = "T";
                                     c.token.Element.Value = vInfo[i - 1];
-                                    App.ParameterClassList.Add(c);
+                                    Program.CurrentApp.ParameterClassList.Add(c);
                                     i--;
                                 }
                                 await thisObject.MethodCall(oPart);
-                                tk.Element.Value = App.ReturnValue.Element.Value;
+                                tk.Element.Value = Program.CurrentApp.ReturnValue.Element.Value;
                             }
                             else
                             {

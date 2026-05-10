@@ -17,7 +17,7 @@ namespace JAXBase.Math
         public JAXMathAux()
         {
             // Load the math functions
-            functions = lists.MathFunctions;
+            functions = JAXLanguageLists.MathFunctions;
         }
 
         /********************************************************************************
@@ -969,7 +969,7 @@ namespace JAXBase.Math
         // to process what remains.
         public static async Task<List<string>> ProcessPops(AppClass App, List<string> pops, int startingElement)
         {
-            JAXMath jaxMath = new(App);
+            JAXMath jaxMath = new();
             List<string> results = [];
             List<string> rpn = [];
 

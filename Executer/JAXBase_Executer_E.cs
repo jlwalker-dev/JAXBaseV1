@@ -14,20 +14,20 @@ namespace JAXBase.Executer
          * EDIT [FIELDS FieldList] [NAME ObjectName] [NOAPPEND] [NODELETE] [NOMODIFY] [TIMEOUT nSeconds] [TITLE cTitleText] 
          * 
          */
-        public static async Task<string> Edit(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Edit(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
                 JAXObjects.Token answer = new();
-                JAXObjectWrapper emptyObj = new(jbe.App, "empty", "", []);
+                JAXObjectWrapper emptyObj = new(Program.CurrentApp, "empty", "", []);
 
                 // Add fields to object
                 string fieldList = string.Empty;
                 for (int i = 0; i < eCodes.Fields.Count; i++)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.Fields[i].Name);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Fields[i].Name);
                     if (answer.Element.Type.Equals("C"))
                         fieldList += answer.AsString().Trim() + ",";
                 }
@@ -46,20 +46,20 @@ namespace JAXBase.Executer
                 json.Element.Value = JAXUtilities.JAXObjectWrapperJsonSerializer.ToJson(emptyObj, Newtonsoft.Json.Formatting.None);
 
                 // Set up the JSON string to be passed to the editor program
-                jbe.App.ParameterClassList.Clear();
+                Program.CurrentApp.ParameterClassList.Clear();
 
                 // TODO - CALL THE EDTIOR PROGRAM
-                string editor = jbe.App.JaxVariables._EditPRG;
+                string editor = Program.CurrentApp.JaxVariables._EditPRG;
                 if (string.IsNullOrWhiteSpace(editor))
                     throw new Exception("2600|");
 
                 if (File.Exists(editor))
                 {
                     // Push the json parameter
-                    jbe.App.ParameterClassList.Add(new() { Type = "T", token = json });
+                    Program.CurrentApp.ParameterClassList.Add(new() { Type = "T", token = json });
 
                     // Make the call
-                    await AppHelper.LoadForExecute(jbe.App, "P", editor, string.Empty);
+                    await AppHelper.LoadForExecute("P", editor, string.Empty);
                 }
                 else
                     throw new Exception($"2601|{editor}");
@@ -80,21 +80,21 @@ namespace JAXBase.Executer
         public static string Else(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
             string result = string.Empty;
-            string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
+            string PrgCode = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
 
                 // Look for the endif and jump past it
-                string lp = AppClass.cmdByte + jbe.App.MiscInfo["endifcmd"] + eCodes.SUBCMD;
+                string lp = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endifcmd"] + eCodes.SUBCMD;
                 int f = PrgCode.IndexOf(lp);
 
                 if (f < 0)
                     throw new Exception("1211|");
                 else
                 {
-                    jbe.App.utl.Conv64(f, 3, out string lp2);
+                    Program.CurrentApp.utl.Conv64(f, 3, out string lp2);
                     result = "Y" + lp2;
                 }
             }
@@ -143,7 +143,7 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
             }
             catch (Exception ex)
             {
@@ -159,28 +159,28 @@ namespace JAXBase.Executer
          * ENDDEFINE
          * 
          */
-        public static async Task<string> EndDefine(AppClass app, string cmdRest)
+        public static async Task<string> EndDefine(string cmdRest)
         {
             try
             {
-                if (app.InDefineObject is not null)
+                if (Program.CurrentApp.InDefineObject is not null)
                 {
-                    JAXObjects.Token tk = await app.InDefineObject.GetProperty("name");
+                    JAXObjects.Token tk = await Program.CurrentApp.InDefineObject!.GetProperty("name");
                     if (tk.Element.IsNull() == false)
                     {
                         string name = tk.AsString().ToLower().Trim();
 
-                        if (app.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects.ContainsKey(name))
-                            app.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects[name] = app.InDefineObject;
+                        if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects.ContainsKey(name))
+                            Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects[name] = Program.CurrentApp.InDefineObject;
                         else
-                            app.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects.Add(name, app.InDefineObject);
+                            Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].UserObjects.Add(name, Program.CurrentApp.InDefineObject);
 
-                        app.InDefine = string.Empty;
-                        app.CurrentClassMethod = string.Empty;
-                        app.InDefineObject = null;
+                        Program.CurrentApp.InDefine = string.Empty;
+                        Program.CurrentApp.CurrentClassMethod = string.Empty;
+                        Program.CurrentApp.InDefineObject = null;
                     }
                     else
-                        throw new Exception($"{app.InDefineObject.GetErrorNo()}|");
+                        throw new Exception($"{Program.CurrentApp.InDefineObject.GetErrorNo()}|");
                 }
                 else
                     throw new Exception("1928|");
@@ -205,17 +205,17 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                string loc = jbe.App.MiscInfo["docmd"] + eCodes.SUBCMD;
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                string loc = Program.CurrentApp.MiscInfo["docmd"] + eCodes.SUBCMD;
 
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
+                string PrgCode = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
                 int f = PrgCode.IndexOf(loc) - 1;
 
                 if (f < 0)
                     throw new Exception("1209|");
                 else
                 {
-                    jbe.App.utl.Conv64(f, 3, out string pos);
+                    Program.CurrentApp.utl.Conv64(f, 3, out string pos);
                     result = "X" + pos;
                     AppLoop.PopLoopStack(); // drop the if loop from the stack
                 }
@@ -240,19 +240,19 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                string loc = jbe.App.MiscInfo["forcmd"] + eCodes.SUBCMD;
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                string loc = Program.CurrentApp.MiscInfo["forcmd"] + eCodes.SUBCMD;
 
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
+                string PrgCode = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
                 int f = PrgCode.IndexOf(loc) - 1;
 
                 if (f < 0)
                     throw new Exception("1207|");
                 else
                 {
-                    jbe.App.utl.Conv64(f, 3, out string pos);
+                    Program.CurrentApp.utl.Conv64(f, 3, out string pos);
                     result = "X" + pos;
-                    //jbe.App.PopLoopStack(); // drop the if loop from the stack
+                    //Program.CurrentApp.PopLoopStack(); // drop the if loop from the stack
                 }
             }
             catch (Exception ex)
@@ -275,7 +275,7 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
 
                 // Make sure we have matching IF/ENDIF
             }
@@ -299,8 +299,8 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                jbe.App.ReturnValue.Element.Value = true;
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                Program.CurrentApp.ReturnValue.Element.Value = true;
             }
             catch (Exception ex)
             {
@@ -322,17 +322,17 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                string loc = jbe.App.MiscInfo["scancmd"] + eCodes.SUBCMD;
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                string loc = Program.CurrentApp.MiscInfo["scancmd"] + eCodes.SUBCMD;
 
-                string PrgCode = jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
+                string PrgCode = Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx];
                 int f = PrgCode.IndexOf(loc) - 1;
 
                 if (f < 0)
                     throw new Exception("1203|");
                 else
                 {
-                    jbe.App.utl.Conv64(f, 3, out string pos);
+                    Program.CurrentApp.utl.Conv64(f, 3, out string pos);
                     result = "X" + pos;
                     AppLoop.PopLoopStack(); // drop the if loop from the stack
                 }
@@ -357,7 +357,7 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
             }
             catch (Exception ex)
             {
@@ -432,9 +432,9 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
-                if (jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count == 0) throw new Exception("1939|");
-                jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.RemoveAt(jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count - 1);
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count == 0) throw new Exception("1939|");
+                Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.RemoveAt(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count - 1);
             }
             catch (Exception ex)
             {
@@ -451,7 +451,7 @@ namespace JAXBase.Executer
 
             if (eCodes.Expressions.Count > 0)
             {
-                JAXObjects.Token answer =await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
 
                 if (answer.Element.Type.Equals("N"))
                     AppErrorHandling.SetError(answer.AsInt(), $"{answer.AsInt()}|", Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
@@ -476,9 +476,9 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
 
-                string PrgCode = jbe.App.PRGCache.Count > 0 ? jbe.App.PRGCache[jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
+                string PrgCode = Program.CurrentApp.PRGCache.Count > 0 ? Program.CurrentApp.PRGCache[Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PRGCacheIdx] : string.Empty;
 
                 // What loop are we currently in?
                 string loopType = AppLoop.PopLoopStack();
@@ -487,19 +487,19 @@ namespace JAXBase.Executer
                 switch (loopType[0])
                 {
                     case 'S':   // SCAN
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["endscancmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endscancmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     case 'W':   // WHILE
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["enddocmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["enddocmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     case 'F':   // FOR
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["endforcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endforcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     case 'U':   // UNTIL
-                        loop = AppClass.cmdByte + jbe.App.MiscInfo["untilcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["untilcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
                         break;
 
                     default:    // ERROR
@@ -525,7 +525,7 @@ namespace JAXBase.Executer
                     }
                 else
                 {
-                    jbe.App.utl.Conv64(++pos, 3, out result);
+                    Program.CurrentApp.utl.Conv64(++pos, 3, out result);
                     result = "Y" + result;
                 }
             }
@@ -549,7 +549,7 @@ namespace JAXBase.Executer
 
             try
             {
-                if (jbe.App.AppLevels.Count < 2) throw new Exception("2|");
+                if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
             }
             catch (Exception ex)
             {

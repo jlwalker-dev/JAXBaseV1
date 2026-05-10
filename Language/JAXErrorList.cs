@@ -179,6 +179,7 @@ namespace JAXBase.Language
                 1926 => "Cannot nest class definitions",
                 1927 => "Statement is not allowed in a class definition",
                 1928 => "Statement can only be used in a class definition",
+                1934 => "Statement only valid within a method",
                 1939 => "WITH/ENDWITH mismatch",
                 1940 => "Expression must be inside WITH/ENDWITH structure.",
                 1960 => "Illegal redefinition of variable {!}",
@@ -309,7 +310,7 @@ namespace JAXBase.Language
                 6599 => "Error in event or method",
 
 
-                
+
                 // 6600 AI Connectivity
                 6600 => "Setting for AIAGENT is OFF",
 

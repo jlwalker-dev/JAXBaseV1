@@ -11,7 +11,7 @@ namespace JAXBase.Executer
          * BEGIN [TRANSACTION]
          * 
          */
-        public static string Begin(AppClass app, string cmdLine)
+        public static string Begin(string cmdLine)
         {
             AppErrorHandling.ClearErrors();
             string result = string.Empty;
@@ -34,7 +34,7 @@ namespace JAXBase.Executer
          * BLANK [FIELDS FieldList] [Scope] [FOR lExpression1] [WHILE lExpression2] [IN nWorkArea | cTableAlias] [SESSION nSession]
          * 
          */
-        public static string Blank(AppClass app, string cmdLine)
+        public static string Blank(string cmdLine)
         {
             AppErrorHandling.ClearErrors();
             string result = string.Empty;
@@ -64,7 +64,7 @@ namespace JAXBase.Executer
          *  FieldList | TitleExpr | Height | Width | LocationExpr | NameExpr | ForExpr | Flags
          * 
          */
-        public static async Task<string> Browse(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Browse(ExecuterCodes eCodes)
         {
             AppErrorHandling.ClearErrors();
             string result = string.Empty;
@@ -95,8 +95,8 @@ namespace JAXBase.Executer
                 bool NoShow = Flags.Contains("S");
 
                 // Now build the JAX BrowseWindow using these parameters
-                JAXObjectWrapper jow = new(jbe.App, "browser", NameExpr, null);
-                NameExpr = AppHelper.RegisterObject(jbe.App, "browser", "browser");
+                JAXObjectWrapper jow = new(Program.CurrentApp, "browser", NameExpr, null);
+                NameExpr = AppHelper.RegisterObject("browser", "browser");
 
                 await jow.SetProperty("height", HeightExpr);
                 await jow.SetProperty("width", WidthExpr);
@@ -120,7 +120,7 @@ namespace JAXBase.Executer
          * BUILD
          * 
          */
-        public static string Build(AppClass app, string cmdLine)
+        public static string Build(string cmdLine)
         {
             AppErrorHandling.ClearErrors();
             string result = string.Empty;

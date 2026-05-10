@@ -12,7 +12,7 @@ namespace JAXBase.Executer
          * UNLOCK [RECORD nRecordNumber] [IN nWorkArea | cTableAlias] [ALL]
          * 
          */
-        public static string Unlock(AppClass app, string cmdLine)
+        public static string Unlock(string cmdLine)
         {
             string result = string.Empty;
             AppErrorHandling.ClearErrors();
@@ -33,7 +33,7 @@ namespace JAXBase.Executer
          * UNTIL lExpression
          * 
          */
-        public static async Task<string> Until(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Until(ExecuterCodes eCodes)
         {
             string result = string.Empty;
             AppErrorHandling.ClearErrors();
@@ -44,14 +44,14 @@ namespace JAXBase.Executer
                 if (lp.Equals(eCodes.SUBCMD))
                 {
                     // Get the until expression
-                    JAXObjects.Token answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                    JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
 
                     if (answer.Element.Type.Equals("L"))
                     {
                         // Get back to the correct datasession and workarea
-                        LoopClass loop = jbe.App.AppLevels[Program.CurrentApp.CurrentAppLevel].ScanLoops[eCodes.SUBCMD];
-                        jbe.App.SetDataSession(loop.DataSession);
-                        jbe.App.CurrentDS.SelectWorkArea(loop.WorkArea);
+                        LoopClass loop = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].ScanLoops[eCodes.SUBCMD];
+                        Program.CurrentApp.SetDataSession(loop.DataSession);
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(loop.WorkArea);
 
                         if (answer.Element.ValueAsBool)
                             result = "U" + lp;  // Go to the DO
@@ -82,7 +82,7 @@ namespace JAXBase.Executer
          * UPDATE with no where sends to REPLACE
          * 
          */
-        public static string Update(AppClass app, string cmdLine)
+        public static string Update(string cmdLine)
         {
             string result = string.Empty;
             AppErrorHandling.ClearErrors();
@@ -107,7 +107,7 @@ namespace JAXBase.Executer
          *      [EXCLUSIVE|SHARED] [NOUPDATE] [AGAIN] 
          * 
          */
-        public static async Task<string> Use(JAXBase_Executer jbe, ExecuterCodes eCodes)
+        public static async Task<string> Use(ExecuterCodes eCodes)
         {
             string result = string.Empty;
 
@@ -115,8 +115,8 @@ namespace JAXBase.Executer
 
             try
             {
-                int ds = jbe.App.CurrentDataSession;
-                int wa = jbe.App.CurrentDS.CurrentWorkArea();
+                int ds = Program.CurrentApp.CurrentDataSession;
+                int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
                 string dbc = string.Empty;
                 string dbf = string.Empty;
@@ -127,7 +127,7 @@ namespace JAXBase.Executer
                 // Is there a table name?
                 if (eCodes.Expressions.Count > 0)
                 {
-                    answer = await jbe.App.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                    answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
                     if (answer.Element.Type.Equals("C"))
                         dbf = answer.AsString();
                     else
@@ -146,20 +146,20 @@ namespace JAXBase.Executer
                     throw new Exception("1||Cannot open a blank table name with a database specification");
 
                 bool again = Array.IndexOf(eCodes.Flags, "again") >= 0;
-                bool exclusive = Array.IndexOf(eCodes.Flags, "exclusive") >= 0 || jbe.App.CurrentDS.JaxSettings.Exclusive;
+                bool exclusive = Array.IndexOf(eCodes.Flags, "exclusive") >= 0 || Program.CurrentApp.CurrentDS.JaxSettings.Exclusive;
                 bool noupdate = Array.IndexOf(eCodes.Flags, "noupdate") >= 0;
 
                 // Are we using a different datasession?
                 if (eCodes.SESSION > 0)
-                    jbe.App.SetDataSession(eCodes.SESSION);
+                    Program.CurrentApp.SetDataSession(eCodes.SESSION);
 
                 // Go to the desired workarea
                 JAXObjects.Token workarea = new();
-                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : jbe.App.SolveFromRPNString(eCodes.InExpr);
+                workarea.Element.Value = string.IsNullOrWhiteSpace(eCodes.InExpr) ? wa : Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
                 if (workarea.Element.Type.Equals("N"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.AsInt());
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.AsInt());
                 else if (workarea.Element.Type.Equals("C"))
-                    jbe.App.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(workarea.Element.ValueAsString);
                 else
                     throw new Exception("11|");
 
@@ -184,7 +184,7 @@ namespace JAXBase.Executer
 
                     // Try to locate it in the path list
                     if (path.Length == 0)
-                        path = AppHelper.FindPathForFile(jbe.App, stem + "." + ext);
+                        path = AppHelper.FindPathForFile(stem + "." + ext);
 
                     // If not found in the path list, toss a file not found error
                     if (path.Length == 0)
@@ -194,7 +194,7 @@ namespace JAXBase.Executer
                     dbf = path + stem + "." + ext;
 
                     // TODO - add AGAIN flag to call for Version 0.8
-                    if (await jbe.App.CurrentDS.CurrentWA.DBFUse(dbf, alias, exclusive, noupdate, string.Empty) == 0)
+                    if (await Program.CurrentApp.CurrentDS.CurrentWA.DBFUse(dbf, alias, exclusive, noupdate, string.Empty) == 0)
                     {
                         // successful open - are there any index?
                         for (int i = 0; i < eCodes.Index.Count(); i++)
@@ -212,21 +212,21 @@ namespace JAXBase.Executer
                             extIdx = string.IsNullOrWhiteSpace(extIdx) ? "idx" : extIdx;
 
                             if (string.IsNullOrWhiteSpace(pathIdx))
-                                pathIdx = AppHelper.FindPathForFile(jbe.App, name + "." + extIdx);
+                                pathIdx = AppHelper.FindPathForFile(name + "." + extIdx);
 
                             // Put together the full index name and open it
                             name = pathIdx + name + "." + extIdx;
-                            await jbe.App.CurrentDS.CurrentWA.IDXOpen(name, false);
+                            await Program.CurrentApp.CurrentDS.CurrentWA.IDXOpen(name, false);
 
                             // Set the ascending/descending flag
-                            jbe.App.CurrentDS.CurrentWA.DbfInfo.IDX[jbe.App.CurrentDS.CurrentWA.DbfInfo.ControllingIDX].Descending = desc;
+                            Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.IDX[Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.ControllingIDX].Descending = desc;
                         }
                     }
                 }
                 else
                 {
                     // No dbf name means CLOSE IT ALL UP!
-                    await jbe.App.CurrentDS.CurrentWA.DBFClose();
+                    await Program.CurrentApp.CurrentDS.CurrentWA.DBFClose();
                 }
 
             }

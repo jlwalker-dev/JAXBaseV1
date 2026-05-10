@@ -168,7 +168,7 @@ namespace JAXBase.XBase
             // the transaction that sets the value to true.
             InTransaction = true;
 
-            if (Array.IndexOf(app.lists.JAXObjects, cClass.ToLower()) < 0)
+            if (Array.IndexOf(JAXLanguageLists.JAXObjects, cClass.ToLower()) < 0)
             {
                 //-------------------------------------------------------------
                 // TODO - DEAL WITH USER DEFINED CLASSES 
@@ -236,7 +236,7 @@ namespace JAXBase.XBase
 
                         try
                         {
-                            AppIO.DebugLog($"Adding property {p0}");
+                            //AppIO.DebugLog($"Adding property {p0}");
                             lastProp = p0;
 
                             // Some properties are already assigned in some classes
@@ -317,7 +317,7 @@ namespace JAXBase.XBase
                                 tk = new();
 
                                 // Converting to type C, D, L, N, O, or T
-                                tk = AppHelper.ReturnStringAsTokenOfType(app, prop[2], p1);
+                                tk = AppHelper.ReturnStringAsTokenOfType(prop[2], p1);
 
                                 thisObject.SetProperty(p0, tk.Element.Value, 0);
                             }
@@ -384,8 +384,7 @@ namespace JAXBase.XBase
                         // via SetProperty except for those that are arrays or protected
                         foreach (KeyValuePair<string, JAXObjects.Token> tok in thisObject.UserProperties)
                         {
-                            AppIO.DebugLog($"Upating {tok.Key} = {tok.Value.AsString()}");
-
+                            //AppIO.DebugLog($"Upating {tok.Key} = {tok.Value.AsString()}");
                             if (tok.Value.Protected == false && tok.Value.TType.Equals("A") == false && JAXLib.InListC(tok.Key, "datasession") == false)
                                 thisObject.SetProperty(tok.Key, tok.Value.Element.Value, 0);
                         }
@@ -394,7 +393,7 @@ namespace JAXBase.XBase
                         string[] JAXMethods = thisObject.JAXMethods();
                         for (int i = 0; i < JAXMethods.Length; i++)
                         {
-                            AppIO.DebugLog($"Adding method {JAXMethods[i]}");
+                            //AppIO.DebugLog($"Adding method {JAXMethods[i]}");
                             thisObject._SetMethod(JAXMethods[i], string.Empty, true, "M!");
                             thisObject.Methods[JAXMethods[i]].Tag = "N";
                         }
@@ -403,7 +402,7 @@ namespace JAXBase.XBase
                         string[] JAXEvents = thisObject.JAXEvents();
                         for (int i = 0; i < JAXEvents.Length; i++)
                         {
-                            AppIO.DebugLog($"Adding event {JAXEvents[i]}");
+                            //AppIO.DebugLog($"Adding event {JAXEvents[i]}");
                             thisObject._SetMethod(JAXEvents[i], string.Empty, true, "E!");
                             thisObject.Methods[JAXEvents[i]].Tag = "N";
                         }
@@ -742,6 +741,12 @@ namespace JAXBase.XBase
                     // Check to see if the method exists before trying to call it
                     if ((await thisObject.IsMember(methodName)).Equals("M"))
                     {
+                        if (methodName.Contains("add"))
+                        {
+                            int iii = 0;
+                        }
+
+
                         if (thisObject.Methods[methodName].CompiledCode.Length > 0)
                         {
                             // Execute the coded method

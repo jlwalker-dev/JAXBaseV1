@@ -179,7 +179,8 @@ namespace JAXBase.XBase
 
             JAXObjects.Token objtk = new(objValue);
 
-            //AppIO.DebugLog($"XBase_Class_Avalonia: {me.JOWName.ToUpper()}.{propertyName}={objtk.AsString()}");
+            //if (InInit == false)
+            //    AppIO.DebugLog($"XBase_Class_Avalonia: {me.JOWName.ToUpper()}.{propertyName}={objtk.AsString()}");
 
             propertyName = propertyName.ToLower();
 
@@ -216,7 +217,7 @@ namespace JAXBase.XBase
                         switch (propertyName)
                         {
                             case "anchor":
-                                if (objtk.Element.Type == "N")
+                                if (objtk.Element.Type.Equals("N"))
                                 {
                                     if (JAXLib.Between(objtk.AsInt(), 0, 1023)) // safe max for now
                                     {

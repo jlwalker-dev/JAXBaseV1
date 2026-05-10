@@ -401,13 +401,14 @@ namespace JAXBase.XBase
                         break;
                 }
 
-                // Just catch the known success codes
+                // Just catch the known result codes
                 if (JAXLib.InList(result, 1, 9))
                 {
+                    if (result < 9)
+                        returnToken.CopyFrom(UserProperties[propertyName]);
+
                     // We get the value, not the reference
                     result = 0;
-                    returnToken.CopyFrom(UserProperties[propertyName]);
-                    returnToken.Protected = false;
                 }
             }
             else
@@ -1437,7 +1438,7 @@ namespace JAXBase.XBase
                         {
                             // First field used creates a new row in the ListArray and associated dictionary
                             // Note: A Key of 0 causes the dictionary key to be automatically created
-                            ListArray.AddItem(cItem, i+1, 1, 0);
+                            ListArray.AddItem(cItem, i + 1, 1, 0);
                             UserProperties["newindex"].Element.Value = i;
                             UserProperties["newitemid"].Element.Value = i;
                         }
