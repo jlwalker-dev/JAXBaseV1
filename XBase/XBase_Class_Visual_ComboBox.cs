@@ -501,8 +501,9 @@ namespace JAXBase.XBase
                                 {
                                     ListArray.AddItem(cItem.AsString(), nItem.AsInt(), nColumn.AsInt(), 0);
 
+                                    // Place it where it's being assigned
                                     if (UserProperties["rowsourcetype"].AsInt() < 2)
-                                        CboBox.Items.Add(cItem.AsString());
+                                        CboBox.Items.Insert(nItem.AsInt() - 1, cItem.AsString());
                                 }
                             }
                         }
@@ -560,7 +561,12 @@ namespace JAXBase.XBase
 
                                 // If no errors then add/update the nItem entry
                                 if (result == 0)
+                                {
                                     ListItemID.AddItemID(cItem.AsString(), ItemID.AsInt(), Column.AsInt());
+
+                                    if (Column.AsInt() < 2)
+                                        CboBox.Items.Add(cItem.AsString());
+                                }
                             }
                         }
                         else

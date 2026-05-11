@@ -308,6 +308,18 @@ namespace JAXBase.XBase
                             result = result == 0 ? 9 : result;  // Skip assigning the value again
                             break;
 
+                        case "padding":
+                            if (objtk.Element.Type.Equals("N"))
+                            {
+                                if (JAXLib.Between(objtk.AsInt(), 0, 32))
+                                    lstBox.Padding=new(objtk.AsInt());
+                                else
+                                    result = 41;
+                            }
+                            else
+                                result = 11;
+                            break;
+
                         case "rowsourcetype":
                             if (objtk.Element.Type.Equals("N"))
                             {
@@ -577,73 +589,6 @@ namespace JAXBase.XBase
         }
 
 
-        /*------------------------------------------------------------------------------------------*
-         * 
-         *------------------------------------------------------------------------------------------*/
-        public override string[] JAXMethods()
-        {
-            return
-                [
-                "additem","addlistitem","addproperty","clear","indextoitemid","move","readexpression","readmethod",
-                "refresh","removeitem","removelistitem","requery","resettodefault","saveasclass","setfocus",
-                "writeexpression","writemethod","zorder"
-                ];
-        }
-
-
-        /*------------------------------------------------------------------------------------------*
-         * 
-         *------------------------------------------------------------------------------------------*/
-        public override string[] JAXEvents()
-        {
-            return
-                [
-                "click","dblclick","destroy","error","gotfocus","init","keypress","load","lostfocus",
-                "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
-                "rightclick","valid","visiblechanged","when"
-                ];
-        }
-
-
-        /*------------------------------------------------------------------------------------------*
-             * property data types
-             *      C = Character
-             *      N = Numeric         I=Integer       R=Color
-             *      D = Date
-             *      T = DateTime
-             *      L = Logical         LY = Yes/No logical
-             *      
-             *      Attributes
-             *          ! Protected - can't change after initialization
-             *          $ Special Handling - do not auto process
-         * 
-         *------------------------------------------------------------------------------------------*/
-        public override string[] JAXProperties()
-        {
-            return
-                [
-                "anchor,N,0","autohidescrollbar,n,0",
-                "BaseClass,C!,listbox","bordercolor,n,6579300","borderwidth,n,0","boundcolumn,n,0","boundto,n,0",
-                "Class,C!,listbox","ClassLibrary,C!,","columncount,n,0","columnlines,l,f","columnwidths,c,","Comment,C,","controlsource,c,",
-                "disabledbackcolor,R,255|255|255","disabledforecolor,R,109|109|109","disableditembackcolor,R,255|255|255",
-                "disableditemforecolor,R,109|109|109","displayvalue,c,",
-                "Enabled,L,true",
-                "firstelement,n,1","FontBold,L,false","FontItalic,L,false",
-                "FontName,C,Arial","FontSize,N,9","FontStrikeThrough,L,false","FontUnderline,L,false","forecolor,R,0",
-                "Height,N,0",
-                "incrementsearch,l,true","itemdata,n,0","itemforecolor,R,0","itemiddata,n,0",
-                "left,N,0","list,c,","listcount,n,0","listindex,n,0","listitem,c,","listitemid,n,0",
-                "moverbars,L,.F.","multiselect,L,.F.",
-                "name,c,","newindex,n,0","newitemid,n,0","numberofelements,n,0",
-                "parent,o!,","parentclass,C!,",
-                "righttoleft,L,false","rowsource,c,","rowsourcetype,n,0",
-                "selected,l,false","selectedid,l,false","selecteditembackcolor,R,0|120|215","selecteditemforecolor,R,255|255|255",
-                "sorted,l,false","sorttype,n,",
-                "tabindex,n,0","tabstop,l,true","tag,c,","top,N,0","topindex,n,1","topitemid,n,-1","tooltiptext,c,",
-                "value,,","visible,l,true",
-                "width,N,100"
-                ];
-        }
 
 
         /*
@@ -727,8 +672,9 @@ namespace JAXBase.XBase
                                 {
                                     ListArray.AddItem(cItem.AsString(), nItem.AsInt(), nColumn.AsInt(), 0);
 
+                                    // Put it at the requested index location
                                     if (UserProperties["rowsourcetype"].AsInt() < 2)
-                                        lstBox.Items.Add(cItem.AsString());
+                                        lstBox.Items.Insert(nItem.AsInt() - 1, cItem.AsString());
                                 }
                             }
                         }
@@ -786,7 +732,13 @@ namespace JAXBase.XBase
 
                                 // If no errors then add/update the nItem entry
                                 if (result == 0)
+                                {
                                     ListItemID.AddItemID(cItem.AsString(), ItemID.AsInt(), Column.AsInt());
+
+                                    // Add it to the end of the list
+                                    if (UserProperties["rowsourcetype"].AsInt() < 2)
+                                        lstBox.Items.Add(cItem.AsString());
+                                }
                             }
                         }
                         else
@@ -1876,6 +1828,74 @@ namespace JAXBase.XBase
             }
 
             return -1;
+        }
+
+        /*------------------------------------------------------------------------------------------*
+         * Methods
+         *------------------------------------------------------------------------------------------*/
+        public override string[] JAXMethods()
+        {
+            return
+                [
+                "additem","addlistitem","addproperty","clear","indextoitemid","move","readexpression","readmethod",
+                "refresh","removeitem","removelistitem","requery","resettodefault","saveasclass","setfocus",
+                "writeexpression","writemethod","zorder"
+                ];
+        }
+
+
+        /*------------------------------------------------------------------------------------------*
+         * Events
+         *------------------------------------------------------------------------------------------*/
+        public override string[] JAXEvents()
+        {
+            return
+                [
+                "click","dblclick","destroy","error","gotfocus","init","keypress","load","lostfocus",
+                "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
+                "rightclick","valid","visiblechanged","when"
+                ];
+        }
+
+
+        /*------------------------------------------------------------------------------------------*
+         * property data types
+         *      C = Character
+         *      N = Numeric         I=Integer       R=Color
+         *      D = Date
+         *      T = DateTime
+         *      L = Logical         LY = Yes/No logical
+         *      
+         *      Attributes
+         *          ! Protected - can't change after initialization
+         *          $ Special Handling - do not auto process
+         * 
+         *------------------------------------------------------------------------------------------*/
+        public override string[] JAXProperties()
+        {
+            return
+                [
+                "anchor,N,0","autohidescrollbar,n,0",
+                "BaseClass,C!,listbox","bordercolor,n,6579300","borderwidth,n,0","boundcolumn,n,0","boundto,n,0",
+                "Class,C!,listbox","ClassLibrary,C!,","columncount,n,0","columnlines,l,f","columnwidths,c,","Comment,C,","controlsource,c,",
+                "disabledbackcolor,R,255|255|255","disabledforecolor,R,109|109|109","disableditembackcolor,R,255|255|255",
+                "disableditemforecolor,R,109|109|109","displayvalue,c,",
+                "Enabled,L,true",
+                "firstelement,n,1","FontBold,L,false","FontItalic,L,false",
+                "FontName,C,Arial","FontSize,N,9","FontStrikeThrough,L,false","FontUnderline,L,false","forecolor,R,0",
+                "Height,N,0",
+                "incrementsearch,l,true","itemdata,n,0","itemforecolor,R,0","itemiddata,n,0",
+                "left,N,0","list,c,","listcount,n,0","listindex,n,0","listitem,c,","listitemid,n,0",
+                "moverbars,L,.F.","multiselect,L,.F.",
+                "name,c,","newindex,n,0","newitemid,n,0","numberofelements,n,0",
+                "padding,n,2","parent,o!,","parentclass,C!,",
+                "righttoleft,L,false","rowsource,c,","rowsourcetype,n,0",
+                "selected,l,false","selectedid,l,false","selecteditembackcolor,R,0|120|215","selecteditemforecolor,R,255|255|255",
+                "sorted,l,false","sorttype,n,",
+                "tabindex,n,0","tabstop,l,true","tag,c,","top,N,0","topindex,n,1","topitemid,n,-1","tooltiptext,c,",
+                "value,,","visible,l,true",
+                "width,N,100"
+                ];
         }
     }
 }

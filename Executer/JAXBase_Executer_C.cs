@@ -31,7 +31,6 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Calculate(JAXBase_Executer jbe, ExecuterCodes eCodes)
         {
-            string result = string.Empty;
             string editor = string.Empty;
 
             try
@@ -226,7 +225,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -243,6 +242,7 @@ namespace JAXBase.Executer
                 Program.CurrentApp.AppLevels.RemoveAt(i - 1);
 
             Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count - 1;
+            AppIO.Talk("Execution Canceled");
 
             return "!";
         }
@@ -256,7 +256,7 @@ namespace JAXBase.Executer
          * case statements until if finds a case expression that is true, otherwise, or endcase.
          * 
          * When an expression is true, it starts with the next command record and continues until
-         * it finds another case statement, otherwise or an end case.
+         * it finds another related case structure statement.
          * 
          */
         public static string Case(JAXBase_Executer jbe, ExecuterCodes eCodes)
@@ -332,20 +332,21 @@ namespace JAXBase.Executer
                         {
                             // We found a CATCH to execute.  Get the current error object
                             JAXErrors le = AppErrorHandling.GetCurrentError();
+                            string toVar;
 
                             // Is there a TO entry?
                             if (eCodes.To.Count > 0)
                             {
                                 // Create the array variable from the TO expression
-                                string to = (await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name)).AsString();
+                                toVar = (await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name)).AsString();
 
-                                if (to.Length > 0)
+                                if (toVar.Length > 0)
                                 {
-                                    if (AppHelper.IsLegalObjectName(to))
+                                    if (AppHelper.IsLegalObjectName(toVar))
                                     {
                                         // Create an empty class and populate it with the error information
-                                        AppVars.MakeLocalVar(to, 1, 1, false);
-                                        JAXObjects.Token errtk = await AppVars.GetVarToken(to, false);
+                                        AppVars.MakeLocalVar(toVar, 1, 1, false);
+                                        JAXObjects.Token errtk = await AppVars.GetVarToken(toVar, false);
 
                                         JAXObjectWrapper errInfo = new(Program.CurrentApp, "empty", "", []);
                                         await errInfo.AddProperty("errorno", new(le.ErrorNo), 0, "");
@@ -356,8 +357,11 @@ namespace JAXBase.Executer
                                         errtk.Element.Value = errInfo;
                                     }
                                     else
-                                        throw new Exception($"46|TO|CATCH {tryCode} TO value '{to.ToUpper()}' is not a legal name");
+                                        throw new Exception($"46|TO|CATCH {tryCode} TO value '{toVar.ToUpper()}' is not a legal name");
                                 }
+
+                                // Talk
+                                AppIO.Talk("Catch" + (string.IsNullOrEmpty(toVar) ? "" : "to " + toVar.ToUpper()));
 
                                 // We found a CATCH to execute
                                 Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[^1].TryPhase = 3;
@@ -480,12 +484,12 @@ namespace JAXBase.Executer
                         if (string.IsNullOrWhiteSpace(path))
                         {
                             // Nothing to do, so just return the default
-                            result = "Current directory is " + Program.CurrentApp.CurrentDS.JaxSettings.Default;
+                            AppIO.Talk("Current directory is " + Program.CurrentApp.CurrentDS.JaxSettings.Default);
                         }
                         else if (Directory.Exists(path))
                         {
                             Program.CurrentApp.CurrentDS.JaxSettings.Default = path;
-                            result = "Default directory is " + path;
+                            AppIO.Talk("Default directory is " + path);
                         }
                         else
                             throw new Exception("202|" + path);
@@ -497,7 +501,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -512,8 +516,6 @@ namespace JAXBase.Executer
          */
         public static string Change(AppClass app, string cmdRest)
         {
-            string result = string.Empty;
-
             try
             {
             }
@@ -522,7 +524,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -535,8 +537,6 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Clear(ExecuterCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
                 string clearCode = eCodes.SUBCMD;
@@ -657,7 +657,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -668,8 +668,6 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Close(ExecuterCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
                 string clearType = eCodes.SUBCMD;
@@ -743,9 +741,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-
-
-            return result;
+            return "";
         }
 
 
@@ -802,7 +798,6 @@ namespace JAXBase.Executer
         public static async Task<string> Compile(ExecuterCodes eCodes)
         {
             AppErrorHandling.ClearErrors();
-            string result = string.Empty;
             int errcount = 0;
 
             try
@@ -857,11 +852,11 @@ namespace JAXBase.Executer
                         //Program.CurrentApp.lists.Decompile(fileInfo[0].Replace(".", "_"), JAXLib.FileToStr(cCode));
 
                         if (AppErrorHandling.ErrorCount() == 0)
-                            result = Environment.NewLine + "Compiled " + fileInfo[0].ToUpper() + " with no errors";
+                            AppIO.Talk("Compiled " + fileInfo[0].ToUpper() + " with no errors");
                         else
                         {
                             errcount += AppErrorHandling.ErrorCount();
-                            result = Environment.NewLine + fileInfo[0].ToUpper() + $" has {AppErrorHandling.ErrorCount()} errors";
+                            AppIO.Talk(fileInfo[0].ToUpper() + $" has {AppErrorHandling.ErrorCount()} errors");
                         }
                     }
                     else
@@ -877,7 +872,7 @@ namespace JAXBase.Executer
             AppErrorHandling.ClearErrors();
             Program.CurrentApp.InCompile = false;
 
-            return result;
+            return "";
         }
 
 
@@ -1009,29 +1004,27 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Create(ExecuterCodes eCodes)
         {
-            string result = string.Empty;
-
             switch (eCodes.SUBCMD.ToLower())
             {
                 case "t":
                 case "tab":
                 case "table":   // Table
                     eCodes.SUBCMD = "T";
-                    result = await CreateTable(eCodes);
+                    await CreateTable(eCodes);
                     break;
 
                 case "c":
                 case "cur":
                 case "cursor":   // Cursor
                     eCodes.SUBCMD = "C";
-                    result = await CreateTable(eCodes);
+                    await CreateTable(eCodes);
                     break;
 
                 default:
                     throw new Exception("1999|Create " + eCodes.SUBCMD.ToUpper());
             }
 
-            return result;
+            return "";
         }
 
         /* TODO PARTIAL - FROM ARRAY
@@ -1047,8 +1040,6 @@ namespace JAXBase.Executer
          */
         public static async Task<string> CreateTable(ExecuterCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
                 JAXObjects.Token answer = new();
@@ -1236,14 +1227,15 @@ namespace JAXBase.Executer
                     FQFN = fqfn,
                 };
 
-                await Program.CurrentApp.CurrentDS.CurrentWA.DBFCreateDBF(dbfInfo, overwrite);
+                if (await Program.CurrentApp.CurrentDS.CurrentWA.DBFCreateDBF(dbfInfo, overwrite))
+                    AppIO.Talk(TableName.ToUpper() + " created");
             }
             catch (Exception ex)
             {
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
     }
 }

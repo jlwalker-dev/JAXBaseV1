@@ -219,6 +219,18 @@ namespace JAXBase.XBase
                                 result = 11;
                             break;
 
+                        case "padding":
+                            if (tk.Element.Type.Equals("N"))
+                            {
+                                if (JAXLib.Between(tk.AsInt(), 0, 32))
+                                    txt.Padding = new(tk.AsInt());
+                                else
+                                    result = 41;
+                            }
+                            else
+                                result = 11;
+                            break;
+
                         case "sellength":
                             if (tk.Element.Type.Equals("N"))
                                 txt.SelectionEnd = txt.SelectionStart + tk.AsInt();
@@ -410,7 +422,7 @@ namespace JAXBase.XBase
                 "margin,n,0","maxlength,n,0","maxheight,n,-1","maxwidth,n,-1","minheight,n,-1","minwidth,n,-1",
                 "name,c,",
                 "originalvalue,,",
-                "parent,o!,","parentclass,C!,","passwordchar,c,",
+                "padding,n,2","parent,o!,","parentclass,C!,","passwordchar,c,",
                 "readonly,l,false","righttoleft,L,false",
                 "sellength,n,0","selstart,n,0","seltext,c,","selectonentry,l,f","setoriginalwhen,n,0",
                 "tabindex,n,1","tabstop,l,.T.","tag,C,","text,c,","top,N,0","tooltiptext,c,",

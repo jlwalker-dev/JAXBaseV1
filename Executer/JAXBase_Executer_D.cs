@@ -13,8 +13,6 @@ namespace JAXBase.Executer
 
         public static async Task<string> Define(string cmdLine)
         {
-            string result = string.Empty;
-
             try
             {
                 // Are we already in a define?
@@ -73,7 +71,7 @@ namespace JAXBase.Executer
             {
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
-            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : result;
+            return "";
         }
 
         /* TODO NOW
@@ -92,7 +90,7 @@ namespace JAXBase.Executer
             {
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
-            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : "$";
+            return "";
 
         }
 
@@ -113,7 +111,7 @@ namespace JAXBase.Executer
             {
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
-            return AppErrorHandling.ErrorCount() > 0 ? string.Empty : "$";
+            return "";
 
         }
 
@@ -127,7 +125,6 @@ namespace JAXBase.Executer
          */
         public static async Task<string> Delete(ExecuterCodes eCodes)
         {
-            string result = string.Empty;
             try
             {
                 switch (eCodes.SUBCMD)
@@ -147,7 +144,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
 
         }
 
@@ -159,8 +156,6 @@ namespace JAXBase.Executer
          */
         public static async Task<string> DeleteFor(ExecuterCodes eCodes, bool delete)
         {
-            string result = string.Empty;
-
             try
             {
                 // Delete or recall?
@@ -211,14 +206,14 @@ namespace JAXBase.Executer
 
                 Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
 
-                result = string.Format("{0} records {1}", jaxScope.RecordsRead, action);
+                AppIO.Talk($"{jaxScope.RecordsRead} records {action}");
             }
             catch (Exception ex)
             {
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -263,7 +258,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return string.Empty;
+            return "";
         }
 
 
@@ -348,7 +343,7 @@ namespace JAXBase.Executer
                 dInfo = new();
             }
 
-            AppIO.SendToIDE(dInfo.ToString());
+            AppIO.Talk(dInfo.ToString());
             return "";
         }
 
