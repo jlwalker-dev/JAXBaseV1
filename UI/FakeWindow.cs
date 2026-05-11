@@ -18,6 +18,66 @@ namespace JAXBase.UI
         public double Width { get; set; } = 400;
         public double Height { get; set; } = 300;
 
+        // Icon support
+        private WindowIcon? _icon;
+        private Avalonia.Media.Imaging.Bitmap? _iconBitmap;
+
+        public WindowIcon? Icon
+        {
+            get => _icon;
+            set
+            {
+                _icon = value;
+                _iconBitmap = null; // reset
+
+                // Try to preserve the original bitmap if it was passed in
+                if (value != null)
+                {
+                    // For now we rely on the caller also setting Bitmap, or load from stream later if needed
+                }
+
+                ApplyIconToRealWindow();
+            }
+        }
+
+        // NEW: Public property for easy Bitmap access(recommended usage)
+        public Avalonia.Media.Imaging.Bitmap? IconBitmap
+        {
+            get => _iconBitmap;
+            set
+            {
+                _iconBitmap = value;
+                _icon = value != null ? new WindowIcon(value) : null;
+                ApplyIconToRealWindow();
+            }
+        }
+
+        private void ApplyIconToRealWindow()
+        {
+            if (_realWindow != null)
+            {
+                _realWindow.Icon = _icon;
+            }
+        }
+
+        // Helper to apply to floating panel (modes 0 and 1)
+        private void ApplyIconToFloatingPanel()
+        {
+            if (_floatingPanel != null && _iconBitmap != null)
+            {
+                _floatingPanel.SetIcon(_iconBitmap);
+            }
+        }
+
+        // Call this after creation in VFPShow(), CreateAsMainWorkspacePanel(), etc.
+        private void ApplyAllVisualState()
+        {
+            ApplySizeConstraints();
+            ApplyWindowState();
+            ApplyIconToRealWindow();
+            ApplyIconToFloatingPanel(); 
+        }
+
         // Window state & buttons (VFP-like)
         public bool MinButton
         {
@@ -147,6 +207,7 @@ namespace JAXBase.UI
             // Apply state after creation
             ApplySizeConstraints();
             ApplyWindowState();
+            ApplyAllVisualState();
 
             if (ShowWindow == 2 && _realWindow != null)
             {
@@ -329,6 +390,12 @@ namespace JAXBase.UI
                 CanMinimize = MinButton,
                 Background = Avalonia.Media.Brushes.White
             };
+
+            // Apply icon right after creation
+            if (_icon != null)
+            {
+                _realWindow.Icon = _icon;
+            }
 
             var realContentCanvas = new Avalonia.Controls.Canvas
             {

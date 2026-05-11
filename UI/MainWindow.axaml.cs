@@ -381,6 +381,28 @@ namespace JAXBase
             }
         }
 
+        private Avalonia.Controls.Image? _iconImage;
+        private Avalonia.Media.Imaging.Bitmap? _iconBitmap;
+
+        public Avalonia.Media.Imaging.Bitmap? Icon
+        {
+            get => _iconBitmap;
+            set
+            {
+                _iconBitmap = value;
+                if (_iconImage != null)
+                {
+                    _iconImage.Source = value;
+                    _iconImage.IsVisible = value != null;
+                }
+            }
+        }
+
+        public void SetIcon(Avalonia.Media.Imaging.Bitmap? icon)
+        {
+            Icon = icon;
+        }
+
         private TextBlock? _titleTextBlock;
 
         public void SetGripsVisible(bool visible)
@@ -557,16 +579,18 @@ namespace JAXBase
             titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var icon = new TextBlock
+            _iconImage = new Avalonia.Controls.Image
             {
-                Text = "🪟",
-                FontSize = 18,
+                Width = 20,
+                Height = 20,
                 Margin = new Thickness(10, 0, 6, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                IsVisible = false  // hidden until an icon is set
             };
-            Grid.SetColumn(icon, 0);
-            titleGrid.Children.Add(icon);
+
+            Grid.SetColumn(_iconImage, 0);
+            titleGrid.Children.Add(_iconImage);
 
             _titleTextBlock = new TextBlock
             {

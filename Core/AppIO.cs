@@ -2,7 +2,6 @@
 using JAXBase.Language;
 using JAXBase.Utilities;
 using JAXBase.XBase;
-using System.Runtime.CompilerServices;
 
 namespace JAXBase.Core
 {

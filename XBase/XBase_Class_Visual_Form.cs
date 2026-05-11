@@ -169,7 +169,9 @@ namespace JAXBase.XBase
                                     var icon = string.IsNullOrEmpty(objtk.AsString()) ? null : App.JaxImages!.GetImage(objtk.AsString(), out _);
                                     icon ??= App.JaxImages!.GetImage("*jax*", out _);
 
-                                    JAXApp.MainWindowInstance!.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
+                                    //JAXApp.MainWindowInstance!.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
+                                    fakeWindow.Icon= new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
+                                    fakeWindow.IconBitmap = App.JaxImages!.Resize(icon, 32, 32);
                                 }
                             }
                             else
