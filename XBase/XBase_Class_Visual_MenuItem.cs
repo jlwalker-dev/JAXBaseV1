@@ -43,13 +43,13 @@ namespace JAXBase.XBase
             SetVisualObject(new Avalonia.Controls.MenuItem(), "MenuItem", "menuitem", true, UserObject.URW);
 
             // Detach the generic Tapped event to prevent it from firing on non-leaf items
-            Menuitem.Tapped -= MyObj_Click;
+            //Menuitem.Tapped -= MyObj_Click;
 
             // Attach a handler to mark Tapped as handled to prevent bubbling
-            Menuitem.Tapped += HandleTapped;
+            //Menuitem.Tapped += HandleTapped;
 
             // Attach to the MenuItem.Click event for leaf items
-            Menuitem.Click += MyObj_Click;
+            //Menuitem.Click += MyObj_Click;
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -341,9 +341,9 @@ namespace JAXBase.XBase
                 ];
         }
 
-        private void HandleTapped(object? sender, TappedEventArgs e)
-        {
-            e.Handled = true;
-        }
+        //private void HandleTapped(object? sender, TappedEventArgs e)
+        //{
+        //    e.Handled = true;
+        //}
     }
 }

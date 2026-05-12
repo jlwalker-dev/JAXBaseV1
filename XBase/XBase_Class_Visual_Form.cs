@@ -170,7 +170,7 @@ namespace JAXBase.XBase
                                     icon ??= App.JaxImages!.GetImage("*jax*", out _);
 
                                     //JAXApp.MainWindowInstance!.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
-                                    fakeWindow.Icon= new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
+                                    fakeWindow.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
                                     fakeWindow.IconBitmap = App.JaxImages!.Resize(icon, 32, 32);
                                 }
                             }
@@ -408,15 +408,10 @@ namespace JAXBase.XBase
             int result = 0;
             methodName = methodName.ToLower();
 
-            if (methodName.Equals("refresh"))
-            {
-                int iii = 0;
-            }
-
             switch (methodName)
             {
                 case "show":
-                     if (fakeWindow.ShowWindow == 1)
+                    if (fakeWindow.ShowWindow == 1)
                     {
                         if (parentForm == null || fakeWindow.Parent == null)
                         {
@@ -505,6 +500,8 @@ namespace JAXBase.XBase
             JAXObjects.Token objects = new();
             objects = thisJOW.thisObject!.UserProperties["objects"];
 
+            AppIO.DebugLog($">>> FixObjects for {thisJOW.JOWName} - baseclass {thisJOW.BaseClass}");
+
             if (thisJOW.BaseClass.Equals("editform", StringComparison.OrdinalIgnoreCase))
             {
                 // EditForm has one child which is a grid.  This routine ties the grid
@@ -527,6 +524,7 @@ namespace JAXBase.XBase
                     if (objects._avalue[i].IsNull() == false)
                     {
                         JAXObjectWrapper childWrapper = (JAXObjectWrapper)objects._avalue[i].Value;
+                        AppIO.DebugLog($"   Reapply Position for {childWrapper.JOWName} - baseclass {childWrapper.BaseClass} is {(childWrapper.thisObject is XBase_Class_Avalonia ? "" : "NOT ")}an AvaloniaObject ");
 
                         // This ensures inline CREATEOBJECT left/top values survive the final move to InnerCanvas
                         if (childWrapper.thisObject is XBase_Class_Avalonia childVisual)
@@ -548,10 +546,8 @@ namespace JAXBase.XBase
                                 }
                             }
                         }
-                        else if (JAXLib.InListC(childWrapper.BaseClass, "form", "container", "pageframe", "page"))
-                        {
+                        else if (JAXLib.InListC(childWrapper.BaseClass, "form", "container", "pageframe", "page")) //, "commandgroup", "optiongroup"))
                             FixObjects((JAXObjectWrapper)objects._avalue[i].Value);  // recursive call for nested containers);
-                        }
                     }
                 }
             }

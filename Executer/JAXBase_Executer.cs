@@ -128,6 +128,22 @@ namespace JAXBase.Executer
          */
         public async Task ExecuteCodeBlock(JAXObjectWrapper thisObject, string methodName, string ccBlock)
         {
+            // Create a new app level and execute the code
+            AppLevel appLevel = new()
+            {
+                PRGCacheIdx = -1,
+                PrgType = "m",
+                PrgName = thisObject.JOWName,
+                CodeCacheName = methodName.ToLower(),
+                ThisObject = thisObject,
+                ThisObjectMethod = methodName,
+                PrgCode = ccBlock,
+                Instance = Program.CurrentApp.SystemCounter()
+            };
+
+            Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count();
+            Program.CurrentApp.AppLevels.Add(appLevel);
+
             // Set up for an object
             AppVars.SetLocalSystemVar("this", thisObject.THIS, 1, 1, false);
 
@@ -150,23 +166,6 @@ namespace JAXBase.Executer
             }
             else
                 AppVars.SetLocalSystemVar("thisformset", thisObject.THISFORMSET, 1, 1, false);
-
-            // Create a new app level and execute the code
-            AppLevel appLevel = new()
-            {
-                PRGCacheIdx = -1,
-                PrgType = "m",
-                PrgName = thisObject.JOWName,
-                CodeCacheName = methodName.ToLower(),
-                ThisObject = thisObject,
-                ThisObjectMethod = methodName,
-                PrgCode = ccBlock,
-                Instance = Program.CurrentApp.SystemCounter()
-            };
-
-            Program.CurrentApp.CurrentAppLevel = Program.CurrentApp.AppLevels.Count();
-            Program.CurrentApp.AppLevels.Add(appLevel);
-
 
             _ = ExecuteBlock(ccBlock);
         }
@@ -335,7 +334,7 @@ namespace JAXBase.Executer
                                 break;
                         }
 
-                        AppIO.DebugLog($"Processed line {lineNo} level {lv} procedure {pr} - Received {respCmd} nextCmd = {nextCmd}");
+                        AppIO.DebugLog($"Processed line {ln} level {lv} procedure {pr} - Received {respCmd} nextCmd = {nextCmd}");
                         Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = nextCmd;
 
 

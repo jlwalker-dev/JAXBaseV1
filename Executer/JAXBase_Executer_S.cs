@@ -419,11 +419,6 @@ namespace JAXBase.Executer
                 // basic sanity checks
                 if (eCodes.Expressions.Count < 1) throw new Exception("10|");
 
-                if (eCodes.To.Count > 0 && eCodes.To[0].Name.Contains(".List[1,2]", StringComparison.OrdinalIgnoreCase))
-                {
-                    int iii = 0;
-                }
-
                 // get the expression to store to the var list
                 JAXObjects.Token ExprValue = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
 

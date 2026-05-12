@@ -39,7 +39,7 @@ namespace JAXBase.Core
             if (Program.CurrentApp.CurrentDS.JaxSettings.Debug)
             {
                 string debugText = DateTime.Now.ToString("MM/dd HH:mm:ss.ffff").PadRight(20) + text;
-                JAXLib.StrToFile(debugText + "\r\n", Program.CurrentApp.AppLogFile, 3);
+                JAXLib.StrToFile(debugText, Program.CurrentApp.AppLogFile, 3);
 
                 if (writeToFileOnly == false)
                 {
@@ -88,27 +88,27 @@ namespace JAXBase.Core
             _currentSettings = SettingsService.Load();
 
             if (_currentSettings.Monitor > 0 && _currentSettings.Monitor <= MonitorLib.GetAvailableMonitorCount())
-                Program.CurrentApp._screen.SetProperty("monitor", _currentSettings.Monitor, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty("monitor", _currentSettings.Monitor, 0).Wait();
 
             // Restore size & position
             if (_currentSettings.WindowWidth > 100)
-                Program.CurrentApp._screen.SetProperty("width", _currentSettings.WindowWidth, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty("width", _currentSettings.WindowWidth, 0).Wait();
 
             if (_currentSettings.WindowHeight > 100)
-                Program.CurrentApp._screen.SetProperty("height", _currentSettings.WindowHeight, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty("height", _currentSettings.WindowHeight, 0).Wait();
 
             if (_currentSettings.WindowLeft >= 0 && _currentSettings.WindowTop >= 0)
             {
                 JAXApp.MainWindowInstance.WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.Manual;
-                Program.CurrentApp._screen.SetProperty("left", (int)_currentSettings.WindowLeft, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty("left", (int)_currentSettings.WindowLeft, 0).Wait();
                 Program.CurrentApp._screen.SetProperty("top", (int)_currentSettings.WindowTop, 0).Wait();
             }
 
             // Restore icon (if you saved the name/path)
             if (!string.IsNullOrEmpty(_currentSettings.IconName))
-                Program.CurrentApp._screen.SetProperty("icon", _currentSettings.IconName, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty("icon", _currentSettings.IconName, 0).Wait();
             else
-                Program.CurrentApp._screen.SetProperty("icon", "*jax*", 0).Wait();
+                Program.CurrentApp._screen!.SetProperty("icon", "*jax*", 0).Wait();
         }
 
         public static void SaveWindowSettings()
@@ -123,7 +123,7 @@ namespace JAXBase.Core
             _currentSettings.WindowTop = JAXApp.MainWindowInstance.Position.Y;
 
             // Save current icon name if you want
-            _currentSettings.IconName = Program.CurrentApp._screen.thisObject!.UserProperties["icon"].AsString();
+            _currentSettings.IconName = Program.CurrentApp._screen!.thisObject!.UserProperties["icon"].AsString();
 
             SettingsService.Save(_currentSettings);
         }

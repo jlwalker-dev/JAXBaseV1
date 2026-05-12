@@ -197,12 +197,6 @@ namespace JAXBase.XBase
             }
             else
             {
-                // Class name is a base class
-                if (Class.Equals("screen", StringComparison.OrdinalIgnoreCase))
-                {
-                    int iii = 0;
-
-                }
                 thisObject = JAXObjectsAux.GetClass(this, cClass, cName);
             }
 
@@ -228,11 +222,6 @@ namespace JAXBase.XBase
                         string p0 = prop[0].ToLower().Trim();
                         string p1 = prop[1].Replace("!", "").ToUpper().Trim();
                         JAXObjects.Token tk = new();
-
-                        if (p0.Contains("backst", StringComparison.OrdinalIgnoreCase))
-                        {
-                            int iii = 0;
-                        }
 
                         try
                         {
@@ -508,7 +497,7 @@ namespace JAXBase.XBase
             else
             {
                 if (baseclass.Contains("form"))
-                    App._screenClass.AddForm(this);
+                    App._screenClass!.AddForm(this);
 
                 thisObject!.PostClassInit().Wait();
             }
@@ -519,7 +508,7 @@ namespace JAXBase.XBase
         public void Release()
         {
             if (baseclass.Contains("form"))
-                App._screenClass.RemoveForm(ClassID);
+                App._screenClass!.RemoveForm(ClassID);
         }
 
         public void SetParent(JAXObjectWrapper parent)
@@ -741,12 +730,6 @@ namespace JAXBase.XBase
                     // Check to see if the method exists before trying to call it
                     if ((await thisObject.IsMember(methodName)).Equals("M"))
                     {
-                        if (methodName.Contains("add"))
-                        {
-                            int iii = 0;
-                        }
-
-
                         if (thisObject.Methods[methodName].CompiledCode.Length > 0)
                         {
                             // Execute the coded method
@@ -1359,10 +1342,6 @@ namespace JAXBase.XBase
                     result = 1901;
                 else
                 {
-                    if (name.Equals("anchor"))
-                    {
-                        int iii = 0;
-                    }
                     JAXObjects.Token tk1 = await thisObject.GetProperty(name);
                     if (tk.Element.IsNull())
                         tk.Element.MakeNull();  // Property is not a member
@@ -1408,10 +1387,6 @@ namespace JAXBase.XBase
                     result = 1901;
                 else
                 {
-                    if (name.Equals("listitem", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int iii = 0;
-                    }
                     JAXObjects.Token tk1 = await thisObject.GetProperty(name, idx);
 
                     if (tk1.Element.IsNull())

@@ -110,11 +110,6 @@ namespace JAXBase.XBase
 
             propertyName = propertyName.ToLower();
 
-            if (propertyName.Contains("list", StringComparison.OrdinalIgnoreCase))
-            {
-                int iii = 0;
-            }
-
             if (UserProperties.TryGetValue(propertyName, out JAXObjects.Token? value) && value.Protected)
                 result = 3026;
             else
@@ -341,11 +336,6 @@ namespace JAXBase.XBase
             int result = 0;
             JAXObjects.Token returnToken = new();
             propertyName = propertyName.ToLower();
-
-            if (propertyName.Contains("listitem", StringComparison.OrdinalIgnoreCase))
-            {
-                int iii = 0;
-            }
 
             if (UserProperties.ContainsKey(propertyName))
             {

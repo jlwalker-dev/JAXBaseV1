@@ -5,6 +5,7 @@
  * Events tie into the toolbar.
  * 
  */
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using JAXBase.Core;
 using JAXBase.Utilities;
@@ -234,7 +235,8 @@ namespace JAXBase.XBase
          * happens before anything else.  Then call the click method and if
          * you get a true (.T.) value return, call the toolbar Valid method.
          */
-        public override async void MyObj_Click(object? sender, RoutedEventArgs e)
+        //public override async void MyObj_Click(object? sender, RoutedEventArgs e)
+        public override async void HandleTapped(object? sender, TappedEventArgs e)
         {
             if (me.parent is not null && me.parent.thisObject is not null && me.parent.BaseClass.Equals("toolbar", StringComparison.OrdinalIgnoreCase))
             {
@@ -249,7 +251,7 @@ namespace JAXBase.XBase
                     await me.parent.MethodCall("valid");
             }
             else 
-                base.MyObj_Click(sender, e);
+                base.HandleTapped(sender, e);
         }
 
         /*------------------------------------------------------------------------------------------*

@@ -326,7 +326,7 @@ namespace JAXBase.XBase
                             UserProperties[propertyName].Element.Value = objValue;
 
                         // Special processsing means something for the path has changed
-                        if (result == 2 && InInit == false)
+                        if (result == 2)
                         {
                             if (points.Count > 0)
                             {

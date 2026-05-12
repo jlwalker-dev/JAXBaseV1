@@ -58,11 +58,6 @@ namespace JAXBase.Executer
                 if (string.IsNullOrEmpty(rpn.RNPExpr))
                     continue;
 
-                if (rpn.RNPExpr.Contains("listitem",StringComparison.OrdinalIgnoreCase))
-                {
-                    int iii = 0;
-                }
-
                 JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(rpn.RNPExpr);
 
                 // M and E types get converted to blank string

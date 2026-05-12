@@ -696,11 +696,6 @@ namespace JAXBase.Core
                             if (member.Equals("O") == false)
                                 throw new Exception("1924|" + var.varName);
 
-                            if (objList[i].Contains("grd", StringComparison.OrdinalIgnoreCase))
-                            {
-                                int iii = 0;
-                            }
-
                             int f = await thisObject.FindObjectByName(objList[i]);
                             if (f < 0)
                                 throw new Exception("9999|SetVarFromExpr|Failed to find a known object");
@@ -738,11 +733,6 @@ namespace JAXBase.Core
                             throw new Exception("1737|"); // not a property
 
                         case "P":   // Property
-                            if (expr.Contains(".listitem", StringComparison.OrdinalIgnoreCase))
-                            {
-                                int iii = 0;
-                            }
-
                             JAXObjects.Token tk = await thisObject.GetProperty(lastVar.varName);
 
                             if (tk.TType.Equals("S"))
@@ -862,11 +852,6 @@ namespace JAXBase.Core
             JAXObjects.Token? result = new();
             JAXObjects.Token answer;
             VarRef var;
-
-            if (expr.Contains(".list", StringComparison.OrdinalIgnoreCase))
-            {
-                int iii = 0;
-            }
 
             string thisVar = string.Empty;
 
@@ -1144,7 +1129,7 @@ namespace JAXBase.Core
         public static void CreateSystemVars()
         {
             MakePublicVar("_screen", 1, 1, true).Wait();
-            Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_screen"].Element.Value = Program.CurrentApp._screen;
+            Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_screen"].Element.Value = Program.CurrentApp._screen!;
 
             MakePublicVar("_jax", 1, 1, true).Wait();
             Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_jax"].Element.Value = new JAXObjectWrapper(Program.CurrentApp, "jax", "_jax", []);
@@ -1326,11 +1311,6 @@ namespace JAXBase.Core
 
                 string expr = answer.AsString().Trim();
 
-                if (expr.Contains("addlist"))
-                {
-                    int iii = 0;
-                }
-
                 // Macro expansion
                 if (expr.Contains('&'))
                     expr = await JAXMacroHandler.Expand(Program.CurrentApp, expr);
@@ -1371,11 +1351,6 @@ namespace JAXBase.Core
                         }
                         else
                             throw new Exception($"2301|There is nothing on the with stack for .{objList[1]}");
-                    }
-
-                    if (eCodes.Expressions.Count > 0 && eCodes.Expressions[0].RNPExpr.Contains(".refresh", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int iii = 0;
                     }
 
                     // We have the object broken down by list so let's start processing it

@@ -438,11 +438,6 @@ namespace JAXBase.Math
         {
             List<string> pop;
 
-            if (rpn.Count > 5 && rpn[4].Contains("flags", StringComparison.OrdinalIgnoreCase))
-            {
-                int iii = 0;
-            }
-
             double val1, val2;
             int dec1 = 0;
             int dec2 = 0;
@@ -1291,11 +1286,6 @@ namespace JAXBase.Math
             mathStack = new();          // Refresh the stack
 
             slEquation = slEquation.Length < 1 ? ".T." : slEquation;    // Assumes .T. when nothing to process
-
-            if (slEquation.Contains("seek", StringComparison.OrdinalIgnoreCase))
-            {
-                int iii = 0;
-            }
 
             List<string> parsestring = MathAux.MathParse(slEquation);
 

@@ -1049,7 +1049,7 @@ namespace JAXBase.XBase
         }
 
         public bool ContainsKey(TKey key) => _innerDictionary.ContainsKey(key);
-        public bool TryGetValue(TKey key, out TValue value) => _innerDictionary.TryGetValue(key, out value);
+        public bool TryGetValue(TKey key, out TValue value) => _innerDictionary.TryGetValue(key, out value!);
         public bool Contains(KeyValuePair<TKey, TValue> item) => _innerDictionary.Contains(item);
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)

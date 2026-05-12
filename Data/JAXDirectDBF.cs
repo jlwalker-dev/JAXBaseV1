@@ -369,7 +369,6 @@
 using JAXBase.Core;
 using JAXBase.Math;
 using JAXBase.Utilities;
-using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Collections;
 using System.Data;

@@ -24,10 +24,6 @@ namespace JAXBase.XBase
         public new string MyBaseClass { get; } = "ListBox";
         public new string MyDefaultName { get; } = "listbox";
 
-
-        // List ID counter
-        private int listID = 1;
-
         public ObservableSortedDictionary<int, JAXObjects.Token> ListSource = [];
         private int ListColumns = 1;
         private int BoundColumn = 1;
