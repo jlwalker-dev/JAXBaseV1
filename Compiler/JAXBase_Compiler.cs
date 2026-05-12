@@ -328,11 +328,6 @@ namespace JAXBase.Compiler
                 lineNo++;
                 string blockLine = block[i].Trim();
 
-                if (blockLine.Contains("console", StringComparison.OrdinalIgnoreCase))
-                {
-                    int iii = 0;
-                }
-
                 if (blockLine.Length > 0)
                 {
                     string ln;
@@ -1398,10 +1393,6 @@ namespace JAXBase.Compiler
                     StringBuilder sb = new();
                     JAXMathAux aux = new();
 
-                    if (exprResult.Contains("seek", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int iii = 0;
-                    }
                     List<string> parsed = aux.MathParse(exprResult);
                     List<string> rpn = aux.MathMakeRPN(parsed);
 

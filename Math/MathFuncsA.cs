@@ -2086,7 +2086,6 @@ namespace JAXBase.Math
 
         public static int ASort(AppClass App, string string1, List<string> p)
         {
-            int result = 0;
             throw new Exception("1999||ASort");
         }
     }

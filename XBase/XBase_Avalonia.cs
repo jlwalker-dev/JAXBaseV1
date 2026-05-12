@@ -39,6 +39,7 @@ using Avalonia.Input;
 using JAXBase.Core;
 using JAXBase.Language;
 using JAXBase.Utilities;
+using System.Windows.Controls;
 using static JAXBase.XBase.JAXObjectsAux;
 
 namespace JAXBase.XBase
@@ -823,11 +824,6 @@ namespace JAXBase.XBase
             int result = 0;
             methodName = methodName.ToLower();
 
-            if (methodName.Equals("refresh"))
-            {
-                int iii = 0;
-            }
-
             if (Methods.ContainsKey(methodName))
             {
                 //string mcall = Methods[methodName].PrgCall;
@@ -1369,20 +1365,20 @@ namespace JAXBase.XBase
                 _CallMethod("doubleclick").Wait();
         }
 
-        public virtual void MyObj_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            if (App.EventsAreActive)
-            {
-                AppIO.DebugLog($"XBASE - {me.JOWName}.click - {UserProperties["name"].AsString()} - {UserProperties["classid"].AsString()}");
+        //public virtual void MyObj_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        //{
+        //    if (App.EventsAreActive)
+        //    {
+        //        AppIO.DebugLog($"XBASE - {me.JOWName}.click - {UserProperties["name"].AsString()} - {UserProperties["classid"].AsString()}");
 
-                if (Methods.ContainsKey("click"))
-                {
-                    App.EventsAreActive = false;
-                    me.MethodCall("click").Wait();
-                    App.EventsAreActive = true;
-                }
-            }
-        }
+        //        if (Methods.ContainsKey("click"))
+        //        {
+        //            App.EventsAreActive = false;
+        //            me.MethodCall("click").Wait();
+        //            App.EventsAreActive = true;
+        //        }
+        //    }
+        //}
 
         public virtual void MyObj_Move(object? sender, EventArgs? e)
         {
@@ -1401,6 +1397,24 @@ namespace JAXBase.XBase
                     _CallMethod("keypress").Wait();
             }
         }
+
+        public virtual void HandleTapped(object? sender, TappedEventArgs e)
+        {
+            e.Handled = true;
+
+            if (App.EventsAreActive)
+            {
+                AppIO.DebugLog($"XBASE - {me.JOWName}.click - {UserProperties["name"].AsString()} - {UserProperties["classid"].AsString()}");
+
+                if (Methods.ContainsKey("click"))
+                {
+                    App.EventsAreActive = false;
+                    me.MethodCall("click").Wait();
+                    App.EventsAreActive = true;
+                }
+            }
+        }
+
 
         /*
          * Everything comes here in order to call a mouse event
@@ -1512,7 +1526,7 @@ namespace JAXBase.XBase
         {
             if (me.avaloniaObject is not null)
             {
-                me.avaloniaObject.Tapped -= MyObj_Click;
+                me.avaloniaObject.Tapped -= HandleTapped;
                 me.avaloniaObject.DoubleTapped -= MyObj_DoubleClick;
                 me.avaloniaObject.PointerEntered -= MyObj_MouseEnter;
                 me.avaloniaObject.PointerExited -= MyObj_MouseLeave;
@@ -1538,8 +1552,8 @@ namespace JAXBase.XBase
         {
             if (me.avaloniaObject is not null)
             {
-                //me.avaloniaObject.Tapped += HandleTapped;
-                me.avaloniaObject.Tapped += MyObj_Click;
+                me.avaloniaObject.Tapped += HandleTapped;
+                //me.avaloniaObject.Tapped += MyObj_Click;
                 me.avaloniaObject.DoubleTapped += MyObj_DoubleClick;
                 me.avaloniaObject.PointerEntered += MyObj_MouseEnter;
                 me.avaloniaObject.PointerExited += MyObj_MouseLeave;

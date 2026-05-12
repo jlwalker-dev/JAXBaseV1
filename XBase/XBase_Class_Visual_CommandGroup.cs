@@ -106,17 +106,15 @@ namespace JAXBase.XBase
             propertyName = propertyName.ToLower();
             int temp;
 
+            AppIO.DebugLog($"  {me.JOWName}.SetProperty({propertyName},{objtk.AsString()})");
+
             if (UserProperties.ContainsKey(propertyName) && UserProperties[propertyName].Protected)
                 result = 3026;
             else
             {
-                if (InInit == false)
-                {
-                    int iii = 0;
-                }
-
                 if (UserProperties.ContainsKey(propertyName))
                 {
+                    // Intercept special handling of properties
                     switch (propertyName)
                     {
                         case "buttonlayout":
@@ -126,7 +124,9 @@ namespace JAXBase.XBase
                             {
                                 temp = objtk.AsInt();
                                 UserProperties[propertyName].Element.Value = temp;
-                                await FixSpacing();
+
+                                if (objtk.AsInt() > 1)
+                                    await FixSpacing();
                                 result = 9;
                             }
                             else
@@ -134,13 +134,20 @@ namespace JAXBase.XBase
 
                             break;
 
-                        // Intercept special handling of properties
                         case "buttoncount":
                             if (objtk.Element.Type.Equals("N"))
                             {
-                                await SetButtonCount(objtk.AsInt());
-                                result = 9;
-                                await FixSpacing();
+                                if (objtk.AsInt() > 1)
+                                {
+                                    await SetButtonCount(objtk.AsInt());
+                                    result = 9;
+                                    await FixSpacing();
+                                }
+                                else
+                                {
+                                    if (InInit == false)
+                                        result = 41;
+                                }
                             }
                             else
                                 result = 11;
@@ -153,7 +160,9 @@ namespace JAXBase.XBase
                                 string caps = objtk.AsString().Replace(',', ';');
                                 UserProperties["buttoncaptions"].Element.Value = objtk.AsString();
                                 await SetButtonCount(-1);
-                                await FixSpacing();
+
+                                if (objtk.AsInt() > 1)
+                                    await FixSpacing();
                                 result = 9;
                             }
                             else
@@ -174,7 +183,8 @@ namespace JAXBase.XBase
                                 if (result == 0)
                                 {
                                     result = 9;
-                                    await FixSpacing();
+                                    if (objtk.AsInt() > 1)
+                                        await FixSpacing();
                                 }
                             }
                             else
@@ -192,7 +202,8 @@ namespace JAXBase.XBase
                                 result = 9;
 
                                 // Fix button spacing
-                                await FixSpacing();
+                                if (objtk.AsInt() > 1)
+                                    await FixSpacing();
                             }
                             else
                                 result = 11;
@@ -213,7 +224,8 @@ namespace JAXBase.XBase
                                 if (result == 0)
                                 {
                                     result = 9;
-                                    await FixSpacing();
+                                    if (objtk.AsInt() > 1)
+                                        await FixSpacing();
                                 }
                             }
                             else
@@ -307,6 +319,7 @@ namespace JAXBase.XBase
                 await obut.SetProperty("autosize", true);
                 await obut.SetProperty("caption", $"Command{bc.Count + 1}");
                 await obut.SetProperty("visible", true);
+                await obut.SetProperty("value", bc.Count + 1);
                 obut.SetParent(me);
                 bc.Add(obut);
                 cmdGroup.Children.Add(obut.avaloniaObject!);
@@ -396,10 +409,6 @@ namespace JAXBase.XBase
             int result = 0;
             string msg = "";
 
-            // Don't do anything during init
-            if (InInit)
-                return 0;
-
             try
             {
                 JAXObjects.Token otk = UserProperties["objects"];
@@ -427,8 +436,16 @@ namespace JAXBase.XBase
                 int btncount = UserProperties["buttoncount"].AsInt();
 
                 // If there are buttons...
-                if (btncount > 0)
+                if (btncount > 1)
                 {
+                    AppIO.DebugLog("---------- FIXSPACING() ----------");
+                    AppIO.DebugLog($"Panel {UserProperties["name"].AsString()}");
+                    AppIO.DebugLog($"   left   {clft.ToString()}");
+                    AppIO.DebugLog($"   top    {ctop.ToString()}");
+                    AppIO.DebugLog($"   width  {cwid.ToString()}");
+                    AppIO.DebugLog($"   height {chgt.ToString()}");
+                    AppIO.DebugLog($"   layout {blayout.ToString()}");
+
                     // Skip this section if freeform
                     if (blayout == 2)
                     {
@@ -493,6 +510,7 @@ namespace JAXBase.XBase
                             else
                             {
                                 await itk.SetProperty("autosize", false);
+
                                 if (blayout == 0)
                                 {
                                     // Vertical layout
@@ -519,11 +537,12 @@ namespace JAXBase.XBase
                         }
                     }
 
-                    // Now adjust the panel height/width and
-                    // make sure the butten area is moved
-                    // into the panel client area.
+                    // Now adjust the panel height/width and make sure the button
+                    // area is moved into the panel client area
                     if (UserProperties["buttonlayout"].AsInt() == 2)
                     {
+                        AppIO.DebugLog("ButtonLayout=2");
+
                         UserProperties["height"].Element.Value = hgt + spacing * 2;
                         UserProperties["width"].Element.Value = wth + spacing * 2;
 
@@ -574,7 +593,7 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                msg= ex.Message;
+                msg = ex.Message;
             }
 
             if (result > 0)
@@ -592,6 +611,7 @@ namespace JAXBase.XBase
         public override async Task<int> DoDefault(string methodName)
         {
             int result = 6501;
+            methodName = methodName.ToLower();
 
             if (Methods.ContainsKey(methodName))
             {
@@ -711,7 +731,7 @@ namespace JAXBase.XBase
             return
                 [
                 "anchor,n,0",
-                "backcolor,R,15790320","backstyle,n,1","BaseClass,C!,commandgroup","bordercolor,R,100|100|100","borderstyle,n,1","borderwidth,n,0",
+                "backcolor,R,255|255|255","backstyle,n,1","BaseClass,C!,commandgroup","bordercolor,R,0","borderstyle,n,1","borderwidth,n,2",
                 "buttoncaptions,c,","buttoncount,n,1","buttonlayout,n,0","buttonnames,c,","buttonpictures,c,","buttontooltips,c,",
                 "Class,C!,commandgroup","ClassLibrary,C!,","Comment,C,","controlcount,n,0",
                 "Enabled,L,true",

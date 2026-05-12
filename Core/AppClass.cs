@@ -136,8 +136,8 @@ namespace JAXBase.Core
         public UI.Dialogs.FilePickerDialog? fileDialog = null;
         public UI.Dialogs.FolderPickerDialog? folderDialog = null;
 
-        public JAXObjectWrapper _screen;
-        public XBase_Class_Screen _screenClass;
+        public JAXObjectWrapper? _screen=null;
+        public XBase_Class_Screen? _screenClass = null;
 
         //-------------------------------------------------------------
         // GLOBALS

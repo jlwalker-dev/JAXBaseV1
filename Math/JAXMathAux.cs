@@ -953,11 +953,6 @@ namespace JAXBase.Math
                 errmsg = ex.Message;
             }
 
-            if (hold.Contains("seek", ignCase))
-            {
-                int iii = 0;
-            }
-
             return nospacesList;
         }
 

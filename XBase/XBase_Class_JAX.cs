@@ -7,8 +7,8 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_JAX : XBase_Class_Avalonia
     {
-        public new string MyBaseClass = "Screen";
-        public new string MyDefaultName = "screen";
+        public new string MyBaseClass = "JAX";
+        public new string MyDefaultName = "jax";
         public new bool Register = false;
 
         // This list holds the row source array followed by important related values
@@ -29,6 +29,12 @@ namespace JAXBase.XBase
             bool result = await base.PostInit(callBack, parameterList);
 
             UserProperties["classid"].Element.Value = App.MyInstance;
+
+            JAXObjects.Token tk = await AppVars.GetVarToken("_jax");
+            
+            if (tk.Element.Type.Equals("L"))
+                UserProperties["name"].Protected = true;
+
             return result;
         }
 
@@ -223,6 +229,7 @@ namespace JAXBase.XBase
                 "config,c!,",
                 "defaulpath,c!,",
                 "fullname,c!,",
+                "name,c,JAX",
                 "pathlist,c!,",
                 "tempfolder,c!,",
                 "toolfolder,c!,",

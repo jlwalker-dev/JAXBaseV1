@@ -678,7 +678,7 @@ namespace JAXBase.XBase
             if (jow.thisObject is null || jow.avaloniaObject is null)
                 return;
 
-            AppIO.DebugLog($">>>>>Reapplying {jow.JOWName} left and top values");
+            AppIO.DebugLog($"      Reapplying {jow.JOWName} values");
 
             // Use the same pattern as SetProperty for consistency
             if (jow.thisObject.UserProperties.TryGetValue("left", out JAXObjects.Token? valueLeft))
@@ -704,6 +704,15 @@ namespace JAXBase.XBase
 
             if (jow.thisObject.UserProperties.TryGetValue("height", out JAXObjects.Token? valueHeight))
                 jow.avaloniaObject.Height = valueHeight.AsDouble();
+
+            if (jow.thisObject.UserProperties.TryGetValue("visible", out JAXObjects.Token? valueVisible))
+                jow.avaloniaObject.IsVisible = valueVisible.AsBool();
+
+            AppIO.DebugLog($"         Left    {valueLeft!.AsDouble()}");
+            AppIO.DebugLog($"         Top     {valueTop!.AsDouble()}");
+            AppIO.DebugLog($"         Height  {jow.avaloniaObject.Height}");
+            AppIO.DebugLog($"         Width   {jow.avaloniaObject.Width}");
+            AppIO.DebugLog($"         Visible {(jow.avaloniaObject.IsVisible ? "YES" : "NO")}");
         }
 
 

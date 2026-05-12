@@ -237,10 +237,6 @@ namespace JAXBase.Executer
 
                     if (answer.Element.Type.Equals("C"))
                     {
-                        if (answer.AsString().Contains("gaprops", StringComparison.OrdinalIgnoreCase))
-                        {
-                            int iii = 0;
-                        }
                         VarRef var = await AppVars.SolveVariableReference(answer.AsString());
                         AppVars.SetVarOrMakePrivate(var.varName, var.row, var.col, true);
 
@@ -484,10 +480,14 @@ namespace JAXBase.Executer
                                             JAXObjects.Token tk = await o.GetProperty("baseclass");
                                             string typ = tk.AsString();
                                             string nam = (await o.GetProperty("name")).AsString();
+                                            sb.AppendLine();
                                             sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
                                         }
                                         else
+                                        {
+                                            sb.AppendLine();
                                             sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
+                                        }
                                     }
                                 }
                                 else
@@ -505,10 +505,14 @@ namespace JAXBase.Executer
                                                 JAXObjects.Token tk = await o.GetProperty("baseclass");
                                                 string typ = tk.AsString();
                                                 string nam = (await o.GetProperty("name")).AsString();
+                                                sb.AppendLine();
                                                 sb.AppendLine(string.Format("    [{0}]={1}", c, t.Element.Value));
                                             }
                                             else
+                                            {
+                                                sb.AppendLine();
                                                 sb.AppendLine(string.Format("    [{0},{1}]={2}", r, c, t.Element.Value));
+                                            }
                                         }
                                     }
                                 }
@@ -530,10 +534,12 @@ namespace JAXBase.Executer
                                         nam = (await o.GetProperty("name")).AsString();
 
                                     // Program variable
+                                    sb.AppendLine();
                                     sb.AppendLine(string.Format("{0} {1}  {2} (Name: {3})", vars[j], t.Element.Type, typ, nam));
                                 }
                                 else
                                 {
+                                    sb.AppendLine();
                                     sb.AppendLine(string.Format("{0} {1}  {2}", vars[j], t.Element.Type, t.Element.Value));
                                 }
                             }
