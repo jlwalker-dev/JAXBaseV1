@@ -205,13 +205,13 @@ namespace JAXBase.XBase
                     if (!string.IsNullOrEmpty(postData))
                         sb.Append(postData);
 
-                    if (!Send(sb.ToString()))
+                    if (!SendLine(sb.ToString()))
                         return "";
 
                     // === READ RESPONSE ===
-                    BeginReceive();
+                    //BeginReceive();
                     bool headersDone = false;
-                    OnLineReceived = line =>
+                    OnLineReceived += line =>
                     {
                         if (_statusCode == 0)
                         {
@@ -239,7 +239,7 @@ namespace JAXBase.XBase
                             else if (string.IsNullOrEmpty(line.Trim()))
                             {
                                 headersDone = true;
-                                OnLineReceived = bodyLine => LastResponse += bodyLine + "\r\n";
+                                OnLineReceived += bodyLine => LastResponse += bodyLine + "\r\n";
                             }
                         }
                         else if (headersDone)
@@ -252,7 +252,7 @@ namespace JAXBase.XBase
                     while (IsConnected && _statusCode == 0)
                         Thread.Sleep(50);
 
-                    StopReceive();
+                    //StopReceive();
                     Disconnect();
 
                     // === REDIRECT ===
@@ -261,7 +261,7 @@ namespace JAXBase.XBase
                         if (++redirectCount > MaxRedirects)
                         {
                             LastError = "Too many redirects";
-                            OnError?.Invoke(LastError);
+                            //OnError?.Invoke(LastError);
                             return "";
                         }
 
@@ -280,7 +280,7 @@ namespace JAXBase.XBase
                 catch (Exception ex)
                 {
                     LastError = ex.Message;
-                    OnError?.Invoke(ex.Message);
+                    //OnError?.Invoke(ex.Message);
                     Disconnect();
                     return "";
                 }
@@ -342,7 +342,7 @@ namespace JAXBase.XBase
         {
             Disconnect();
 
-            Host = host;
+            hostAddress = host;
             Port = port;
 
             try
@@ -352,7 +352,7 @@ namespace JAXBase.XBase
                 if (!connectTask.Wait(Timeout))
                 {
                     LastError = "Connection timeout";
-                    OnError?.Invoke(LastError);
+                    //OnError?.Invoke(LastError);
                     return false;
                 }
 
@@ -375,7 +375,7 @@ namespace JAXBase.XBase
                     if (!sslTask.Wait(Timeout))
                     {
                         LastError = "SSL handshake timeout";
-                        OnError?.Invoke(LastError);
+                        //OnError?.Invoke(LastError);
                         return false;
                     }
 
@@ -385,13 +385,13 @@ namespace JAXBase.XBase
                 _reader = new StreamReader(_stream, Encoding);
                 _writer = new StreamWriter(_stream, Encoding) { AutoFlush = true };
 
-                OnConnected?.Invoke();
+                //OnConnected?.Invoke();
                 return true;
             }
             catch (Exception ex)
             {
                 LastError = ex.Message;
-                OnError?.Invoke(ex.Message);
+                //OnError?.Invoke(ex.Message);
                 Disconnect();
                 return false;
             }

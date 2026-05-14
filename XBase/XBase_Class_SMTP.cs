@@ -81,7 +81,7 @@ namespace JAXBase.XBase
 
             Encoding = Encoding.UTF8;
             Timeout = TimeSpan.FromSeconds(30);
-            OnLineReceived = ProcessSmtpResponse;
+            OnLineReceived += ProcessSmtpResponse;
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -106,7 +106,7 @@ namespace JAXBase.XBase
             Port = ImplicitSSL ? 465 : (Port == 25 ? 587 : Port);
             UseSSL = UseSSL || !ImplicitSSL;
 
-            if (!Connect(Server, Port))
+            if (!Connect())
                 return false;
 
             WaitForCode(220);
@@ -286,7 +286,7 @@ namespace JAXBase.XBase
                 sb.AppendLine(Body ?? "");
             }
 
-            Send(sb.ToString());
+            SendLine(sb.ToString());
         }
 
         private bool TryAuthLogin()

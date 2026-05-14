@@ -38,6 +38,7 @@
  * UTF-8                Yes             Full emoji support
  * 
  */
+using Npgsql.PostgresTypes;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -64,7 +65,6 @@ namespace JAXBase.XBase
         public string CurrentNick { get; private set; } = "";
         public string Server { get; set; } = "";
         //public int Port { get; set; } = 6667;
-        public bool AutoReconnect { get; set; } = true;
         public int ReconnectDelayMs { get; set; } = 5000;
         public bool AutoPong { get; set; } = true;
         public bool AutoJoinChannels { get; set; } = true;
@@ -93,8 +93,8 @@ namespace JAXBase.XBase
         {
             Encoding = Encoding.UTF8;
             Timeout = TimeSpan.FromSeconds(30);
-            OnLineReceived = ProcessIrcLine;
-            OnDisconnected = HandleDisconnect;
+            OnLineReceived += ProcessIrcLine;
+            OnDisconnected += HandleDisconnect;
             Port= 6667;
         }
 
@@ -114,14 +114,14 @@ namespace JAXBase.XBase
             if (string.IsNullOrWhiteSpace(Server))
             {
                 LastError = "Server not set";
-                OnError?.Invoke(LastError);
+                //OnError?.Invoke(LastError);
                 return false;
             }
 
             CurrentNick = Nick;
             _joinedChannels.Clear();
 
-            if (!base.Connect(Server, Port))
+            if (!base.Connect())
                 return false;
 
             // Send initial IRC commands
@@ -320,17 +320,6 @@ namespace JAXBase.XBase
             if (parts.Length == 1)
                 return input.Split(' ');
             return parts[0].Split(' ').Concat(new[] { parts[1] }).ToArray();
-        }
-
-
-        // === SECURE CONNECT WITH CERT PINNING (reuse your HttpClientEx logic) ===
-        public override bool Connect(string host, int port)
-        {
-            Server = host;
-            Port = port;
-            UseSSL = Port == 6697 || Port == 6690 || UseSSL;
-
-            return base.Connect(host, port);
         }
     }
 }
