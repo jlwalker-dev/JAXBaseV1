@@ -88,7 +88,7 @@ namespace JAXBase.XBase
 
             Encoding = Encoding.UTF8;
             Timeout = TimeSpan.FromSeconds(30);
-            OnLineReceived = ProcessPop3Response;
+            OnLineReceived += ProcessPop3Response;
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -102,14 +102,14 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public bool Connect()
+        public override bool Connect()
         {
             if (string.IsNullOrWhiteSpace(Server)) return false;
 
             Port = ImplicitSSL ? 995 : (Port == 995 ? 110 : Port);
             UseSSL = UseSSL || ImplicitSSL;
 
-            if (!base.Connect(Server, Port)) return false;
+            if (!base.Connect()) return false;
 
             WaitForResponse();
             if (!_lastResponse.StartsWith("+OK")) return false;
@@ -155,7 +155,7 @@ namespace JAXBase.XBase
             using var sw = new StreamWriter(fs, Encoding.UTF8);
             var inBody = false;
 
-            OnLineReceived = line =>
+            OnLineReceived += line =>
             {
                 OnPop3Response?.Invoke(line);
                 if (line == ".") return;
@@ -173,7 +173,7 @@ namespace JAXBase.XBase
             var sb = new StringBuilder();
             var done = false;
 
-            OnLineReceived = line =>
+            OnLineReceived += line =>
             {
                 if (line == ".") done = true;
                 else if (!done) sb.AppendLine(line);
@@ -282,7 +282,7 @@ namespace JAXBase.XBase
             _messageUids.Clear();
             var inMultiLine = false;
 
-            OnLineReceived = line =>
+            OnLineReceived += line =>
             {
                 if (line == ".") inMultiLine = false;
                 if (inMultiLine)

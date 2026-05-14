@@ -70,6 +70,15 @@ namespace JAXBase.XBase
     }
 
 
+    public class WebHistory
+    {
+        public string Content = "";
+        public readonly DateTime DateVisited = DateTime.Now;
+        public string URL = "";
+        public int Status = 0;
+    }
+
+
     public class JAXErrors
     {
         public int ErrorNo = 0;

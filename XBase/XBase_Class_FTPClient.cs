@@ -26,6 +26,7 @@
  * Proxy (future)           Ready       Just add ProxyServer
  * 
  */
+using System.DirectoryServices.ActiveDirectory;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -38,7 +39,7 @@ namespace JAXBase.XBase
     /// VFP-style FTP client: CREATEOBJECT("FtpClient")
     /// Full FTP + FTPS (Explicit/Implicit) + TLS cert pinning + resume + proxy
     /// </summary>
-    public class XBase_Class_FTPClient : XBase_Class_TCPClient
+    public class XBase_Class_FTPClient : XBase_Class_TCPClient, IDisposable
     {
         public new string MyBaseClass = "FTPClient";
         public new string MyDefaultName = "ftpclient";
@@ -70,11 +71,9 @@ namespace JAXBase.XBase
         public XBase_Class_FTPClient(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             jow2 = new JAXObjectWrapper(App, "TCP", "tcp2", []);
-            Encoding = Encoding.ASCII;
-            Timeout = TimeSpan.FromSeconds(30);
-            OnLineReceived = ProcessControlResponse;
-            Port = 21;
-            UseSSL = false;
+            //Encoding = Encoding.ASCII;
+            //Timeout = TimeSpan.FromSeconds(30);
+            //OnLineReceived += ProcessControlResponse;
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -88,14 +87,14 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public bool Connect()
+        public override bool Connect()
         {
             if (string.IsNullOrWhiteSpace(Server)) return false;
 
             Port = ImplicitSSL ? 990 : Port;
             UseSSL = UseSSL || ImplicitSSL;
 
-            if (!base.Connect(Server, Port)) return false;
+            if (!base.Connect()) return false;
 
             WaitForResponse();
             if (_lastResponseCode != 220)
@@ -141,7 +140,7 @@ namespace JAXBase.XBase
             var ip = $"{match.Groups[1]}.{match.Groups[2]}.{match.Groups[3]}.{match.Groups[4]}";
             var port = (int.Parse(match.Groups[5].Value) << 8) + int.Parse(match.Groups[6].Value);
 
-            if (!_dataClient!.Connect(ip, port))
+            if (!_dataClient!.Connect())
             {
                 CloseDataConnection();
                 return Array.Empty<string>();
