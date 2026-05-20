@@ -324,7 +324,7 @@ namespace JAXBase.XBase
                         }
                     }
                     else
-                        AppIO.DebugLog($"Property error {JAXProperties[i]}");
+                        AppIO.DebugLog($"Property parse length error for {prop[0]} in class {Class}");
                 }
 
                 // Make sure the name gets set

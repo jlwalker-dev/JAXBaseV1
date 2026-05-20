@@ -165,7 +165,11 @@ namespace JAXBase.XBase
             url = ResolveUrl(url);
             var uri = new Uri(url);
             int port = uri.Port == -1 ? (uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ? 443 : 80) : uri.Port;
-            UseSSL = uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
+            bool useSecure = uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
+            
+            UserProperties["secure"].Element.Value = useSecure;
+            UserProperties["host"].Element.Value = uri.Host;
+            UserProperties["port"].Element.Value = port;
 
             LastResponse = "";
             _responseHeaders.Clear();
@@ -177,7 +181,7 @@ namespace JAXBase.XBase
 
             while (true)
             {
-                if (!ConnectSecure(uri.Host, port))
+                if (!ConnectSecure())
                     return "";
 
                 try
@@ -271,7 +275,7 @@ namespace JAXBase.XBase
 
                         uri = new Uri(url);
                         port = uri.Port == -1 ? (uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ? 443 : 80) : uri.Port;
-                        UseSSL = uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
+                        UserProperties["secure"].Element.Value = uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase);
                         continue;
                     }
 
@@ -338,17 +342,17 @@ namespace JAXBase.XBase
         }
 
         // === SECURE CONNECT WITH FULL CERT VALIDATION ===
-        private bool ConnectSecure(string host, int port)
+        private bool ConnectSecure()
         {
             Disconnect();
-
-            hostAddress = host;
-            Port = port;
+            hostAddress = UserProperties["host"].AsString();
+            int port = UserProperties["port"].AsInt();
+            bool useSecure = UserProperties["secure"].AsBool();
 
             try
             {
                 _client = new TcpClient();
-                var connectTask = _client.ConnectAsync(host, port);
+                var connectTask = _client.ConnectAsync(hostAddress, port);
                 if (!connectTask.Wait(Timeout))
                 {
                     LastError = "Connection timeout";
@@ -358,7 +362,7 @@ namespace JAXBase.XBase
 
                 _networkStream = _client.GetStream();
 
-                if (!UseSSL)
+                if (!useSecure)
                 {
                     _stream = _networkStream;
                 }
@@ -371,7 +375,7 @@ namespace JAXBase.XBase
                         null
                     );
 
-                    var sslTask = ssl.AuthenticateAsClientAsync(host);
+                    var sslTask = ssl.AuthenticateAsClientAsync(hostAddress);
                     if (!sslTask.Wait(Timeout))
                     {
                         LastError = "SSL handshake timeout";

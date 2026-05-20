@@ -33,19 +33,24 @@ namespace JAXBase.Core
         // Send to the default console
         public static void DebugLog(string text) { AppIO.DebugLog(text, true); }
 
+        private static readonly Lock _logLock = new();
 
         public static void DebugLog(string text, bool writeToFileOnly)
         {
             if (Program.CurrentApp.CurrentDS.JaxSettings.Debug)
             {
                 string debugText = DateTime.Now.ToString("MM/dd HH:mm:ss.ffff").PadRight(20) + text;
-                JAXLib.StrToFile(debugText, Program.CurrentApp.AppLogFile, 3);
-
-                if (writeToFileOnly == false)
+                
+                lock (_logLock)
                 {
-                    // Write to mainwindow if available, otherwise ignore
-                    //if (JAXConsoles["default"].active)
-                    //    JAXConsoles["default"].WriteLine(text);
+                    JAXLib.StrToFile(debugText, Program.CurrentApp.AppLogFile, 3);
+
+                    if (writeToFileOnly == false)
+                    {
+                        // Write to mainwindow if available, otherwise ignore
+                        //if (JAXConsoles["default"].active)
+                        //    JAXConsoles["default"].WriteLine(text);
+                    }
                 }
             }
         }
@@ -109,9 +114,22 @@ namespace JAXBase.Core
                 Program.CurrentApp._screen!.SetProperty("icon", _currentSettings.IconName, 0).Wait();
             else
                 Program.CurrentApp._screen!.SetProperty("icon", "*jax*", 0).Wait();
+
+            // Restore Command Window settings
+            if (_currentSettings.CommandWindowWidth > 100)
+                Program.CurrentApp._screen!.SetProperty("commandWindowWidth", _currentSettings.CommandWindowWidth, 0).Wait();
+
+            if (_currentSettings.CommandWindowHeight > 100)
+                Program.CurrentApp._screen!.SetProperty("commandWindowHeight", _currentSettings.CommandWindowHeight, 0).Wait();
+
+            if (_currentSettings.CommandWindowLeft >= 0 && _currentSettings.CommandWindowTop >= 0)
+            {
+                Program.CurrentApp._screen!.SetProperty("commandWindowLeft", _currentSettings.CommandWindowLeft, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty("commandWindowTop", _currentSettings.CommandWindowTop, 0).Wait();
+            }
         }
 
-        public static void SaveWindowSettings()
+        public static async Task SaveWindowSettings()
         {
             if (JAXApp.MainWindowInstance == null) return;
 
@@ -124,6 +142,19 @@ namespace JAXBase.Core
 
             // Save current icon name if you want
             _currentSettings.IconName = Program.CurrentApp._screen!.thisObject!.UserProperties["icon"].AsString();
+
+            // Save current command window settings
+            JAXObjects.Token setting =await Program.CurrentApp._screen!.GetProperty("commandWindowLeft");
+            _currentSettings.CommandWindowLeft =setting.AsInt();
+
+            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowTop",0);
+            _currentSettings.CommandWindowTop = setting.AsInt();
+
+            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowWidth");
+            _currentSettings.CommandWindowWidth = setting.AsInt();
+
+            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowHeight");
+            _currentSettings.CommandWindowHeight = setting.AsInt();
 
             SettingsService.Save(_currentSettings);
         }

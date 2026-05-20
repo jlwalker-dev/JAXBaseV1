@@ -1,5 +1,4 @@
-﻿using Avalonia;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 
 namespace JAXBase.Utilities
@@ -7,12 +6,19 @@ namespace JAXBase.Utilities
     // Settings model
     public class AppSettings
     {
+        //  IDE Main Window settings
         public double WindowWidth { get; set; } = 800;
         public double WindowHeight { get; set; } = 600;
         public double WindowLeft { get; set; } = -1;   // -1 = use default / center
         public double WindowTop { get; set; } = -1;
         public string? IconName { get; set; }          // e.g. "Assets/skull-icon.ico"
         public int Monitor { get; set; } = 1;
+
+        // Command window settings
+        public int CommandWindowWidth { get; set; } = 200;
+        public int CommandWindowHeight { get; set;} = 200;
+        public int CommandWindowLeft { get; set; } = 100;
+        public int CommandWindowTop { get; set; } = 100;
     }
 
     // Settings service

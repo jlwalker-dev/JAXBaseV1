@@ -76,7 +76,7 @@ namespace JAXBase
         private ScrollViewer? _mainOutputScroll;
 
         public readonly AppClass App;
-        JAXBase.FloatingPanel commandWindow;
+        public JAXBase.FloatingPanel commandWindow;
 
         public MainWindow(AppClass app)
         {
@@ -151,7 +151,7 @@ namespace JAXBase
             AppIO.DebugLog("MainWindow Closing event fired - Saving settings");
 
             // Call the save method from JAXApp
-            AppIO.SaveWindowSettings();
+            AppIO.SaveWindowSettings().Wait();
 
             // Optional: If you ever want to cancel the close (e.g. unsaved changes later)
             // e.Cancel = true;
@@ -185,7 +185,7 @@ namespace JAXBase
         /// <returns></returns>
         public FloatingPanel? GetPanelByNameOrID(string nameOrID)
         {
-            foreach (FloatingPanel panel in _workspaceCanvas.Children)
+            foreach (FloatingPanel panel in _workspaceCanvas.Children.Cast<FloatingPanel>())
             {
                 if (panel.Title.Equals(nameOrID, StringComparison.OrdinalIgnoreCase) || nameOrID.Equals(panel.Tag ?? " "))
                     return panel;

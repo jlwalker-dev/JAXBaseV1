@@ -22,7 +22,7 @@ namespace JAXBase.Compiler
                 {
                     case "cons":
                     case "console":
-                        result = jbc.CompilerXRef["CS"].ToString() + "console" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "console" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0", []);
                         break;
 
                     default:
@@ -134,9 +134,9 @@ namespace JAXBase.Compiler
                 else if (addCmd.Equals("from", StringComparison.OrdinalIgnoreCase))
                 {
                     if (cmdRest.Contains(" array ", StringComparison.OrdinalIgnoreCase))
-                        result = jbc.CompilerXRef["CS"].ToString() + "array" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM1,IN0,FV3,FG1", ["nomenu"]);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "array" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM1,IN0,FV3,FG1", ["nomenu"]);
                     else
-                        result = jbc.CompilerXRef["CS"].ToString() + "file" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM0,FR0,AS0,TY2,DA1,SH0,FV1,FG1", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "file" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM0,FR0,AS0,TY2,DA1,SH0,FV1,FG1", []);
                 }
                 else if (addCmd.Equals("general", StringComparison.OrdinalIgnoreCase))
                     result = jbc.Key_Parser(cmdRest, ["general"], "XX0,FM1,DA0,CL0,FG1", ["link"]);

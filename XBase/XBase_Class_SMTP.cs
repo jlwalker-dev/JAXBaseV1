@@ -76,8 +76,8 @@ namespace JAXBase.XBase
             name = string.IsNullOrEmpty(name) ? "smtp" : name;
             SetVisualObject(null, "SMTP", name, false, UserObject.URW);
 
-            Port = 25;
-            UseSSL = false;
+            UserProperties["port"].Element.Value = 25;
+            UserProperties["secure"].Element.Value = false;
 
             Encoding = Encoding.UTF8;
             Timeout = TimeSpan.FromSeconds(30);
@@ -97,14 +97,19 @@ namespace JAXBase.XBase
 
         public bool Send()
         {
-            if (string.IsNullOrWhiteSpace(Server) || string.IsNullOrWhiteSpace(From))
+            hostAddress = UserProperties["host"].AsString();
+            int port = UserProperties["port"].AsInt();
+            bool useSecure = UserProperties["secure"].AsBool();
+
+            if (string.IsNullOrWhiteSpace(hostAddress) || string.IsNullOrWhiteSpace(From))
             {
                 LastError = "Server or From not set";
                 return false;
             }
 
-            Port = ImplicitSSL ? 465 : (Port == 25 ? 587 : Port);
-            UseSSL = UseSSL || !ImplicitSSL;
+
+            port = ImplicitSSL ? 465 : (port == 25 ? 587 : port);
+            useSecure = useSecure || !ImplicitSSL;
 
             if (!Connect())
                 return false;
@@ -118,7 +123,7 @@ namespace JAXBase.XBase
                 WaitForCode(250);
             }
 
-            if (UseSSL && !ImplicitSSL && _lastResponse.Contains("STARTTLS"))
+            if (useSecure && !ImplicitSSL && _lastResponse.Contains("STARTTLS"))
             {
                 SendCommand("STARTTLS");
                 if (_lastResponseCode != 220) return false;
@@ -141,7 +146,7 @@ namespace JAXBase.XBase
             }
 
             // STARTTLS
-            if (UseSSL && !ImplicitSSL && _lastResponse.Contains("STARTTLS"))
+            if (useSecure && !ImplicitSSL && _lastResponse.Contains("STARTTLS"))
             {
                 SendCommand("STARTTLS");
                 if (_lastResponseCode != 220) return false;

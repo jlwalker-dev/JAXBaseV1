@@ -43,7 +43,7 @@ namespace JAXBase.Compiler
                             _ => throw new Exception("9999|")
                         };
 
-                        result = Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0", []);
                     }
                     else
                     {
@@ -61,7 +61,7 @@ namespace JAXBase.Compiler
                             _ => throw new Exception("9999|")
                         };
 
-                        result = Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter;
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter;
                     }
                 }
             }
@@ -221,9 +221,9 @@ namespace JAXBase.Compiler
                 case "cursor":
                 case "table":
                     if (cmdRest.Contains(" FROM ARRAY ", StringComparison.OrdinalIgnoreCase))
-                        result = jbc.CompilerXRef["CS"].ToString() + tok[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,FM0", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + tok[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,FM0", []);
                     else
-                        result = jbc.CompilerXRef["CS"].ToString() + tok[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,TB0", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + tok[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,TB0", []);
                     break;
 
                 default:    // Open the table designer

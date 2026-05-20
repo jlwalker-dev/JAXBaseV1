@@ -22,7 +22,6 @@ namespace JAXBase.Compiler
     {
         public readonly Dictionary<string, string> CompilerCodes = [];      // Compiler Code / Dictionary Code translation
         public readonly List<string> CodeDictionary = [];                   // Compiler Code Dictionary
-        public readonly Dictionary<string, char> CompilerXRef = [];         // Convert compiler code to byte
         public readonly Dictionary<string, string> KeyLabels = [];          // Holds the code to execute for active key handlers
 
         private int lineNo = 0;
@@ -42,7 +41,7 @@ namespace JAXBase.Compiler
 
                 char k = Convert.ToChar(Convert.ToInt32(jcp[2], 16));
 
-                CompilerXRef.Add(jcp[0], k);            // Use these codes building runtime statements
+                app.CompilerXRef.Add(jcp[0], k);            // Use these codes building runtime statements
                 app.XRef4Runtime.Add(k, jcp[0]);        // Convert statementcodes back to human readable codes
                 app.RunTimeCodes.Add(jcp[0], jcp[1]);   // Human readable runtime statement elements
             }
@@ -295,7 +294,7 @@ namespace JAXBase.Compiler
                 "zap" => Generic_Parser(cmdRest, "IN0,SS0", []),
                 "?" => Generic_Parser(cmdRest, "XX3", []),
                 "??" => Generic_Parser(cmdRest, "XX3", []),
-                "~~~" => CompilerXRef["XX"].ToString() + AppClass.literalStart + cmdRest + AppClass.literalEnd,    // The object call will parse it out
+                "~~~" => Program.CurrentApp.CompilerXRef["XX"].ToString() + AppClass.literalStart + cmdRest + AppClass.literalEnd,    // The object call will parse it out
                 _ => Generic_Parser(cmdRest, "XX*", [])
             };
 
@@ -356,7 +355,7 @@ namespace JAXBase.Compiler
 
                         // Process the command
                         if (Program.CurrentApp.InCompile && includeSource && cLine.Length > 0)
-                            cmpBlock.Append(AppClass.cmdByte + Program.CurrentApp.MiscInfo["sourcecode"] + CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
+                            cmpBlock.Append(AppClass.cmdByte + Program.CurrentApp.MiscInfo["sourcecode"] + Program.CurrentApp.CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
 
                         // Only append line number if there is something returned
                         if (cmdLine.Length > 0) cmpBlock.Append(cmdLine + lnNo);
@@ -601,22 +600,22 @@ namespace JAXBase.Compiler
                         string p = pCode[..2].ToString();
                         if (JAXLib.InListC(pCode, "XX8", "XX5"))
                         {
-                            result += CompilerXRef["XX"].ToString() + code["expressions"] + AppClass.stmtDelimiter + CompilerXRef["AS"].ToString() + code["as"] + AppClass.stmtDelimiter;
+                            result += Program.CurrentApp.CompilerXRef["XX"].ToString() + code["expressions"] + AppClass.stmtDelimiter + Program.CurrentApp.CompilerXRef["AS"].ToString() + code["as"] + AppClass.stmtDelimiter;
                         }
                         else if (JAXLib.InListC(p, "fw"))
                         {
                             // FW is FIELDS and WITH
-                            result += CompilerXRef["FV"].ToString() + code["fields"] + AppClass.stmtDelimiter + CompilerXRef["WT"].ToString() + code["with"] + AppClass.stmtDelimiter;
+                            result += Program.CurrentApp.CompilerXRef["FV"].ToString() + code["fields"] + AppClass.stmtDelimiter + Program.CurrentApp.CompilerXRef["WT"].ToString() + code["with"] + AppClass.stmtDelimiter;
                         }
                         else
                         {
                             if (code[CompilerCodes[p]].Length > 0)
-                                result += CompilerXRef[p].ToString() + code[CompilerCodes[p]] + AppClass.stmtDelimiter;
+                                result += Program.CurrentApp.CompilerXRef[p].ToString() + code[CompilerCodes[p]] + AppClass.stmtDelimiter;
                         }
                     }
 
                     if (code["flags"].Length > 0)
-                        result += CompilerXRef["FG"].ToString() + AppClass.literalStart + code["flags"].ToString() + AppClass.literalEnd + AppClass.stmtDelimiter;
+                        result += Program.CurrentApp.CompilerXRef["FG"].ToString() + AppClass.literalStart + code["flags"].ToString() + AppClass.literalEnd + AppClass.stmtDelimiter;
 
                     result = result.TrimEnd(AppClass.stmtDelimiter);
                 }
@@ -688,7 +687,7 @@ namespace JAXBase.Compiler
                         // case we need it in the future
                         Program.CurrentApp.WithHold.Add(cmdRest);
                         cmdRest = GetNameLiteralOrExpression(cmdRest, string.Empty, out string withExpr);
-                        result = CompilerXRef["XX"].ToString() + withExpr;
+                        result = Program.CurrentApp.CompilerXRef["XX"].ToString() + withExpr;
                     }
                     else
                     {
@@ -705,14 +704,14 @@ namespace JAXBase.Compiler
                 {
                     // If it's a start code then push the loop type to the loop stack
                     // Do Case, Do While, Do Until, Transaction, Try, PrintJob, If, For, Scan
-                    result = CompilerXRef["CS"].ToString() + AppLoop.AddLoop(Type[0].ToString()) + AppClass.stmtDelimiter;
+                    result = Program.CurrentApp.CompilerXRef["CS"].ToString() + AppLoop.AddLoop(Type[0].ToString()) + AppClass.stmtDelimiter;
                 }
                 else if (JAXLib.InListC(Type, "IS"))
                 {
                     // ELSEIF
                     result = AppLoop.GetLoopStack();
                     if (result[0] == Type[0])
-                        result = CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
                     else
                         result = string.Empty;
                 }
@@ -721,7 +720,7 @@ namespace JAXBase.Compiler
                     // Case, Otherwise, Catch, Finally, Else
                     result = AppLoop.GetLoopStack();
                     if (result[0] == Type[0])
-                        result = CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
                     else
                         result = string.Empty;
                 }
@@ -731,7 +730,7 @@ namespace JAXBase.Compiler
                     result = AppLoop.PopLoopStack();
 
                     if (result[0] == Type[0])
-                        result = CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + result + AppClass.stmtDelimiter;
                     else
                         result = string.Empty;
                 }
@@ -801,7 +800,7 @@ namespace JAXBase.Compiler
                             {
                                 string p = pCode[..2];
                                 if (code[CompilerCodes[p]].Length > 0)
-                                    result += CompilerXRef[p].ToString() + code[CompilerCodes[p]] + AppClass.stmtDelimiter;
+                                    result += Program.CurrentApp.CompilerXRef[p].ToString() + code[CompilerCodes[p]] + AppClass.stmtDelimiter;
                             }
 
                             result = result.TrimEnd(AppClass.stmtDelimiter);  // get rid of trailing statement delimiters
@@ -838,7 +837,7 @@ namespace JAXBase.Compiler
                     {
                         case "error":
                             // Set up the ON ERROR command
-                            result = CompilerXRef["CS"].ToString() + "E" + AppClass.stmtDelimiter;
+                            result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "E" + AppClass.stmtDelimiter;
                             break;
 
                         case "key":
@@ -861,7 +860,7 @@ namespace JAXBase.Compiler
                                     keylabel += key.SHIFT ? "SHIFT+" : "";
                                     keylabel += key.keyLabel;
 
-                                    result = CompilerXRef["CS"].ToString() + "L" + AppClass.expDelimiter + CompilerXRef["ON"].ToString() + keylabel;
+                                    result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "L" + AppClass.expDelimiter + Program.CurrentApp.CompilerXRef["ON"].ToString() + keylabel;
                                 }
 
                                 // Set up the ON KEY LABEL command
@@ -873,7 +872,7 @@ namespace JAXBase.Compiler
 
                         case "shutdown":
                             // Set up the ON SHUTDOWN command
-                            result = CompilerXRef["CS"].ToString() + "S" + AppClass.stmtDelimiter;
+                            result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "S" + AppClass.stmtDelimiter;
                             break;
 
                         default:
@@ -881,7 +880,7 @@ namespace JAXBase.Compiler
                     }
 
                     // Add the command source - syntax is checked if the ON command is executed
-                    result += CompilerXRef["CM"] + cmdRest + AppClass.stmtDelimiter;
+                    result += Program.CurrentApp.CompilerXRef["CM"] + cmdRest + AppClass.stmtDelimiter;
                 }
             }
             catch (Exception ex)
@@ -947,7 +946,7 @@ namespace JAXBase.Compiler
                     if (f < 0) throw new Exception("10||Invalid key " + key);
 
                     if (key.Length > 0)
-                        result = CompilerXRef["CS"].ToString() + key.ToUpper() + AppClass.stmtDelimiter + Generic_Parser(cmdRest, ParseInfo, Flags);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + key.ToUpper() + AppClass.stmtDelimiter + Generic_Parser(cmdRest, ParseInfo, Flags);
                     else
                         result = Generic_Parser(cmdRest, ParseInfo, Flags);
                 }
@@ -1223,10 +1222,10 @@ namespace JAXBase.Compiler
                 else
                     throw new Exception("GROK FAILED!");
 
-                result = CompilerXRef["XX"].ToString() + exprResult;
+                result = Program.CurrentApp.CompilerXRef["XX"].ToString() + exprResult;
 
                 if (string.IsNullOrWhiteSpace(target) == false)
-                    result += AppClass.stmtDelimiter + CompilerXRef["TO"].ToString() + AppClass.literalStart + target + AppClass.literalEnd;
+                    result += AppClass.stmtDelimiter + Program.CurrentApp.CompilerXRef["TO"].ToString() + AppClass.literalStart + target + AppClass.literalEnd;
             }
             catch (Exception ex)
             {
@@ -1661,12 +1660,12 @@ namespace JAXBase.Compiler
                     if (string.IsNullOrWhiteSpace(codes[CompilerCodes["FV"]]) || string.IsNullOrWhiteSpace(codes[CompilerCodes["WT"]]))
                         throw new Exception("|");
                     else
-                        result += CompilerXRef["FV"].ToString() + codes[CompilerCodes["FV"]] + AppClass.stmtDelimiter + CompilerXRef["WT"].ToString() + codes[CompilerCodes["WT"]] + AppClass.stmtDelimiter;
+                        result += Program.CurrentApp.CompilerXRef["FV"].ToString() + codes[CompilerCodes["FV"]] + AppClass.stmtDelimiter + Program.CurrentApp.CompilerXRef["WT"].ToString() + codes[CompilerCodes["WT"]] + AppClass.stmtDelimiter;
                 }
                 else
                 {
                     if (codes[CompilerCodes[p]].Length > 0)
-                        result += CompilerXRef[p].ToString() + codes[CompilerCodes[p]] + AppClass.stmtDelimiter;
+                        result += Program.CurrentApp.CompilerXRef[p].ToString() + codes[CompilerCodes[p]] + AppClass.stmtDelimiter;
                 }
             }
 

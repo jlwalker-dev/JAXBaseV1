@@ -98,6 +98,7 @@ namespace JAXBase.Core
 
         public Dictionary<char, string> XRef4Runtime = []; // Convert compler byte to runtime codes
         public Dictionary<string, string> RunTimeCodes = []; // Runtime codes - Human readable runtime statement elements
+        public Dictionary<string, char> CompilerXRef = [];         // Convert compiler code to byte
 
         //public readonly JAXSettings JaxSettings = new();
         public readonly JAXVariables JaxVariables = new();
@@ -155,7 +156,7 @@ namespace JAXBase.Core
         public readonly OSType OS = OSType.Unknown;
         public readonly string ExeFolder = string.Empty;
 
-        public Form? WaitWindow = null;
+        public Avalonia.Controls.Window? WaitWindow = null;
 
         /*-----------------------------------------------------------*
          * Language settings - set commands

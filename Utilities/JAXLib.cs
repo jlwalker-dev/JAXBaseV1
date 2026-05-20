@@ -1,4 +1,6 @@
-﻿using JAXBase.Core;
+﻿using Avalonia.Threading;
+using JAXBase.Core;
+using JAXBase.UI.Dialogs;
 using Microsoft.VisualBasic;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -1434,207 +1436,7 @@ namespace JAXBase.Utilities
             static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
         }
 
-        /*
-         * Between GROK and me, we got this figured out.
-         */
-        public static Form? WaitWindow(AppClass app, string msgText, int row, int col, bool clear, bool wait, int timeout, out string retval)
-        {
-            retval = string.Empty; // Always initialize
 
-            // CLEAR option - close any existing wait window
-            if (clear)
-            {
-                CloseExistingWaitWindow();
-                return null;
-            }
-
-            // Prevent multiple overlapping wait windows
-            CloseExistingWaitWindow();
-
-            var screenWidth = Screen.PrimaryScreen!.WorkingArea.Width;
-            var screenHeight = Screen.PrimaryScreen!.WorkingArea.Height;
-
-            Form msgBox = new Form
-            {
-                FormBorderStyle = FormBorderStyle.None,
-                BackColor = Color.FromArgb(255, 255, 192), // Classic VFP yellow
-                Padding = new Padding(12),
-                StartPosition = FormStartPosition.Manual,
-                TopMost = true,
-                ShowInTaskbar = false,
-                Top = 20,
-                MinimumSize = new Size(180, 60)
-            };
-
-            Label lbl = new Label
-            {
-                Text = msgText,
-                AutoSize = true,
-                MaximumSize = new Size(520, 0),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Dock = DockStyle.Fill
-            };
-
-            // Simple border
-            msgBox.Paint += (s, e) =>
-            {
-                e.Graphics.DrawRectangle(Pens.Gray, 0, 0, msgBox.Width - 1, msgBox.Height - 1);
-            };
-
-            msgBox.Controls.Add(lbl);
-
-            // Auto-size form to content
-            var preferred = lbl.GetPreferredSize(new Size(520, 0));
-            msgBox.ClientSize = new Size(
-                System.Math.Max(preferred.Width + 24, 200),
-                preferred.Height + 24);
-
-            // Position top-right
-            msgBox.Left = screenWidth - msgBox.Width - 30;
-
-            // Optional row/col (VFP style)
-            if (row >= 0 && col >= 0)
-            {
-                msgBox.Top = 40 + row * (lbl.Font.Height + 4);
-                msgBox.Left = 40 + col * 8;
-            }
-
-            ActiveWaitForm = msgBox;
-            msgBox.FormClosed += (s, e) => ActiveWaitForm = null;
-
-            // NOWAIT = just show and return
-            if (!wait)
-            {
-                msgBox.Show();
-                return msgBox;
-            }
-
-            // ─────────────────────────────────────────────────────────────
-            // WAITING MODE (wait = true) - this blocks until key/click/timeout
-            // ─────────────────────────────────────────────────────────────
-
-            var result = new JAXObjects.Token(); // Local copy - safe to modify in lambdas
-
-            // Helper: is this a "real" key(not just a naked modifier) ?
-            bool IsRealKey(System.Windows.Forms.KeyEventArgs e)
-            {
-                // If they hit the capslock or numlock, forgive them their tresspass
-                if (e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.NumLock) return false;
-
-                // These fire even when pressed alone — we want to ignore them unless combined
-                if (e.KeyCode == Keys.ShiftKey ||
-                e.KeyCode == Keys.ControlKey ||
-                e.KeyCode == Keys.Menu        // Alt
-                )
-                {
-                    int m = (int)e.Modifiers;
-
-                    Keys kk = m switch
-                    {
-                        65536 => Keys.ShiftKey,
-                        131072 => Keys.ControlKey,
-                        262144 => Keys.Alt,
-                        _ => 0
-                    };
-
-                    int k = (int)e.KeyCode;
-                    return kk != e.KeyCode; // Only accept if another key is also pressed
-                }
-
-                return true; // All other keys are real
-            }
-
-            msgBox.KeyPreview = true;
-
-            // Accept Enter, Space, Escape, or any key really
-            msgBox.KeyDown += (s, e) =>
-            {
-                // Ignore bare Shift, Ctrl, Alt
-                if (!IsRealKey(e))
-                    return;
-
-                // Now we have a meaningful key press
-                int k = (int)e.KeyData;
-                if (k > 65791)
-                    k = 0;
-                else if (k > 65535 && k < 65536 + 255)
-                {
-                    // Only the shift was pressed
-                    k = k % 65536;
-                }
-                else if (k > 64 && k < 91)
-                {
-                    if (!Control.IsKeyLocked(Keys.CapsLock))
-                        k += 32;    // Shift & capslock are not in use, so lower case
-                }
-                result.Element.Value = k;  // This includes Shift/Ctrl/Alt state! Perfect!
-                msgBox.Close();
-            };
-
-            // Click anywhere to dismiss (very VFP-like)
-            msgBox.MouseClick += (s, e) =>
-            {
-                result.Element.Value = 0;
-                msgBox.Close();
-            };
-            lbl.MouseClick += (s, e) =>
-            {
-                result.Element.Value = 0;
-                msgBox.Close();
-            };
-
-            // Timeout support
-            System.Windows.Forms.Timer? timer = null;
-
-            //timeout = 99999;
-            if (timeout > 0)
-            {
-                timer = new System.Windows.Forms.Timer { Interval = timeout * 1000 };
-                timer.Tick += (s, e) =>
-                {
-                    timer.Stop();
-                    timer.Dispose();
-                    result.Element.Value = 0;
-                    msgBox.Close();
-                };
-                timer.Start();
-            }
-
-            msgBox.ShowDialog(); // Blocks here until Close() is called
-
-            if (timer != null && timer.Enabled)
-            {
-                timer.Stop();
-                timer.Dispose();
-            }
-
-            // Now safely copy local result back to out parameter
-            int testkey = result.AsInt();
-            retval = JAXLib.Between(testkey, 32, 127) ? ((char)testkey).ToString() : string.Empty;
-
-            return null; // After waiting, return null like VFP
-        }
-
-        // ────────────── Static helper to manage single instance ──────────────
-        private static Form? ActiveWaitForm = null;
-
-        private static void CloseExistingWaitWindow()
-        {
-            if (ActiveWaitForm != null && !ActiveWaitForm.IsDisposed)
-            {
-                try
-                {
-                    if (ActiveWaitForm.InvokeRequired)
-                        ActiveWaitForm.BeginInvoke(new Action(() => ActiveWaitForm.Close()));
-                    else
-                        ActiveWaitForm.Close();
-                }
-                catch { /* ignore */ }
-            }
-            ActiveWaitForm = null;
-        }
-
-        
 
         /// <summary>
         /// Exact emulation of Visual FoxPro PUTFILE()
@@ -2212,6 +2014,126 @@ namespace JAXBase.Utilities
                 result = nKeyCode;
 
             return result;
+        }
+
+
+
+        //public static Avalonia.Controls.Window? WaitWindow(
+        //    Core.AppClass app,
+        //    string msgText,
+        //    int row,
+        //    int col,
+        //    bool clear,
+        //    bool wait,
+        //    int timeout,
+        //    out string retval)
+        //{
+        //    retval = string.Empty;
+
+        //    if (clear)
+        //    {
+        //        CloseExistingWaitWindow();
+        //        return null;
+        //    }
+
+        //    CloseExistingWaitWindow();
+
+        //    var waitWin = new AvaloniaWaitWindow(msgText, row, col, timeout);
+        //    ActiveWaitWindow = waitWin;
+        //    waitWin.Closed += (s, e) => ActiveWaitWindow = null;
+
+        //    if (!wait)
+        //    {
+        //        waitWin.ShowNonBlocking();
+        //        return waitWin;
+        //    }
+
+        //    // Blocking WAIT on UI thread (no deadlock)
+        //    string result = string.Empty;
+        //    Dispatcher.UIThread.Invoke(() =>
+        //    {
+        //        result = waitWin.ShowAndWait();
+        //    });
+
+        //    retval = result;
+        //    return null;
+        //}
+
+        //private static Avalonia.Controls.Window? ActiveWaitWindow = null;
+
+        //private static void CloseExistingWaitWindow()
+        //{
+        //    if (ActiveWaitWindow == null) return;
+
+        //    try
+        //    {
+        //        if (Dispatcher.UIThread.CheckAccess())
+        //            ActiveWaitWindow.Close();
+        //        else
+        //            Dispatcher.UIThread.InvokeAsync(() => ActiveWaitWindow?.Close());
+        //    }
+        //    catch { }
+        //    finally
+        //    {
+        //        ActiveWaitWindow = null;
+        //    }
+        //}
+
+        /// <summary>
+        /// Returns the window immediately. Blocking is handled by the caller (Executer) via await.
+        /// </summary>
+        public static Avalonia.Controls.Window? WaitWindow(
+            Core.AppClass app,
+            string msgText,
+            int row,
+            int col,
+            bool clear,
+            bool wait,
+            int timeout,
+            out string retval)
+        {
+            retval = string.Empty;
+
+            if (clear)
+            {
+                CloseExistingWaitWindow();
+                return null;
+            }
+
+            CloseExistingWaitWindow();
+
+            var waitWin = new AvaloniaWaitWindow(msgText, row, col, timeout);
+            ActiveWaitWindow = waitWin;
+            waitWin.Closed += (s, e) => ActiveWaitWindow = null;
+
+            if (!wait)
+            {
+                waitWin.ShowNonBlocking();
+                return waitWin;
+            }
+
+            // For wait=true we return the window and let caller await the task
+            return waitWin;
+        }
+
+        private static Avalonia.Controls.Window? ActiveWaitWindow = null;
+
+        private static void CloseExistingWaitWindow()
+        {
+            if (ActiveWaitWindow == null) return;
+
+            try
+            {
+                if (Dispatcher.UIThread.CheckAccess())
+                    ActiveWaitWindow.Close();
+                else
+                    Dispatcher.UIThread.InvokeAsync(() => ActiveWaitWindow?.Close());
+            }
+            catch { }
+            finally
+            {
+                ActiveWaitWindow = null;
+            }
         }
     }
 }
