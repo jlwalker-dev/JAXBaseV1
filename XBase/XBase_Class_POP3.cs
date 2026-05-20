@@ -83,8 +83,8 @@ namespace JAXBase.XBase
 
         public XBase_Class_POP3(JAXObjectWrapper jow, string name) : base(jow, name)
         {
-            Port = 110;
-            UseSSL = false;
+            UserProperties["port"].Element.Value = 110;
+            UserProperties["secure"].Element.Value = false;
 
             Encoding = Encoding.UTF8;
             Timeout = TimeSpan.FromSeconds(30);
@@ -104,17 +104,21 @@ namespace JAXBase.XBase
 
         public override bool Connect()
         {
-            if (string.IsNullOrWhiteSpace(Server)) return false;
+            hostAddress = UserProperties["host"].AsString();
+            int port = UserProperties["port"].AsInt();
+            bool useSecure = UserProperties["secure"].AsBool();
+            
+            if (string.IsNullOrWhiteSpace(hostAddress)) return false;
 
-            Port = ImplicitSSL ? 995 : (Port == 995 ? 110 : Port);
-            UseSSL = UseSSL || ImplicitSSL;
+            port = ImplicitSSL ? 995 : (port == 995 ? 110 : port);
+            useSecure = useSecure || ImplicitSSL;
 
             if (!base.Connect()) return false;
 
             WaitForResponse();
             if (!_lastResponse.StartsWith("+OK")) return false;
 
-            if (UseSSL && !ImplicitSSL && _lastResponse.Contains("STLS"))
+            if (useSecure && !ImplicitSSL && _lastResponse.Contains("STLS"))
             {
                 SendCommand("STLS");
                 if (!_lastResponse.StartsWith("+OK")) return false;

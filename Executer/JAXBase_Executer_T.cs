@@ -128,7 +128,7 @@ namespace JAXBase.Executer
                 while (true)
                 {
                     //Program.CurrentApp.utl.Conv64(Program.CurrentApp.CmdList.IndexOf("catch"), 2, out string b64);
-                    cmdString = plead + Program.CurrentApp.MiscInfo["catchcmd"] + Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
+                    cmdString = plead + Program.CurrentApp.MiscInfo["catchcmd"] + Program.CurrentApp.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
                     prgPos = Program.CurrentApp.utl.FindByteSequence(PrgCode, cmdString, thisPos);
                     if (prgPos < 0) break;
 
@@ -136,9 +136,9 @@ namespace JAXBase.Executer
                     thisPos = prgPos + cmdString.Length;
                 }
 
-                cmdString = plead + Program.CurrentApp.MiscInfo["finallycmd"] + Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
+                cmdString = plead + Program.CurrentApp.MiscInfo["finallycmd"] + Program.CurrentApp.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
                 lc.FinallyPos = Program.CurrentApp.utl.FindByteSequence(PrgCode, cmdString, thisPos);
-                cmdString = plead + Program.CurrentApp.MiscInfo["endtrycmd"] + Program.CurrentApp.JaxCompiler.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
+                cmdString = plead + Program.CurrentApp.MiscInfo["endtrycmd"] + Program.CurrentApp.CompilerXRef["CS"].ToString() + tryCode + AppClass.stmtDelimiter;
                 lc.EndTry = Program.CurrentApp.utl.FindByteSequence(PrgCode, cmdString, thisPos);
 
                 Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].TryStack[^1] = lc;

@@ -60,6 +60,34 @@ namespace JAXBase.XBase
                         returnToken.Element = UserProperties["forms"]._avalue[UserProperties["activeform"].AsInt()];
                         break;
 
+                    case "commandwindowheight":
+                        if (JAXApp.MainWindowInstance is null)
+                            returnToken.Element.MakeNull();
+                        else
+                            returnToken.Element.Value = JAXApp.MainWindowInstance.commandWindow.Height;
+                        break;
+
+                    case "commandwindowleft":
+                        if (JAXApp.MainWindowInstance is null)
+                            returnToken.Element.MakeNull();
+                        else
+                            returnToken.Element.Value = JAXApp.MainWindowInstance.commandWindow.Bounds.Left;
+                        break;
+
+                    case "commandwindowtop":
+                        if (JAXApp.MainWindowInstance is null)
+                            returnToken.Element.MakeNull();
+                        else
+                            returnToken.Element.Value = JAXApp.MainWindowInstance.commandWindow.Bounds.Top;
+                        break;
+
+                    case "commandwindowwidth":
+                        if (JAXApp.MainWindowInstance is null)
+                            returnToken.Element.MakeNull();
+                        else
+                            returnToken.Element.Value = JAXApp.MainWindowInstance.commandWindow.Width;
+                        break;
+
                     case "forms":
                         if (JAXLib.Between(idx, 1, UserProperties["forms"]._avalue.Count))
                         {
@@ -221,6 +249,66 @@ namespace JAXBase.XBase
                                     {
 
                                     }
+                                }
+                                else
+                                    result = 11;
+                            }
+                            break;
+
+                        case "commandwindowheight":
+                            if (JAXApp.MainWindowInstance is not null)
+                            {
+                                if (tk.Element.Type.Equals("N"))
+                                {
+                                    if (tk.AsInt() < 0)
+                                        result = 41;
+                                    else
+                                        JAXApp.MainWindowInstance.commandWindow.Height = tk.AsInt();
+                                }
+                                else
+                                    result = 11;
+                            }
+                            break;
+
+                        case "commandwindowleft":
+                            if (JAXApp.MainWindowInstance is not null)
+                            {
+                                if (tk.Element.Type.Equals("N"))
+                                {
+                                    if (tk.AsInt() < 0)
+                                        result = 41;
+                                    else
+                                        Avalonia.Controls.Canvas.SetLeft(JAXApp.MainWindowInstance.commandWindow, tk.AsInt());
+                                }
+                                else
+                                    result = 11;
+                            }
+                            break;
+
+                        case "commandwindowtop":
+                            if (JAXApp.MainWindowInstance is not null)
+                            {
+                                if (tk.Element.Type.Equals("N"))
+                                {
+                                    if (tk.AsInt() < 0)
+                                        result = 41;
+                                    else
+                                        Avalonia.Controls.Canvas.SetTop(JAXApp.MainWindowInstance.commandWindow, tk.AsInt());
+                                }
+                                else
+                                    result = 11;
+                            }
+                            break;
+
+                        case "commandwindowwidth":
+                            if (JAXApp.MainWindowInstance is not null)
+                            {
+                                if (tk.Element.Type.Equals("N"))
+                                {
+                                    if (tk.AsInt() < 0)
+                                        result = 41;
+                                    else
+                                        JAXApp.MainWindowInstance.commandWindow.Width = tk.AsInt();
                                 }
                                 else
                                     result = 11;
@@ -795,7 +883,9 @@ namespace JAXBase.XBase
             [
                 "activecontrol,o!,","activeform,n!,","alwaysontop,L,false", "autocenter,L,false",
                 "backcolor,R,255|255|255","baseclass,C!,form","borderstyle,N!,3",
-                "caption,C,Form","class,C!,screen","classlibrary,C!,","closable,L,true","comment,C,","controlbox,L,true","controlcount,N!,0",
+                "caption,C,Form","class,C!,screen","classlibrary,C!,","closable,L,true","comment,C,",
+                "commandwindowleft,N,100","commandwindowheight,N,200","commandwindowtop,N,100","commandwindowwidth,N,200",
+                "controlbox,L,true","controlcount,N!,0",
                 "FontBold,L,false","FontItalic,L,false","FontName,C,Arial","FontSize,N,12","forecolor,R,0","formcount,N!,0",
                 "Height,N,300",
                 "icon,C,",

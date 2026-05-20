@@ -45,8 +45,21 @@ namespace JAXBase.Executer
                         throw new Exception("11|");
                 }
 
-                bool wait4 = Array.IndexOf(eCodes.Flags, "wait") > 0 || eCodes.To.Count > 0;
-                Program.CurrentApp.WaitWindow = JAXLib.WaitWindow(Program.CurrentApp, msg, eCodes.At.row, eCodes.At.col, Array.IndexOf(eCodes.Flags, "clear") > 0, wait4, eCodes.TIME, out string retval);
+                bool wait4 = Array.IndexOf(eCodes.Flags, "wait") > 0 || eCodes.To.Count > 0 || eCodes.TIME >= 0;
+
+                AppIO.DebugLog($"Wait -> msg: {msg}, varName: {varName}, wait4: {wait4}");
+                var waitWindow = JAXLib.WaitWindow(Program.CurrentApp, msg, eCodes.At.row, eCodes.At.col,
+                    Array.IndexOf(eCodes.Flags, "clear") > 0, wait4, eCodes.TIME, out string retval);
+
+                Program.CurrentApp.WaitWindow = waitWindow;
+
+                if (wait4 && waitWindow != null)
+                {
+                    AppIO.DebugLog("Waiting for user input...");
+                    // This is the critical part: await the real Task so UI stays responsive
+                    retval = await ((UI.Dialogs.AvaloniaWaitWindow)waitWindow).ShowAndWaitAsync();
+                    AppIO.DebugLog($"    Received: {retval}");
+                }
 
                 if (string.IsNullOrWhiteSpace(varName) == false)
                     await AppVars.SetVarFromExpression(varName, retval, true);
@@ -56,6 +69,7 @@ namespace JAXBase.Executer
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
+            AppIO.DebugLog("Exit WAIT");
             return result;
         }
 

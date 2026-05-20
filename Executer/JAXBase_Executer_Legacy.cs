@@ -42,7 +42,7 @@ namespace JAXBase.Executer
                     JAXLib.StrToFile(result, Program.CurrentApp.CurrentDS.JaxSettings.Alternate_Name, 1);
             }
 
-            return string.Empty;
+            return "";
         }
 
 
@@ -65,19 +65,10 @@ namespace JAXBase.Executer
                     answer = new("");
 
                 result += answer.AsString() + " ";
+
             }
 
             return result.Length > 0 ? result[..^1] : string.Empty;
-        }
-
-
-        /*
-         * Place source code into the current AppLevel
-         */
-        public static string SourceCode(ExecuterCodes eCodes)
-        {
-            Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = eCodes.COMMAND;
-            return string.Empty;
         }
     }
 }

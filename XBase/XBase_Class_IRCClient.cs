@@ -95,7 +95,7 @@ namespace JAXBase.XBase
             Timeout = TimeSpan.FromSeconds(30);
             OnLineReceived += ProcessIrcLine;
             OnDisconnected += HandleDisconnect;
-            Port= 6667;
+            UserProperties["port"].Element.Value= 6667;
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -109,9 +109,13 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public bool Connect()
+        public override bool Connect()
         {
-            if (string.IsNullOrWhiteSpace(Server))
+            hostAddress = UserProperties["host"].AsString();
+            int port = UserProperties["port"].AsInt();
+            bool useSecure = UserProperties["secure"].AsBool();
+
+            if (string.IsNullOrWhiteSpace(hostAddress))
             {
                 LastError = "Server not set";
                 //OnError?.Invoke(LastError);
@@ -128,7 +132,7 @@ namespace JAXBase.XBase
             if (!string.IsNullOrEmpty(Password))
                 SendLine($"PASS {Password}");
 
-            if (UseSasl && UseSSL)
+            if (UseSasl && useSecure)
             {
                 SendLine("CAP REQ :sasl");
             }
@@ -189,6 +193,7 @@ namespace JAXBase.XBase
         private void ProcessIrcLine(string line)
         {
             OnRawMessage?.Invoke(line);
+            bool useSecure = UserProperties["secure"].AsBool();
 
             if (string.IsNullOrEmpty(line)) return;
 
@@ -222,7 +227,7 @@ namespace JAXBase.XBase
             {
                 case "001": // Welcome
                     CurrentNick = trailing[0];
-                    if (UseSasl && UseSSL)
+                    if (UseSasl && useSecure)
                     {
                         SendLine("CAP REQ :sasl");
                     }

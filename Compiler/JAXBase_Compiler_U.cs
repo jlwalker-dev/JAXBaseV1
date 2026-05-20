@@ -21,7 +21,7 @@ namespace JAXBase.Compiler
             try
             {
                 string loop = AppLoop.GetLoopStack();
-                result = jbc.CompilerXRef["CS"].ToString() + loop + AppClass.stmtDelimiter + jbc.Struct_Parser(cmdLine, "UE", "XX*", []);
+                result = Program.CurrentApp.CompilerXRef["CS"].ToString() + loop + AppClass.stmtDelimiter + jbc.Struct_Parser(cmdLine, "UE", "XX*", []);
             }
 
             catch (Exception ex)

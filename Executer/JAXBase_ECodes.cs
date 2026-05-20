@@ -339,8 +339,8 @@ namespace JAXBase.Executer
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
 
                         if (rpnValue.Element.Type.Equals("N"))
-                            eCodes.RECORD = rpnValue.AsInt();
-                        else
+                            eCodes.TIME = rpnValue.AsInt();
+                         else
                             throw new Exception("11|");
                         break;
 

@@ -272,7 +272,7 @@ namespace JAXBase.Compiler
                         int f1 = cmdLine.ToLower().IndexOf(" with ");
                         int f2 = f1 > 0 ? cmdLine.ToLower().IndexOf('=', f1) : -1;
 
-                        result = jbc.CompilerXRef["CS"].ToString() + nextToken[..1].ToUpper() + AppClass.stmtDelimiter;
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + nextToken[..1].ToUpper() + AppClass.stmtDelimiter;
 
                         if (f2 < 0)
                             result += jbc.Key_Parser(cmdLine, [nextToken], "XX0,WT1", ["noconsole"]);    // WITH reportObj
@@ -281,27 +281,27 @@ namespace JAXBase.Compiler
                         break;
 
                     case "form":    // DO FORM FormName | ? [NAME VarName [LINKED]] [WITH cParameterList] [TO VarName] [NOREAD] [NOSHOW]
-                        result = jbc.CompilerXRef["CS"].ToString() + "F" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdLine, "NM0,WT0,TO0", ["noread", "noshow", "linked"]);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "F" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdLine, "NM0,WT0,TO0", ["noread", "noshow", "linked"]);
                         break;
 
                     case "case":    // DO CASE
-                        result = jbc.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("C");
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("C");
                         break;
 
                     case "while":   // DO WHILE lExpression 
                         cmdLine = jbc.GetNextToken(cmdLine, string.Empty, out nextToken);
                         expression = jbc.GetRPNString(Program.CurrentApp, cmdLine);
-                        result = jbc.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("W") + AppClass.stmtDelimiter +jbc.CompilerXRef["XX"].ToString()+ expression;
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("W") + AppClass.stmtDelimiter +Program.CurrentApp.CompilerXRef["XX"].ToString()+ expression;
                         break;
 
                     default:        // DO ProgramName1 | ProcedureName [IN ProgramName2] [WITH ParameterList]
                         if (cmdLine.Length == 0)
                         {
                             // Nothing following the DO assumes an UNTIL is coming
-                            result = jbc.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("U");
+                            result = Program.CurrentApp.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("U");
                         }
                         else
-                            result = jbc.CompilerXRef["CS"].ToString() + "P" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdLine, "XX0,IN0,WT3", ["noread", "noshow", "linked"]); // Just expressions after with
+                            result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "P" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdLine, "XX0,IN0,WT3", ["noread", "noshow", "linked"]); // Just expressions after with
 
                         break;
                 }

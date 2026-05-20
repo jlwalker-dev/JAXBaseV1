@@ -131,6 +131,8 @@ namespace JAXBase.UI
                 // ────────────────────────────────────────────────
                 bool wasVisible = commandPanel.IsVisible;
                 commandPanel.IsVisible = false;
+                commandPanel.InvalidateVisual();
+                commandPanel.InvalidateMeasure();
 
                 try
                 {

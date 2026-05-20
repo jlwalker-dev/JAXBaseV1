@@ -487,19 +487,19 @@ namespace JAXBase.Executer
                 switch (loopType[0])
                 {
                     case 'S':   // SCAN
-                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endscancmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endscancmd"] + Program.CurrentApp.CompilerXRef["CS"].ToString() + loopType + AppClass.cmdEnd;
                         break;
 
                     case 'W':   // WHILE
-                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["enddocmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["enddocmd"]+ Program.CurrentApp.CompilerXRef["CS"].ToString() + loopType + AppClass.cmdEnd;
                         break;
 
                     case 'F':   // FOR
-                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endforcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["endforcmd"] + Program.CurrentApp.CompilerXRef["CS"].ToString() + loopType + AppClass.cmdEnd;
                         break;
 
                     case 'U':   // UNTIL
-                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["untilcmd"] + eCodes.SUBCMD + AppClass.cmdEnd;
+                        loop = AppClass.cmdByte + Program.CurrentApp.MiscInfo["untilcmd"] + Program.CurrentApp.CompilerXRef["CS"].ToString() + loopType + AppClass.cmdEnd;
                         break;
 
                     default:    // ERROR

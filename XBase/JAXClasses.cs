@@ -449,7 +449,7 @@ namespace JAXBase.XBase
         public string SUBCMD = string.Empty;
         public string TABLE = string.Empty;
         public List<ExCodeName> Tag = [];
-        public int TIME = 0;
+        public int TIME = -1;
         public string TITLE = string.Empty;
         public List<ExCodeName> To = [];
         public List<ExCodeName> Type = [];

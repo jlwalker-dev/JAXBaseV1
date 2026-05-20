@@ -89,10 +89,11 @@ namespace JAXBase.XBase
 
         public override bool Connect()
         {
-            if (string.IsNullOrWhiteSpace(Server)) return false;
+            hostAddress = UserProperties["host"].AsString();
+            if (string.IsNullOrWhiteSpace(hostAddress)) return false;
 
-            Port = ImplicitSSL ? 990 : Port;
-            UseSSL = UseSSL || ImplicitSSL;
+            int port = UserProperties["port"].AsInt();
+            bool useSecure = UserProperties["secure"].AsBool();
 
             if (!base.Connect()) return false;
 
@@ -104,7 +105,7 @@ namespace JAXBase.XBase
                 return false;
             }
 
-            if (UseSSL && !ImplicitSSL)
+            if (useSecure && !ImplicitSSL)
             {
                 if (!SendCommand("AUTH TLS") || _lastResponseCode != 234)
                 {
@@ -134,6 +135,8 @@ namespace JAXBase.XBase
 
             if (!SendCommand("PASV")) { CloseDataConnection(); return Array.Empty<string>(); }
 
+            bool useSecure = UserProperties["secure"].AsBool();
+
             var match = Regex.Match(_lastResponse, @"\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)");
             if (!match.Success) { CloseDataConnection(); return Array.Empty<string>(); }
 
@@ -146,7 +149,7 @@ namespace JAXBase.XBase
                 return Array.Empty<string>();
             }
 
-            if (UseSSL && !ImplicitSSL)
+            if ( useSecure && !ImplicitSSL)
             {
                 SendCommand("PBSZ 0");
                 SendCommand("PROT P");
