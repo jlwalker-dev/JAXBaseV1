@@ -438,20 +438,20 @@ namespace JAXBase.UI
             switch (BorderStyle)
             {
                 case 0:
-                    _realWindow.SystemDecorations = SystemDecorations.None;
+                    _realWindow.WindowDecorations = WindowDecorations.None;
                     _realWindow.CanResize = false;
                     break;
                 case 1:
-                    _realWindow.SystemDecorations = SystemDecorations.Full;
+                    _realWindow.WindowDecorations = WindowDecorations.Full;
                     _realWindow.CanResize = false;
                     break;
                 case 2:
-                    _realWindow.SystemDecorations = SystemDecorations.BorderOnly;
+                    _realWindow.WindowDecorations = WindowDecorations.BorderOnly;
                     _realWindow.CanResize = false;
                     break;
                 case 3:
                 default:
-                    _realWindow.SystemDecorations = SystemDecorations.Full;
+                    _realWindow.WindowDecorations = WindowDecorations.Full;
                     _realWindow.CanResize = true;
                     break;
             }

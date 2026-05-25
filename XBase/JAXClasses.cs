@@ -1091,4 +1091,30 @@ namespace JAXBase.XBase
             return new ExpandoObject();
         }
     }
+
+
+    // Supporting classes
+    public class XBase_HttpRequest
+    {
+        public HttpMethod Method { get; set; } = HttpMethod.Get;
+        public string Url { get; set; } = "";
+        public object? Content { get; set; }
+    }
+
+    // Supporting types
+    public class NostrHistoryEntry
+    {
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public string RelayUrl { get; set; } = string.Empty;
+        public string RawEvent { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+    }
+
+
+    internal class RelayConnection
+    {
+        public string Url { get; }
+        public RelayConnection(string url) => Url = url;
+    }
+
 }

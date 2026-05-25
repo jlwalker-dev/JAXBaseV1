@@ -82,9 +82,9 @@ namespace JAXBase.XBase
 
             if (err > 0)
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(err, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(err, $"{err}|{value?.BaseClass}", string.Empty);
             }
 
@@ -129,8 +129,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
@@ -325,9 +325,9 @@ namespace JAXBase.XBase
             // If result>0 at this point, then there's been an error
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -443,7 +443,7 @@ namespace JAXBase.XBase
             // Next, do we need to add buttons?
             while (currentButtonCount < desiredButtonCount)
             {
-                JAXObjectWrapper obut = new(App, "toolbutton", "", []);
+                JAXObjectWrapper obut = new(Program.CurrentApp, "toolbutton", "", []);
                 //await obut.SetProperty("autosize", true);
                 await obut.SetProperty("name", $"Button{currentButtonCount + 1}");
                 await obut.SetProperty("visible", true);
@@ -679,7 +679,7 @@ namespace JAXBase.XBase
                         string imgName = imgs[count].Trim().Equals("*") ? "" : imgs[count].Trim();
 
                         if (imgName.Contains('\\') || imgName.Contains('/'))
-                            App.JaxImages!.RegisterImage(imgName, "", out imgName);
+                            Program.CurrentApp.JaxImages!.RegisterImage(imgName, "", out imgName);
 
                         await btn.SetProperty("picture", imgName);
                         await btn.SetProperty("enabled", true);

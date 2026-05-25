@@ -173,9 +173,9 @@ namespace JAXBase.XBase
             if (err > 0)
             {
                 // Something went wrong
-                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(err, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(err, $"{err}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -194,7 +194,7 @@ namespace JAXBase.XBase
 
             // Create the column based on type
             string colName = $"Column{grid.Columns.Count + 1}";
-            JAXObjectWrapper colObj = new JAXObjectWrapper(App, "column", colName, p);
+            JAXObjectWrapper colObj = new JAXObjectWrapper(Program.CurrentApp, "column", colName, p);
 
             await colObj.SetProperty("columnnumber", grid.Columns.Count);
             UserProperties["objects"].Add(colObj);
@@ -238,7 +238,7 @@ namespace JAXBase.XBase
             int results = 0;
             string msg = string.Empty;
             methodName = methodName.ToLower();
-            App.ReturnValue.Element.Value = true;
+            Program.CurrentApp.ReturnValue.Element.Value = true;
             try
             {
                 if (Methods.ContainsKey(methodName))
@@ -253,14 +253,14 @@ namespace JAXBase.XBase
                         {
                             case "addcolumn":
                                 // Should be just one parameter
-                                if (App.ParameterClassList.Count > 1)
+                                if (Program.CurrentApp.ParameterClassList.Count > 1)
                                     results = 94;
                                 else
                                 {
                                     JAXObjects.Token tk = new();
-                                    if (App.ParameterClassList.Count == 1)
+                                    if (Program.CurrentApp.ParameterClassList.Count == 1)
                                     {
-                                        object? obj = AppHelper.GetParameterValue(App.ParameterClassList[0]);
+                                        object? obj = AppHelper.GetParameterValue(Program.CurrentApp.ParameterClassList[0]);
                                         if (obj is null)
                                             tk.Element.MakeNull();
                                         else
@@ -299,10 +299,10 @@ namespace JAXBase.XBase
 
             if (results > 0)
             {
-                _AddError(results, 0, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(results, 0, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(results, $"{results}|{msg}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-                App.ReturnValue.Element.Value = false;
+                Program.CurrentApp.ReturnValue.Element.Value = false;
                 results = -1;
             }
             return results;
@@ -669,7 +669,7 @@ namespace JAXBase.XBase
                                                     if (result == 0)
                                                     {
                                                         // We may have an alias so try to open it up
-                                                        GridDBF = App.CurrentDS.GetWorkAreaObject(alias);
+                                                        GridDBF = Program.CurrentApp.CurrentDS.GetWorkAreaObject(alias);
                                                         if (result == 0 && GridDBF is not null)
                                                         {
                                                             await PrepDataGrid();
@@ -864,8 +864,8 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
@@ -910,8 +910,8 @@ namespace JAXBase.XBase
                 result = 1559;
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 returnToken.Element.MakeNull();
@@ -1043,8 +1043,8 @@ namespace JAXBase.XBase
             }
             if (results > 0)
             {
-                _AddError(results, 0, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(results, 0, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(results, $"{results}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 results = -1;
             }
@@ -1133,7 +1133,7 @@ namespace JAXBase.XBase
             //AppIO.DebugLog("Grid Keypress", false);
             // VFP nKeyCode translation
             ParameterClass nKeyCode = new();
-            if (App.OS == OSType.Windows)
+            if (Program.CurrentApp.OS == OSType.Windows)
             {
                 nKeyCode.token.Element.Value = JAXLib.FormsVFPKeyPress(e.Key.ToString(), (int)e.Key);
                 if (nKeyCode.token.AsInt() > 200) return; // Don't want modifier keys here
@@ -1148,8 +1148,8 @@ namespace JAXBase.XBase
             keymods += e.KeyModifiers == KeyModifiers.Alt ? 4 : 0;
             ParameterClass nShiftAltCtrl = new();
             nShiftAltCtrl.token.Element.Value = keymods;
-            App.ParameterClassList.Add(nKeyCode);
-            App.ParameterClassList.Add(nShiftAltCtrl);
+            Program.CurrentApp.ParameterClassList.Add(nKeyCode);
+            Program.CurrentApp.ParameterClassList.Add(nShiftAltCtrl);
             await _CallMethod("keypress");
         }
 
@@ -1169,9 +1169,9 @@ namespace JAXBase.XBase
                 cellValue.token.Element.Value = value;
             else
                 cellValue.token.Element.MakeNull();
-            App.ParameterClassList.Add(rowIndex);
-            App.ParameterClassList.Add(colIndex);
-            App.ParameterClassList.Add(cellValue);
+            Program.CurrentApp.ParameterClassList.Add(rowIndex);
+            Program.CurrentApp.ParameterClassList.Add(colIndex);
+            Program.CurrentApp.ParameterClassList.Add(cellValue);
             await _CallMethod("beforerowcolchange");
         }
 
@@ -1195,7 +1195,7 @@ namespace JAXBase.XBase
                     aGridData.Element.Value = value;
                 }
 
-                App.ParameterClassList.Clear();
+                Program.CurrentApp.ParameterClassList.Clear();
                 AppHelper.LoadTokenValToParameters(new(colIdx + 1));
                 AppHelper.LoadTokenValToParameters(new(rowidx + 1));
                 AppHelper.LoadTokenValToParameters(new(value));

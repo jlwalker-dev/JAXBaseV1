@@ -50,7 +50,7 @@ namespace JAXBase.XBase
                     if (cCode.Length > 0)
                     {
                         // Call the routine to compile and execute a block of code
-                        _ = App.JaxExecuter.ExecuteCodeBlock(me, methodName, cCode);
+                        _ = Program.CurrentApp.JaxExecuter.ExecuteCodeBlock(me, methodName, cCode);
                     }
                     else
                     {
@@ -73,9 +73,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{msg}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
@@ -123,8 +123,8 @@ namespace JAXBase.XBase
                         {
                             // Fix the filename value for path and naming
                             string string2 = tk.AsString();
-                            string2 = JAXLib.FixFilePath(string2, App.CurrentDS.JaxSettings.Default);
-                            objValue = AppHelper.FixFileCase(string.Empty, string2, App.CurrentDS.JaxSettings.Naming, App.CurrentDS.JaxSettings.NamingAll);
+                            string2 = JAXLib.FixFilePath(string2, Program.CurrentApp.CurrentDS.JaxSettings.Default);
+                            objValue = AppHelper.FixFileCase(string.Empty, string2, Program.CurrentApp.CurrentDS.JaxSettings.Naming, Program.CurrentApp.CurrentDS.JaxSettings.NamingAll);
                         }
                         else
                             result = 11;
@@ -136,9 +136,9 @@ namespace JAXBase.XBase
 
                 if (result > 0)
                 {
-                    _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                    _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                    if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                         AppErrorHandling.SetError(result, $"{result}|", string.Empty);
                 }
             }
@@ -179,9 +179,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{info}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
@@ -249,18 +249,18 @@ namespace JAXBase.XBase
 
             if (fs is null)
             {
-                if (App.ParameterClassList.Count < 2)
+                if (Program.CurrentApp.ParameterClassList.Count < 2)
                 {
 
-                    if (App.ParameterClassList.Count == 0)
+                    if (Program.CurrentApp.ParameterClassList.Count == 0)
                     {
                         tk = new();
                         tk.Element.Value = 0;
                     }
                     else
-                        tk.CopyFrom(App.ParameterClassList[0].token);
+                        tk.CopyFrom(Program.CurrentApp.ParameterClassList[0].token);
 
-                    App.ParameterClassList.Clear();
+                    Program.CurrentApp.ParameterClassList.Clear();
 
                     if (tk.Element.Type.Equals("N"))
                     {
@@ -335,9 +335,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -369,9 +369,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -391,13 +391,13 @@ namespace JAXBase.XBase
             UserProperties["readcount"].Element.Value = 0;
 
             // Default a return value of an empty string
-            App.ReturnValue.Element.Value = string.Empty;
+            Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
 
             // Is there a parameter?  It should be line/byte count.
-            if (App.ParameterClassList.Count > 0)
+            if (Program.CurrentApp.ParameterClassList.Count > 0)
             {
                 // We have a byte/line count
-                tk.Element.Value = App.ParameterClassList[0].token.Element.Value;
+                tk.Element.Value = Program.CurrentApp.ParameterClassList[0].token.Element.Value;
                 if (tk.Element.Type.Equals("N"))
                 {
                     linebytes = tk.AsInt();
@@ -411,7 +411,7 @@ namespace JAXBase.XBase
             if (result == 0)
             {
                 // If more than 1 parameter, toss an error
-                if (App.ParameterClassList.Count > 1)
+                if (Program.CurrentApp.ParameterClassList.Count > 1)
                     result = 1230;
                 else
                 {
@@ -444,7 +444,7 @@ namespace JAXBase.XBase
                                 UserProperties["position"].Element.Value = fs.Position;
 
                             // Set the return value
-                            App.ReturnValue.Element.Value = System.Text.Encoding.UTF8.GetString(readBytes);
+                            Program.CurrentApp.ReturnValue.Element.Value = System.Text.Encoding.UTF8.GetString(readBytes);
                         }
                         else
                         {
@@ -466,7 +466,7 @@ namespace JAXBase.XBase
                             UserProperties["currentposition"].Element.Value = -1;
 
                             // Set the return value
-                            App.ReturnValue.Element.Value = lines.ToString();
+                            Program.CurrentApp.ReturnValue.Element.Value = lines.ToString();
                         }
                     }
                 }
@@ -474,9 +474,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -500,27 +500,27 @@ namespace JAXBase.XBase
             else
             {
                 UserProperties["writecount"].Element.Value = 0;
-                App.ReturnValue.Element.Value = true;
+                Program.CurrentApp.ReturnValue.Element.Value = true;
 
                 // Is there a parameter?  It should be line/byte count.
-                if (App.ParameterClassList.Count > 0)
+                if (Program.CurrentApp.ParameterClassList.Count > 0)
                 {
                     // We have string
-                    tk.Element.Value = App.ParameterClassList[0].token.Element.Value;
+                    tk.Element.Value = Program.CurrentApp.ParameterClassList[0].token.Element.Value;
                     if (tk.Element.Type.Equals("C"))
                     {
-                        WriteTo = App.ParameterClassList[0].token.AsString();
+                        WriteTo = Program.CurrentApp.ParameterClassList[0].token.AsString();
 
-                        if (App.ParameterClassList.Count > 1)
+                        if (Program.CurrentApp.ParameterClassList.Count > 1)
                         {
                             // We have a positiong (long)
-                            tk.Element.Value = App.ParameterClassList[0].token.Element.Value;
+                            tk.Element.Value = Program.CurrentApp.ParameterClassList[0].token.Element.Value;
                             if (tk.Element.Type.Equals("N"))
                             {
-                                pos = App.ParameterClassList[0].token.AsLong();
+                                pos = Program.CurrentApp.ParameterClassList[0].token.AsLong();
 
                                 // Did they send 3 or more parameters?
-                                if (App.ParameterClassList.Count > 2)
+                                if (Program.CurrentApp.ParameterClassList.Count > 2)
                                     result = 1230;
                             }
                             else
@@ -583,9 +583,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -606,14 +606,14 @@ namespace JAXBase.XBase
                 result = 1113;
             else
             {
-                if (App.ParameterClassList.Count < 2)
+                if (Program.CurrentApp.ParameterClassList.Count < 2)
                 {
-                    if (App.ParameterClassList.Count == 0)
+                    if (Program.CurrentApp.ParameterClassList.Count == 0)
                         tk.Element.Value = 0;
                     else
-                        tk.CopyFrom(App.ParameterClassList[0].token);
+                        tk.CopyFrom(Program.CurrentApp.ParameterClassList[0].token);
 
-                    App.ParameterClassList.Clear();
+                    Program.CurrentApp.ParameterClassList.Clear();
 
                     if (tk.Element.Type.Equals("N"))
                     {
@@ -651,9 +651,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;

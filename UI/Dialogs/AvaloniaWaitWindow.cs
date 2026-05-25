@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -17,7 +15,7 @@ namespace JAXBase.UI.Dialogs
 
         public AvaloniaWaitWindow(string msgText, int row, int col, int timeoutSeconds)
         {
-            this.SystemDecorations = SystemDecorations.None;
+            this.WindowDecorations = WindowDecorations.None;
             this.Background = new SolidColorBrush(Avalonia.Media.Color.FromRgb(255, 255, 192));
             this.Topmost = true;
             this.ShowInTaskbar = false;

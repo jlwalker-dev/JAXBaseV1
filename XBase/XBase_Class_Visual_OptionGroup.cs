@@ -158,7 +158,7 @@ namespace JAXBase.XBase
                                         // Finallyu, do we need to add some to the end?
                                         while (oGrp.Children.Count < desiredButtonCount)
                                         {
-                                            JAXObjectWrapper obut = new(App, "optionbutton", $"option{bc.Count + 1}", []);
+                                            JAXObjectWrapper obut = new(Program.CurrentApp, "optionbutton", $"option{bc.Count + 1}", []);
                                             obut.SetParent(me);
                                             bc.Add(obut);
                                             oGrp.Children.Add(obut.avaloniaObject!);
@@ -253,9 +253,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName} - {objtk.AsString()}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
@@ -306,8 +306,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();

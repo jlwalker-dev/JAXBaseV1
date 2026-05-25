@@ -142,7 +142,7 @@ namespace JAXBase.XBase
                         case "disabledpicture":
                             if (InInit == false && string.IsNullOrWhiteSpace(tk.AsString()) == false)
                             {
-                                App.JaxImages!.RegisterImage(tk.AsString(), "", out string imageName);
+                                Program.CurrentApp.JaxImages!.RegisterImage(tk.AsString(), "", out string imageName);
 
                                 if (string.IsNullOrWhiteSpace(imageName) == false)
                                     PrivateProperties["picdisabled"].Element.Value = imageName;
@@ -152,7 +152,7 @@ namespace JAXBase.XBase
                         case "downpicture":
                             if (InInit == false && string.IsNullOrWhiteSpace(tk.AsString()) == false)
                             {
-                                App.JaxImages!.RegisterImage(tk.AsString(), "", out string imageName);
+                                Program.CurrentApp.JaxImages!.RegisterImage(tk.AsString(), "", out string imageName);
 
                                 if (string.IsNullOrWhiteSpace(imageName) == false)
                                     PrivateProperties["picdown"].Element.Value = imageName;
@@ -166,10 +166,10 @@ namespace JAXBase.XBase
                                 {
                                     string imageName;
 
-                                    if (App.JaxImages!.HasImage(tk.AsString()))
+                                    if (Program.CurrentApp.JaxImages!.HasImage(tk.AsString()))
                                         imageName = tk.AsString();
                                     else
-                                        App.JaxImages!.RegisterImage(tk.AsString(), "", out imageName);
+                                        Program.CurrentApp.JaxImages!.RegisterImage(tk.AsString(), "", out imageName);
 
                                     if (string.IsNullOrWhiteSpace(imageName) == false)
                                     {
@@ -179,7 +179,7 @@ namespace JAXBase.XBase
                                         w = w < 16 ? 16 : w;
                                         h = UserProperties["height"].AsInt() - 2;
                                         h = h < 16 ? 16 : h;
-                                        bitMap = App.JaxImages.Resize(App.JaxImages.GetImage(imageName, out _), w, h);
+                                        bitMap = Program.CurrentApp.JaxImages.Resize(Program.CurrentApp.JaxImages.GetImage(imageName, out _), w, h);
                                         Avalonia.Controls.Image img = new() { Source = bitMap, Stretch = Avalonia.Media.Stretch.Uniform };
                                         btn.Content = img;
                                     }
@@ -217,9 +217,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
@@ -247,7 +247,7 @@ namespace JAXBase.XBase
                 await me.MethodCall("click");
 
                 // If a return value of true, then call the toolbar valid
-                if (App.ReturnValue.AsBool())
+                if (Program.CurrentApp.ReturnValue.AsBool())
                     await me.parent.MethodCall("valid");
             }
             else 

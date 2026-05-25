@@ -360,7 +360,7 @@ namespace JAXBase.XBase
          * ------------------------------------------------------------------------------------------*/
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
-            _currentFilePath = App.CurrentDS.JaxSettings.Default + "untitled.prg";
+            _currentFilePath = Program.CurrentApp.CurrentDS.JaxSettings.Default + "untitled.prg";
 
             bool result = await base.PostInit(callBack, parameterList);
 
@@ -462,9 +462,9 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
@@ -587,10 +587,10 @@ namespace JAXBase.XBase
                                 if (JAXApp.MainWindowInstance is not null)
                                 {
                                     // set up the image and apply it
-                                    var icon = string.IsNullOrEmpty(objtk.AsString()) ? null : App.JaxImages!.GetImage(objtk.AsString(), out _);
-                                    icon ??= App.JaxImages!.GetImage("*jax*", out _);
+                                    var icon = string.IsNullOrEmpty(objtk.AsString()) ? null : Program.CurrentApp.JaxImages!.GetImage(objtk.AsString(), out _);
+                                    icon ??= Program.CurrentApp.JaxImages!.GetImage("*jax*", out _);
 
-                                    JAXApp.MainWindowInstance!.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
+                                    JAXApp.MainWindowInstance!.Icon = new Avalonia.Controls.WindowIcon(Program.CurrentApp.JaxImages!.Resize(icon, 32, 32));
                                 }
                             }
                             else
@@ -846,9 +846,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 result = -1;

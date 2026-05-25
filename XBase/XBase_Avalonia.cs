@@ -46,12 +46,10 @@ namespace JAXBase.XBase
 {
     public class XBase_Avalonia : IJAXAvaClass, IDisposable
     {
-        // Control flag for the object array indicating if
-        // the JAXCode can work with the array.  Caps mean
-        // the code is allowed to Read, Write, or Update.
+        // Control flag for the object array indicating if the JAXCode can work with the array.  Caps mean
+        // the code is allowed to Read, Write, or Update.  All lower case prohibits all object array access.
         public enum UserObject { urw, Urw, uRw, URw, UrW, URW }
 
-        public AppClass App;
         public JAXObjectWrapper me;
         public JAXObjectWrapper? Parent = null;
         public Dictionary<string, JAXObjects.Token> UserProperties { get; private set; } = [];
@@ -85,7 +83,6 @@ namespace JAXBase.XBase
 
         public XBase_Avalonia(JAXObjectWrapper jow, string name)
         {
-            App = jow.App;
             me = jow;
             me.BaseClass = MyBaseClass;
             //MyDefaultName = string.Empty;
@@ -275,9 +272,9 @@ namespace JAXBase.XBase
 
             if (err > 0)
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(err, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(err, $"{err}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             }
@@ -304,9 +301,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -349,9 +346,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{me.JOWName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -487,9 +484,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 returnToken.Element.IsNull();
@@ -531,9 +528,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 objToken.Element.MakeNull();
@@ -576,9 +573,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -631,9 +628,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -676,9 +673,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -740,7 +737,7 @@ namespace JAXBase.XBase
             // Is there some source code to compile?
             if (result == 0 && SourceCode.Length > 0)
             {
-                CompCode = App.JaxCompiler.CompileBlock(SourceCode, true, out int errorCount);
+                CompCode = Program.CurrentApp.JaxCompiler.CompileBlock(SourceCode, true, out int errorCount);
 
                 if (errorCount > 0)
                     result = 9997;
@@ -758,9 +755,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -776,7 +773,7 @@ namespace JAXBase.XBase
             int results = 0;
             string msg = "";
 
-            App.ReturnValue.Element.Value = true;
+            Program.CurrentApp.ReturnValue.Element.Value = true;
 
             try
             {
@@ -790,7 +787,7 @@ namespace JAXBase.XBase
                         //AppIO.DebugLog($"_CallMethod for {methodName} start ─ this: {this.GetHashCode()}  me: {me?.GetHashCode() ?? -1}  me.Name: {me?.Name ?? "?"}", false);
 
                         //// Call the routine to compile and execute a block of code
-                        _ = App.JaxExecuter.ExecuteCodeBlock(me!, methodName, cCode);
+                        _ = Program.CurrentApp.JaxExecuter.ExecuteCodeBlock(me!, methodName, cCode);
 
                     }
                     else
@@ -808,9 +805,9 @@ namespace JAXBase.XBase
 
             if (results > 0)
             {
-                _AddError(results, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(results, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(results, $"{results}|{methodName}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 results = -1;
@@ -833,20 +830,20 @@ namespace JAXBase.XBase
                 {
                     case "addobject":
                         // TODO - Only certain classes can have objects added to them
-                        if (App.ParameterClassList.Count == 1 && App.ParameterClassList[0].token.Element.Type.Equals("O"))
+                        if (Program.CurrentApp.ParameterClassList.Count == 1 && Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("O"))
                         {
                             // JAXBase can accept an object in ADDOBJECT()
-                            AddObject((JAXObjectWrapper)App.ParameterClassList[0].token.Element.Value).Wait();
+                            AddObject((JAXObjectWrapper)Program.CurrentApp.ParameterClassList[0].token.Element.Value).Wait();
                         }
                         else
                         {
                             // we're expecting cName, cClass [,aInit1, aInit2...]
-                            if (App.ParameterClassList.Count == 0)
+                            if (Program.CurrentApp.ParameterClassList.Count == 0)
                                 result = 1229;
                             else
                             {
                                 List<JAXObjects.Token> ParameterList = [];
-                                foreach (ParameterClass p in App.ParameterClassList)
+                                foreach (ParameterClass p in Program.CurrentApp.ParameterClassList)
                                 {
                                     JAXObjects.Token t = new();
                                     object? obj = AppHelper.GetParameterValue(p);
@@ -864,7 +861,7 @@ namespace JAXBase.XBase
                         break;
 
                     case "error":
-                        if (App.CurrentDS.JaxSettings.ErrorClassReporting)
+                        if (Program.CurrentApp.CurrentDS.JaxSettings.ErrorClassReporting)
                         {
                             // We are supposed to report the error
                             if (UserProperties.TryGetValue("aerror", out JAXObjects.Token? tk))
@@ -880,26 +877,26 @@ namespace JAXBase.XBase
 
                     case "errormessage":
                         // Show an Invalid Input message in upper right
-                        App.WaitWindow = JAXLib.WaitWindow(App, "Invalid Input", -1, -1, false, false, 3, out _);
+                        Program.CurrentApp.WaitWindow = JAXLib.WaitWindow(Program.CurrentApp, "Invalid Input", -1, -1, false, false, 3, out _);
                         break;
 
 
                     case "lostfocus":
                         // Does this control have a validation clause and has it been validated?
-                        if (App.ReturnValue.AsBool() && Methods.ContainsKey("valid") && me.Validated == false)
+                        if (Program.CurrentApp.ReturnValue.AsBool() && Methods.ContainsKey("valid") && me.Validated == false)
                         {
                             // Yes, so call that and decide if we can leave the control
                             // and in what direction
                             me.MethodCall("valid").Wait();
 
-                            if (App.ReturnValue.Element.Type.Equals("L"))
+                            if (Program.CurrentApp.ReturnValue.Element.Type.Equals("L"))
                             {
-                                if (App.ReturnValue.AsBool() == false)
+                                if (Program.CurrentApp.ReturnValue.AsBool() == false)
                                 {
                                     // Don't leave this control
                                 }
                             }
-                            else if (App.ReturnValue.Element.Type.Equals("N"))
+                            else if (Program.CurrentApp.ReturnValue.Element.Type.Equals("N"))
                             {
                                 // Potentially moving forward or backward
                             }
@@ -914,8 +911,8 @@ namespace JAXBase.XBase
 
                     case "resettodefault":
                         // Only certain objects can reset to default
-                        if (App.ParameterClassList.Count == 1 && App.ParameterClassList[0].token.Element.Type.Equals("C"))
-                            result = await ResetPropertyToDefault(App.ParameterClassList[0].token.AsString());
+                        if (Program.CurrentApp.ParameterClassList.Count == 1 && Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
+                            result = await ResetPropertyToDefault(Program.CurrentApp.ParameterClassList[0].token.AsString());
                         else
                             result = 1559;
 
@@ -934,9 +931,9 @@ namespace JAXBase.XBase
 
                     case "writemethod":
                         // Only some classes allow method code to be written at runtime
-                        string cMethodName = (App.ParameterClassList.Count > 0) ? App.ParameterClassList[0].token.AsString() : string.Empty;
-                        string cSourceCode = (App.ParameterClassList.Count > 1) ? App.ParameterClassList[1].token.AsString() : string.Empty;
-                        bool lWriteNew = (App.ParameterClassList.Count > 2) && App.ParameterClassList[2].token.AsBool();
+                        string cMethodName = (Program.CurrentApp.ParameterClassList.Count > 0) ? Program.CurrentApp.ParameterClassList[0].token.AsString() : string.Empty;
+                        string cSourceCode = (Program.CurrentApp.ParameterClassList.Count > 1) ? Program.CurrentApp.ParameterClassList[1].token.AsString() : string.Empty;
+                        bool lWriteNew = (Program.CurrentApp.ParameterClassList.Count > 2) && Program.CurrentApp.ParameterClassList[2].token.AsBool();
 
                         result = me.SetMethod(cMethodName, cSourceCode, lWriteNew);
                         break;
@@ -947,9 +944,9 @@ namespace JAXBase.XBase
 
                 if (result > 0)
                 {
-                    _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                    _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                    if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                         AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 }
             }
@@ -1209,22 +1206,22 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public virtual void MyObj_LostFocus(object? sender, EventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("valid"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("valid"))
             {
                 _CallMethod("valid").Wait();
 
-                if (App.ReturnValue.Element.Type.Equals("L") && App.ReturnValue.AsBool())
+                if (Program.CurrentApp.ReturnValue.Element.Type.Equals("L") && Program.CurrentApp.ReturnValue.AsBool())
                     _CallMethod("LostFocus").Wait();
             }
-            else if (App.EventsAreActive && Methods.ContainsKey("lostfocus"))
+            else if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("lostfocus"))
                 _CallMethod("lostfocus").Wait();
 
             // If by tab/shift+tab then set direction of travel
         }
 
-        public virtual void MyObj_GotFocus(object? sender, GotFocusEventArgs e)
+        public virtual void MyObj_GotFocus(object? sender, FocusChangedEventArgs e)
         {
-            if (App.EventsAreActive)
+            if (Program.CurrentApp.EventsAreActive)
             {
                 bool OK2Enter = true;
 
@@ -1234,8 +1231,8 @@ namespace JAXBase.XBase
                     _CallMethod("when").Wait();
 
                     // OK to enter?
-                    if (App.ReturnValue.Element.Type.Equals("L"))
-                        OK2Enter = App.ReturnValue.AsBool();
+                    if (Program.CurrentApp.ReturnValue.Element.Type.Equals("L"))
+                        OK2Enter = Program.CurrentApp.ReturnValue.AsBool();
                     else
                         throw new Exception("11|");
                 }
@@ -1286,9 +1283,9 @@ namespace JAXBase.XBase
 
                         case NavigationMethod.Directional:
                             // Arrow keys so is it back or forward?
-                            if (App.LastKeyPressed is not null)
+                            if (Program.CurrentApp.LastKeyPressed is not null)
                             {
-                                if (App.LastKeyPressed.Value == Key.Up || App.LastKeyPressed.Value == Key.Left)
+                                if (Program.CurrentApp.LastKeyPressed.Value == Key.Up || Program.CurrentApp.LastKeyPressed.Value == Key.Left)
                                 {
                                     // back
                                 }
@@ -1310,7 +1307,7 @@ namespace JAXBase.XBase
         public virtual void MyObj_MouseWheel(object? sender, PointerWheelEventArgs e)
         {
             // Should only be called when over an Avalonia object
-            if (App.EventsAreActive && Methods.ContainsKey("mousewheel") && me.THISFORM is not null)
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("mousewheel") && me.THISFORM is not null)
             {
                 //Avalonia.Controls.Canvas _canvas = (Avalonia.Controls.Canvas)me.THISFORM.avaloniaObject!;
                 double deltaY = e.Delta.Y;     // This is the important value
@@ -1321,25 +1318,25 @@ namespace JAXBase.XBase
 
         public virtual void MyObj_MouseMove(object? sender, PointerEventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("mousemove"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("mousemove"))
                 MouseButtonAction("mousemove", e);
         }
 
         public virtual void MyObj_MouseUp(object? sender, PointerEventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("mouseup"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("mouseup"))
                 MouseButtonAction("mouseup", e);
         }
 
         public virtual void MyObj_MouseDown(object? sender, PointerEventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("mousedown"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("mousedown"))
                 MouseButtonAction("mousedown", e);
         }
 
         public virtual void MyObj_MouseEnter(object? sender, PointerEventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("mouseenter"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("mouseenter"))
                 MouseButtonAction("mouseenter", false, e);
         }
 
@@ -1355,13 +1352,13 @@ namespace JAXBase.XBase
 
         public virtual void MyObj_MouseLeave(object? sender, PointerEventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("mouseleave"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("mouseleave"))
                 MouseButtonAction("mouseleave", false, e);
         }
 
         public virtual void MyObj_DoubleClick(object? sender, EventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("doubleclick"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("doubleclick"))
                 _CallMethod("doubleclick").Wait();
         }
 
@@ -1382,15 +1379,15 @@ namespace JAXBase.XBase
 
         public virtual void MyObj_Move(object? sender, EventArgs? e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("moved"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("moved"))
                 _CallMethod("moved").Wait();
         }
 
         public virtual void MyObj_KeyPress(object? sender, Avalonia.Input.KeyEventArgs e)
         {
-            if (App.EventsAreActive)
+            if (Program.CurrentApp.EventsAreActive)
             {
-                App.LastKeyPressed = e.Key;
+                Program.CurrentApp.LastKeyPressed = e.Key;
 
                 // Set parameters nKeyCode, nShiftAltCtrl
                 if (Methods.ContainsKey("keypress"))
@@ -1402,15 +1399,15 @@ namespace JAXBase.XBase
         {
             e.Handled = true;
 
-            if (App.EventsAreActive)
+            if (Program.CurrentApp.EventsAreActive)
             {
                 AppIO.DebugLog($"XBASE - {me.JOWName}.click - {UserProperties["name"].AsString()} - {UserProperties["classid"].AsString()}");
 
                 if (Methods.ContainsKey("click"))
                 {
-                    App.EventsAreActive = false;
+                    Program.CurrentApp.EventsAreActive = false;
                     me.MethodCall("click").Wait();
-                    App.EventsAreActive = true;
+                    Program.CurrentApp.EventsAreActive = true;
                 }
             }
         }
@@ -1450,7 +1447,7 @@ namespace JAXBase.XBase
             xCoord = pnt.X;
             yCoord = pnt.Y;
 
-            App.ParameterClassList.Clear();
+            Program.CurrentApp.ParameterClassList.Clear();
 
             // Is this a button or wheel event?
             if (checkButton)
@@ -1460,15 +1457,15 @@ namespace JAXBase.XBase
                 if (p.Properties.IsRightButtonPressed) nButton += 2;
                 if (p.Properties.IsMiddleButtonPressed) nButton += 4;
 
-                App.ParameterClassList.Add(new(nButton));
+                Program.CurrentApp.ParameterClassList.Add(new(nButton));
             }
             else if (wheelDelta != 0)
-                App.ParameterClassList.Add(new(wheelDelta));
+                Program.CurrentApp.ParameterClassList.Add(new(wheelDelta));
 
             // All mouse actions have these parameters
-            App.ParameterClassList.Add(new(nShift));
-            App.ParameterClassList.Add(new(xCoord));
-            App.ParameterClassList.Add(new(yCoord));
+            Program.CurrentApp.ParameterClassList.Add(new(nShift));
+            Program.CurrentApp.ParameterClassList.Add(new(xCoord));
+            Program.CurrentApp.ParameterClassList.Add(new(yCoord));
 
             _CallMethod(cMethod).Wait();
         }
@@ -1579,13 +1576,13 @@ namespace JAXBase.XBase
         // Add these two virtual methods for easy overriding in derived classes
         public virtual void MyObj_Closing(object? sender, WindowClosingEventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("closing"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("closing"))
             {
                 // You can expose e.Cancel to JAX code via ReturnValue or a property
                 _CallMethod("queryunload").Wait();
 
                 // Example: allow JAX code to cancel by returning .F.
-                if (App.ReturnValue.Element.Type.Equals("L") && App.ReturnValue.AsBool() == false)
+                if (Program.CurrentApp.ReturnValue.Element.Type.Equals("L") && Program.CurrentApp.ReturnValue.AsBool() == false)
                 {
                     e.Cancel = true;
                 }
@@ -1594,7 +1591,7 @@ namespace JAXBase.XBase
 
         public virtual void MyObj_Closed(object? sender, EventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("closed"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("closed"))
             {
                 _CallMethod("destroy").Wait();
             }
