@@ -62,7 +62,7 @@ namespace JAXBase.XBase
         {
             name = string.IsNullOrEmpty(name) ? "sql" : name;
             SetVisualObject(null, "SQL", name, false, UserObject.urw);
-            me.nvObject =  new XBase_ClassSQL_NONE(App);
+            me.nvObject =  new XBase_ClassSQL_NONE(Program.CurrentApp);
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -138,8 +138,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
@@ -270,9 +270,9 @@ namespace JAXBase.XBase
                 // Deal with errors
                 if (result > 10)
                 {
-                    _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                    _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                    if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                         AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                     result = -1;
@@ -302,7 +302,7 @@ namespace JAXBase.XBase
                     if (cCode.Length > 0)
                     {
                         // Call the routine to compile and execute a block of code
-                        _ = App.JaxExecuter.ExecuteCodeBlock(me, methodName, cCode);
+                        _ = Program.CurrentApp.JaxExecuter.ExecuteCodeBlock(me, methodName, cCode);
                     }
                     else
                         await DoDefault(methodName);
@@ -321,9 +321,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{msg}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
@@ -427,9 +427,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{info}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                 result = -1;
@@ -473,7 +473,7 @@ namespace JAXBase.XBase
         {
             return [
                 "authentication,n,0",
-                $"appname,C,{App.AppLevels[0].PrgName}",
+                $"appname,C,{Program.CurrentApp.AppLevels[0].PrgName}",
                 "baseclass,C!,SQL",
                 "class,C!,SQL","classlibrary,C$,","comment,C,","connectionstring,c,",
                 "database,c,",
@@ -543,15 +543,15 @@ namespace JAXBase.XBase
                             break;
 
                         case 1: // SQL Server
-                            me.nvObject = new XBase_ClassSQL_MSSS(App);
+                            me.nvObject = new XBase_ClassSQL_MSSS(Program.CurrentApp);
                             break;
 
                         case 2: // MySQL
-                            me.nvObject = new XBase_ClassSQL_MYSQL(App);
+                            me.nvObject = new XBase_ClassSQL_MYSQL(Program.CurrentApp);
                             break;
 
                         case 3: // PostGreSQL
-                            me.nvObject = new XBase_ClassSQL_POSTGRE(App);
+                            me.nvObject = new XBase_ClassSQL_POSTGRE(Program.CurrentApp);
                             break;
 
                         default:    // Not chosen
@@ -586,9 +586,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -618,16 +618,16 @@ namespace JAXBase.XBase
                 string sqlCursor = string.Empty;
                 object? returnObject = null;
 
-                if (App.ParameterClassList.Count == 0)
+                if (Program.CurrentApp.ParameterClassList.Count == 0)
                 {
                     // ERROR!
                     result = 1498;
                 }
                 else
                 {
-                    if (App.ParameterClassList[0].token.Element.Type.Equals("C"))
+                    if (Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
                     {
-                        sqlStmt = App.ParameterClassList[0].token.AsString();
+                        sqlStmt = Program.CurrentApp.ParameterClassList[0].token.AsString();
                     }
                     else
                     {
@@ -635,16 +635,16 @@ namespace JAXBase.XBase
                         result = 11;
                     }
 
-                    if (App.ParameterClassList.Count == 2)
+                    if (Program.CurrentApp.ParameterClassList.Count == 2)
                     {
-                        if (App.ParameterClassList[1].token.Element.Type.Equals("C"))
-                            sqlCursor = App.ParameterClassList[1].token.AsString();
+                        if (Program.CurrentApp.ParameterClassList[1].token.Element.Type.Equals("C"))
+                            sqlCursor = Program.CurrentApp.ParameterClassList[1].token.AsString();
                         else
                         {
                             result = 11;
                         }
                     }
-                    else if (App.ParameterClassList.Count > 2)
+                    else if (Program.CurrentApp.ParameterClassList.Count > 2)
                         result = 1230;
                 }
 
@@ -652,12 +652,12 @@ namespace JAXBase.XBase
                 if (result > 0)
                 {
                     // Deal with errors before trying to execute
-                    _AddError(result, 0, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                    _AddError(result, 0, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                    if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                         AppErrorHandling.SetError(result, $"{result}|{msg}", string.Empty);
 
-                    App.ReturnValue.Element.Value = -1;
+                    Program.CurrentApp.ReturnValue.Element.Value = -1;
                 }
                 else
                 {
@@ -670,12 +670,12 @@ namespace JAXBase.XBase
                     {
                         // Retrieve the error and log it
                         JAXErrors err = MyConnection.GetErrorMsg();
-                        _AddError(err.ErrorNo, 0, err.ErrorMessage, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        _AddError(err.ErrorNo, 0, err.ErrorMessage, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                        if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                        if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                             AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
-                        App.ReturnValue.Element.Value = -1;
+                        Program.CurrentApp.ReturnValue.Element.Value = -1;
                     }
                     else
                     {
@@ -689,27 +689,27 @@ namespace JAXBase.XBase
                                 // Data Table
                                 case 1:
                                     DataTable dt = (DataTable)returnObject;
-                                    App.ReturnValue.Element.Value = dt.Rows.Count;
+                                    Program.CurrentApp.ReturnValue.Element.Value = dt.Rows.Count;
 
                                     // Create a cursor for the datatable
-                                    await TableHelper.MakeCursorForDataTable(App, dt, sqlCursor);
+                                    await TableHelper.MakeCursorForDataTable(Program.CurrentApp, dt, sqlCursor);
                                     break;
 
                                 // Scalar
                                 case 2:
-                                    App.ReturnValue.Element.Value = 1;
+                                    Program.CurrentApp.ReturnValue.Element.Value = 1;
 
                                     // Create a cursor
                                     break;
 
                                 // NonQuery
                                 case 3:
-                                    App.ReturnValue.Element.Value = result;
+                                    Program.CurrentApp.ReturnValue.Element.Value = result;
                                     break;
 
                                 default:
-                                    _AddError(1400, 0, "Invalid or unknown sql statement type", App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                                    App.ReturnValue.Element.Value = -1;
+                                    _AddError(1400, 0, "Invalid or unknown sql statement type", Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                    Program.CurrentApp.ReturnValue.Element.Value = -1;
                                     break;
                             }
                         }
@@ -719,9 +719,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -746,9 +746,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -772,9 +772,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -798,9 +798,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -818,19 +818,19 @@ namespace JAXBase.XBase
             if (MyConnection is null)
             {
                 result = 6004;
-                App.ReturnValue.Element.Value = string.Empty;
+                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
             }
             else
             {
                 result = MyConnection.GetIndex("", out string idxInfo);
-                App.ReturnValue.Element.Value = idxInfo;
+                Program.CurrentApp.ReturnValue.Element.Value = idxInfo;
             }
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -851,11 +851,11 @@ namespace JAXBase.XBase
             }
             else
             {
-                if (App.ParameterClassList.Count == 1)
+                if (Program.CurrentApp.ParameterClassList.Count == 1)
                 {
-                    if (App.ParameterClassList[0].token.Element.Type.Equals("C"))
+                    if (Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
                     {
-                        string varName = App.ParameterClassList[0].token.AsString();
+                        string varName = Program.CurrentApp.ParameterClassList[0].token.AsString();
 
                         // Is it a variable?
 
@@ -896,9 +896,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -916,7 +916,7 @@ namespace JAXBase.XBase
             if (MyConnection is null)
             {
                 result = 6004;
-                App.ReturnValue.Element.Value = string.Empty;
+                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
             }
             else
             {
@@ -925,14 +925,14 @@ namespace JAXBase.XBase
                 foreach (string idx in idxList)
                     idxlist += idx + ";";
 
-                App.ReturnValue.Element.Value = idxlist;
+                Program.CurrentApp.ReturnValue.Element.Value = idxlist;
             }
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -950,7 +950,7 @@ namespace JAXBase.XBase
             if (MyConnection is null)
             {
                 result = 6004;
-                App.ReturnValue.Element.Value = string.Empty;
+                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
             }
             else
             {
@@ -959,14 +959,14 @@ namespace JAXBase.XBase
                 foreach (string tbl in tblList)
                     tbllist += tbl + ";";
 
-                App.ReturnValue.Element.Value = tbllist;
+                Program.CurrentApp.ReturnValue.Element.Value = tbllist;
             }
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -984,7 +984,7 @@ namespace JAXBase.XBase
             if (MyConnection is null)
             {
                 result = 6004;
-                App.ReturnValue.Element.Value = string.Empty;
+                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
             }
             else
             {
@@ -993,14 +993,14 @@ namespace JAXBase.XBase
                 foreach (string db in dbList)
                     dblist += db + ";";
 
-                App.ReturnValue.Element.Value = dbList;
+                Program.CurrentApp.ReturnValue.Element.Value = dbList;
             }
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;

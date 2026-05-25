@@ -426,9 +426,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 result = -1;
@@ -572,8 +572,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
@@ -605,7 +605,7 @@ namespace JAXBase.XBase
                 case "additem":         // Add or update based on the ListArray if rowsourcetype<2
                     if (UserProperties["rowsourcetype"].AsInt() < 2)
                     {
-                        if (App.ParameterClassList.Count > 0)
+                        if (Program.CurrentApp.ParameterClassList.Count > 0)
                         {
                             JAXObjects.Token cItem = await AppHelper.GetParameterToken(null);
                             JAXObjects.Token nItem = await AppHelper.GetParameterToken(null);
@@ -685,7 +685,7 @@ namespace JAXBase.XBase
                 case "addlistitem":     // Add to the ListItemID if rowsourcetype<2
                     if (UserProperties["rowsourcetype"].AsInt() < 2)
                     {
-                        if (App.ParameterClassList.Count > 0)
+                        if (Program.CurrentApp.ParameterClassList.Count > 0)
                         {
                             JAXObjects.Token cItem = await AppHelper.GetParameterToken(null);
                             JAXObjects.Token ItemID = await AppHelper.GetParameterToken(null);
@@ -749,7 +749,7 @@ namespace JAXBase.XBase
                     // Remove from the ListArray for rowsourcetype 0 and 1
                     if (UserProperties["rowsourcetype"].AsInt() < 2)
                     {
-                        if (App.ParameterClassList.Count > 0)
+                        if (Program.CurrentApp.ParameterClassList.Count > 0)
                         {
                             JAXObjects.Token nItem = await AppHelper.GetParameterToken(null);
                             if (nItem.Element.IsNull())
@@ -792,7 +792,7 @@ namespace JAXBase.XBase
                     // Remove from the ListItemID for rowsourcetype 0 & 1
                     if (UserProperties["rowsourcetype"].AsInt() < 2)
                     {
-                        if (App.ParameterClassList.Count > 0)
+                        if (Program.CurrentApp.ParameterClassList.Count > 0)
                         {
                             JAXObjects.Token nItemID = await AppHelper.GetParameterToken(null);
                             if (nItemID.Element.IsNull())
@@ -845,7 +845,7 @@ namespace JAXBase.XBase
                     break;
 
                 case "clear":
-                    if (App.ParameterClassList.Count > 0)
+                    if (Program.CurrentApp.ParameterClassList.Count > 0)
                         result = 98;
                     else
                         ListItemID.Clear();
@@ -861,7 +861,7 @@ namespace JAXBase.XBase
             {
                 _AddError(result, 0, msg, methodName);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{msg}|{methodName}", methodName);
             }
 
@@ -1161,7 +1161,7 @@ namespace JAXBase.XBase
         {
             int result = 0;
 
-            JAXObjects.Token values = await XClass_AuxCode.GetRowSource(App, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
+            JAXObjects.Token values = await XClass_AuxCode.GetRowSource(Program.CurrentApp, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
 
             if (values.Element.Type.Equals("N"))
                 result = values.AsInt();
@@ -1214,26 +1214,26 @@ namespace JAXBase.XBase
             int result = 0;
             string msg = "";
 
-            int cds = App.CurrentDataSession;
-            int cwa = App.CurrentDS.CurrentWorkArea();
+            int cds = Program.CurrentApp.CurrentDataSession;
+            int cwa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
             try
             {
                 // Get the alias or table from the rowsource property and
                 // load the combo box using first ColumnCount columns
                 // Load the entire array up to ColumnCount
-                JAXObjects.Token table = await XClass_AuxCode.GetRowSource(App, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
+                JAXObjects.Token table = await XClass_AuxCode.GetRowSource(Program.CurrentApp, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
 
                 if (table.Element.Type.Equals("N"))
                     result = table.AsInt();
                 else if (table.Element.Type.Equals("C"))
                 {
                     // If we got something back, load it!
-                    int wa = App.CurrentDS.ReturnWorkArea(table.AsString(), 0);
+                    int wa = Program.CurrentApp.CurrentDS.ReturnWorkArea(table.AsString(), 0);
                     if (wa > 0)
                     {
-                        App.CurrentDS.SelectWorkArea(wa);
-                        RowSourceDBF = App.CurrentDS.WorkAreas[wa];
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
+                        RowSourceDBF = Program.CurrentApp.CurrentDS.WorkAreas[wa];
 
                         if (RowSourceDBF.DbfInfo.DBFStream is not null)
                         {
@@ -1251,8 +1251,8 @@ namespace JAXBase.XBase
             }
 
             // Put us back where we started
-            App.SetDataSession(cds);
-            App.CurrentDS.SelectWorkArea(cwa);
+            Program.CurrentApp.SetDataSession(cds);
+            Program.CurrentApp.CurrentDS.SelectWorkArea(cwa);
 
             return result;
         }
@@ -1434,7 +1434,7 @@ namespace JAXBase.XBase
             try
             {
                 // Load the entire array up to ColumnCount
-                JAXObjects.Token LoadArray = await XClass_AuxCode.GetRowSource(App, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
+                JAXObjects.Token LoadArray = await XClass_AuxCode.GetRowSource(Program.CurrentApp, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
 
                 if (LoadArray.Element.Type.Equals("N"))
                     result = LoadArray.AsInt();
@@ -1494,7 +1494,7 @@ namespace JAXBase.XBase
             try
             {
                 // Load the field list for the combo box
-                JAXObjects.Token fieldList = await XClass_AuxCode.GetRowSource(App, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
+                JAXObjects.Token fieldList = await XClass_AuxCode.GetRowSource(Program.CurrentApp, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
 
                 if (fieldList.Element.Type.Equals("N"))
                     result = fieldList.AsInt();
@@ -1503,11 +1503,11 @@ namespace JAXBase.XBase
                     string table = fieldList._avalue[0].ValueAsString;
 
                     // If we got something back, load it!
-                    int wa = App.CurrentDS.ReturnWorkArea(table, 0);
+                    int wa = Program.CurrentApp.CurrentDS.ReturnWorkArea(table, 0);
                     if (wa > 0)
                     {
-                        App.CurrentDS.SelectWorkArea(wa);
-                        RowSourceDBF = App.CurrentDS.WorkAreas[wa];
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
+                        RowSourceDBF = Program.CurrentApp.CurrentDS.WorkAreas[wa];
 
                         if (RowSourceDBF.DbfInfo.DBFStream is not null)
                         {
@@ -1667,7 +1667,7 @@ namespace JAXBase.XBase
             try
             {
                 // Load the field list for the combo box
-                JAXObjects.Token fileList = await XClass_AuxCode.GetRowSource(App, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
+                JAXObjects.Token fileList = await XClass_AuxCode.GetRowSource(Program.CurrentApp, UserProperties["rowsource"].AsString(), UserProperties["rowsourcetype"].AsInt());
 
                 if (fileList.Element.Type.Equals("N"))
                     result = fileList.AsInt();

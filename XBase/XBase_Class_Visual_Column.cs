@@ -151,7 +151,7 @@ namespace JAXBase.XBase
                         {
                             var textPresenter = new Avalonia.Controls.Presenters.TextPresenter
                             {
-                                [!Avalonia.Controls.Presenters.TextPresenter.TextProperty] = new Avalonia.Data.Binding("Text", Avalonia.Data.BindingMode.TwoWay)
+                                [!Avalonia.Controls.Presenters.TextPresenter.TextProperty] = new Avalonia.Data.Binding("Text")
                             };
                             // Apply decorations via style
                             textPresenter.Styles.Add(new Avalonia.Styling.Style(x => x.Is<Avalonia.Controls.Presenters.TextPresenter>())
@@ -212,10 +212,10 @@ namespace JAXBase.XBase
                             value is string path &&
                             !string.IsNullOrEmpty(path))
                         {
-                            App.JaxImages!.RegisterImage(path, "", out string imageName);
+                            Program.CurrentApp.JaxImages!.RegisterImage(path, "", out string imageName);
                             int maxW = UserProperties["maximagewidth"].AsInt();
                             int maxH = UserProperties["maximageheight"].AsInt();
-                            image.Source = App.JaxImages.GetImage(imageName, maxW, maxH);
+                            image.Source = Program.CurrentApp.JaxImages.GetImage(imageName, maxW, maxH);
                         }
                         ApplyCommonProperties(image);
                         return image;
@@ -577,8 +577,8 @@ namespace JAXBase.XBase
                 result = 1559;
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
@@ -632,8 +632,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();

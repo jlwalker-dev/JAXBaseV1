@@ -129,9 +129,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -194,8 +194,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 returnToken.Element.MakeNull();
@@ -287,17 +287,17 @@ namespace JAXBase.XBase
             switch (methodName)
             {
                 case "textcommand":
-                    if (App.ParameterClassList.Count == 1)
+                    if (Program.CurrentApp.ParameterClassList.Count == 1)
                     {
-                        if (App.ParameterClassList[0].token.Element.Type.Equals("C"))
+                        if (Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
                         {
-                            string cmd = App.ParameterClassList[0].token.AsString().ToLower();
+                            string cmd = Program.CurrentApp.ParameterClassList[0].token.AsString().ToLower();
 
                             switch (cmd)
                             {
                                 case "co":
-                                    if (App.ParameterClassList.Count == 1 && App.ParameterClassList[0].token.Element.Type.Equals("C"))
-                                        filename = App.ParameterClassList[0].token.AsString();
+                                    if (Program.CurrentApp.ParameterClassList.Count == 1 && Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
+                                        filename = Program.CurrentApp.ParameterClassList[0].token.AsString();
 
                                     await OpenFileAsync(filename);
                                     break;
@@ -307,16 +307,16 @@ namespace JAXBase.XBase
                                     break;
 
                                 case "cs":
-                                    if (App.ParameterClassList.Count == 1 && App.ParameterClassList[0].token.Element.Type.Equals("C"))
-                                        filename = App.ParameterClassList[0].token.AsString();
+                                    if (Program.CurrentApp.ParameterClassList.Count == 1 && Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
+                                        filename = Program.CurrentApp.ParameterClassList[0].token.AsString();
 
                                     result = await SaveAsFileAsync(filename);
                                     break;
 
                                 case "sa":
                                     _currentFilePath = "";   // Clear current file path to force SaveAs behavior
-                                    if (App.ParameterClassList.Count == 1 && App.ParameterClassList[0].token.Element.Type.Equals("C"))
-                                        filename = App.ParameterClassList[0].token.AsString();
+                                    if (Program.CurrentApp.ParameterClassList.Count == 1 && Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
+                                        filename = Program.CurrentApp.ParameterClassList[0].token.AsString();
 
                                     result = await SaveAsFileAsync(filename);
                                     break;
@@ -619,7 +619,7 @@ namespace JAXBase.XBase
 
             // Was an error reported?
             if (result > 0 && result != 6700)
-                _AddError(result, 0, _currentFilePath + "|" + msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, _currentFilePath + "|" + msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
         }
 
 
@@ -652,7 +652,7 @@ namespace JAXBase.XBase
 
             // Was an error reported?
             if (result > 0 && result != 6700)
-                _AddError(result, 0, _currentFilePath + "|" + msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, _currentFilePath + "|" + msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
         }
 
 
@@ -668,7 +668,7 @@ namespace JAXBase.XBase
                 // Filename provided, save directly without showing the file picker
                 // If the provided filename is just a name without path, prepend the default path
                 if (string.IsNullOrWhiteSpace(JAXLib.JustPath(filename)))
-                    filename = App.CurrentDS.JaxSettings.Default + filename;
+                    filename = Program.CurrentApp.CurrentDS.JaxSettings.Default + filename;
 
                 // If the provided filename does not have an extension, add .prg by default
                 if (string.IsNullOrWhiteSpace(JAXLib.JustExt(filename)) && filename[^1] != '.')
@@ -725,7 +725,7 @@ namespace JAXBase.XBase
 
             // Was an error reported?
             if (result > 0 && result != 6700)
-                _AddError(result, 0, filename + "|" + msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, filename + "|" + msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
             return result;
         }

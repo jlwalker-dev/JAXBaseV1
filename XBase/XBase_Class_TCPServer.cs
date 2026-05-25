@@ -145,7 +145,7 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, $"{result}|{propertyName}|", App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, $"{result}|{propertyName}|", Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                 returnToken.Element.MakeNull();
             }
             return returnToken;
@@ -218,7 +218,7 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                 result = -1;
             }
             return result;

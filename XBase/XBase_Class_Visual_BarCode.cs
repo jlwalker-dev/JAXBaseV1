@@ -26,8 +26,8 @@ namespace JAXBase.XBase
             img.IsTabStop = false;
             img.TabIndex = 0;
 
-            if (App.JaxImages is not null)
-                img.Source = App.JaxImages.GetImage("*nog*", out _);
+            if (Program.CurrentApp.JaxImages is not null)
+                img.Source = Program.CurrentApp.JaxImages.GetImage("*nog*", out _);
 
             bool result = await base.PostInit(callBack, parameterList);
 
@@ -142,9 +142,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|", string.Empty);
 
                 result = -1;
@@ -187,9 +187,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();

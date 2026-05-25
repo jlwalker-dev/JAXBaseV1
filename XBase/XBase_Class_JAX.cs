@@ -28,7 +28,7 @@ namespace JAXBase.XBase
 
             bool result = await base.PostInit(callBack, parameterList);
 
-            UserProperties["classid"].Element.Value = App.MyInstance;
+            UserProperties["classid"].Element.Value = Program.CurrentApp.MyInstance;
 
             JAXObjects.Token tk = await AppVars.GetVarToken("_jax");
             
@@ -63,11 +63,11 @@ namespace JAXBase.XBase
                         break;
 
                     case "config":
-                        returnToken.Element.Value = File.Exists(App.ExeFolder + "jaxbase.ini") ? App.ExeFolder + "jaxbase.ini" : "";
+                        returnToken.Element.Value = File.Exists(Program.CurrentApp.ExeFolder + "jaxbase.ini") ? Program.CurrentApp.ExeFolder + "jaxbase.ini" : "";
                         break;
 
                     case "defaultpath":
-                        returnToken.Element.Value = App.CurrentDS.JaxSettings.Default;
+                        returnToken.Element.Value = Program.CurrentApp.CurrentDS.JaxSettings.Default;
                         break;
 
                     case "fullname":
@@ -85,15 +85,15 @@ namespace JAXBase.XBase
                         break;
 
                     case "pathlist":
-                        returnToken.Element.Value = App.CurrentDS.JaxSettings.Path;
+                        returnToken.Element.Value = Program.CurrentApp.CurrentDS.JaxSettings.Path;
                         break;
 
                     case "tempfolder":
-                        returnToken.Element.Value = App.JaxVariables._TempPath;
+                        returnToken.Element.Value = Program.CurrentApp.JaxVariables._TempPath;
                         break;
 
                     case "toolfolder":
-                        returnToken.Element.Value = App.JaxVariables._ToolsPath;
+                        returnToken.Element.Value = Program.CurrentApp.JaxVariables._ToolsPath;
                         break;
 
                     case "version":
@@ -101,7 +101,7 @@ namespace JAXBase.XBase
                         break;
 
                     case "workfolder":
-                        returnToken.Element.Value = App.AppWorkFolder;
+                        returnToken.Element.Value = Program.CurrentApp.AppWorkFolder;
                         break;
 
                     case "x64":
@@ -126,8 +126,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 returnToken.Element.MakeNull();
@@ -194,9 +194,9 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", string.Empty);
 
                 result = -1;

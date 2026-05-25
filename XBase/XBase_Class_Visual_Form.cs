@@ -42,7 +42,7 @@ namespace JAXBase.XBase
             InnerCanvas.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch;
             InnerCanvas.Margin = new Thickness(0);
             InnerCanvas.Background = Avalonia.Media.Brushes.LightCoral;
-            InnerCanvas.Name = App.SystemCounter();
+            InnerCanvas.Name = Program.CurrentApp.SystemCounter();
         }
 
 
@@ -52,7 +52,7 @@ namespace JAXBase.XBase
 
             // Deal with datasession handling
             if (UserProperties["datasession"].AsInt() > 1 && UserProperties["datasessionid"].AsInt() < 2)
-                UserProperties["datasessionid"].Element.Value = App.CreateNewDataSession(App.SystemCounter());
+                UserProperties["datasessionid"].Element.Value = Program.CurrentApp.CreateNewDataSession(Program.CurrentApp.SystemCounter());
 
             // Add to the _Screen object
             if (result)
@@ -101,8 +101,8 @@ namespace JAXBase.XBase
             }
             else
             {
-                _AddError(err, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(err, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(err, $"{err}|{value.JOWName}|{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
@@ -166,12 +166,12 @@ namespace JAXBase.XBase
                                 if (JAXApp.MainWindowInstance is not null)
                                 {
                                     // set up the image and apply it
-                                    var icon = string.IsNullOrEmpty(objtk.AsString()) ? null : App.JaxImages!.GetImage(objtk.AsString(), out _);
-                                    icon ??= App.JaxImages!.GetImage("*jax*", out _);
+                                    var icon = string.IsNullOrEmpty(objtk.AsString()) ? null : Program.CurrentApp.JaxImages!.GetImage(objtk.AsString(), out _);
+                                    icon ??= Program.CurrentApp.JaxImages!.GetImage("*jax*", out _);
 
                                     //JAXApp.MainWindowInstance!.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
-                                    fakeWindow.Icon = new Avalonia.Controls.WindowIcon(App.JaxImages!.Resize(icon, 32, 32));
-                                    fakeWindow.IconBitmap = App.JaxImages!.Resize(icon, 32, 32);
+                                    fakeWindow.Icon = new Avalonia.Controls.WindowIcon(Program.CurrentApp.JaxImages!.Resize(icon, 32, 32));
+                                    fakeWindow.IconBitmap = Program.CurrentApp.JaxImages!.Resize(icon, 32, 32);
                                 }
                             }
                             else
@@ -326,8 +326,8 @@ namespace JAXBase.XBase
 
             if (result > 10)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}|{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
@@ -394,8 +394,8 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                _AddError(result, 0, string.Empty, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
                     AppErrorHandling.SetError(result, $"{result}||{propertyName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 returnToken.Element.MakeNull();
             }
@@ -616,12 +616,12 @@ namespace JAXBase.XBase
 
         private void FakeWindow_Closing(object? sender, CancelEventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("queryunload"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("queryunload"))
             {
                 // JAX code can set ReturnValue = .F. to cancel
                 _CallMethod("queryunload").Wait();
 
-                if (App.ReturnValue.Element.Type.Equals("L") && App.ReturnValue.AsBool() == false)
+                if (Program.CurrentApp.ReturnValue.Element.Type.Equals("L") && Program.CurrentApp.ReturnValue.AsBool() == false)
                 {
                     e.Cancel = true;
                 }
@@ -630,7 +630,7 @@ namespace JAXBase.XBase
 
         private void FakeWindow_Closed(object? sender, EventArgs e)
         {
-            if (App.EventsAreActive && Methods.ContainsKey("destroy"))
+            if (Program.CurrentApp.EventsAreActive && Methods.ContainsKey("destroy"))
                 _CallMethod("destroy").Wait();
 
             // Optional: auto-cleanup
