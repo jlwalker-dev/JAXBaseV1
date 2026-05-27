@@ -1080,17 +1080,18 @@ namespace JAXBase.Math
                         // We're left with functions - handle the array based functions separately
                         if (JAXLib.InList(_rpn, "`ACLASS", "`ACLASS", "`ACOPY", "`ADATABASES", "`ADBOBJECTS", "`ADDBS", "`ADDPROPERTY", "`ADEL", "`ADIR", "`ADLLS", "`ADOCKSTATE", "`AELEMENT", "`AERROR", "`AEVENTS",
                             "`AFIELDS", "`AFONT", "`AGETCLASS", "`AGETFILEVERSION", "`AINS", "`AINSTANCE", "`ALEN", "`ALINES", "`AMEMBERS", "`AMOUSEOBJ", "`ANETRECOURCES", "`APRINTERS", "`APROCINFO", "`ASCAN",
-                            "`ASELOBJ", "`ASESSIONS", "`ASORT", "`ASQLHANDLES", "`ASTACKINFO", "`ASUBSCRIPT", "`ATAGINFO", "`AUSED", "`AVCXCLASSES", "`REMOVEPROPERTY"))
+                            "`ASELOBJ", "`ASESSIONS", "`ASORT", "`ASQLHANDLES", "`ASTACKINFO", "`ASUBSCRIPT", "`ATAGINFO", "`AUSED", "`AVCXCLASSES", "`REMOVEPROPERTY", "`OBJTOJSON", "`OBJTOCLIENT"))
                         {
-                            // Functions that deal with arrays need
-                            // special handling
+                            // Functions that deal with arrays or objects need special handling
                             pop = PopStackItems(100);
 
                             // Most array functions start with an A
                             if (JAXLib.InList(_rpn, "`REMOVEPROPERTY"))
                                 mathStack.Token = await MathFuncsR.R(Program.CurrentApp, _rpn, pop);
+                            else if (JAXLib.InListC(_rpn, "`OBJTOJSON", "`OBJTOCLIENT"))
+                                mathStack.Token = await MathFuncsP.P(Program.CurrentApp, _rpn, pop);
                             else
-                                mathStack.Token = await MathFuncsA.A0(Program.CurrentApp, _rpn, pop);
+                                mathStack.Token = await MathFuncsA.A0(_rpn, pop);
                         }
                         else
                         {
@@ -1106,7 +1107,7 @@ namespace JAXBase.Math
                             switch (_rpn[1].ToString())
                             {
                                 case "A":
-                                    mathStack.Token = MathFuncsA.A1(Program.CurrentApp, _rpn, pop);
+                                    mathStack.Token = MathFuncsA.A1(_rpn, pop);
                                     break;
 
                                 case "B":
@@ -1149,7 +1150,7 @@ namespace JAXBase.Math
                                 case "O":
                                 case "P":
                                 case "Q":
-                                    mathStack.Token = MathFuncsP.P(Program.CurrentApp, _rpn, pop);
+                                    mathStack.Token = await MathFuncsP.P(Program.CurrentApp, _rpn, pop);
                                     break;
 
                                 case "R":
@@ -1553,153 +1554,153 @@ namespace JAXBase.Math
             int inLiteralSpace = 0;
             bool notField = true;
 
-                // Last sVar element is the head variable - It has to be an object or table alias
-                string sVar = vInfo[^1].AsString();
-                //if (sVar[0] == '_') sVar = sVar[1..];
+            // Last sVar element is the head variable - It has to be an object or table alias
+            string sVar = vInfo[^1].AsString();
+            //if (sVar[0] == '_') sVar = sVar[1..];
 
-                // Is it an alias.field?
-                if (vInfo.Count == 2 && Program.CurrentApp.CurrentDS.IsWorkArea(sVar))
+            // Is it an alias.field?
+            if (vInfo.Count == 2 && Program.CurrentApp.CurrentDS.IsWorkArea(sVar))
+            {
+                // Found the alias
+                int wa = Program.CurrentApp.CurrentDS.GetWorkArea(sVar);
+                string fName = vInfo[1].AsString().Trim('.').Trim();
+                if (Program.CurrentApp.CurrentDS.FieldExists(fName, wa))
                 {
-                    // Found the alias
-                    int wa = Program.CurrentApp.CurrentDS.GetWorkArea(sVar);
-                    string fName = vInfo[1].AsString().Trim('.').Trim();
-                    if (Program.CurrentApp.CurrentDS.FieldExists(fName, wa))
-                    {
-                        // Found the field
-                        sResult = await Program.CurrentApp.CurrentDS.GetFieldToken(wa, fName);
-                        notField = false;
-                    }
+                    // Found the field
+                    sResult = await Program.CurrentApp.CurrentDS.GetFieldToken(wa, fName);
+                    notField = false;
                 }
+            }
 
-                if (notField)
+            if (notField)
+            {
+                // Not a table.field so look for an object
+                CurrentPart = await AppVars.GetVarFromExpression(sVar, null);
+
+
+                // Is it an object?
+                if (CurrentPart.Element.Type.Equals("O", StringComparison.OrdinalIgnoreCase) == false)
+                    throw new Exception("1924|" + sVar);
+
+                // We have an object, assign it to thisObject
+                thisObject = (JAXObjectWrapper)CurrentPart.Element.Value;
+
+                for (int i = vInfo.Count - 2; i >= 0; i--)
                 {
-                    // Not a table.field so look for an object
-                    CurrentPart = await AppVars.GetVarFromExpression(sVar, null);
+                    string oPart = vInfo[i].AsString().TrimStart('.');
 
-
-                    // Is it an object?
-                    if (CurrentPart.Element.Type.Equals("O", StringComparison.OrdinalIgnoreCase) == false)
-                        throw new Exception("1924|" + sVar);
-
-                    // We have an object, assign it to thisObject
-                    thisObject = (JAXObjectWrapper)CurrentPart.Element.Value;
-
-                    for (int i = vInfo.Count - 2; i >= 0; i--)
+                    if ("[(".Contains(oPart[..1]))
                     {
-                        string oPart = vInfo[i].AsString().TrimStart('.');
+                        if (inLiteralSpace != 0)
+                            throw new Exception("3010|");
 
-                        if ("[(".Contains(oPart[..1]))
+                        // We're inside brakets/parens
+                        inLiteralSpace++;
+                    }
+                    else if ("])".Contains(oPart[..1]))
+                    {
+                        // Close out the literal space
+                        inLiteralSpace--;
+
+                        if (inLiteralSpace != 0)
+                            throw new Exception("3011|");
+                    }
+                    else if (vInfo[i].TType.Equals("C", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // We've got a comma, skip it - DO WE NEED THIS?
+                    }
+                    else if (vInfo[i].TType.Equals("V"))        // Object name
+                    {
+                        // Found a variable
+                        if (inLiteralSpace > 0)
                         {
-                            if (inLiteralSpace != 0)
-                                throw new Exception("3010|");
-
-                            // We're inside brakets/parens
-                            inLiteralSpace++;
+                            // Solve for this literal and put it 
+                            // into the parameters
+                            vInfo2 = [];
+                            vInfo2.Add(vInfo[i]);
+                            parms.Add(await GetVar(vInfo2));
                         }
-                        else if ("])".Contains(oPart[..1]))
+                        else
+                            throw new Exception("3012|" + vInfo[i].AsString());
+                    }
+                    else if (vInfo[i].TType.Equals("v"))        // Object property, method, or event
+                    {
+                        // Found an object part
+                        if (inLiteralSpace > 0)
+                            throw new Exception("3013|" + vInfo[i].AsString());
+
+                        JAXObjects.Token tk = new();
+
+                        // Is it a property or method call?
+                        if ((await thisObject.IsMember(oPart)).Equals("M", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Close out the literal space
-                            inLiteralSpace--;
-
-                            if (inLiteralSpace != 0)
-                                throw new Exception("3011|");
-                        }
-                        else if (vInfo[i].TType.Equals("C", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // We've got a comma, skip it - DO WE NEED THIS?
-                        }
-                        else if (vInfo[i].TType.Equals("V"))        // Object name
-                        {
-                            // Found a variable
-                            if (inLiteralSpace > 0)
+                            // Method call
+                            while (i > 0)
                             {
-                                // Solve for this literal and put it 
-                                // into the parameters
-                                vInfo2 = [];
-                                vInfo2.Add(vInfo[i]);
-                                parms.Add(await GetVar(vInfo2));
+                                // Adding parameters until we hit the next object part
+                                if (vInfo[i - 1].TType.Equals("V", StringComparison.OrdinalIgnoreCase))
+                                    break;
+
+                                ParameterClass c = new();
+                                c.Type = "T";
+                                c.token.Element.Value = vInfo[i - 1];
+                                Program.CurrentApp.ParameterClassList.Add(c);
+                                i--;
                             }
-                            else
-                                throw new Exception("3012|" + vInfo[i].AsString());
-                        }
-                        else if (vInfo[i].TType.Equals("v"))        // Object property, method, or event
-                        {
-                            // Found an object part
-                            if (inLiteralSpace > 0)
-                                throw new Exception("3013|" + vInfo[i].AsString());
-
-                            JAXObjects.Token tk = new();
-
-                            // Is it a property or method call?
-                            if ((await thisObject.IsMember(oPart)).Equals("M", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Method call
-                                while (i > 0)
-                                {
-                                    // Adding parameters until we hit the next object part
-                                    if (vInfo[i - 1].TType.Equals("V", StringComparison.OrdinalIgnoreCase))
-                                        break;
-
-                                    ParameterClass c = new();
-                                    c.Type = "T";
-                                    c.token.Element.Value = vInfo[i - 1];
-                                    Program.CurrentApp.ParameterClassList.Add(c);
-                                    i--;
-                                }
-                                await thisObject.MethodCall(oPart);
-                                tk.Element.Value = Program.CurrentApp.ReturnValue.Element.Value;
-                            }
-                            else
-                            {
-                                // Is this an array or UDF?
-                                if (i > 0 && "([".Contains(vInfo[i - 1].AsString()))
-                                {
-                                    // Add each parameter to the oPart comma-delimited var string
-                                    string endPart = vInfo[i - 1].AsString() == "(" ? ")" : "]";
-                                    oPart += vInfo[i - 1].AsString();
-                                    i--;
-
-                                    while (i > 0 && vInfo[--i].AsString().Equals(endPart) == false)
-                                        oPart += vInfo[i].AsString() + ",";
-
-                                    // Clear out the trailing comma and add the closing paren/bracket
-                                    if (i >= 0)
-                                        oPart = oPart.Trim(',') + vInfo[i].AsString();
-                                    else
-                                        throw new Exception("3014|");
-                                }
-
-                                // It's a property or object
-                                tk = await AppVars.GetVarFromExpression(oPart, thisObject);
-                            }
-
-                            if (i > 0)
-                            {
-                                // Still have parts to process
-                                if (tk.Element.Type.Equals("O", StringComparison.OrdinalIgnoreCase))
-                                    thisObject = (JAXObjectWrapper)tk.Element.Value;
-                                else
-                                    throw new Exception("1766|" + vInfo[i].AsString());
-                            }
-                            else
-                            {
-                                // We are out of here!
-                                //sResult.Element.Value = tk.Element.Value;
-                                sResult = tk;
-                            }
-
-                            parms = [];
+                            await thisObject.MethodCall(oPart);
+                            tk.Element.Value = Program.CurrentApp.ReturnValue.Element.Value;
                         }
                         else
                         {
-                            // Add values to the parameters
-                            parms.Add(vInfo[i]);
-                        }
-                    }
+                            // Is this an array or UDF?
+                            if (i > 0 && "([".Contains(vInfo[i - 1].AsString()))
+                            {
+                                // Add each parameter to the oPart comma-delimited var string
+                                string endPart = vInfo[i - 1].AsString() == "(" ? ")" : "]";
+                                oPart += vInfo[i - 1].AsString();
+                                i--;
 
-                    // Can't leave parms dangling
-                    if (parms.Count > 0) throw new Exception("10|");
+                                while (i > 0 && vInfo[--i].AsString().Equals(endPart) == false)
+                                    oPart += vInfo[i].AsString() + ",";
+
+                                // Clear out the trailing comma and add the closing paren/bracket
+                                if (i >= 0)
+                                    oPart = oPart.Trim(',') + vInfo[i].AsString();
+                                else
+                                    throw new Exception("3014|");
+                            }
+
+                            // It's a property or object
+                            tk = await AppVars.GetVarFromExpression(oPart, thisObject);
+                        }
+
+                        if (i > 0)
+                        {
+                            // Still have parts to process
+                            if (tk.Element.Type.Equals("O", StringComparison.OrdinalIgnoreCase))
+                                thisObject = (JAXObjectWrapper)tk.Element.Value;
+                            else
+                                throw new Exception("1766|" + vInfo[i].AsString());
+                        }
+                        else
+                        {
+                            // We are out of here!
+                            //sResult.Element.Value = tk.Element.Value;
+                            sResult = tk;
+                        }
+
+                        parms = [];
+                    }
+                    else
+                    {
+                        // Add values to the parameters
+                        parms.Add(vInfo[i]);
+                    }
                 }
+
+                // Can't leave parms dangling
+                if (parms.Count > 0) throw new Exception("10|");
+            }
 
             return sResult;
         }
