@@ -25,7 +25,7 @@ namespace JAXBase.Math
 {
     public class MathFuncsA
     {
-        public static async Task<JAXObjects.Token> A0(AppClass App, string _rpn, List<string> pop)
+        public static async Task<JAXObjects.Token> A0(string _rpn, List<string> pop)
         {
             JAXObjects.Token tAnswer = new();
             JAXObjects.Token answer;
@@ -100,21 +100,21 @@ namespace JAXBase.Math
 
                 case "`ACOPY":                                                              // Copy from one array to another
                     if (stype1.Equals("_") & stype2.Equals("_"))
-                        tAnswer = await ACopy(App, string1, string2, await JAXMathAux.ProcessPops(App, pop, 2));
+                        tAnswer = await ACopy(Program.CurrentApp, string1, string2, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ADATABASES":                                                         // Array of all open databases
                     if (stype1.Equals("_"))
-                        tAnswer = ADatabases(App, string1);
+                        tAnswer = ADatabases(Program.CurrentApp, string1);
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ADBOBJECTS":                                                         // Array of named connections, relations, tables, or SQL views from current database
                     if (stype1.Equals("_"))
-                        tAnswer = await ADBObjects(App, string1, string2, await JAXMathAux.ProcessPops(App, pop, 2));
+                        tAnswer = await ADBObjects(Program.CurrentApp, string1, string2, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -147,28 +147,28 @@ namespace JAXBase.Math
 
                 case "`ADEL":                                                               // Delete a row or column from an array - does not shrink array
                     if (stype1.Equals("_"))
-                        tAnswer = await ADel(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
+                        tAnswer = await ADel(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 1));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ADIR":                                                               // Gets file/directory information to an array
                     if (stype1.Equals("_"))
-                        tAnswer = await ADir(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
+                        tAnswer = await ADir(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 1));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AELEMENT":                                                           // Returns element number based on subscript
                     if (stype1.Equals("_"))
-                        tAnswer = await AElement(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
+                        tAnswer = await AElement(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`AERROR":                                                             // Array of last error
                     if (stype1.Equals("_"))
-                        tAnswer = AError(App, string1);
+                        tAnswer = AError(Program.CurrentApp, string1);
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -184,7 +184,7 @@ namespace JAXBase.Math
 
                 case "`AFIELDS":                                                            // Get fields in table
                     if (stype1.Equals("_"))
-                        tAnswer = AFields(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
+                        tAnswer = AFields(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -227,7 +227,7 @@ namespace JAXBase.Math
 
                 case "`AINS":                                                               // insert into an array - does not grow array
                     if (stype1.Equals("_"))
-                        tAnswer = await AIns(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
+                        tAnswer = await AIns(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 1));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -239,7 +239,7 @@ namespace JAXBase.Math
                     {
                         if (stype2.Equals("C"))
                         {
-                            matchX = await GetClassVarList(App, string2);
+                            matchX = await GetClassVarList(Program.CurrentApp, string2);
 
                             // Sort the matched vars
                             matchX.Sort();
@@ -259,14 +259,14 @@ namespace JAXBase.Math
 
                 case "`ALEN":                                                               // Array length, rows, cols
                     if (stype1.Equals("_"))
-                        tAnswer = await ALen(App, string1, intval2);
+                        tAnswer = await ALen(Program.CurrentApp, string1, intval2);
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ALINE":                                                             // Copy lines from a character expression or memo field to an array
                     if (stype1.Equals("_"))
-                        tAnswer = ALines(App, string1, await JAXMathAux.ProcessPops(App, pop, 1));
+                        tAnswer = ALines(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 1));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -552,9 +552,9 @@ namespace JAXBase.Math
                                 {
                                     // Worry about uncompile code later
                                     string sCode = JAXLib.FileToStr(string2);
-                                    string MD5 = App.utl.GetFileCheckSum_MD5(sCode);
+                                    string MD5 = Program.CurrentApp.utl.GetFileCheckSum_MD5(sCode);
 
-                                    cCode = App.JaxCompiler.CompileBlock(sCode, true, out int errCount);
+                                    cCode = Program.CurrentApp.JaxCompiler.CompileBlock(sCode, true, out int errCount);
                                     if (errCount > 0)
                                     {
                                         err = 9992;
@@ -628,7 +628,7 @@ namespace JAXBase.Math
 
                 case "`ASCAN":                                                              // Scan an array
                     if (stype1.Equals("_"))
-                        tAnswer = await AScan(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
+                        tAnswer = await AScan(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -646,7 +646,7 @@ namespace JAXBase.Math
                 case "`ASESSIONS":
                     if (stype1.Equals("_"))
                     {
-                        tAnswer = ASessions(App, string1);
+                        tAnswer = ASessions(Program.CurrentApp, string1);
                     }
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
@@ -656,7 +656,7 @@ namespace JAXBase.Math
                     //----------------------------------------------------
                     if (stype1.Equals("_"))
                     {
-                        tAnswer.Element.Value = ASort(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
+                        tAnswer.Element.Value = ASort(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
                     }
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
@@ -666,7 +666,7 @@ namespace JAXBase.Math
                 case "`ASTACKINFO":
                     if (stype1.Equals("_"))
                     {
-                        tAnswer = AStackinfo(App, string1);
+                        tAnswer = AStackinfo(Program.CurrentApp, string1);
                     }
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
@@ -674,7 +674,7 @@ namespace JAXBase.Math
 
                 case "`ASUBSCRIPT":                                                         // Return row or col of element number
                     if ((stype1).Equals("_"))
-                        tAnswer = await ASubscript(App, string1, await JAXMathAux.ProcessPops(App, pop, 2));
+                        tAnswer = await ASubscript(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -683,15 +683,15 @@ namespace JAXBase.Math
                     if (stype1.Equals("_"))
                     {
                         // Remember current work area and data session
-                        int cwa = App.CurrentDS.CurrentWorkArea();
-                        int cds = App.CurrentDataSession;
+                        int cwa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
+                        int cds = Program.CurrentApp.CurrentDataSession;
 
 
                         // Set the data session
                         if (stype3.Equals("N"))
                         {
                             if (intval3 > 0)
-                                App.SetDataSession(intval3);
+                                Program.CurrentApp.SetDataSession(intval3);
                         }
                         else if (string.IsNullOrWhiteSpace(stype3) == false)
                             AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
@@ -700,14 +700,14 @@ namespace JAXBase.Math
                         if (stype2.Equals("N"))
                         {
                             if (intval2 > 0)
-                                App.CurrentDS.SelectWorkArea(intval2);
+                                Program.CurrentApp.CurrentDS.SelectWorkArea(intval2);
                         }
                         else if (stype2.Equals("C"))
-                            App.CurrentDS.SelectWorkArea(string2);
+                            Program.CurrentApp.CurrentDS.SelectWorkArea(string2);
                         else if (string.IsNullOrWhiteSpace(stype2) == false)
                             AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
-                        JAXDirectDBF.DBFInfo dbf = App.CurrentDS.CurrentWA.DbfInfo;
+                        JAXDirectDBF.DBFInfo dbf = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo;
 
                         // Are there indexes to report on?
                         if (dbf.IDX.Count > 0)
@@ -738,8 +738,8 @@ namespace JAXBase.Math
                             }
                         }
 
-                        App.SetDataSession(cds);                // Restore the data session
-                        App.CurrentDS.SelectWorkArea(cwa);      // Restore the work area
+                        Program.CurrentApp.SetDataSession(cds);                // Restore the data session
+                        Program.CurrentApp.CurrentDS.SelectWorkArea(cwa);      // Restore the work area
                     }
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
@@ -753,16 +753,16 @@ namespace JAXBase.Math
                     if (stype1.Equals("_"))
                     {
 
-                        int cds = App.CurrentDataSession;   // Remember the current data session
+                        int cds = Program.CurrentApp.CurrentDataSession;   // Remember the current data session
 
                         // Select the data session in question if > 0
                         if (intval2 > 0)
-                            App.SetDataSession(intval2);
+                            Program.CurrentApp.SetDataSession(intval2);
 
                         Dictionary<int, JAXDirectDBF> temp = [];
 
                         // Create a temp copy of the work areas list for this data session
-                        foreach (KeyValuePair<int, JAXDirectDBF> wa in App.CurrentDS.WorkAreas)
+                        foreach (KeyValuePair<int, JAXDirectDBF> wa in Program.CurrentApp.CurrentDS.WorkAreas)
                             temp.Add(wa.Key, wa.Value);
 
                         // Grab the current low SysID from the WA in the temp list, record
@@ -771,7 +771,7 @@ namespace JAXBase.Math
                         while (temp.Count > 0)
                         {
                             // Reset the lowID to the current high value of the system counter
-                            string lowID = App.SystemCounter();
+                            string lowID = Program.CurrentApp.SystemCounter();
 
                             // Work areas start at 1
                             int lowWA = 0;
@@ -812,7 +812,7 @@ namespace JAXBase.Math
                         }
 
                         // And finally, go back to the current data session
-                        App.SetDataSession(cds);
+                        Program.CurrentApp.SetDataSession(cds);
 
                         tAnswer.Element.Value = idx;
                     }
@@ -831,16 +831,16 @@ namespace JAXBase.Math
                      */
                     if (stype1.Equals("_"))
                     {
-                        int cds = App.CurrentDataSession;   // Remember the current data session
+                        int cds = Program.CurrentApp.CurrentDataSession;   // Remember the current data session
 
                         // Select the data session in question if > 0
                         if (intval2 > 0)
-                            App.SetDataSession(intval2);
+                            Program.CurrentApp.SetDataSession(intval2);
 
                         Dictionary<int, JAXDirectDBF> temp = [];
 
                         // Create a temp copy of the work areas list for this data session
-                        foreach (KeyValuePair<int, JAXDirectDBF> wa in App.CurrentDS.WorkAreas)
+                        foreach (KeyValuePair<int, JAXDirectDBF> wa in Program.CurrentApp.CurrentDS.WorkAreas)
                             temp.Add(wa.Key, wa.Value);
 
                         // Grab the current low SysID from the WA in the temp list, record
@@ -849,7 +849,7 @@ namespace JAXBase.Math
                         while (temp.Count > 0)
                         {
                             // Reset the lowID to the current high value of the system counter
-                            string lowID = App.SystemCounter();
+                            string lowID = Program.CurrentApp.SystemCounter();
 
                             // Work areas start at 1
                             int lowWA = 0;
@@ -894,7 +894,7 @@ namespace JAXBase.Math
                         }
 
                         // And finally, go back to the current data session
-                        App.SetDataSession(cds);
+                        Program.CurrentApp.SetDataSession(cds);
 
                         tAnswer.Element.Value = idx;
                     }
@@ -910,7 +910,7 @@ namespace JAXBase.Math
             return tAnswer;
         }
 
-        public static JAXObjects.Token A1(AppClass App, string _rpn, List<string> pop)
+        public static JAXObjects.Token A1(string _rpn, List<string> pop)
         {
             JAXObjects.Token tAnswer = new();
 
@@ -954,7 +954,7 @@ namespace JAXBase.Math
                     break;
 
                 case "`ACOS":                                                               // Arc Cosine
-                    tAnswer = ACos(App, stype1, intval2, val1);
+                    tAnswer = ACos(Program.CurrentApp, stype1, intval2, val1);
                     break;
 
                 case "`ADDBS":                                                          // Add backslash to path
@@ -962,8 +962,8 @@ namespace JAXBase.Math
                     break;
 
                 case "`ALIAS":                                                              // Current alias name
-                    if (App.CurrentDS.CurrentWA.DbfInfo is not null)
-                        tAnswer._avalue[0].Value = App.CurrentDS.CurrentWA.DbfInfo.Alias;
+                    if (Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo is not null)
+                        tAnswer._avalue[0].Value = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Alias;
                     else
                         tAnswer._avalue[0].Value = string.Empty;
                     break;
@@ -983,7 +983,7 @@ namespace JAXBase.Math
                     break;
 
                 case "`ASIN":                               // Arc sine
-                    tAnswer = ASin(App, string1, stype1);
+                    tAnswer = ASin(Program.CurrentApp, string1, stype1);
                     break;
 
                 case "`AT":  // Return postion of string in string
@@ -1040,7 +1040,7 @@ namespace JAXBase.Math
                     {
                         List<string> list = [];
                         list.Add(string1);
-                        list = MathFuncsA.GetALinesList(App, []);
+                        list = MathFuncsA.GetALinesList(Program.CurrentApp, []);
                         for (int i = 0; i < list.Count; i++)
                         {
                             if (list[i].Contains(string2, comp))
@@ -1599,7 +1599,7 @@ namespace JAXBase.Math
             JAXObjects.Token tAnswer = new();
 
 
-            List<string> ln = GetALinesList(App, p);
+            List<string> ln = GetALinesList(Program.CurrentApp, p);
             AppVars.SetVarOrMakePrivate(varName, ln.Count, 1, true);   // adjust array length
 
             for (int i = 1; i <= ln.Count; i++)

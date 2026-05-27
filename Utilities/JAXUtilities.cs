@@ -85,16 +85,14 @@ namespace JAXBase.Utilities
 
 
         /* -------------------------------------------------------------------------------------------------*
-         * Convert Token to json and back
+         * Convert Token to JSON string and back
          * 
-         * Supplied by Grok - 2006-01-31
-         * Touch ups and minor fixes by JLW - The more information along with concise instructions
-         * that you provide Grok on the front end, the less you'll have to fix on the back end.
+         * Supplied by Grok - 2006-01-31 with touch ups and minor fixes by JLW
          * 
-         * 
-         * Will not create an exact duplicae of the JAXObjectWrapper class:
+         * TODO - Will not create an exact duplicate of the JAXObjectWrapper class:
          *      - New ClassID
          *      - AError reset to 1 empty row
+         *      - Arrays need work
          * 
          * Usage:
          *      string json = JAXObjectWrapperJsonSerializer.ToJson(form, Formatting.Indented);
@@ -175,7 +173,6 @@ namespace JAXBase.Utilities
                     return new JValue(token.AsString() ?? "");
 
                 // ── Array handling ─────────────────────────────────────────────
-
                 int rows = token.Row;
                 int cols = token.Col;
 

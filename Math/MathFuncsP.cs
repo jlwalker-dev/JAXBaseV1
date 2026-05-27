@@ -7,16 +7,19 @@
  ******************************************************************************************************************************************/
 using JAXBase.Core;
 using JAXBase.Data;
-using System.Globalization;
 using JAXBase.Utilities;
+using System.Globalization;
 using static JAXBase.Core.AppClass;
-using static System.Net.Mime.MediaTypeNames;
+using static JAXBase.Utilities.JAXUtilities;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using JAXBase.XBase;
 
 namespace JAXBase.Math
 {
     internal class MathFuncsP
     {
-        public static JAXObjects.Token P(AppClass App, string _rpn, List<string> pop)
+        public static async Task<JAXObjects.Token> P(AppClass App, string _rpn, List<string> pop)
         {
             JAXObjects.Token tAnswer = new();
 
@@ -55,9 +58,14 @@ namespace JAXBase.Math
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`OBJTOJSON@":
+                case "`OBJTOJSON":
                     // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    if (stype1.Equals("_"))
+                    {
+                        JAXObjects.Token objVar = await AppVars.GetVarToken(string1);
+                        JAXObjectWrapper objWrapper=(JAXObjectWrapper)objVar.Element.Value;
+                        tAnswer.Element.Value = await JAXObjectWrapperJsonSerializer.ToJson(objWrapper, Formatting.Indented);
+                    }
                     break;
 
                 case "`OCCURS":
