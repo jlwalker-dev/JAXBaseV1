@@ -1,13 +1,13 @@
 ﻿using JAXBase.Core;
 using JAXBase.XBase;
 
-namespace JAXBase.Executer
+namespace JAXBase.Executor
 {
     public static class JAXBase_ECodes
     {
-        public static async Task<ExecuterCodes> Split(string[] mProc)
+        public static async Task<ExecutorCodes> Split(string[] mProc)
         {
-            ExecuterCodes eCodes = new();
+            ExecutorCodes eCodes = new();
 
             // --------------------------------------------------
             // Load the eCodes class with the various components

@@ -1,4 +1,4 @@
-﻿namespace JAXBase.Executer
+﻿namespace JAXBase.Executor
 {
     public class JAXBase_Debugger
     {
@@ -35,7 +35,7 @@
             //                App.CurrentDS.JaxSettings.Step = false;
             //                App.JaxDebugger?.EndDebugging();
             //                App.JaxDebugger = null;
-            //                JAXBase_Executer_C.Cancel(this, null);
+            //                JAXBase_Executor_C.Cancel(this, null);
             //                return "Z";
 
             //            case JAXDebuggerForm.DebugAction.Resume:

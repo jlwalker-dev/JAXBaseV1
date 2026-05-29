@@ -725,7 +725,7 @@ namespace JAXBase.Data
             public int RecNo = 0;
             public int RecCount = 0;
             public bool Found = false;
-            public ExecuterCodes? LastLocate = null;
+            public ExecutorCodes? LastLocate = null;
 
 
             // 2025-09-25 - TODO - JAXBase tag to confirm an Index, memo, and JSON files belong to the DBF

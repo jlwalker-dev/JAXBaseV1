@@ -50,7 +50,7 @@ namespace JAXBase.XBase
                     if (cCode.Length > 0)
                     {
                         // Call the routine to compile and execute a block of code
-                        _ = Program.CurrentApp.JaxExecuter.ExecuteCodeBlock(me, methodName, cCode);
+                        _ = Program.CurrentApp.JaxExecutor.ExecuteCodeBlock(me, methodName, cCode);
                     }
                     else
                     {

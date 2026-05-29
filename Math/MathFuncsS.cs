@@ -13,7 +13,7 @@
  */
 using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.Executer;
+using JAXBase.Executor;
 using JAXBase.XBase;
 using JAXBase.Utilities;
 
@@ -187,7 +187,7 @@ namespace JAXBase.Math
                         tAnswer.Element.Value = jow;
                     }
                     else
-                        tAnswer.Element.Value = JAXBase_Executer_Settings.GetSettings(App, string1, intval2).Element.Value;
+                        tAnswer.Element.Value = JAXBase_Executor_Settings.GetSettings(App, string1, intval2).Element.Value;
                     break;
 
                 case "`SETFLDSTATE":

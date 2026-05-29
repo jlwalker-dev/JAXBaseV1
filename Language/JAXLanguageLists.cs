@@ -101,27 +101,28 @@ namespace JAXBase.Language
 
 
         /// <summary>
-        /// List of all supported SET commands
+        /// List of all supported SET commands - TODO: Validate against JAXBase_Executor_settings
         /// </summary>
-        public static string[] SetCommands = [
-            "alternate", "appinit", "asserts", "autoincerror","autosave",
-            "bell", "blocksize",
-            "carry","century", "classlib", "collate","confirm","console","coverage","cpcompile","cpialog","currency","cursor",
-            "database","datasession","date","debug", "debugout","decimals","default","deleted","development",
-            "echo","escape","eventlist","eventtracking","exeact","exclusive",
-            "fdow","fields","filter","fixed","fullpath","fweek",
-            "headings","help","hour",
-            "index",
-            "kbminput",
-            "lock","logging",
-            "mackey","memowidth","message","multilocks",
-            "naming","near","nocptrans","notify","null","nulldisplay",
-            "odometer","order",
-            "path","point","primary","procedure",
-            "refresh","relation","reprocess","resource",
-            "safety","seconds","security","separator","skip","space","sqlconnection","sqlload","step","strictdate","sysmenu",
-            "tableprompt","tablevalidate","talk","textmerge","textdelimiters","topic","topicid","trbetween","typeahead","typeconvert",
-            "includesource"];   // Deprecated as of V1.0
+        public static string[] SetCommands = 
+            [
+            "AIaGent", "ALTernate", "ANSi", "APPinit", "ASserTs", "AutoIncError","AutoSaVe",
+            "BELl", "BLocKsize",
+            "CaRrY","CENtury", "CLassliB", "CoLlaTe","ConFirM","CONsole","COVerage","CPCompile","CPDialog","CURrency","CurSoR",
+            "DataBaSe","DataSessioM","DATe","DEBug", "DeBugOut","DECimals","DEFault","DELeted","DEVelopment","DeViCe",
+            "EChO","ESCape","EVentList","EVentTracking","eXaCT","eXCLusive",
+            "FDoW","FieLDs","FiLTer","FIXed","FullPaTh","FWeeK",
+            "HEaDings","HeLP","HouRs",
+            "InDeX",
+            "KBMinput",
+            "LoCK","LOGging",
+            "MaCKey","MemoWiDth","MeSsaGe","MultiLocKs",
+            "NAMing","NEaR","NoCPtrans","NOTify","NULl","NuLlDisplay",
+            "ODoMeter","ORDer",
+            "PaTH","PoiNT","PRImary","PROcedure",
+            "REFresh","RELation","REProcess","RESource",
+            "SAFety","SEConds","SeCuRity","SEParator","SKiP","SPaCe","SqlCoNnection","SqlLoaD","STeP","StrictDaTe","SYSmenu",
+            "TaBlePrompt","TaBleValidate","TaLK","TextMerGe","TextDeLimiters","ToPiC","TopicID","TRBetween","TyPeaHead","TyPeConvert",
+            ];
 
         /// <summary>
         /// Array of Language code | Language component | Language byte code Elements

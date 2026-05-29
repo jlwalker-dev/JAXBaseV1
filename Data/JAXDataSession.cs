@@ -94,8 +94,7 @@ namespace JAXBase.Data
             FormID = formID;
 
             JAXDirectDBF db = new(app);
-            //db.DbfInfo.FQFN = app.JaxSettings.Default;
-            //Databases.Add(DEFAULT, db);     // Set up the default empty SQL database for free tables
+
             WorkAreas.Add(0, new(App));
             WorkAreas.Add(1, new(App));
 

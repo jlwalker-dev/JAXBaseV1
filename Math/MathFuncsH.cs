@@ -168,9 +168,9 @@ namespace JAXBase.Math
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`INDBC@??":
+                case "`INDBC":                          // Is this object in a database
                     // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], "*JLW");
+                    tAnswer._avalue[0].Value = false;
                     break;
 
                 case "`INDEXSEEK":
@@ -202,7 +202,6 @@ namespace JAXBase.Math
 
                 case "`INLISTC":
                 case "`INLIST":
-                    // ---------------------------------------------------------------------------------
                     if (pop.Count < 2)
                         throw new Exception("10||Too few arguments");
 
@@ -348,7 +347,6 @@ namespace JAXBase.Math
                     break;
 
                 case "`ISEXCLUSIVE":
-                    // --------------------------------------------------------------------------------- TODO
                     cwa = App.CurrentDS.CurrentWorkArea();
 
                     if (stype1.Equals("N"))
@@ -446,8 +444,8 @@ namespace JAXBase.Math
                         throw new Exception("11|");
 
                     dbf = App.CurrentDS.CurrentWA.DbfInfo;
-
                     App.CurrentDS.SelectWorkArea(cwa);
+
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 

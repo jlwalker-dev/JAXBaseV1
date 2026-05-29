@@ -1571,7 +1571,7 @@ namespace JAXBase.Core
         //        // TODO Push the parameter list to the stack
 
         //        // Execute the code
-        //        results += app.JaxExecuter.ExecuteBlock(null, compiledCode) + "\r\n";
+        //        results += app.JaxExecutor.ExecuteBlock(null, compiledCode) + "\r\n";
         //    }
 
         //    return results;
@@ -1770,7 +1770,7 @@ namespace JAXBase.Core
         /// </summary>
         /// <param name="app"></param>
         /// <param name="fileName"></param>
-        /// <returns>Path where file was found</returns>
+        /// <returns>Path if file is found</returns>
         public static string FindPathForFile(string fileName)
         {
             string result = string.Empty;

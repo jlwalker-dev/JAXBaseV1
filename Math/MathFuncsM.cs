@@ -713,7 +713,7 @@ namespace JAXBase.Math
                     App.CurrentDS.SelectWorkArea(cwa);
                     break;
 
-                case "`NEWOBJECT":  // TODO NOW ????
+                case "`NEWOBJECT":  // TODO 
                     // --------------------------------------------------------------------------------- TODO
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;

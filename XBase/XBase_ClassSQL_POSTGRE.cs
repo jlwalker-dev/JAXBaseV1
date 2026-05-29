@@ -549,7 +549,7 @@ namespace JAXBase.XBase
                         ApplicationName = type.Equals("C") ? value.AsString() : throw new Exception($"11|");
                         break;
 
-                    case "authentication":
+                    case "authtype":
                         int authType = type.Equals("N") ? value.AsInt() : throw new Exception($"11|");
                         break;
 

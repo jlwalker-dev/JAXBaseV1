@@ -14,12 +14,10 @@ using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Utilities;
 using JAXBase.XBase;
-using System.CodeDom;
 using System.Drawing.Printing;
 using System.Drawing.Text;
 using System.Management;
 using System.Text;
-using System.Xml.Linq;
 
 namespace JAXBase.Math
 {
@@ -215,8 +213,8 @@ namespace JAXBase.Math
                     tAnswer.Element.Value = fCount;
                     break;
 
-                case "`AGETCLASS":                                                          // Information on loaded classes
-                    //----------------------------------------------------
+                case "`AGETCLASS":                                                          // Select ClassLibrary & Class dialog
+                    // --------------------------------------------------------------------------------------------------------
                     if (stype1.Equals("_"))
                     {
                         throw new Exception("1999||AGETCLASS");
@@ -633,8 +631,8 @@ namespace JAXBase.Math
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`ASELOBJ":
-                    //----------------------------------------------------
+                case "`ASELOBJ":                                    // Returns selected object reference(s) in an array
+                    // --------------------------------------------------------------------------------------------------------
                     if (stype1.Equals("_"))
                     {
                         throw new Exception("1999||ASELOBJ");
@@ -645,19 +643,14 @@ namespace JAXBase.Math
 
                 case "`ASESSIONS":
                     if (stype1.Equals("_"))
-                    {
                         tAnswer = ASessions(Program.CurrentApp, string1);
-                    }
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`ASORT":                                                              // Sort an array
-                    //----------------------------------------------------
                     if (stype1.Equals("_"))
-                    {
                         tAnswer.Element.Value = ASort(Program.CurrentApp, string1, await JAXMathAux.ProcessPops(Program.CurrentApp, pop, 2));
-                    }
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -665,9 +658,7 @@ namespace JAXBase.Math
 
                 case "`ASTACKINFO":
                     if (stype1.Equals("_"))
-                    {
                         tAnswer = AStackinfo(Program.CurrentApp, string1);
-                    }
                     else
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
@@ -820,7 +811,8 @@ namespace JAXBase.Math
                         AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`AVCXCLASSES@??":
+                case "`AVCXCLASSES@??":                             // Return array of classes in library
+                    // --------------------------------------------------------------------------------------------------------
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
