@@ -1,5 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
+using JAXBase.Utilities;
 using NodaTime;
 using NodaTime.TimeZones;
 using System.Data.Common;
@@ -33,6 +34,8 @@ namespace JAXBase.Math
             int intval2 = (int)val2;
             int intval3 = (int)val3;
 
+            int errNo = 0;
+
             switch (_rpn)
             {
                 case "`UNBINDEVENTS":
@@ -50,14 +53,14 @@ namespace JAXBase.Math
                     break;
 
                 case "`USED":                               // Check current datasession for name/alias
-                    tAnswer._avalue[0].Value = thisDS.TableUsed(string1)>0;
+                    tAnswer._avalue[0].Value = thisDS.TableUsed(string1) > 0;
                     break;
 
                 case "`VAL":  // Convert from string to number
                     if (stype1.Equals("C"))
                         tAnswer._avalue[0].Value = val1;
                     else
-                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        errNo = 11;
                     break;
 
                 case "`VARTYPE":
@@ -75,11 +78,29 @@ namespace JAXBase.Math
                         else
                             tAnswer.Element.Value = 0;
                     }
+                    else
+                        errNo = 11;
                     break;
 
-                case "`XMLTOCURSOR":  // TODO
-                    // --------------------------------------------------------------- 
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                case "`XMLTOCURSOR":
+                    if (stype1.Equals("C"))
+                    {
+                        if (stype2.Equals("C") || string.IsNullOrWhiteSpace(stype2))
+                        {
+                            if (stype3.Equals("N") || string.IsNullOrWhiteSpace(stype3))
+                            {
+                                string2 = string.IsNullOrWhiteSpace(string2) ? "XMLCursor" : string2;
+                                tAnswer._avalue[0].Value=VFPUtilities.MakeCursorFromXML(string1, string2, intval3);
+                            }
+                            else
+                                errNo = 11;
+                        }
+                        else
+                            errNo = 11;
+                    }
+                    else
+                        errNo = 11;
+
                     break;
 
                 case "`YEAR":
@@ -91,12 +112,15 @@ namespace JAXBase.Math
                             tAnswer._avalue[0].Value = 0;
                     }
                     else
-                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        errNo = 11;
                     break;
 
                 default:
                     throw new Exception("1999|" + _rpn[1..]);
             }
+
+            if (errNo > 0)
+                AppErrorHandling.SetError(errNo, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             return tAnswer;
         }

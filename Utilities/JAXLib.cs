@@ -910,7 +910,7 @@ namespace JAXBase.Utilities
                 cTrans = netString.ToCharArray();
 
                 // Blank out leading commas and zeros
-                for (int i = 0; i < cTrans.Length-1; i++)
+                for (int i = 0; i < cTrans.Length - 1; i++)
                 {
                     if (" ,0".Contains(cTrans[i]))
                         cTrans[i] = ' ';
@@ -941,7 +941,7 @@ namespace JAXBase.Utilities
                 {
                     // kill leading zeros
                     cTrans = netString.ToCharArray();
-                    for (int i = 0; i < cTrans.Length-1; i++)
+                    for (int i = 0; i < cTrans.Length - 1; i++)
                     {
                         if (cTrans[i].Equals('0'))
                             cTrans[i] = ' ';
@@ -1544,12 +1544,7 @@ namespace JAXBase.Utilities
         /// Returns folder path with trailing separator (e.g. "C:\MyFolder\" or "/home/user/Documents/")
         /// Returns "" on Cancel — exactly like VFP
         /// </summary>
-        public static string GetDir(
-            string cDirectory,
-            string cText,
-            string cCaption,
-            int nFlags,
-            bool lRootOnly)
+        public static string GetDir(string cDirectory, string cText, string cCaption, int nFlags, bool lRootOnly)
         {
             // Linux / macOS: Use Ookii.Dialogs for beautiful native folder picker
             return GetDirCrossPlatform(cDirectory, cText ?? cCaption);
@@ -1850,7 +1845,7 @@ namespace JAXBase.Utilities
             bool Shift = modifiers == Keys.Shift;
             bool Alt = modifiers == Keys.Alt;
             bool Ctrl = modifiers == Keys.Control;
-            bool CapsLock= modifiers == Keys.CapsLock;
+            bool CapsLock = modifiers == Keys.CapsLock;
 
             // Keydown and KeyUp fire the events.  Only listen if key is down
             if (nKeyCode != 0)
@@ -1884,57 +1879,57 @@ namespace JAXBase.Utilities
                         };
                     }
                 }
-                
+
                 if (result == 0)
                 {
                     // Not a special alt key or one of the keypads, so try to figure it out
                     result = nKeyCode switch
                     {
-                        8 =>Shift ? 127 : (Ctrl ? 127 : (Alt ? 14 : 127)),    // Backspace
-                        9 =>Shift ? 15 : (Ctrl ? 148 : (Alt ? 0 : 9)),        // Tab
-                        13 =>Alt ? 166 : (Ctrl ? 10 : 13),                    // Enter
-                        27 =>Shift ? 50 : (Ctrl ? 27 : (Alt ? 1 : 27)),       // Esc
-                        32 =>Shift ? 32 : (Ctrl ? 32 : (Alt ? 57 : 32)),      // Spacebar
-                        48 =>Shift ? 41 : 48,                                 // 0
-                        49 =>Shift ? 33 : 49,                                 // 1
-                        50 =>Shift ? 64 : 50,                                 // 2
-                        51 =>Shift ? 35 : 51,                                 // 3
-                        52 =>Shift ? 36 : 52,                                 // 4
-                        53 =>Shift ? 37 : 53,                                 // 5
-                        54 =>Shift ? 94 : 54,                                 // 6
-                        55 =>Shift ? 38 : 55,                                 // 7
-                        56 =>Shift ? 42 : 56,                                 // 8
-                        57 =>Shift ? 40 : 57,                                 // 9
-                        112 =>Shift ? 84 : (Ctrl ? 94 : (Alt ? 104 : 28)),    // F1
-                        113 =>Shift ? 86 : (Ctrl ? 95 : (Alt ? 104 : -1)),    // F2
-                        114 =>Shift ? 87 : (Ctrl ? 96 : (Alt ? 105 : -2)),    // F3
-                        115 =>Shift ? 87 : (Ctrl ? 97 : (Alt ? 106 : -3)),    // F4
-                        116 =>Shift ? 88 : (Ctrl ? 98 : (Alt ? 107 : -4)),    // F5
-                        117 =>Shift ? 89 : (Ctrl ? 99 : (Alt ? 108 : -5)),    // F6
-                        118 =>Shift ? 90 : (Ctrl ? 100 : (Alt ? 109 : -6)),   // F7
-                        119 =>Shift ? 91 : (Ctrl ? 101 : (Alt ? 110 : -7)),   // F8
-                        120 =>Shift ? 92 : (Ctrl ? 102 : (Alt ? 111 : -8)),   // F9
-                        121 =>Shift ? 93 : (Ctrl ? 103 : (Alt ? 112 : -9)),   // F10
-                        122 =>Shift ? 135 : (Ctrl ? 137 : (Alt ? 139 : 133)), // F11
-                        123 =>Shift ? 136 : (Ctrl ? 138 : (Alt ? 140 : 134)), // F12
-                        186 =>Shift ? 59 : 58,                                // ;
-                        187 =>Shift ? 61 : 43,                                // =
-                        188 =>Shift ? 44 : 60,                                // ,
-                        189 =>Shift ? 45 : 95,                                // _
-                        190 =>Shift ? 46 : 62,                                // .
-                        191 =>Shift ? 47 : 63,                                // /
-                        192 =>Shift ? 96 : 126,                               // `
-                        222 =>Shift ? 39 : 34,                                // '
-                        219 =>Shift ? 91 : 123,                               // [
-                        220 =>Shift ? 92 : 124,                               // \
-                        221 =>Shift ? 93 : 125,                               // ]
+                        8 => Shift ? 127 : (Ctrl ? 127 : (Alt ? 14 : 127)),    // Backspace
+                        9 => Shift ? 15 : (Ctrl ? 148 : (Alt ? 0 : 9)),        // Tab
+                        13 => Alt ? 166 : (Ctrl ? 10 : 13),                    // Enter
+                        27 => Shift ? 50 : (Ctrl ? 27 : (Alt ? 1 : 27)),       // Esc
+                        32 => Shift ? 32 : (Ctrl ? 32 : (Alt ? 57 : 32)),      // Spacebar
+                        48 => Shift ? 41 : 48,                                 // 0
+                        49 => Shift ? 33 : 49,                                 // 1
+                        50 => Shift ? 64 : 50,                                 // 2
+                        51 => Shift ? 35 : 51,                                 // 3
+                        52 => Shift ? 36 : 52,                                 // 4
+                        53 => Shift ? 37 : 53,                                 // 5
+                        54 => Shift ? 94 : 54,                                 // 6
+                        55 => Shift ? 38 : 55,                                 // 7
+                        56 => Shift ? 42 : 56,                                 // 8
+                        57 => Shift ? 40 : 57,                                 // 9
+                        112 => Shift ? 84 : (Ctrl ? 94 : (Alt ? 104 : 28)),    // F1
+                        113 => Shift ? 86 : (Ctrl ? 95 : (Alt ? 104 : -1)),    // F2
+                        114 => Shift ? 87 : (Ctrl ? 96 : (Alt ? 105 : -2)),    // F3
+                        115 => Shift ? 87 : (Ctrl ? 97 : (Alt ? 106 : -3)),    // F4
+                        116 => Shift ? 88 : (Ctrl ? 98 : (Alt ? 107 : -4)),    // F5
+                        117 => Shift ? 89 : (Ctrl ? 99 : (Alt ? 108 : -5)),    // F6
+                        118 => Shift ? 90 : (Ctrl ? 100 : (Alt ? 109 : -6)),   // F7
+                        119 => Shift ? 91 : (Ctrl ? 101 : (Alt ? 110 : -7)),   // F8
+                        120 => Shift ? 92 : (Ctrl ? 102 : (Alt ? 111 : -8)),   // F9
+                        121 => Shift ? 93 : (Ctrl ? 103 : (Alt ? 112 : -9)),   // F10
+                        122 => Shift ? 135 : (Ctrl ? 137 : (Alt ? 139 : 133)), // F11
+                        123 => Shift ? 136 : (Ctrl ? 138 : (Alt ? 140 : 134)), // F12
+                        186 => Shift ? 59 : 58,                                // ;
+                        187 => Shift ? 61 : 43,                                // =
+                        188 => Shift ? 44 : 60,                                // ,
+                        189 => Shift ? 45 : 95,                                // _
+                        190 => Shift ? 46 : 62,                                // .
+                        191 => Shift ? 47 : 63,                                // /
+                        192 => Shift ? 96 : 126,                               // `
+                        222 => Shift ? 39 : 34,                                // '
+                        219 => Shift ? 91 : 123,                               // [
+                        220 => Shift ? 92 : 124,                               // \
+                        221 => Shift ? 93 : 125,                               // ]
                         _ => 0 // did not translate
                     };
 
                     // Perhaps it's not a special key?
                     if (result == 0 && JAXLib.Between(nKeyCode, 32, 127))
                     {
-                        string akey =Shift ? ((char)nKeyCode).ToString().ToUpper() : ((char)nKeyCode).ToString().ToLower();
+                        string akey = Shift ? ((char)nKeyCode).ToString().ToUpper() : ((char)nKeyCode).ToString().ToLower();
 
                         if (Shift || CapsLock)
                             result = akey.ToUpper()[0];
@@ -2080,7 +2075,7 @@ namespace JAXBase.Utilities
         //}
 
         /// <summary>
-        /// Returns the window immediately. Blocking is handled by the caller (Executer) via await.
+        /// Returns the window immediately. Blocking is handled by the caller (Executor) via await.
         /// </summary>
         public static Avalonia.Controls.Window? WaitWindow(
             Core.AppClass app,

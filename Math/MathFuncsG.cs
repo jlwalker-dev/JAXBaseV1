@@ -1,5 +1,7 @@
 ﻿using JAXBase.Core;
 using JAXBase.Utilities;
+using Newtonsoft.Json.Linq;
+
 
 namespace JAXBase.Math
 {
@@ -136,8 +138,17 @@ namespace JAXBase.Math
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`GETJSON": // TODO
-                    // --------------------------------------------------------------------------------- TODO
+                case "`GETJSON":
+                    if (stype1.Equals("C") && stype2.Equals("C"))
+                    {
+                        object? obj = VFPUtilities.GetJsonValue(string1, string2, "");
+
+                        if (obj is null)
+                            tAnswer._avalue[0].MakeNull();
+                        else
+                            tAnswer._avalue[0].Value = obj;
+                    }
+
                     break;
 
                 case "`GETOBJ":
@@ -145,7 +156,7 @@ namespace JAXBase.Math
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`GETPICT": //  TODO NOW
+                case "`GETPICT": // CHECK DOCS!
                     // --------------------------------------------------------------------------------- TODO
                     AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;

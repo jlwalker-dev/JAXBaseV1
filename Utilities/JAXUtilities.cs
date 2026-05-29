@@ -246,10 +246,9 @@ namespace JAXBase.Utilities
             /// using ToJson(...) or has compatible structure.
             /// </summary>
             /// <param name="json">The JSON string to deserialize</param>
-            /// <param name="app">The App instance needed to create JAXObjectWrapper instances for nested objects</param>
             /// <returns>A Token representing the JSON value (scalar, 1D array, 2D array, or object)</returns>
             // -------------------------------------------------------------------------------------------------------------------
-            public static async Task<JAXObjects.Token> FromJson(string json, AppClass app)
+            public static async Task<JAXObjects.Token> FromJson(string json)
             {
                 if (string.IsNullOrWhiteSpace(json))
                     return new JAXObjects.Token(); // default = single bool false
@@ -265,11 +264,11 @@ namespace JAXBase.Utilities
                 }
 
                 JAXObjects.Token token = new();
-                await PopulateTokenFromJToken(app, token, jToken);
+                await PopulateTokenFromJToken(token, jToken);
                 return token;
             }
 
-            private static async Task PopulateTokenFromJToken(AppClass app, JAXObjects.Token targetToken, JToken source, string? propertyNameForWrapper = null)
+            private static async Task PopulateTokenFromJToken(JAXObjects.Token targetToken, JToken source, string? propertyNameForWrapper = null)
             {
                 if (source == null || source.Type == JTokenType.Null)
                 {
@@ -308,12 +307,18 @@ namespace JAXBase.Utilities
                         // Nested object → becomes TType="S", Type="O", Value = JAXObjectWrapper
                         var jObj = (JObject)source;
 
-                        JAXObjectWrapper wrapper = new(app, "object", propertyNameForWrapper ?? "jsonObject", []);
+                        JAXObjectWrapper wrapper;
+
+                        // TODO
+                        // if class is a JAXClass
+                        // if baseclass is a JAXClass
+                        // else
+                        wrapper= new(Program.CurrentApp, "empty", propertyNameForWrapper ?? "jsonObject", []);
 
                         foreach (var prop in jObj.Properties())
                         {
                             var propToken = new JAXObjects.Token();
-                            await PopulateTokenFromJToken(app, propToken, prop.Value, prop.Name);
+                            await PopulateTokenFromJToken(propToken, prop.Value, prop.Name);
 
                             // We have some clean up chores --------------------------------------------------
                             // If it doesn't exist, assume it's a user property and needs to be added
@@ -322,7 +327,7 @@ namespace JAXBase.Utilities
 
                             // We can't copy class ids - they have to be unique
                             if (prop.Name.Equals("classid", StringComparison.OrdinalIgnoreCase))
-                                propToken.Element.Value = app.SystemCounter();
+                                propToken.Element.Value = Program.CurrentApp.SystemCounter();
 
                             // We don't copy the aerror array - set as blank
                             if (prop.Name.Equals("aerror", StringComparison.OrdinalIgnoreCase))
@@ -360,7 +365,7 @@ namespace JAXBase.Utilities
                             for (int c = 1; c <= cols; c++)
                             {
                                 var elemToken = new JAXObjects.Token();
-                                await PopulateTokenFromJToken(app, elemToken, jArray[c - 1]);
+                                await PopulateTokenFromJToken(elemToken, jArray[c - 1]);
 
                                 targetToken.SetElement(1, c);
                                 targetToken.CopyFrom(elemToken); // or use your copy mechanism
@@ -380,7 +385,7 @@ namespace JAXBase.Utilities
                                 for (int c = 1; c <= cols; c++)
                                 {
                                     var elemToken = new JAXObjects.Token();
-                                    await PopulateTokenFromJToken(app, elemToken, row[c - 1]);
+                                    await PopulateTokenFromJToken(elemToken, row[c - 1]);
                                     targetToken.SetElement(r, c);
                                     targetToken.CopyFrom(elemToken);
                                 }

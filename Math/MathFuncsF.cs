@@ -153,7 +153,6 @@ namespace JAXBase.Math
                             long length = new System.IO.FileInfo(string1).Length;
                             tAnswer._avalue[0].Value = length;
                         }
-
                     }
                     catch (Exception e)
                     {
@@ -169,9 +168,18 @@ namespace JAXBase.Math
                         AppErrorHandling.SetError(1, string1, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`FULLPATH@":
-                    // --------------------------------------------------------------------------------- TODO
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                case "`FULLPATH":   // TODO - parameter 2 holds logical - if .T., search subfolders
+                    if (stype1.Equals("C"))
+                    {
+                        string file = AppHelper.FindPathForFile(string1);
+                        if (string.IsNullOrEmpty(file))
+                            tAnswer._avalue[0].Value = Program.CurrentApp.CurrentDS.JaxSettings.Default + string1;
+                        else
+                            tAnswer._avalue[0].Value = file;
+                    }
+                    else
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+
                     break;
 
                 case "`FV":

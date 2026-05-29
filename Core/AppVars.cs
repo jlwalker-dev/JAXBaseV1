@@ -1292,7 +1292,7 @@ namespace JAXBase.Core
          * returned at the end.
          * 
          *-------------------------------------------------------------------------------------------*/
-        public static async Task<GenericClass> ObjectCall(ExecuterCodes eCodes, bool expectingValue)
+        public static async Task<GenericClass> ObjectCall(ExecutorCodes eCodes, bool expectingValue)
         {
             GenericClass result = new();
             result.Result.Element.Value = "U";

@@ -138,7 +138,7 @@ namespace JAXBase.UI
                 {
                     if (compiled.Length > 1)
                     {
-                        output = await app.JaxExecuter.ExecuteCommand(compiled) ?? "";
+                        output = await app.JaxExecutor.ExecuteCommand(compiled) ?? "";
 
                         if (!string.IsNullOrEmpty(output))
                         {

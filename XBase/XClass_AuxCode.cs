@@ -8,7 +8,7 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using JAXBase.Core;
-using JAXBase.Executer;
+using JAXBase.Executor;
 using JAXBase.Utilities;
 
 namespace JAXBase.XBase
@@ -29,7 +29,7 @@ namespace JAXBase.XBase
                     xParameters parm = new()
                     {
                         Name = p[..f],
-                        Value = await JAXBase_Executer_M.RawMath(p[(f + 1)..])
+                        Value = await JAXBase_Executor_M.RawMath(p[(f + 1)..])
                     };
 
                     pList.Add(parm);

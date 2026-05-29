@@ -87,12 +87,6 @@ namespace JAXBase.XBase
                 builder.TrustServerCertificate = TrustServerCertificate;
                 builder.UserID = ConnectionUserID;
                 builder.WorkstationID = WorkStation;
-
-                //builder.CurrentLanguage = string.Empty;
-                //builder.IPAddressPreference = SqlConnectionIPAddressPreference.IPv4First;
-                //builder.PersistSecurityInfo = false;
-                //builder.ServerCertificate = string.Empty;
-                //builder.ServerSPN = string.Empty;
             }
             catch (Exception ex) { result = 9999; msg = ex.Message; }
 
@@ -812,7 +806,7 @@ namespace JAXBase.XBase
                         ApplicationName = type.Equals("C") ? value.AsString() : throw new Exception($"11|");
                         break;
 
-                    case "authentication":
+                    case "authtype":
                         int authType = type.Equals("N") ? value.AsInt() : throw new Exception($"11|");
                         switch (authType)
                         {

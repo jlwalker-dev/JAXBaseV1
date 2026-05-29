@@ -1,0 +1,1098 @@
+﻿using JAXBase.Core;
+using JAXBase.Data;
+using JAXBase.Utilities;
+using JAXBase.XBase;
+
+namespace JAXBase.Executor
+{
+    /*
+     *     eCodes.SUBCMD contains set command (alternate, bell, etc)
+     *     eCodes.To contains the TO expression
+     *     eCodes.Expression contains the ON/OFF expression
+     */
+    public class JAXBase_Executor_Settings
+    {
+        public static async Task<string> Settings(ExecutorCodes eCodes)
+        {
+            string status = string.Empty;
+
+            JAXObjects.Token answer;
+            string settingName = eCodes.SUBCMD;
+            string Expression;
+            JAXObjects.Token ToExpression = new();
+            bool HasOnOff = false;
+            bool HasOther = false;
+            bool IsOn = false;
+            int ds;
+            int wa;
+            int nds;
+
+            try
+            {
+                string settingValue = string.Empty;
+                ToExpression.Element.Value = string.Empty;
+
+                // This method is used to get or set settings for the JAXBase executor.
+                // If settingValue is provided, it sets the value; otherwise, it retrieves the current value.
+                // For simplicity, we will just return a formatted string.
+                if (string.IsNullOrEmpty(settingName) == false)
+                {
+                    status = $"Setting {settingName.ToUpper()} ";
+
+                    // ON/OFF
+                    if (eCodes.Expressions.Count > 0)
+                    {
+                        if (eCodes.Expressions.Count > 1) throw new Exception("10|");
+
+                        if (string.IsNullOrWhiteSpace(eCodes.Expressions[0].RNPExpr) == false)
+                        {
+                            answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
+                            if (answer.Element.Type.Equals("C"))
+                            {
+                                Expression = answer.AsString();
+                                if (JAXLib.InList(Expression.ToLower(), "on", "off"))
+                                {
+                                    HasOnOff = true;
+                                    IsOn = Expression.Equals("ON", StringComparison.OrdinalIgnoreCase);
+                                }
+                                else
+                                {
+                                    // Is there something other than ON/OFF?
+                                    HasOther = string.IsNullOrWhiteSpace(answer.AsString()) == false;
+                                }
+                            }
+                            else
+                                throw new Exception("11|");
+                        }
+                    }
+
+                    if (eCodes.To.Count > 0)
+                    {
+                        if (eCodes.To.Count > 1) throw new Exception("10|");
+
+                        if (string.IsNullOrWhiteSpace(eCodes.To[0].Name) == false)
+                            ToExpression = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name);
+                    }
+
+                    // SET the setting's value
+                    switch (settingName.ToLower())
+                    {
+                        // -------------------------------------
+                        // ON/OFF Settings
+                        // -------------------------------------
+                        case "AIG":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.AIAgent = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+
+                            // If OFF, then all AI classses will disconnect the next
+                            // time there is any communiction/connection activity
+                            // or when the watchdog timer fires.
+                            break;
+
+                        case "ANS":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.ANSI = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "AST":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Asserts = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "AIE":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.AutoIncError = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "ASV":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.AutoSave = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "CFM":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Confirm = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "CPD":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.CP_Dialog = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "CSR":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Cursor = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "DBG":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Debug = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "DEL":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Deleted = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "DEV":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Development = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "ECO":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Echo = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "XCT":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Exact = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "XCL":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Exclusive = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "FIX":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Fixed = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "FPT":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.FullPath = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "HED":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Headings = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "LCK":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Lock = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "LOG":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.LogErrors = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "MLK":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.MultiLocks = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "NER":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Near = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "NUL":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Null = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "readborder": // ???
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Readborder = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "SAF":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Safety = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "SEC":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Seconds = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "SPC":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Space = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "sqlbuffering": // ???
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.SQLBuffering = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "status":  // ???
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Status = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "STP":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Step = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+
+                            //if (Program.CurrentApp.CurrentDS.JaxSettings.Step == false && Program.CurrentApp.JaxDebugger is not null)
+                            //{
+                            //    // Shut down the debugger and resume execution of the program
+                            //    Program.CurrentApp.JaxDebugger.EndDebugging();
+                            //    Program.CurrentApp.JaxDebugger = null;
+                            //}
+                            break;
+
+                        case "sysformats":  // ???
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.SysFormats = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "TBP":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.TablePrompt = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "TRB":
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.TRBetween = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "unique":  // ???
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Unique = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        case "varcharmapping":  // ???
+                            if (HasOnOff == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.VarCharMapping = IsOn;
+                            status += "is " + (IsOn ? "ON" : "OFF");
+                            break;
+
+                        // -------------------------------------
+                        // INT Values
+                        // -------------------------------------
+                        case "BLK":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.BlockSize = JAXLib.Between(ToExpression.AsInt(), 1, 1024) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.BlockSize.ToString();
+                            break;
+
+                        case "DSN":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.DataSession = ToExpression.AsInt() > 0 ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.DataSession.ToString();
+                            break;
+
+                        case "FDW":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.FDOW = JAXLib.Between(ToExpression.AsInt(), 1, 7) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.FDOW.ToString();
+                            break;
+
+                        case "FWK":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.FWeek = JAXLib.Between(ToExpression.AsInt(), 1, 3) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.FWeek.ToString();
+                            break;
+
+                        case "HRS":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Hours = JAXLib.InList(ToExpression.AsInt(), 12, 24) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.Hours.ToString();
+                            break;
+
+                        case "MWT":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.MemoWidth = JAXLib.Between(ToExpression.AsDouble(), 0D, 8000D) ? (uint)ToExpression.AsDouble() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.MemoWidth.ToString();
+                            break;
+
+                        case "ODM":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Odometer = JAXLib.Between(ToExpression.AsInt(), 1, 10000) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.Odometer.ToString();
+                            break;
+
+                        case "SDT":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.StrictDate = JAXLib.Between(ToExpression.AsInt(), 0, 2) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.StrictDate.ToString();
+                            break;
+
+                        case "TBV":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.TableValidate = JAXLib.Between(ToExpression.AsInt(), 1, 15) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.TableValidate.ToString();
+                            break;
+
+                        case "TID":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.Topic_ID = ToExpression.AsInt() > 0 ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.Topic_ID.ToString();
+                            break;
+
+                        case "TPH":
+                            if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+                            Program.CurrentApp.CurrentDS.JaxSettings.TypeAhead = JAXLib.Between(ToExpression.AsInt(), 0, 255) ? ToExpression.AsInt() : throw new Exception("3003|");
+                            status += "is " + Program.CurrentApp.CurrentDS.JaxSettings.TypeAhead.ToString();
+                            break;
+
+
+                        // ------------------------------------------------------------------------------------------------------------
+                        // The following settings are more complex 
+                        // ------------------------------------------------------------------------------------------------------------
+                        case "ALT":       // ON/OFF | TO [FileName [ADDITIVE]]
+
+                            if (HasOther) throw new Exception("11|");
+                            if (HasOnOff)
+                            {
+                                status += " is " + (IsOn ? "ON" : "OFF");
+                                Program.CurrentApp.CurrentDS.JaxSettings.Alternate = IsOn;
+                            }
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Alternate = false;      // Ending all output to the current file and autosetting to off
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Alternate_Name = settingValue.Trim();
+                            }
+                            break;
+
+                        case "BEL":            // ON/OFF or TO cWaveFileName|cMP3FileName
+                            if (HasOther) throw new Exception("11|");
+                            if (HasOnOff)
+                            {
+                                status += " is " + (IsOn ? "ON" : "OFF");
+                                Program.CurrentApp.CurrentDS.JaxSettings.Bell = IsOn;
+                            }
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Bell = false;      // Ending all output to the current file and autosetting to off
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Bell_Name = settingValue.Trim();
+                            }
+                            break;
+
+
+                        case "CRY":           // ON/OFF | TO [FieldList [ADDITIVE]]
+                            if (HasOther) throw new Exception("11|");
+                            if (HasOnOff)
+                            {
+                                status += " is " + (IsOn ? "ON" : "OFF");
+                                Program.CurrentApp.CurrentDS.JaxSettings.Carry = IsOn;
+                            }
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Carry = false;      // Ending all output to the current file and autosetting to off
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Carry_Name = settingValue.Trim();
+                            }
+                            break;
+
+                        case "DBO":        // TO [FileName [ADDITIVE]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "library":         // TO [FileName [ADDITIVE]] ???
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "PTH":            // TO [Path] [ADDITIVE]]  
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Path = string.Empty;
+                                else
+                                {
+                                    if (eCodes.Flags.Length == 0 || Array.IndexOf(eCodes.Flags, "additive") < 0)
+                                    {
+                                        // "additive" flag not included, so overwrite the file
+                                        Program.CurrentApp.CurrentDS.JaxSettings.Path = settingValue;
+                                    }
+                                    else
+                                        Program.CurrentApp.CurrentDS.JaxSettings.Path += (";" + settingValue.Trim()).Trim(';');
+
+                                    AppIO.Talk("Path is " + Program.CurrentApp.CurrentDS.JaxSettings.Path);
+                                }
+                            }
+                            break;
+
+                        case "CEN":         // ON/OFF | TO [nCentury [ROLLOVER nYear]]
+                            if (HasOther) throw new Exception("11|");
+                            if (HasOnOff)
+                            {
+                                status += " is " + (IsOn ? "ON" : "OFF");
+                                Program.CurrentApp.CurrentDS.JaxSettings.Century = IsOn;
+                            }
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("N") == false) throw new Exception("11|");
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Century_Current = JAXLib.Between(ToExpression.AsInt(), 0, 99) ? ToExpression.AsInt() : throw new Exception("3031|");      // Ending all output to the current file and autosetting to off
+                            }
+
+                            break;
+
+                        case "CLB":        // TO ClassLibraryName [IN APPFileName | EXEFileName] [ADDITIVE][ALIAS AliasName]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "clock":           // ON | OFF | STATUS    -or -  TO[nRow, nColumn] ???
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "COV":        // ON/OFF | TO [FileName][ADDITIVE]
+                            if (HasOther) throw new Exception("11|");
+                            if (HasOnOff)
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage = IsOn;
+
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Coverage = false;      // Ending all output to the current file and autosetting to off
+
+                                if (eCodes.Flags.Length == 0 || Array.IndexOf(eCodes.Flags, "additive") < 0)
+                                {
+                                    // "additive" flag not included, so overwrite the file
+                                    JAXLib.StrToFile("", settingValue.Trim(), 0);
+                                }
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage_Name = settingValue.Trim();
+                            }
+                            break;
+
+                        case "CON":         // [name] [SIZE <nCols>,<nRows> | FULL] [AT <nLeft>,<nTop>] [ON | OFF | ACTIVE | INACTIVE] 
+                            string consoleName = eCodes.NAME.ToLower().Trim();
+                            consoleName = string.IsNullOrWhiteSpace(consoleName) ? "default" : consoleName;
+
+                            status += consoleName.ToUpper() + " to ";
+
+                            //if (HasOnOff)
+                            //    Program.CurrentApp.JAXConsoles[consoleName].Visible(IsOn);
+
+                            if (string.IsNullOrWhiteSpace(settingValue) == false)
+                            {
+                                switch (settingValue.ToLower())
+                                {
+                                    case "inactive":
+                                        status += settingValue.ToUpper();
+                                        //Program.CurrentApp.JAXConsoles[consoleName].Active(false);
+                                        break;
+
+                                    default:
+                                        status += "";
+                                        //Program.CurrentApp.JAXConsoles[consoleName].Active(true);
+                                        break;
+                                }
+                            }
+
+                            break;
+
+                        case "DEF":
+                            if (ToExpression.Element.Type.Equals("C"))
+                            {
+                                if (string.IsNullOrWhiteSpace(ToExpression.AsString()) == false)
+                                {
+                                    // Does the path exist?
+                                    if (Directory.Exists(ToExpression.AsString()))
+                                    {
+                                        // Set the default path
+                                        Program.CurrentApp.CurrentDS.JaxSettings.Default = JAXLib.Addbs(ToExpression.AsString());
+                                        status += "directory to " + Program.CurrentApp.CurrentDS.JaxSettings.Default;
+                                    }
+                                    else
+                                        throw new Exception("202|" + ToExpression.AsString());
+                                }
+                            }
+                            else
+                                throw new Exception("11|");
+                            break;
+
+
+                        case "DVC":          // TO SCREEN | TO PRINTER [PROMPT] | TO FILE FileName
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "EVL":       // TO [EventName1 [, EventName2 ...] [ADDITIVE]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "EVT":   // ON/OFF/PROMPT | TO [FileName [ADDITIVE]]
+                            if (Array.IndexOf(eCodes.Flags, "on") < 0 || Array.IndexOf(eCodes.Flags, "off") < 0 || eCodes.Flags.Length == 0) throw new Exception("11|");
+                            if (Array.IndexOf(eCodes.Flags, "on") >= 0)
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage = true;
+                            else if (Array.IndexOf(eCodes.Flags, "off") >= 0 || (eCodes.Flags.Length == 0 && eCodes.To.Count == 0))
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage = false;
+
+                            if (Array.IndexOf(eCodes.Flags, "prompt") >= 0)
+                            {
+                                // TODO
+                            }
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Coverage = false;      // Ending all output to the current file and autosetting to off
+
+                                if (eCodes.Flags.Length == 0 || Array.IndexOf(eCodes.Flags, "additive") < 0)
+                                {
+                                    // "additive" flag not included, so overwrite the file
+                                    JAXLib.StrToFile("", settingValue.Trim(), 0);
+                                }
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Coverage_Name = settingValue.Trim();
+                            }
+                            break;
+
+                        case "FIL":          // ON|OFF|TO [lExpression] [IN nWorkArea | cTableAlias]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "FUN":        // nFunctionKeyNumber | KeyLabelName TO [eExpression]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "HLP":            // ON/OFF | TO [FileName] [COLLECTION [cCollectionURL]] [SYSTEM]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "IDX":           // TO [IndexFileList ] [ORDER nIndexNumber | IDXIndexFileName] [IN nWorkArea|cAlias] [SESSION nSessionID]
+                            ds = Program.CurrentApp.CurrentDataSession;
+                            wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
+
+                            nds = eCodes.SESSION;
+
+                            try
+                            {
+                                // Session setting
+                                if (nds != 0)
+                                {
+                                    if (nds > 0)
+                                        Program.CurrentApp.SetDataSession(nds);
+                                    else
+                                        throw new Exception("4016|");
+                                }
+
+                                // Workarea setting
+                                JAXObjects.Token w = new();
+                                w = await Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
+
+                                if (w.Element.Type.Equals("C"))
+                                    Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsString());
+                                else if (w.Element.Type.Equals("N"))
+                                {
+                                    if (w.AsInt() != 0)
+                                    {
+                                        if (w.AsInt() > 0)
+                                            Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsInt());
+                                        else
+                                            throw new Exception("4016|");
+                                    }
+                                }
+                                else
+                                    throw new Exception("11|");
+
+                                // Open, select, or set no order
+                                JAXDirectDBF db = Program.CurrentApp.CurrentDS.CurrentWA;
+                                if (db is not null && db.DbfInfo.DBFStream is not null)
+                                {
+                                    if (string.IsNullOrEmpty(eCodes.NAME))
+                                        db.DbfInfo.ControllingIDX = -1; // No name = no controlling index
+                                    else
+                                        await db.IDXOpen(eCodes.NAME);        // Open or select
+
+                                    if (db.DbfInfo.ControllingIDX >= 0)
+                                    {
+                                        // Set descending order?
+                                        db.DbfInfo.IDX[db.DbfInfo.ControllingIDX].NaturalOrder = Array.IndexOf(eCodes.Flags, "des") < 0;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                            }
+
+                            // Revert back to the original session and area
+                            Program.CurrentApp.SetDataSession(ds);
+                            Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
+                            break;
+
+
+                        case "KEY":             // TO [eExpression1 | RANGE eExpression2 [, eExpression3]] [IN cTableAlias | nWorkArea] ???
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "MSG":         // TO [cMessageText]
+                                                // TO [nRow [LEFT | CENTER | RIGHT]]
+                                                // WINDOW [WindowName]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "NCP":       // TO [FieldName1 [, FieldName2 ...]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "NOT":          // [CURSOR] ON | OFF
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "ORD":           // TO [nIndexNumber | IDXIndexFileName] [IN nWorkArea | cTableAlias] [ASCENDING | DESCENDING]]
+                            ds = Program.CurrentApp.CurrentDataSession;
+                            wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
+
+                            nds = eCodes.SESSION;
+
+                            try
+                            {
+                                if (nds != 0)
+                                {
+                                    if (nds > 0)
+                                        Program.CurrentApp.SetDataSession(nds);
+                                    else
+                                        throw new Exception("4016|");
+                                }
+
+                                JAXObjects.Token w = new();
+                                w = await Program.CurrentApp.SolveFromRPNString(eCodes.InExpr);
+
+                                if (w.Element.Type.Equals("C"))
+                                    Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsString());
+                                else if (w.Element.Type.Equals("N"))
+                                {
+                                    if (w.AsInt() != 0)
+                                    {
+                                        if (w.AsInt() > 0)
+                                            Program.CurrentApp.CurrentDS.SelectWorkArea(w.AsInt());
+                                        else
+                                            throw new Exception("4016|");
+                                    }
+                                }
+                                else
+                                    throw new Exception("11|");
+
+                                // Open, select or set no controlling index
+                                JAXDirectDBF db = Program.CurrentApp.CurrentDS.CurrentWA;
+                                if (db is not null && db.DbfInfo.DBFStream is not null)
+                                {
+                                    if (string.IsNullOrEmpty(eCodes.NAME))
+                                        db.DbfInfo.ControllingIDX = -1; // No name = no controlling index
+                                    else
+                                        await db.IDXOpen(eCodes.NAME);        // Open or select
+
+                                    if (db.DbfInfo.ControllingIDX >= 0)
+                                    {
+                                        // WITH ASCENDING|DESCENDING
+                                        if (eCodes.With.Count != 1) throw new Exception("1233||Invalid WITH clause");
+                                        JAXObjects.Token ord = await Program.CurrentApp.SolveFromRPNString(eCodes.With[0].RNPExpr);
+                                        if (ord.Element.Type.Equals("C"))
+                                            db.DbfInfo.IDX[db.DbfInfo.ControllingIDX].NaturalOrder = ord.AsString().StartsWith("desc", StringComparison.OrdinalIgnoreCase) == false;
+                                        else
+                                            throw new Exception("11|");
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                            }
+                            break;
+
+                        case "printer":         // ON | OFF | PROMPT ???
+                            if (eCodes.Flags.Length > 0)
+                            {
+                                if (Array.IndexOf(eCodes.Flags, "on") >= 0)
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Printer = Program.CurrentApp.CurrentDS.JaxSettings.Printer_Default;
+                                else if (Array.IndexOf(eCodes.Flags, "off") >= 0)
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Printer = -1;
+
+                                if (Array.IndexOf(eCodes.Flags, "prompt") >= 0)
+                                {
+                                    // TODO - Set the default printer ID
+                                }
+                            }
+                            else
+                                Program.CurrentApp.CurrentDS.JaxSettings.Printer = -1;
+
+                            break;
+
+                        case "PRO":       // TO [FileName1 [, FileName2, ...]] [ADDITIVE]
+                            if (eCodes.To.Count < 1 || Array.IndexOf(eCodes.Flags, "additive") < 0)
+                            {
+                                // Kill all procedure files in cache
+                            }
+
+                            // Add the list of procedure files
+                            for (int i = 0; i < eCodes.To.Count; i++)
+                            {
+                                JAXObjects.Token pfile = await Program.CurrentApp.SolveFromRPNString(eCodes.To[i].Name);
+
+                                if (pfile.TType.Equals("S") && pfile.Element.Type.Equals("C"))
+                                    await AppHelper.LoadPrgIntoCache("P", pfile.AsString(), string.Empty);
+                                else
+                                    throw new Exception("11");
+                            }
+                            break;
+
+                        case "REF":         // TO nSeconds1 [, nSeconds2]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "REL":        // TO [eExpression1 INTO nWorkArea1 | cTableAlias1 [, eExpression2 INTO nWorkArea2 | cTableAlias2...] [IN nWorkArea | cTableAlias] [ADDITIVE]]
+                                                // TO IN nWorkArea | cTableAlias
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "REP":       // TO nAttempts [SECONDS] [SYSTEM] | TO AUTOMATIC [SYSTEM]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "RES":        // ON/OFF | TO [FileName]
+                            if (HasOther) throw new Exception("11|");
+                            if (HasOnOff)
+                            {
+                                status += " is " + (IsOn ? "ON" : "OFF");
+                                Program.CurrentApp.CurrentDS.JaxSettings.Resource = IsOn;
+                            }
+
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Resource = false;      // Ending all output to the current file and autosetting to off
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Resource_Name = settingValue.Trim();
+                            }
+                            break;
+
+
+                        case "view":    // ???
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "SKP":            // TO [TableAlias1 [, TableAlias2 ...]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "SYS":         // TO ON | OFF | AUTOMATIC | TO [MenuList] | TO [MenuTitleList] | TO[DEFAULT] | TO LTRJUSTIFY | TO RTLJUSTIFY | SAVE | NOSAVE
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "TLK":
+                            if (HasOther) throw new Exception("11|");
+                            if (HasOnOff)
+                            {
+                                status += " is " + (IsOn ? "ON" : "OFF");
+                                Program.CurrentApp.CurrentDS.JaxSettings.Talk = IsOn;
+                            }
+
+
+                            if (eCodes.To.Count > 0)
+                            {
+                                if (ToExpression.Element.Type.Equals("C") == false) throw new Exception("11|");
+
+                                settingValue = ToExpression.AsString();
+                                if (string.IsNullOrWhiteSpace(settingValue))
+                                    Program.CurrentApp.CurrentDS.JaxSettings.Talk = false;      // Ending all output to the current file and autosetting to off
+
+                                if (string.IsNullOrWhiteSpace(settingValue) == false && settingValue.Trim().Equals("default", StringComparison.OrdinalIgnoreCase) == false)
+                                    throw new Exception("4013|" + settingValue);
+
+                                Program.CurrentApp.CurrentDS.JaxSettings.Talk_Console = settingValue.ToLower().Trim();
+                            }
+                            break;
+
+                        case "TMG":       // [ON | OFF] [TO [FileName] MEMVAR VarName [ADDITIVE]] [WINDOW WindowName][SHOW | NOSHOW]
+                                                // DELIMITERS [TO cLeftDelimiter [, cRightDelimiter]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "TOP":           // TO [cHelpTopicName | lExpression]
+                                                // ID TO nHelpContextID
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "TPC":
+                            if (HasOnOff)
+                                Program.CurrentApp.CurrentDS.JaxSettings.TypeConvert = IsOn;
+                            break;
+
+                        default:
+                            throw new Exception("1999|Unsupported setting " + settingName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+
+
+            if (string.IsNullOrEmpty(status))
+                throw new Exception($"10||Setting {settingName} not found or could not be set.");
+
+            AppIO.Talk(status);
+            return string.Empty;
+        }
+
+        public static JAXObjects.Token GetSettings(AppClass App, string settingName, int idx)
+        {
+            JAXObjects.Token answer = new();
+
+            try
+            {
+                // This method is used to get or set settings for the JAXBase executor.
+                // If settingValue is provided, it sets the value; otherwise, it retrieves the current value.
+                // For simplicity, we will just return a formatted string.
+                if (string.IsNullOrEmpty(settingName) == false)
+                {
+                    // SET the setting's value
+                    switch (settingName.ToLower())
+                    {
+                        // ON/OFF Settings
+                        case "ANS": answer.Element.Value = App.CurrentDS.JaxSettings.ANSI; break;
+                        case "AST": answer.Element.Value = App.CurrentDS.JaxSettings.Asserts; break;
+                        case "AIE": answer.Element.Value = App.CurrentDS.JaxSettings.AutoIncError; break;
+                        case "ASV": answer.Element.Value = App.CurrentDS.JaxSettings.AutoSave; break;
+                        case "CFM": answer.Element.Value = App.CurrentDS.JaxSettings.Confirm; break;
+                        case "CPD": answer.Element.Value = App.CurrentDS.JaxSettings.CP_Dialog; break;
+                        case "CSR": answer.Element.Value = App.CurrentDS.JaxSettings.Cursor; break;
+                        case "DBG": answer.Element.Value = App.CurrentDS.JaxSettings.Debug; break;
+                        case "DEL": answer.Element.Value = App.CurrentDS.JaxSettings.Deleted; break;
+                        case "DEV": answer.Element.Value = App.CurrentDS.JaxSettings.Development; break;
+                        case "ECO": answer.Element.Value = App.CurrentDS.JaxSettings.Echo; break;
+                        case "XCT": answer.Element.Value = App.CurrentDS.JaxSettings.Exact; break;
+                        case "XCL": answer.Element.Value = App.CurrentDS.JaxSettings.Exclusive; break;
+                        case "FIX": answer.Element.Value = App.CurrentDS.JaxSettings.Fixed; break;
+                        case "FPT": answer.Element.Value = App.CurrentDS.JaxSettings.FullPath; break;
+                        case "HED": answer.Element.Value = App.CurrentDS.JaxSettings.Headings; break;
+                        case "LOC": answer.Element.Value = App.CurrentDS.JaxSettings.Lock; break;
+                        case "LOG": answer.Element.Value = App.CurrentDS.JaxSettings.LogErrors; break;
+                        case "MLK": answer.Element.Value = App.CurrentDS.JaxSettings.MultiLocks; break;
+                        case "NER": answer.Element.Value = App.CurrentDS.JaxSettings.Near; break;
+                        case "NUL": answer.Element.Value = App.CurrentDS.JaxSettings.Null; break;
+                        case "readborder": answer.Element.Value = App.CurrentDS.JaxSettings.Readborder; break;
+                        case "SAF": answer.Element.Value = App.CurrentDS.JaxSettings.Safety; break;
+                        case "SEC": answer.Element.Value = App.CurrentDS.JaxSettings.Seconds; break;
+                        case "SPC": answer.Element.Value = App.CurrentDS.JaxSettings.Space; break;
+                        case "sqlbuffering": answer.Element.Value = App.CurrentDS.JaxSettings.SQLBuffering; break;
+                        case "status": answer.Element.Value = App.CurrentDS.JaxSettings.Status; break;
+                        case "STP": answer.Element.Value = App.CurrentDS.JaxSettings.Step; break;
+                        case "sysformats": answer.Element.Value = App.CurrentDS.JaxSettings.SysFormats; break;
+                        case "TBP": answer.Element.Value = App.CurrentDS.JaxSettings.TablePrompt; break;
+                        case "TRP": answer.Element.Value = App.CurrentDS.JaxSettings.TRBetween; break;
+                        case "unique": answer.Element.Value = App.CurrentDS.JaxSettings.Unique; break;
+                        case "varcharmapping": answer.Element.Value = App.CurrentDS.JaxSettings.VarCharMapping; break;
+                        case "TPC": answer.Element.Value = App.CurrentDS.JaxSettings.TypeConvert; break;
+
+                        // INT Values
+                        case "BLK": answer.Element.Value = App.CurrentDS.JaxSettings.BlockSize; break;
+                        case "DSN": answer.Element.Value = App.CurrentDS.JaxSettings.DataSession; break;
+                        case "FDW": answer.Element.Value = App.CurrentDS.JaxSettings.FDOW; break;
+                        case "FWK": answer.Element.Value = App.CurrentDS.JaxSettings.FWeek; break;
+                        case "HRS": answer.Element.Value = App.CurrentDS.JaxSettings.Hours; break;
+                        case "MWD": answer.Element.Value = App.CurrentDS.JaxSettings.MemoWidth; break;
+                        case "ODM": answer.Element.Value = App.CurrentDS.JaxSettings.Odometer; break;
+                        case "SDT": answer.Element.Value = App.CurrentDS.JaxSettings.StrictDate; break;
+                        case "TBV": answer.Element.Value = App.CurrentDS.JaxSettings.TableValidate; break;
+                        case "TID": answer.Element.Value = App.CurrentDS.JaxSettings.Topic_ID; break;
+                        case "TYH": answer.Element.Value = App.CurrentDS.JaxSettings.TypeAhead; break;
+
+
+                        // ------------------------------------------------------------------------------------------------------------
+                        // The following settings are more complex 
+                        // ------------------------------------------------------------------------------------------------------------
+                        case "ALT":       // ON/OFF | TO [FileName [ADDITIVE]]
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Alternate;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.Alternate_Name;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+                        case "BEL":            // ON/OFF or TO cWaveFileName|cMP3FileName
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Bell;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.Bell_Name;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+
+                        case "CRY":           // ON/OFF | TO [FieldList [ADDITIVE]]
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Carry;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.Carry_Name;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+                        case "DBO":        // TO [FileName [ADDITIVE]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "LIB":         // TO [FileName [ADDITIVE]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "PTH":            // TO [Path] [ADDITIVE]]  
+                            answer.Element.Value = App.CurrentDS.JaxSettings.Path;
+                            break;
+
+                        case "CEN":         // ON/OFF | TO [nCentury [ROLLOVER nYear]]
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Century;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.Century_Current;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+                        case "CLB":        // TO ClassLibraryName [IN APPFileName | EXEFileName] [ADDITIVE][ALIAS AliasName]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "clock":           // ON | OFF | STATUS    -or -  TO[nRow, nColumn]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "COV":        // ON/OFF | TO [FileName][ADDITIVE]
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Coverage;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.Coverage_Name;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+                        case "CON":         // [name] [SIZE <nCols>,<nRows> | FULL] [AT <nLeft>,<nTop>] [ON | OFF | ACTIVE | INACTIVE] 
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Console;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.Console_Name;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+                        case "DVC":          // TO SCREEN | TO PRINTER [PROMPT] | TO FILE FileName
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "EVL":       // TO [EventName1 [, EventName2 ...] [ADDITIVE]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "EVT":   // ON/OFF/PROMPT | TO [FileName [ADDITIVE]]
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.EventTracking;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.EventTracking_Name;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+
+                        case "FIL":          // ON|OFF|TO [lExpression] [IN nWorkArea | cTableAlias]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "function":        // nFunctionKeyNumber | KeyLabelName TO [eExpression]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "HLP":            // ON/OFF | TO [FileName] [COLLECTION [cCollectionURL]] [SYSTEM]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "IDX":           // TO [IndexFileList | ? ] [ORDER nIndexNumber | IDXIndexFileName | [TAG] TagName[OF CDXFileName][ASCENDING | DESCENDING]] [ADDITIVE]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "key":             // TO [eExpression1 | RANGE eExpression2 [, eExpression3]] [IN cTableAlias | nWorkArea]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "mark":            // OF MENU|POPUP MenuBarName TO lExpression1
+                                                // BAR nMenuItemNumber OF MenuName2 TO lExpression3
+                                                // TO [cDelimiter]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "MSG":         // TO [cMessageText]
+                                                // TO [nRow [LEFT | CENTER | RIGHT]]
+                                                // WINDOW [WindowName]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "NCP":       // TO [FieldName1 [, FieldName2 ...]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "NOT":          // [CURSOR] ON | OFF
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "ORD":           // TO [nIndexNumber | IDXIndexFileName] [IN nWorkArea | cTableAlias] [ASCENDING | DESCENDING]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "printer":         // ON | OFF | PROMPT
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Printer >= 0;
+                            else if (idx == 1) answer.Element.Value = "PRINTEROBJECT"; // TODO
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+                        case "PRO":       // TO [FileName1 [, FileName2, ...]] [ADDITIVE]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "REF":         // TO nSeconds1 [, nSeconds2]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "REL":        // TO [eExpression1 INTO nWorkArea1 | cTableAlias1 [, eExpression2 INTO nWorkArea2 | cTableAlias2...] [IN nWorkArea | cTableAlias] [ADDITIVE]]
+                                                // TO IN nWorkArea | cTableAlias
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "REP":       // TO nAttempts [SECONDS] [SYSTEM] | TO AUTOMATIC [SYSTEM]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "RES":        // ON/OFF | TO [FileName]
+                            if (idx == 0) answer.Element.Value = App.CurrentDS.JaxSettings.Resource;
+                            else if (idx == 1) answer.Element.Value = App.CurrentDS.JaxSettings.Resource_Name;
+                            else answer.Element.Value = string.Empty;
+                            break;
+
+                        case "view":
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "SKP":            // TO [TableAlias1 [, TableAlias2 ...]]
+                                                // OF MENU|POPUP MenuBarName1 lExpression1
+                                                // OF PAD MenuTitleName OF MenuBarName2 lExpression2
+                                                // OF BAR nMenuItemNumber | SystemItemName OF MenuName2 lExpression4
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "SYS":         // TO ON | OFF | AUTOMATIC | TO [MenuList] | TO [MenuTitleList] | TO[DEFAULT] | TO LTRJUSTIFY | TO RTLJUSTIFY | SAVE | NOSAVE
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "TMG":       // [ON | OFF] [TO [FileName] MEMVAR VarName [ADDITIVE]] [WINDOW WindowName][SHOW | NOSHOW]
+                                                // DELIMITERS [TO cLeftDelimiter [, cRightDelimiter]]
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        case "TOP":           // TO [cHelpTopicName | lExpression]
+                                                // ID TO nHelpContextID
+                            throw new Exception("1999|Unsupported setting " + settingName);
+
+                        default:
+                            throw new Exception("1999|Unsupported setting " + settingName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
+
+            return answer;
+        }
+    }
+}

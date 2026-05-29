@@ -175,7 +175,7 @@ namespace JAXBase.Math
                     var cType = Array.Find(JAXLanguageLists.JAXObjects, s => s.Equals(string1, StringComparison.OrdinalIgnoreCase));
                     if (cType is not null)
                     {
-                        List<ParameterClass>? plist=new();
+                        List<ParameterClass>? plist = new();
 
                         if (string.IsNullOrWhiteSpace(string2))
                             plist = null;   // Empty parameter string
@@ -186,14 +186,14 @@ namespace JAXBase.Math
                             // which is parsed and sent to the JAXObjectWrapper class
 
                             // TODO - Can't split on ',' until I ignore them in quoted material
-                            string[] pl= string2.Split(';');
+                            string[] pl = string2.Split(';');
                             string2 = "";
 
                             for (int i = 0; i < pl.Length; i++)
                             {
                                 string[] par = pl[i].Split('=');
 
-                                if (par.Length == 2) 
+                                if (par.Length == 2)
                                 {
                                     ParameterClass p = new();
                                     p.Type = "N";
@@ -205,7 +205,7 @@ namespace JAXBase.Math
                                 else
                                 {
                                     // Was not in the format NAME=VALUE
-                                    AppErrorHandling.SetError(9999,$"1905|{pl[i]}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                    AppErrorHandling.SetError(9999, $"1905|{pl[i]}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                                 }
                             }
                         }
@@ -302,21 +302,23 @@ namespace JAXBase.Math
 
                 case "`CURSORGETPROP":
                     // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-                    break;
+                    throw new Exception($"1999||{_rpn[..1]}");
 
                 case "`CURSORSETPROP":
                     // ---------------------------------------------------------------------------------
-                    break;
+                    throw new Exception($"1999||{_rpn[..1]}");
 
                 case "CURSORTOJSON":
-                    // ---------------------------------------------------------------------------------
-                    //TODO - tAnswer.Element.Value=JsonConvert.SerializeObject(dt, Formatting.Indented);
+                    if (stype1.Equals("L"))
+                        tAnswer._avalue[0].Value = VFPUtilities.CursorToJSON(Program.CurrentApp.CurrentDS.CurrentWA, string1.Contains('T', StringComparison.OrdinalIgnoreCase));
+                    else
+                        AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`CURSORTOXML":                    // Create a VFP compatible XML from a table
                     // ---------------------------------------------------------------------------------
-                    break;
+                    throw new Exception($"1999||{_rpn[..1]}");
+
 
                 case "`CURREC":
                     // TODO - Like CURVAL but grab entire record with _DELETED
@@ -357,7 +359,7 @@ namespace JAXBase.Math
                         App.CurrentDS.SelectWorkArea(cwa);
 
                         if (valueList.Count == 0)
-                            AppErrorHandling.SetError(9999, "9999|CURREC()|"+_rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(9999, "9999|CURREC()|" + _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                         else
                         {
                             // Create the object and save the answer
@@ -412,7 +414,7 @@ namespace JAXBase.Math
                         if (valueList.Count == 1)
                             tAnswer.Element.Value = valueList[0].Element.Value;
                         else
-                            AppErrorHandling.SetError(9999, "9999|CURVAL()"+_rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(9999, "9999|CURVAL()" + _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
                     }
                     break;
@@ -621,7 +623,7 @@ namespace JAXBase.Math
                     // Check out each object
                     for (int i = 0; i < ccount1; i++)
                     {
-                        JAXObjectWrapper? ochild1=await obj1.GetObject(0);
+                        JAXObjectWrapper? ochild1 = await obj1.GetObject(0);
 
                         if (ochild1 is not null)
                         {

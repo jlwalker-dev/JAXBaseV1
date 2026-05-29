@@ -66,16 +66,17 @@ namespace JAXBase.Math
 
                 case "`DBGETPROP":
                     // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[1..], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DBSETPROP":
                     // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[1..], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`DBUSED":                         // TODO - Is this database open?
-                    // --------------------------------------------------------------------------------- TODO
+                case "`DBUSED":                                 // Is database open?
+                                                                // Optionally return array of DBs open
+                                                                // ---------------------------------------------------------------------------------
                     break;
 
                 case "`DEFAULTEXT":                     // Make sure a file has an extension as given if it doesn't already
@@ -95,17 +96,19 @@ namespace JAXBase.Math
 
                 case "`DESCENDING":
                     // --------------------------------------------------------------------------------- TODO
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[1..], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DIFFERENCE":
                     // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[1..], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
-                case "`DIRECTORY":  // TODO NOW
-                    // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                case "`DIRECTORY":
+                    if (stype1.Equals("C"))
+                        tAnswer._avalue[0].Value = Directory.Exists(string1);
+                    else
+                        AppErrorHandling.SetError(11, _rpn[1..], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DISKSPACE":
@@ -175,7 +178,7 @@ namespace JAXBase.Math
 
                 case "`DRIVETYPE":
                     // ---------------------------------------------------------------------------------
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1999, _rpn[1..], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                     break;
 
                 case "`DTOC":                   // TODO - Convert date to string MM/dd/yyyy
@@ -268,8 +271,23 @@ namespace JAXBase.Math
                     break;
 
                 case "`EXECSCRIPT":
-                    // --------------------------------------------------------------------------------- TODO
-                    AppErrorHandling.SetError(1999, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    if (stype1.Equals("C"))
+                    {
+                        Program.CurrentApp.ReturnValue.Element.Value = false;
+                        string ccode = Program.CurrentApp.JaxCompiler.CompileBlock(string1, false, out int errCount);
+
+                        if (errCount == 0)
+                        {
+                            Program.CurrentApp.ReturnValue.Element.Value = true;
+                            await Program.CurrentApp.JaxExecutor.ExecuteBlock(ccode);
+                        }
+                        else
+                            throw new Exception($"10||{_rpn[1..]}");
+                    }
+                    else
+                        throw new Exception($"11||{_rpn[1..]}");
+
+                    tAnswer._avalue[0].Value = Program.CurrentApp.ReturnValue.Element.Value;
                     break;
 
                 case "`EXP":

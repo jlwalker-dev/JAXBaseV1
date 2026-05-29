@@ -181,13 +181,13 @@ namespace JAXBase.Compiler
                 "case" => Struct_Parser(cmdRest, "CS", "XX*", []),
                 "catch" => Struct_Parser(cmdRest, "TC", "TO0,WH0", []),
                 "clear" => JAXBase_Compiler_C.Clear(this, cmdRest),
-                "close" => Key_Parser(cmdRest, ["alternate", "database", "debugger", "format", "index", "memo", "procedure", "table", ""], "XX0", ["all"]),
-                "compile" => Key_Parser(cmdRest, ["form", "classlib", "label", "report", "program", string.Empty], "XX:,CP0", ["all", "encrypt", "nodebug"]),
+                "close" => Key_Parser(cmdRest, ["Alternate", "Database", "dEbugger", "Format", "Index", "Memo", "Procedure", "Table", ""], "XX0", ["all"]),
+                "compile" => Key_Parser(cmdRest, ["Form", "Classlib", "Label", "Report", "Program", string.Empty], "XX:,CP0", ["all", "encrypt", "nodebug"]),
                 "continue" => string.Empty,
                 "copy" => JAXBase_Compiler_C.Copy(this, cmdRest),
                 "count" => Generic_Parser(cmdRest, "XX3,SC0,FR0,WL0,TO1", ["nooptimize"]),
                 "create" => JAXBase_Compiler_C.Create(this, cmdRest),
-                "deactivate" => Key_Parser(cmdRest, ["menu", "popup", "window"], "XX0", ["ALL"]),
+                "deactivate" => Key_Parser(cmdRest, ["Menu", "Popup", "Window"], "XX0", ["ALL"]),
                 "debug" => string.Empty,
                 "debugout" => Generic_Parser(cmdRest, "XX3", []),
                 "define" => JAXBase_Compiler_D.Define(this, cmdRest),
@@ -198,7 +198,7 @@ namespace JAXBase.Compiler
                 "do" => JAXBase_Compiler_D.Do(this, cmdRest),
                 "doevents" => Generic_Parser(cmdRest, string.Empty, ["force"]),
                 "dodefault" => string.Empty,
-                "drop" => Key_Parser(cmdRest, ["table", "view"], "XX0", []),
+                "drop" => Key_Parser(cmdRest, ["Table", "View"], "XX0", []),
                 "edit" => StrictBreak(cmdRest, "FV1,SC0,FR0,WH0,NM0,TM0,TT0", ["noappend", "nodelete", "nomodify"], string.Empty),
                 "eject" => Generic_Parser(cmdRest, string.Empty, ["page"]),
                 "else" => Struct_Parser(cmdRest, "IL", string.Empty, []),
@@ -218,7 +218,7 @@ namespace JAXBase.Compiler
                 "error" => Generic_Parser(cmdRest, "XX3", []),
                 "exit" => string.Empty,
                 "export" => Generic_Parser(cmdRest, "TO3,DB0,NM0,SH0,FR0,AS0", ["type|", "calc|xlsx|tab|csv|sdf"]),
-                "external" => Key_Parser(cmdRest, ["file", "array", "class", "form", "label", "library", "menu", "procedure", "query", "report", "screen", "table"], "XX0", []),
+                "external" => Key_Parser(cmdRest, ["Array", "Class", "File", "fOrm", "Label", "lIbrary", "Menu", "Procedure", "Query", "Report", "Screen", "Table"], "XX0", []),
                 "finally" => Struct_Parser(cmdRest, "TF", string.Empty, []),
                 "for" => Struct_Parser(cmdRest, "FR", "XX!,FR1,TO4,ST0", []),
                 "foreach" => Struct_Parser(cmdRest, "EA", "XX7,AS0,OF0,IN0", []),
@@ -239,38 +239,36 @@ namespace JAXBase.Compiler
                 "lprocedure" => string.Empty,
                 "md" => Generic_Parser(cmdRest, "XX0", []),
                 "modify" => JAXBase_Compiler_M.Modify(this, cmdRest),
-                "mouse" => Key_Parser(cmdRest, ["click", "dblclick"], "AT0,DG0,WI1", ["pixels", "left", "middle", "right", "shift", "control", "alt"]),
-                "move" => Key_Parser(cmdRest, ["popup", "window"], "XX0,TO0,BY0", []),
+                "mouse" => Key_Parser(cmdRest, ["Click", "Dblclick"], "AT0,DG0,WI1", ["pixels", "left", "middle", "right", "shift", "control", "alt"]),
+                "move" => Key_Parser(cmdRest, ["Popup", "Window"], "XX0,TO0,BY0", []),
                 "nodefault" => string.Empty,
                 "on" => ON_Parser(cmdRest).TrimStart(AppClass.expByte).TrimEnd(AppClass.expEnd),    // need to remove bytes as it's part of a command, not a command of it's own.
-                "open" => Key_Parser(cmdRest, ["database"], "XX0", ["exclusive", "shared", "noupdate", "validate"]),
+                "open" => Key_Parser(cmdRest, ["Database"], "XX0", ["exclusive", "shared", "noupdate", "validate"]),
                 "otherwise" => Struct_Parser(cmdRest, "CO", string.Empty, []),
                 "pack" => Generic_Parser(cmdRest, "IN0", ["memo", "dbf"]),
                 "parameters" => Generic_Parser(cmdRest, "XX8", []),
-                "play" => Key_Parser(cmdRest, ["macro"], "XX0,TI1", []),
-                "pop" => Key_Parser(cmdRest, ["key", "menu", "popup"], "XX0", ["all"]),
+                "play" => Key_Parser(cmdRest, ["Macro"], "XX0,TI1", []),
                 "private" => Generic_Parser(cmdRest, "XX8", []),
                 "procedure" => Generic_Parser(cmdRest, "XX9", []),
                 "protected" => Generic_Parser(cmdRest, "XX0", []),
                 "public" => Generic_Parser(cmdRest, "XX8", []),
-                "push" => Key_Parser(cmdRest, ["key", "menu", "popup"], "XX0", ["clear"]),
                 "quit" => string.Empty,
                 "rd" => Generic_Parser(cmdRest, "XX0", []),
                 "read" => Generic_Parser(cmdRest, string.Empty, ["events"]),
                 "recall" => Generic_Parser(cmdRest, "SC0,FR0,WH0,IN0", ["nooptimize"]),
-                "register" => Key_Parser(cmdRest, ["", "image", "sound", "video"], "XX*,AS0", []),
+                "register" => Key_Parser(cmdRest, ["", "Image", "Sound", "Video"], "XX*,AS0", []),
                 "reindex" => string.Empty,
-                "release" => Key_Parser(cmdRest, ["", "classlib", "console", "procedure"], "XX7", ["all"]),
+                "release" => Key_Parser(cmdRest, ["", "Classlib", "coNsole", "Procedure"], "XX7", ["all"]),
                 "rename" => JAXBase_Compiler_R.Rename(this, cmdRest),
-                "remove" => Key_Parser(cmdRest, ["classlib", "table"], "XX0,OF0", ["all"]),
+                "remove" => Key_Parser(cmdRest, ["Classlib", "Table"], "XX0,OF0", ["all"]),
                 "replace" => JAXBase_Compiler_R.Replace(this, cmdRest),
-                "restore" => Key_Parser(cmdRest, ["", "macros"], "FM0,AL0", ["additive"]),
+                "restore" => Key_Parser(cmdRest, ["", "Macros"], "FM0,AL0", ["additive"]),
                 "resume" => string.Empty,
                 "retry" => string.Empty,
                 "return" => Generic_Parser(cmdRest, "XX*,TO3", []),
                 "rollback" => string.Empty,
                 "run" => Generic_Parser(cmdRest, "XX9", ["/N", "/M"]),
-                "save" => Key_Parser(cmdRest, ["", "macros"], "FM0,AL0", ["additive"]),
+                "save" => Key_Parser(cmdRest, ["", "Macros"], "FM0,AL0", ["additive"]),
                 "scan" => Struct_Parser(cmdRest, "SC", "SC0,FF0,WH0", ["nooptimize"]),
                 "scatter" => Generic_Parser(cmdRest, "FV3,TO6", ["memo", "blank", "default"]),
                 "seek" => Generic_Parser(cmdRest, "XX*,OR0,IN0,SS0", ["ascending|descending"]),
@@ -289,7 +287,7 @@ namespace JAXBase.Compiler
                 "until" => JAXBase_Compiler_U.Until(this, cmdRest),
                 "update" => JAXBase_Compiler_U.Update(this, cmdRest),
                 "use" => Generic_Parser(cmdRest, "XX0,IN0,AL0,IX1", ["again", "shared|exclusive", "noupdate"]),
-                "wait" => Key_Parser(cmdRest, ["window", string.Empty], "XX*,TO0,TI0,WI0", ["nowait", "clear|noclear"]),
+                "wait" => Key_Parser(cmdRest, ["", "Window"], "XX*,TO0,TI0,WI0", ["nowait", "clear|noclear"]),
                 "with" => Struct_Parser(cmdRest, "WH", "XX7", []),
                 "zap" => Generic_Parser(cmdRest, "IN0,SS0", []),
                 "?" => Generic_Parser(cmdRest, "XX3", []),
@@ -945,8 +943,13 @@ namespace JAXBase.Compiler
 
                     if (f < 0) throw new Exception("10||Invalid key " + key);
 
+
                     if (key.Length > 0)
-                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + key.ToUpper() + AppClass.stmtDelimiter + Generic_Parser(cmdRest, ParseInfo, Flags);
+                    {
+                        //result = Program.CurrentApp.CompilerXRef["CS"].ToString() + key.ToUpper() + AppClass.stmtDelimiter + Generic_Parser(cmdRest, ParseInfo, Flags);
+                        // Remove all lower case letters leaving the one upper case which is the key flag
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + JAXLib.ChrTran(key, "abcdefghijklmnopqrstuvwxyz", "") + AppClass.stmtDelimiter + Generic_Parser(cmdRest, ParseInfo, Flags);
+                    }
                     else
                         result = Generic_Parser(cmdRest, ParseInfo, Flags);
                 }

@@ -9,7 +9,7 @@
 using DeftSharp.Windows.Input.Mouse;
 using JAXBase.Compiler;
 using JAXBase.Data;
-using JAXBase.Executer;
+using JAXBase.Executor;
 using JAXBase.Language;
 using JAXBase.Math;
 using JAXBase.Utilities;
@@ -87,7 +87,7 @@ namespace JAXBase.Core
         // Environment setup
         public readonly string MyInstance;
 
-        public readonly JAXBase_Executer JaxExecuter;
+        public readonly JAXBase_Executor JaxExecutor;
         public readonly JAXBase_Compiler JaxCompiler;
 
         public readonly JAXMath JaxMath;
@@ -367,7 +367,7 @@ namespace JAXBase.Core
 
             // Set up runtime vars
             AppLevels.Add(new AppLevel());
-            JaxExecuter = new();
+            JaxExecutor = new();
             JaxCompiler = new(this);
             JaxMath = new();
             PrivateJaxMath = new();

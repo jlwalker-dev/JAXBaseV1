@@ -400,9 +400,9 @@ namespace JAXBase.XBase
     }
 
     /*----------------------------------------------------------------------------------------------*
-     * Executer Code Class section
+     * Executor Code Class section
      * 
-     * The ExecuterCodes class contains the information extracted from the pcode for a command.
+     * The ExecutorCodes class contains the information extracted from the pcode for a command.
      * Properties in ALLCAPS are already processed and are just a value.  The rest typically
      * require you to resolve their values when you need them as they may rely on data from
      * a table in a different datasession/work area.
@@ -413,7 +413,7 @@ namespace JAXBase.XBase
     public class ExCodeScope { public string Type = string.Empty; public int Count = 0; }
 
 
-    public class ExecuterCodes
+    public class ExecutorCodes
     {
         public string ALIAS = string.Empty;
         public List<string> As = [];
@@ -1117,4 +1117,19 @@ namespace JAXBase.XBase
         public RelayConnection(string url) => Url = url;
     }
 
+    // Supporting classes for clean JSON structure
+    public class CursorJsonExport
+    {
+        public string TableName { get; set; } = string.Empty;
+        public List<ColumnDefinition> Columns { get; set; } = new List<ColumnDefinition>();
+        public List<Dictionary<string, object?>>? Rows { get; set; }
+    }
+
+    public class ColumnDefinition
+    {
+        public string Name { get; set; } = string.Empty;
+        public string DataType { get; set; } = string.Empty;
+        public bool AllowDBNull { get; set; }
+        public bool IsPrimaryKey { get; set; }
+    }
 }

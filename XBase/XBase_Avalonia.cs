@@ -787,7 +787,7 @@ namespace JAXBase.XBase
                         //AppIO.DebugLog($"_CallMethod for {methodName} start ─ this: {this.GetHashCode()}  me: {me?.GetHashCode() ?? -1}  me.Name: {me?.Name ?? "?"}", false);
 
                         //// Call the routine to compile and execute a block of code
-                        _ = Program.CurrentApp.JaxExecuter.ExecuteCodeBlock(me!, methodName, cCode);
+                        _ = Program.CurrentApp.JaxExecutor.ExecuteCodeBlock(me!, methodName, cCode);
 
                     }
                     else
