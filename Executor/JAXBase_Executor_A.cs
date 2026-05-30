@@ -279,24 +279,24 @@ namespace JAXBase.Executor
                 if (Program.CurrentApp.CurrentDS.CurrentWA is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
                     throw new Exception(string.Format("52|{0}", Program.CurrentApp.CurrentDS.CurrentWorkArea()));
 
-                if (eCodes.SUBCMD.Equals("blank", StringComparison.OrdinalIgnoreCase))
+                if (eCodes.SUBCMD.Equals("B", StringComparison.OrdinalIgnoreCase))
                 {
                     // Append a blank record
                     await Program.CurrentApp.CurrentDS.CurrentWA.DBFAppendRecord(null);
                 }
-                else if (eCodes.SUBCMD.Equals("array", StringComparison.OrdinalIgnoreCase))
+                else if (eCodes.SUBCMD.Equals("A", StringComparison.OrdinalIgnoreCase))
                 {
                     // APPEND FROM ARRAY
                     // result = JAXDataHandler.AppendArray(jbe, eCodes)
                     throw new Exception("1999|APPEND FROM ARRAY");
                 }
-                else if (eCodes.SUBCMD.Equals("file", StringComparison.OrdinalIgnoreCase))
+                else if (eCodes.SUBCMD.Equals("F", StringComparison.OrdinalIgnoreCase))
                 {
                     // APPEND FROM filename
                     // result = JAXDataHandler.AppendFile(jbe, eCodes)
                     throw new Exception("1999|APPEND FROM FILE");
                 }
-                else if (eCodes.SUBCMD.Equals("json", StringComparison.OrdinalIgnoreCase))
+                else if (eCodes.SUBCMD.Equals("J", StringComparison.OrdinalIgnoreCase))
                 {
                     // APPEND FROM JSON
                     // result = JAXDataHandler.AppendJSON(jbe, eCodes)

@@ -1,4 +1,4 @@
-﻿/*
+﻿/* ================================================================================================= *
  * This is the JAXErrorList class which contains a static method for retrieving error 
  * messages based on error numbers.  A secondary argument can be passed to insert into 
  * the error message if the message contains a placeholder.
@@ -7,7 +7,7 @@
  * messages, but there are many custom error numbers and messages that are specific 
  * to the JAXBase system.
  * 
- */
+ * ================================================================================================= */
 namespace JAXBase.Language
 {
     public class JAXErrorList

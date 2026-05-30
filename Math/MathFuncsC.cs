@@ -28,6 +28,7 @@ namespace JAXBase.Math
             string string1 = (pop.Count > 0 ? pop[0][1..] : string.Empty);
             string string2 = (pop.Count > 1 ? pop[1][1..] : string.Empty);
             string string3 = (pop.Count > 2 ? pop[2][1..] : string.Empty);
+            string string4;
 
             // translate into numbers for certain commands
             if (double.TryParse(string1.Trim(), out double val1) == false) val1 = 0D;
@@ -37,6 +38,9 @@ namespace JAXBase.Math
             int intval1 = (int)val1;
             int intval2 = (int)val2;
             int intval3 = (int)val3;
+
+            int cds = Program.CurrentApp.CurrentDataSession;
+            int cwa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
             switch (_rpn)
             {
@@ -96,7 +100,7 @@ namespace JAXBase.Math
                         string result = string1;
                         for (int i = 0; i < string2.Length; i++)
                         {
-                            string string4 = string3.Length > i ? string3.Substring(i, 1) : string.Empty;
+                            string4 = string3.Length > i ? string3.Substring(i, 1) : string.Empty;
                             result = result.Replace(string2.Substring(i, 1), string4);
                         }
 
@@ -308,11 +312,35 @@ namespace JAXBase.Math
                     // ---------------------------------------------------------------------------------
                     throw new Exception($"1999||{_rpn[..1]}");
 
-                case "CURSORTOJSON":
-                    if (stype1.Equals("L"))
-                        tAnswer._avalue[0].Value = VFPUtilities.CursorToJSON(Program.CurrentApp.CurrentDS.CurrentWA, string1.Contains('T', StringComparison.OrdinalIgnoreCase));
+                case "`CURSORTOJSON":
+                    if (stype1.Equals("C"))
+                    {
+                        int wa = cwa;
+
+                        if (stype2.Equals("N"))
+                        {
+                            // if > 0 then select the requested workarea, otherwise we stay where we are
+                            if (intval2 > 0)
+                                Program.CurrentApp.CurrentDS.SelectWorkArea(intval2);
+                        }
+                        else if (stype2.Equals("C"))
+                            Program.CurrentApp.CurrentDS.SelectWorkArea(string2);
+
+                        // Clean up the filename so it has a full path
+                        string4 = AppHelper.FindPathForFile(string1);
+                        if (string.IsNullOrEmpty(string4))
+                            string1 = Program.CurrentApp.CurrentDS.JaxSettings.Default + string1;
+                        else
+                            string1 = string4 + string1;
+
+                        // Create the JSON file and return the JSON string
+                        tAnswer._avalue[0].Value = VFPUtilities.CursorToJSON(string1, Program.CurrentApp.CurrentDS.CurrentWA, string3.Contains('T', StringComparison.OrdinalIgnoreCase));
+                    }
                     else
                         AppErrorHandling.SetError(11, _rpn[..1], System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+
+                    Program.CurrentApp.SetDataSession(cds);
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(cwa);
                     break;
 
                 case "`CURSORTOXML":                    // Create a VFP compatible XML from a table
@@ -322,8 +350,6 @@ namespace JAXBase.Math
 
                 case "`CURREC":
                     // TODO - Like CURVAL but grab entire record with _DELETED
-                    int cwa = App.CurrentDS.CurrentWorkArea();
-
                     if (stype2.Equals("N"))
                     {
                         if (intval2 > 0)

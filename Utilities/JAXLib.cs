@@ -776,12 +776,12 @@ namespace JAXBase.Utilities
                 else
                     using (StreamWriter sw = File.AppendText(fileName)) { sw.Write(text); }
             }
-            catch (DirectoryNotFoundException ex) { result = -1; SetError(1963, ex.Message); }
-            catch (UnauthorizedAccessException ex) { result = -1; SetError(1705, ex.Message); }
-            catch (NotSupportedException ex) { result = -1; SetError(333, ex.Message); }
-            catch (ArgumentException ex) { result = -1; SetError(1220, ex.Message); }
-            catch (PathTooLongException ex) { result = -1; SetError(202, ex.Message); }
-            catch (Exception ex) { result = -1; SetError(9999, ex.Message); }
+            catch (DirectoryNotFoundException ex) { throw new Exception($"1963||{ex.Message}"); }
+            catch (UnauthorizedAccessException ex) { throw new Exception($"1705||{ex.Message}"); }
+            catch (NotSupportedException ex) { throw new Exception($"333||{ex.Message}"); }
+            catch (ArgumentException ex) { throw new Exception($"1220||{ex.Message}"); }
+            catch (PathTooLongException ex) { throw new Exception($"202||{ex.Message}"); }
+            catch (Exception ex) { throw new Exception($"9999||{ex.Message}"); }
 
             return result;
         }

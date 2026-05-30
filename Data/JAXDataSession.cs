@@ -1,4 +1,4 @@
-﻿/*
+﻿/* ================================================================================================= *
  * This is the Datasession control system
  * 
  * All databases, tables, cursors, views, and datasessions
@@ -70,7 +70,7 @@
  *      for "JAX Tables in SQL", which appear to act exactly like local tables, and then 
  *      leave standard SQL table handling to the more traditional methods.
  *      
- */
+ * ================================================================================================= */
 using JAXBase.Core;
 using JAXBase.Math;
 using System.Text;

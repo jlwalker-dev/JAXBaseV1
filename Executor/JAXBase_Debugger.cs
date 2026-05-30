@@ -1,4 +1,7 @@
-﻿namespace JAXBase.Executor
+﻿/*
+ * DEBUGGER/STEPPER
+ */
+namespace JAXBase.Executor
 {
     public class JAXBase_Debugger
     {

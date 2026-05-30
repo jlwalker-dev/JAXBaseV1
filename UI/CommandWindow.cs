@@ -1,4 +1,7 @@
-﻿using JAXBase.Core;
+﻿/*
+ * Command Window
+ */
+using JAXBase.Core;
 using JAXBase.Utilities;
 
 namespace JAXBase.UI

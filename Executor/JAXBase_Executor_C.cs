@@ -678,29 +678,32 @@ namespace JAXBase.Executor
                     case "all":    //All
                         break;
 
-                    case "alternate":   // Alternate
+                    case "A":   // Alternate
                         // SET ALTERNATE OFF
                         // SET ALTERNATE TO
                         break;
 
-                    case "databases":   // Databases <ALL>
+                    case "D":   // Databases <ALL>
                         break;
 
-                    case "debugger":   // Debugger
+                    case "E":   // Debugger
                         break;
 
-                    case "format":   // Format
+                    case "F":   // Format
                         break;
 
-                    case "indexes":   // Indexes
+                    case "I":   // Indexes
                         await CloseIDX(eCodes);
                         break;
 
-                    case "procedure":   // Procedure
+                    case "M":
+                        break;
+
+                    case "P":   // Procedure
                         break;
 
                     case "":
-                    case "tables":   // Tables <ALL>
+                    case "T":   // Tables <ALL>
 
                         // If all flag is there, then all datasessions are affected.
                         int closeDS = Array.IndexOf(eCodes.Flags, "all") < 0 ? 0 : Program.CurrentApp.CurrentDataSession;
@@ -804,7 +807,7 @@ namespace JAXBase.Executor
             {
                 Program.CurrentApp.InCompile = true;
 
-                string cType = string.IsNullOrWhiteSpace(eCodes.SUBCMD) ? "program" : eCodes.SUBCMD;
+                string cType = string.IsNullOrWhiteSpace(eCodes.SUBCMD) ? "P" : eCodes.SUBCMD;
 
                 JAXObjects.Token answer = eCodes.Expressions.Count > 0 ? await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr) : throw new Exception("1|");
                 if (answer.Element.Type.Equals("C") == false) throw new Exception("11|");
@@ -820,11 +823,11 @@ namespace JAXBase.Executor
                 {
                     fExt = cType switch
                     {
-                        "form" => "scx",
-                        "classlib" => "vcx",
-                        "program" => "prg",
-                        "label" => "lbx",
-                        "report" => "frx",
+                        "F" => "scx",
+                        "C" => "vcx",
+                        "P" => "prg",
+                        "L" => "lbx",
+                        "R" => "frx",
                         _ => throw new Exception("1999|" + cType)
                     };
                 }
@@ -1006,16 +1009,12 @@ namespace JAXBase.Executor
         {
             switch (eCodes.SUBCMD.ToLower())
             {
-                case "t":
-                case "tab":
-                case "table":   // Table
+                case "t":   // Table
                     eCodes.SUBCMD = "T";
                     await CreateTable(eCodes);
                     break;
 
-                case "c":
-                case "cur":
-                case "cursor":   // Cursor
+                case "c":   // Cursor
                     eCodes.SUBCMD = "C";
                     await CreateTable(eCodes);
                     break;

@@ -80,7 +80,7 @@ namespace JAXBase.Executor
                         // -------------------------------------
                         // ON/OFF Settings
                         // -------------------------------------
-                        case "AIG":
+                        case "AIG":     // AIAgent
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.AIAgent = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
@@ -90,61 +90,61 @@ namespace JAXBase.Executor
                             // or when the watchdog timer fires.
                             break;
 
-                        case "ANS":
+                        case "ANS":     // ANSI
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.ANSI = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "AST":
+                        case "AST":     // Asserts
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Asserts = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "AIE":
+                        case "AIE":      // AutoIncError
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.AutoIncError = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "ASV":
+                        case "ASV":     // AutoSave
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.AutoSave = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "CFM":
+                        case "CFM":     // Confirm
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Confirm = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "CPD":
+                        case "CPD":     // CPDialog
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.CP_Dialog = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "CSR":
+                        case "CSR":     // Cursor
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Cursor = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "DBG":
+                        case "DBG":     // Debug
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Debug = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "DEL":
+                        case "DEL":     // Deleted
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Deleted = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "DEV":
+                        case "DEV":     // Development
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Development = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
@@ -216,12 +216,6 @@ namespace JAXBase.Executor
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "readborder": // ???
-                            if (HasOnOff == false) throw new Exception("11|");
-                            Program.CurrentApp.CurrentDS.JaxSettings.Readborder = IsOn;
-                            status += "is " + (IsOn ? "ON" : "OFF");
-                            break;
-
                         case "SAF":
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Safety = IsOn;
@@ -240,15 +234,9 @@ namespace JAXBase.Executor
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "sqlbuffering": // ???
+                        case "SQB": // ???
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.SQLBuffering = IsOn;
-                            status += "is " + (IsOn ? "ON" : "OFF");
-                            break;
-
-                        case "status":  // ???
-                            if (HasOnOff == false) throw new Exception("11|");
-                            Program.CurrentApp.CurrentDS.JaxSettings.Status = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
@@ -256,16 +244,9 @@ namespace JAXBase.Executor
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Step = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
-
-                            //if (Program.CurrentApp.CurrentDS.JaxSettings.Step == false && Program.CurrentApp.JaxDebugger is not null)
-                            //{
-                            //    // Shut down the debugger and resume execution of the program
-                            //    Program.CurrentApp.JaxDebugger.EndDebugging();
-                            //    Program.CurrentApp.JaxDebugger = null;
-                            //}
                             break;
 
-                        case "sysformats":  // ???
+                        case "SSF":  // SysFormats
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.SysFormats = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
@@ -283,13 +264,7 @@ namespace JAXBase.Executor
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "unique":  // ???
-                            if (HasOnOff == false) throw new Exception("11|");
-                            Program.CurrentApp.CurrentDS.JaxSettings.Unique = IsOn;
-                            status += "is " + (IsOn ? "ON" : "OFF");
-                            break;
-
-                        case "varcharmapping":  // ???
+                        case "VCM":  // VarCharMapping
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.VarCharMapping = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
@@ -433,7 +408,7 @@ namespace JAXBase.Executor
                         case "DBO":        // TO [FileName [ADDITIVE]]
                             throw new Exception("1999|Unsupported setting " + settingName);
 
-                        case "library":         // TO [FileName [ADDITIVE]] ???
+                        case "LIB":         // TO [FileName [ADDITIVE]] ???
                             throw new Exception("1999|Unsupported setting " + settingName);
 
                         case "PTH":            // TO [Path] [ADDITIVE]]  
@@ -477,9 +452,6 @@ namespace JAXBase.Executor
                             break;
 
                         case "CLB":        // TO ClassLibraryName [IN APPFileName | EXEFileName] [ADDITIVE][ALIAS AliasName]
-                            throw new Exception("1999|Unsupported setting " + settingName);
-
-                        case "clock":           // ON | OFF | STATUS    -or -  TO[nRow, nColumn] ???
                             throw new Exception("1999|Unsupported setting " + settingName);
 
                         case "COV":        // ON/OFF | TO [FileName][ADDITIVE]
@@ -906,19 +878,16 @@ namespace JAXBase.Executor
                         case "MLK": answer.Element.Value = App.CurrentDS.JaxSettings.MultiLocks; break;
                         case "NER": answer.Element.Value = App.CurrentDS.JaxSettings.Near; break;
                         case "NUL": answer.Element.Value = App.CurrentDS.JaxSettings.Null; break;
-                        case "readborder": answer.Element.Value = App.CurrentDS.JaxSettings.Readborder; break;
                         case "SAF": answer.Element.Value = App.CurrentDS.JaxSettings.Safety; break;
                         case "SEC": answer.Element.Value = App.CurrentDS.JaxSettings.Seconds; break;
                         case "SPC": answer.Element.Value = App.CurrentDS.JaxSettings.Space; break;
-                        case "sqlbuffering": answer.Element.Value = App.CurrentDS.JaxSettings.SQLBuffering; break;
-                        case "status": answer.Element.Value = App.CurrentDS.JaxSettings.Status; break;
+                        case "SQB": answer.Element.Value = App.CurrentDS.JaxSettings.SQLBuffering; break;
                         case "STP": answer.Element.Value = App.CurrentDS.JaxSettings.Step; break;
-                        case "sysformats": answer.Element.Value = App.CurrentDS.JaxSettings.SysFormats; break;
+                        case "SSF": answer.Element.Value = App.CurrentDS.JaxSettings.SysFormats; break;
                         case "TBP": answer.Element.Value = App.CurrentDS.JaxSettings.TablePrompt; break;
                         case "TRP": answer.Element.Value = App.CurrentDS.JaxSettings.TRBetween; break;
-                        case "unique": answer.Element.Value = App.CurrentDS.JaxSettings.Unique; break;
-                        case "varcharmapping": answer.Element.Value = App.CurrentDS.JaxSettings.VarCharMapping; break;
                         case "TPC": answer.Element.Value = App.CurrentDS.JaxSettings.TypeConvert; break;
+                        case "VCM": answer.Element.Value = App.CurrentDS.JaxSettings.VarCharMapping; break;
 
                         // INT Values
                         case "BLK": answer.Element.Value = App.CurrentDS.JaxSettings.BlockSize; break;
@@ -1004,9 +973,6 @@ namespace JAXBase.Executor
 
 
                         case "FIL":          // ON|OFF|TO [lExpression] [IN nWorkArea | cTableAlias]
-                            throw new Exception("1999|Unsupported setting " + settingName);
-
-                        case "function":        // nFunctionKeyNumber | KeyLabelName TO [eExpression]
                             throw new Exception("1999|Unsupported setting " + settingName);
 
                         case "HLP":            // ON/OFF | TO [FileName] [COLLECTION [cCollectionURL]] [SYSTEM]
