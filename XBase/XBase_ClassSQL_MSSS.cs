@@ -1,4 +1,4 @@
-﻿/* 
+﻿/* ================================================================================================= * 
  * MSSQL Engine support
  *  
  * All public INT methods return 0 for success and a positive value for an error EXCEPT FOR the following:
@@ -8,7 +8,7 @@
  * 
  * The most recent error is always logged and can be retrieved using the GetErrorMsg() method.
  * 
- */
+ * ================================================================================================= */
 using JAXBase.Core;
 using JAXBase.Data;
 using Microsoft.Data.SqlClient;

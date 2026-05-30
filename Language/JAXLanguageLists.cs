@@ -84,14 +84,14 @@ namespace JAXBase.Language
             "ACTIVATE","ADD","ALTER","APARAMETERS","APPEND",
             "ASSERT","AVERAGE","BEGIN","BLANK","BROWSE","CALCULATE",
             "CANCEL","CASE","CATCH","CD","CLEAR","CLOSE","COMPILE","CONTINUE",
-            "COPY", "COUNT", "CREATE", "DEACTIVATE","DEBUG","DEBUGOUT","DEFINE","DELETE",
+            "COPY", "COUNT", "CREATE", "DEBUG","DEBUGOUT","DEFINE","DELETE",
             "DIMENSION","DIRECTORY","DISPLAY","DO","DOEVENTS","DODEFAULT",
             "DROP","EDIT","ELSE","ELSEIF","END","ENDCASE","ENDDEFINE", "ENDDO", "ENDFOR","ENDFUNCTION",
             "ENDIF","ENDPROCEDURE","ENDSCAN","ENDTEXT","ENDTRANSACTION","ENDTRY", "ENDWITH",
             "ERASE","ERROR","EXIT","EXPORT","EXTERNAL","FINALLY", "FOR","FOREACH","FUNCTION",
             "GATHER","GETEXPR","GOTO","HELP","IF", "IMPORT","INDEX","INSERT","KEYBOARD",
             "LIST","LOCATE","LOCAL","LOOP","LPARAMETERS","LPROCEDURE",
-            "MD","MENU","MODIFY","MOUSE","MOVE","NODEFAULT","ON","OPEN",
+            "MD","MENU","MODIFY","MOUSE","NODEFAULT","ON","OPEN",
             "OTHERWISE","PACK", "PARAMETERS","PLAY","PRIVATE","PROCEDURE","PUBLIC",
             "QUIT","RD", "READ","RECALL","REGISTER","REINDEX","RELEASE","RENAME", "REPLACE",
             "RESTORE","RESUME","RETRY","RETURN","ROLLBACK","RUN","SAVE","SCAN","SCATTER",
@@ -103,7 +103,8 @@ namespace JAXBase.Language
         /// <summary>
         /// List of all supported SET commands - TODO: Validate against JAXBase_Executor_settings
         /// </summary>
-        public static string[] SetCommands = 
+        // Settings have caps because those letters are used to identify each setting with a 3 char mnmonic
+        public static string[] SetCommands =
             [
             "AIaGent", "ALTernate", "ANSi", "APPinit", "ASserTs", "AutoIncError","AutoSaVe",
             "BELl", "BLocKsize",
@@ -114,14 +115,15 @@ namespace JAXBase.Language
             "HEaDings","HeLP","HouRs",
             "InDeX",
             "KBMinput",
-            "LoCK","LOGging",
+            "LIBrary","LoCK","LOGging",
             "MaCKey","MemoWiDth","MeSsaGe","MultiLocKs",
             "NAMing","NEaR","NoCPtrans","NOTify","NULl","NuLlDisplay",
             "ODoMeter","ORDer",
             "PaTH","PoiNT","PRImary","PROcedure",
             "REFresh","RELation","REProcess","RESource",
-            "SAFety","SEConds","SeCuRity","SEParator","SKiP","SPaCe","SqlCoNnection","SqlLoaD","STeP","StrictDaTe","SYSmenu",
+            "SAFety","SEConds","SeCuRity","SEParator","SKiP","SPaCe","SQlBuffering","SqlCoNnection","SqlLoaD","STeP","StrictDaTe","SySFormats","SYSmenu",
             "TaBlePrompt","TaBleValidate","TaLK","TextMerGe","TextDeLimiters","ToPiC","TopicID","TRBetween","TyPeaHead","TyPeConvert",
+            "VarCharMapping","UDFparms"
             ];
 
         /// <summary>

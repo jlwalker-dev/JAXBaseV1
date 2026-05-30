@@ -6,7 +6,6 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Dynamic;
-using System.Windows.Navigation;
 
 namespace JAXBase.XBase
 {
@@ -898,69 +897,13 @@ namespace JAXBase.XBase
         }
     }
 
-    // TCP and web based classes
-    public class Cookie
-    {
-        public string Name { get; }
-        public string Value { get; }
-        public string Path { get; }
-        public string Domain { get; }
 
-        public Cookie(string name, string value, string path, string domain)
-        {
-            Name = name;
-            Value = value;
-            Path = path;
-            Domain = domain;
-        }
-    }
 
-    class F1Swallower : IMessageFilter
-    {
-        AppClass App;
-        public F1Swallower(AppClass app)
-        {
-            App = app;
-        }
-        public bool PreFilterMessage(ref Message m)
-        {
-            // ONLY look at real keyboard messages — ignore mouse, paint, timers, etc.
-            if (m.Msg != 0x100 && m.Msg != 0x101 &&   // WM_KEYDOWN & WM_KEYUP
-                m.Msg != 0x104 && m.Msg != 0x105)     // WM_SYSKEYDOWN & WM_SYSKEYUP
-                return false;
-
-            Keys key = (Keys)(int)m.WParam;
-
-            // Optional: also filter by currently focused control if you want
-            // if (Control.FromHandle(m.HWnd) is not TextBox) return false;
-            bool isDown = (m.Msg == 0x100 || m.Msg == 0x104);
-
-            bool alt = (System.Windows.Forms.Control.ModifierKeys & Keys.Alt) == Keys.Alt;
-            bool shift = (System.Windows.Forms.Control.ModifierKeys & Keys.Shift) == Keys.Shift;
-            bool control = (System.Windows.Forms.Control.ModifierKeys & Keys.Control) == Keys.Control;
-
-            string onKey = alt ? "A" : string.Empty;
-            onKey += control ? "C" : string.Empty;
-            onKey += shift ? "S" : string.Empty;
-            onKey += onKey.Length > 0 ? "+" : string.Empty;
-            onKey += $"{key.ToString()}";
-
-            if (App.OnKeyLabel.ContainsKey(onKey))
-            {
-                if (isDown == false)
-                {
-                    Console.WriteLine($"{key.ToString()}");
-
-                    // run your JAX code exactly once per press
-                    //
-                }
-                return true;   // swallow both down and up so no help window
-            }
-
-            return false;   // let all other keys through
-        }
-    }
-
+    /* ========================================================================================= *  
+     *  Observable Dictionary
+     *  
+     *  This makes the collection class possible and eases ListBox and ComboBox
+     * ========================================================================================= */
     /// <summary>
     /// SortedDictionary with change notifications (CollectionChanged and PropertyChanged).
     /// Useful for UI binding in Avalonia and for runtime monitoring in JAXBaseV1.
@@ -1093,7 +1036,75 @@ namespace JAXBase.XBase
     }
 
 
-    // Supporting classes
+    /* ========================================================================================= *  
+     *  Web classes
+     * ========================================================================================= */
+    
+    // TCP and web based class support
+    public class Cookie
+    {
+        public string Name { get; }
+        public string Value { get; }
+        public string Path { get; }
+        public string Domain { get; }
+
+        public Cookie(string name, string value, string path, string domain)
+        {
+            Name = name;
+            Value = value;
+            Path = path;
+            Domain = domain;
+        }
+    }
+
+    class F1Swallower : IMessageFilter
+    {
+        AppClass App;
+        public F1Swallower(AppClass app)
+        {
+            App = app;
+        }
+        public bool PreFilterMessage(ref Message m)
+        {
+            // ONLY look at real keyboard messages — ignore mouse, paint, timers, etc.
+            if (m.Msg != 0x100 && m.Msg != 0x101 &&   // WM_KEYDOWN & WM_KEYUP
+                m.Msg != 0x104 && m.Msg != 0x105)     // WM_SYSKEYDOWN & WM_SYSKEYUP
+                return false;
+
+            Keys key = (Keys)(int)m.WParam;
+
+            // Optional: also filter by currently focused control if you want
+            // if (Control.FromHandle(m.HWnd) is not TextBox) return false;
+            bool isDown = (m.Msg == 0x100 || m.Msg == 0x104);
+
+            bool alt = (System.Windows.Forms.Control.ModifierKeys & Keys.Alt) == Keys.Alt;
+            bool shift = (System.Windows.Forms.Control.ModifierKeys & Keys.Shift) == Keys.Shift;
+            bool control = (System.Windows.Forms.Control.ModifierKeys & Keys.Control) == Keys.Control;
+
+            string onKey = alt ? "A" : string.Empty;
+            onKey += control ? "C" : string.Empty;
+            onKey += shift ? "S" : string.Empty;
+            onKey += onKey.Length > 0 ? "+" : string.Empty;
+            onKey += $"{key.ToString()}";
+
+            if (App.OnKeyLabel.ContainsKey(onKey))
+            {
+                if (isDown == false)
+                {
+                    Console.WriteLine($"{key.ToString()}");
+
+                    // run your JAX code exactly once per press
+                    //
+                }
+                return true;   // swallow both down and up so no help window
+            }
+
+            return false;   // let all other keys through
+        }
+    }
+
+
+    // NOSTR Supporting classes
     public class XBase_HttpRequest
     {
         public HttpMethod Method { get; set; } = HttpMethod.Get;
@@ -1110,26 +1121,35 @@ namespace JAXBase.XBase
         public string Reason { get; set; } = string.Empty;
     }
 
-
     internal class RelayConnection
     {
         public string Url { get; }
         public RelayConnection(string url) => Url = url;
     }
 
+
+    /* ========================================================================================= *  
+     *  JSON Related Classes
+     * ========================================================================================= */
     // Supporting classes for clean JSON structure
     public class CursorJsonExport
     {
         public string TableName { get; set; } = string.Empty;
         public List<ColumnDefinition> Columns { get; set; } = new List<ColumnDefinition>();
-        public List<Dictionary<string, object?>>? Rows { get; set; }
+        public List<List<RowFieldValue>> Rows { get; set; } = [];
     }
 
     public class ColumnDefinition
     {
         public string Name { get; set; } = string.Empty;
-        public string DataType { get; set; } = string.Empty;
-        public bool AllowDBNull { get; set; }
-        public bool IsPrimaryKey { get; set; }
+        public string FieldType { get; set; } = string.Empty;
+        public int FieldWidth { get; set; } = 0;
+        public int FieldPrecision { get; set; } = 0;
+    }
+
+    public class RowFieldValue
+    {
+        public string Name { get; set; } = string.Empty;
+        public object? Value { get; set; } = string.Empty;
     }
 }

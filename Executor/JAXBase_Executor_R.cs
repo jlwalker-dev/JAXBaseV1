@@ -72,17 +72,17 @@ namespace JAXBase.Executor
             string fileName = answer.AsString();
 
             // What kind of media is it?
-            if (string.IsNullOrWhiteSpace(eCodes.SUBCMD) || eCodes.SUBCMD.Equals("Image", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(eCodes.SUBCMD) || eCodes.SUBCMD.Equals("I", StringComparison.OrdinalIgnoreCase))
             {
                 // Image
                 Program.CurrentApp.JaxImages!.RegisterMedia(fileName, "I", mediaName, out _);
             }
-            else if (eCodes.SUBCMD.Equals("Sound", StringComparison.OrdinalIgnoreCase))
+            else if (eCodes.SUBCMD.Equals("S", StringComparison.OrdinalIgnoreCase))
             {
                 // Sound
                 Program.CurrentApp.JaxImages!.RegisterMedia(fileName, "S", mediaName, out _);
             }
-            else if (eCodes.SUBCMD.Equals("Video", StringComparison.OrdinalIgnoreCase))
+            else if (eCodes.SUBCMD.Equals("V", StringComparison.OrdinalIgnoreCase))
             {
                 // Video
                 Program.CurrentApp.JaxImages!.RegisterMedia(fileName, "V", mediaName, out _);

@@ -1,4 +1,5 @@
-﻿using JAXBase.Data;
+﻿using DynamicData;
+using JAXBase.Data;
 using JAXBase.XBase;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -9,7 +10,11 @@ namespace JAXBase.Utilities
 {
     public class VFPUtilities
     {
-        /******************************************************************************************
+        /* ========================================================================================= *  
+         *  XML Section
+         * ========================================================================================= */
+
+        /* ========================================================================================= *
          * Write a datatable out to a VFP compatible XML file.  
          * xml:space="preserve" is added to keep leading spaces in the data.
          * 
@@ -104,7 +109,7 @@ namespace JAXBase.Utilities
          *                      
          * ""           Specifies that no schema is produced. 
          * 
-         ******************************************************************************************/
+         * ========================================================================================= */
         public static string MakeXMLFromCursor(DataTable dt, string cursorname, int vfpFlags)
         {
             string slXML = "";
@@ -132,7 +137,7 @@ namespace JAXBase.Utilities
         }
 
 
-        /*
+        /* ========================================================================================= *
          *     nFlag    Description
          *      1       Preserves white space in the data
          *      2       Appends data to cCursor
@@ -140,7 +145,7 @@ namespace JAXBase.Utilities
          *      8 	    Ignore text data over 254 characters
          *      16 	    Ignore binary fields over 254 characters
          * 
-         */
+         * ========================================================================================= */
         public static bool MakeCursorFromXML(string XMLschema, string cursorname, int vfpFlags)
         {
             bool result = false;
@@ -150,8 +155,13 @@ namespace JAXBase.Utilities
 
 
 
-        /*
-         */
+        /* ========================================================================================= *  
+         *  JSON Section
+         * ========================================================================================= */
+
+        /* ========================================================================================= *  
+         *  Convert a Cursor/Table to JSON
+         * ========================================================================================= */
         /// <summary>
         /// Converts a DataTable (cursor) to a JSON string containing structure and/or data using Newtonsoft.Json.
         /// </summary>
@@ -159,8 +169,11 @@ namespace JAXBase.Utilities
         /// <param name="includeData">If true, includes row data. If false, returns structure only.</param>
         /// <param name="formatting">Optional formatting (Indented or None).</param>
         /// <returns>JSON string representing the cursor.</returns>
-        public static string CursorToJSON(JAXDirectDBF dbf, bool includeData = true, Formatting formatting = Formatting.Indented)
+        public static int CursorToJSON(string fileName, JAXDirectDBF dbf, bool includeData)
         {
+            int records = 0;
+            Formatting formatting = Formatting.Indented;
+
             if (dbf.DbfInfo.DBFStream is null)
                 throw new Exception($"52||CursorToJSON");
 
@@ -174,16 +187,23 @@ namespace JAXBase.Utilities
                     Columns = []
                 };
 
-                // Build structure
-                foreach (DataColumn col in dbf.DbfInfo.EmptyRow.Columns)
+                List<string> Fields = [];
+
+                // Build DBF structure
+                for (int i = 0; i < dbf.DbfInfo.Fields.Count; i++)
                 {
-                    result.Columns.Add(new ColumnDefinition
+                    if (dbf.DbfInfo.Fields[i].SystemColumn == false)
                     {
-                        Name = col.ColumnName,
-                        DataType = col.DataType.FullName ?? col.DataType.Name,
-                        AllowDBNull = col.AllowDBNull,
-                        IsPrimaryKey = dbf.DbfInfo.EmptyRow.PrimaryKey != null && dbf.DbfInfo.EmptyRow.PrimaryKey.Contains(col)
-                    });
+                        Fields.Add(dbf.DbfInfo.Fields[i].FieldName);
+
+                        result.Columns.Add(new ColumnDefinition
+                        {
+                            Name = dbf.DbfInfo.Fields[i].FieldName,
+                            FieldType = dbf.DbfInfo.Fields[i].FieldType,
+                            FieldWidth = dbf.DbfInfo.Fields[i].FieldLen,
+                            FieldPrecision = dbf.DbfInfo.Fields[i].FieldDec
+                        });
+                    }
                 }
 
                 // Add data if requested
@@ -191,21 +211,28 @@ namespace JAXBase.Utilities
                 {
                     result.Rows = [];
 
-                    for (int i = 1; i < dbf.DbfInfo.RecCount; i++)
+                    for (int i = 1; i <= dbf.DbfInfo.RecCount; i++)
                     {
-                        Dictionary<string, object?> rowDict = [];
+                        List<RowFieldValue> rowDict = [];
                         dbf.DBFGotoRecord(i).Wait();
 
                         if (dbf.DbfInfo.currentRowIsDeleted == false)
                         {
-                            for (int j = 1; j < dbf.DbfInfo.VisibleFields; j++)
+                            for (int j = 0; j < dbf.DbfInfo.VisibleFields; j++)
                             {
-                                object? value = dbf.DbfInfo.CurrentRow.Columns[j];
-                                rowDict[dbf.DbfInfo.Fields[j].FieldName] = (value == DBNull.Value) ? null : value;
-                            }
-                        }
+                                object? value = dbf.DbfInfo.CurrentRow.Rows[0][j + 1];
+                                RowFieldValue rfv = new()
+                                {
+                                    Name = Fields[j],
+                                    Value = value
+                                };
 
-                        result.Rows.Add(rowDict);
+                                rowDict.Add(rfv);
+                            }
+
+                            result.Rows.Add(rowDict);
+                            records++;
+                        }
                     }
                 }
 
@@ -218,16 +245,21 @@ namespace JAXBase.Utilities
                 };
 
                 strJSON = JsonConvert.SerializeObject(result, settings);
+
+                JAXLib.StrToFile(strJSON, fileName, 0);
             }
             catch (Exception ex)
             {
-                throw new Exception($"9999||{ex.Message}");
+                throw new Exception($"9999|{ex.Message}|CursorToJSON");
             }
 
-            return strJSON;
+            return records;
         }
 
 
+        /* ========================================================================================= *  
+         *  Get a value from JSON with possible null return
+         * ========================================================================================= */
         /// <summary>
         /// Extracts a single value from a JSON string by property name.
         /// </summary>
@@ -264,6 +296,9 @@ namespace JAXBase.Utilities
         /// <summary>
         /// Extracts a single value as string (most common use case).
         /// </summary>
+        /* ========================================================================================= *  
+         *  Minimal get a string from JSON 
+         * ========================================================================================= */
         /// <param name="jsonString">The JSON string.</param>
         /// <param name="propertyName">The name of the property.</param>
         /// <returns>The value as string, or empty string if not found.</returns>

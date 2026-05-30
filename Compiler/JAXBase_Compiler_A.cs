@@ -130,20 +130,22 @@ namespace JAXBase.Compiler
                 if (addCmd.Length == 0)
                     result = jbc.StrictBreak(cmdRest, "FV1,SC0,FR0,WH0,NM0,TM0,TT0", ["noappend", "nodelete", "nomodify"], string.Empty);
                 else if (addCmd.Equals("blank", StringComparison.OrdinalIgnoreCase))
-                    result = jbc.Key_Parser(cmdRest, ["blank"], "FR0,IN0,SS0", ["nomenu"]);
+                    result = jbc.Key_Parser(cmdRest, ["Blank"], "FR0,IN0,SS0", ["nomenu"]);
                 else if (addCmd.Equals("from", StringComparison.OrdinalIgnoreCase))
                 {
                     if (cmdRest.Contains(" array ", StringComparison.OrdinalIgnoreCase))
-                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "array" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM1,IN0,FV3,FG1", ["nomenu"]);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "A" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM1,IN0,FV3,FG1", ["nomenu"]);
+                    if (cmdRest.Contains(" json ", StringComparison.OrdinalIgnoreCase))
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "J" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM0,IN0,FV3,FG1", ["nomenu"]);
                     else
-                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "file" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM0,FR0,AS0,TY2,DA1,SH0,FV1,FG1", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "F" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "FM0,FR0,AS0,TY2,DA1,SH0,FV1,FG1", []);
                 }
                 else if (addCmd.Equals("general", StringComparison.OrdinalIgnoreCase))
-                    result = jbc.Key_Parser(cmdRest, ["general"], "XX0,FM1,DA0,CL0,FG1", ["link"]);
+                    result = jbc.Key_Parser(cmdRest, ["General"], "XX0,FM1,DA0,CL0,FG1", ["link"]);
                 else if (addCmd.Equals("memo", StringComparison.OrdinalIgnoreCase))
-                    result = jbc.Key_Parser(cmdRest, ["memo"], "XX0,FM0,AS0,FG1", ["overwrite"]);
+                    result = jbc.Key_Parser(cmdRest, ["Memo"], "XX0,FM0,AS0,FG1", ["overwrite"]);
                 else if (addCmd.Equals("procedures", StringComparison.OrdinalIgnoreCase))
-                    result = jbc.Key_Parser(cmdRest, ["procedures"], "FM1,AS0,FG1", ["overwrite"]);
+                    result = jbc.Key_Parser(cmdRest, ["Procedures"], "FM1,AS0,FG1", ["overwrite"]);
                 else
                     throw new Exception(string.Format("1999||Unknown add type {0}", addCmd));
             }

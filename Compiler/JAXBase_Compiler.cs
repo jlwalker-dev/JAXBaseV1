@@ -159,9 +159,6 @@ namespace JAXBase.Compiler
                     break;
             }
 
-            if (cmdRest.Contains("strtofile", StringComparison.OrdinalIgnoreCase))
-                cmd = cmd.ToLower();
-
             string result = cmd.ToLower() switch
             {
                 "activate" => JAXBase_Compiler_A.Activate(this, cmdRest),
@@ -187,7 +184,6 @@ namespace JAXBase.Compiler
                 "copy" => JAXBase_Compiler_C.Copy(this, cmdRest),
                 "count" => Generic_Parser(cmdRest, "XX3,SC0,FR0,WL0,TO1", ["nooptimize"]),
                 "create" => JAXBase_Compiler_C.Create(this, cmdRest),
-                "deactivate" => Key_Parser(cmdRest, ["Menu", "Popup", "Window"], "XX0", ["ALL"]),
                 "debug" => string.Empty,
                 "debugout" => Generic_Parser(cmdRest, "XX3", []),
                 "define" => JAXBase_Compiler_D.Define(this, cmdRest),
@@ -240,7 +236,6 @@ namespace JAXBase.Compiler
                 "md" => Generic_Parser(cmdRest, "XX0", []),
                 "modify" => JAXBase_Compiler_M.Modify(this, cmdRest),
                 "mouse" => Key_Parser(cmdRest, ["Click", "Dblclick"], "AT0,DG0,WI1", ["pixels", "left", "middle", "right", "shift", "control", "alt"]),
-                "move" => Key_Parser(cmdRest, ["Popup", "Window"], "XX0,TO0,BY0", []),
                 "nodefault" => string.Empty,
                 "on" => ON_Parser(cmdRest).TrimStart(AppClass.expByte).TrimEnd(AppClass.expEnd),    // need to remove bytes as it's part of a command, not a command of it's own.
                 "open" => Key_Parser(cmdRest, ["Database"], "XX0", ["exclusive", "shared", "noupdate", "validate"]),
