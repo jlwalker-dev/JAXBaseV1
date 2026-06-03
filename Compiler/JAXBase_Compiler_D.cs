@@ -1,4 +1,5 @@
 ﻿using JAXBase.Core;
+using JAXBase.Utilities;
 
 namespace JAXBase.Compiler
 {
@@ -52,7 +53,7 @@ namespace JAXBase.Compiler
 
                 Program.CurrentApp.InDefine = "C";
 
-                result = jbc.Key_Parser(cmdLine, ["class"], "XX0,AS1", []);
+                result = jbc.Key_Parser(cmdLine, ["Class"], "XX0,AS1", []);
             }
             catch (Exception ex)
             {
@@ -89,7 +90,7 @@ namespace JAXBase.Compiler
                     case "database":
                     case "table":
                     case "file":
-                        result = jbc.Key_Parser(cmdLine, [cmd], "XX0", []);
+                        result = jbc.Key_Parser(JAXLib.Proper(cmdLine), [cmd], "XX0", []);
                         break;
 
                     default:
@@ -146,27 +147,27 @@ namespace JAXBase.Compiler
                 {
                     case "database":
                     case "data":
-                        result = jbc.Key_Parser(cmdLine, ["database"], "XX0,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Database"], "XX0,TO5", ["additive", "noconsole"]);
                         break;
 
                     case "procedures":
                     case "proc":
-                        result = jbc.Key_Parser(cmdLine, ["procedures"], "XX0,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Procedures"], "XX0,TO5", ["additive", "noconsole"]);
                         break;
 
                     case "status":
                     case "stat":
-                        result = jbc.Key_Parser(cmdLine, ["status"], "XX0,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Status"], "XX0,TO5", ["additive", "noconsole"]);
                         break;
 
                     case "tables":
                     case "tabl":
-                        result = jbc.Key_Parser(cmdLine, ["tables"], "XX0,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Tables"], "XX0,TO5", ["additive", "noconsole"]);
                         break;
 
                     case "views":
                     case "view":
-                        result = jbc.Key_Parser(cmdLine, ["views"], "TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Views"], "TO5", ["additive", "noconsole"]);
                         break;
 
                     case "fields":
@@ -177,23 +178,23 @@ namespace JAXBase.Compiler
 
                     case "files":
                     case "file":
-                        result = jbc.Key_Parser(cmdLine, ["files"], "XX0,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Files"], "XX0,TO5", ["additive", "noconsole"]);
                         break;
 
                     case "memory":
                     case "memo":
-                        result = jbc.Key_Parser(cmdLine, ["memory"], "LK2,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Memory"], "LK2,TO5", ["additive", "noconsole"]);
                         break;
 
                     case "objects":
                     case "obj":
                     case "object":
-                        result = jbc.Key_Parser(cmdLine, ["objects"], "XX0,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Objects"], "XX0,TO5", ["additive", "noconsole"]);
                         break;
 
                     case "structure":
                     case "stru":
-                        result = jbc.Key_Parser(cmdLine, ["structure"], "IN0,TO5", ["additive", "noconsole"]);
+                        result = jbc.Key_Parser(cmdLine, ["Structure"], "IN0,TO5", ["additive", "noconsole"]);
                         break;
 
                     default:

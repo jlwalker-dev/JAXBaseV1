@@ -132,14 +132,17 @@ namespace JAXBase.Language
         // Language code is abreviated in the lexxer AS0, AT3, etc
         // Language component is the name used for the dictionary
         // Byte code is what's written into the tokenized code identifying the statement component
-        public static string[] JAXCompilerDictionary = ["AL|alias|0x80","AS|as|0x82", "AT|at|0x84", "CS|subcmd|0x88", "CM|command|0x8A", "CO|collate|0x8C",
-            "CP|codepage|0x90", "DB|database|0x94", "FG|flags|0x96", "FM|from|0x98", "FN|fname|0x9C",
-            "FR|for|0xA0", "FV|fields|0xA4", "IN|in|0xA8", "IT|into|0xAC","IX|index|0xAE",
-            "LK|like|0xB0", "MS|message|0xB4","xx|xxxx|0xB8","NM|name|0xBC",
-            "OF|of|0xC0", "ON|on|0xC4", "OR|order|0xC8", "RC|record|0xCA", "SC|scope|0xCC", "SH|sheet|0xCE",
-            "SI|size|0xD0", "SS|session|0xD1", "ST|step|0xD2", "TB|table|0xD4", "TG|tag|0xD6","TI|timeout|0xD8", "TO|to|0xDC",
-            "TY|type|0xE0", "VL|values|0xE4", "WL|while|0xE8", "WH|when|0xEC",
-            "WI||0xF0", "WT|with|0xF4", "XF|fileexpr|0xF6", "XX|expressions|0xF8"];
+        public static string[] JAXCompilerDictionary = 
+            [
+            "AL|alias|0x80","AS|as|0x82", "AT|at|0x84", "CS|subcmd|0x86", "CM|command|0x88", "CO|collate|0x8A", "CP|codepage|0x8C", 
+            "DB|database|0x90", "FG|flags|0x92", "FM|from|0x94", "FN|fname|0x96", "FR|for|0x98", "FV|fields|0x9A", 
+            "IN|in|0xA0", "IT|into|0xA2","IX|index|0xA4", "LK|like|0xa6", "MS|message|0xA8","xx|xxxx|0xAC","NM|name|0xAD",
+            "OF|of|0xB0", "ON|on|0xB4", "OR|order|0xB8","PT|pretext|0xB9", "RC|record|0xBA", 
+            "SC|scope|0xC0", "SH|sheet|0xC2", "SI|size|0xC4", "SS|session|0xC6", "ST|step|0xC8", 
+            "TB|table|0xD0", "TG|tag|0xD2", "TI|timeout|0xD4", "TO|to|0xD6", "TY|type|0xD8", "TX|text|0xDA",
+            "VL|values|0xE0", "WL|while|0xE2", "WH|when|0xE4", "WI||0xE6", "WT|with|0xE8", 
+            "XF|fileexpr|0xF0", "XX|expressions|0xF2"
+            ];
 
         /// <summary>
         /// Array containing all valid JAXBase object types

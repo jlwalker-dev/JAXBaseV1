@@ -139,7 +139,7 @@ namespace JAXBase.Core
             string appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name ?? "IDE";
             string parm1 = args.Length > 0 ? args[0] : string.Empty;
 
-            App.SetEnvironment();
+            App.SetEnvironment().Wait();
 
             // Determine mode
             bool parm1IsRT = parm1.Equals("/rt", StringComparison.OrdinalIgnoreCase) ||

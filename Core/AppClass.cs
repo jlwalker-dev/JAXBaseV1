@@ -137,6 +137,9 @@ namespace JAXBase.Core
         public UI.Dialogs.FilePickerDialog? fileDialog = null;
         public UI.Dialogs.FolderPickerDialog? folderDialog = null;
 
+        public JAXObjectWrapper? _jax = null;
+        public XBase_Class_JAX? _jaxClass = null;
+
         public JAXObjectWrapper? _screen=null;
         public XBase_Class_Screen? _screenClass = null;
 
@@ -387,19 +390,22 @@ namespace JAXBase.Core
         }
 
 
-        public void SetEnvironment()
+        public async Task SetEnvironment()
         {
             // Set up the default log file
             try { if (Directory.Exists(JaxVariables._LogPath) == false) Directory.CreateDirectory(JaxVariables._LogPath); } catch { JaxVariables._LogPath = ""; }
             string logfile = $"System_{DateTime.Now.ToString("yyyyMMddHHmmssff")}.log";
             AppLogFile = string.Format(JaxVariables._LogPath + logfile);
 
-            // Create system variables
-            AppVars.CreateSystemVars();
-
             // Set up system JAXObjectWrappers
             _screen = new(this, "screen", "_screen", []);
             _screenClass = (XBase_Class_Screen)_screen.thisObject!;
+
+            _jax = new(this, "jax", "_jax", []);
+            _jaxClass = (XBase_Class_JAX)_jax.thisObject!;
+
+            // Create system variables
+            AppVars.CreateSystemVars();
 
             // Read the ini
             if (File.Exists(ExeFolder + "jaxbase.ini"))

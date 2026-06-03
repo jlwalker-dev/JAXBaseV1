@@ -6,52 +6,7 @@ namespace JAXBase.XBase
 {
     public static class XEnvironment_Classes
     {
-        public static JAXObjectWrapper _JAX(AppClass app)
-        {
-            List<ParameterClass> xParameters = [];
-            ParameterClass p = new() { PName = "path" };
-            xParameters.Add(p);
-
-            p = new() { PName = "version" };
-            xParameters.Add(p);
-
-            p = new() { PName = "x64" };
-            xParameters.Add(p);
-
-            p = new() { PName = "classeditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "config" };
-            xParameters.Add(p);
-
-            p = new() { PName = "fileeditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "formeditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "imageeditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "labeleditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "menueditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "projecteditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "reporteditor" };
-            xParameters.Add(p);
-
-            p = new() { PName = "tableeditor" };
-            xParameters.Add(p);
-
-            JAXObjectWrapper custom = new(app, "empty", "_JAX", xParameters);
-            return custom;
-        }
-
+        
         public static async Task<List<JAXObjectWrapper>> _CPU(AppClass app)
         {
             List<JAXObjectWrapper> custom = [];

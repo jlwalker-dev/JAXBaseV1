@@ -33,6 +33,7 @@ using JAXBase.Math;
 using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Data;
+using System.Runtime.InteropServices;
 using System.Text;
 using static JAXBase.Core.AppClass;
 
@@ -1774,26 +1775,90 @@ namespace JAXBase.Core
         public static string FindPathForFile(string fileName)
         {
             string result = string.Empty;
+
+            string path = JAXLib.JustFullPath(fileName);
             string fName = JAXLib.JustFName(fileName);
 
-            string[] pathList = (Program.CurrentApp.CurrentDS.JaxSettings.Default + ";" + Program.CurrentApp.CurrentDS.JaxSettings.Path).Split(';');
-            for (int i = 0; i < pathList.Length; i++)
+            try
             {
-                if (pathList[i].Length > 0)
+                if (File.Exists(fileName) == false)
                 {
-                    string path = JAXLib.Addbs(pathList[i]);
-                    string fName2 = FixFileCase(path, fName, Program.CurrentApp.CurrentDS.JaxSettings.Naming, Program.CurrentApp.CurrentDS.JaxSettings.NamingAll);
-
-                    if (File.Exists(fName2))
+                    // Doing the search
+                    string[] pathList = (Program.CurrentApp.CurrentDS.JaxSettings.Default + ";" + Program.CurrentApp.CurrentDS.JaxSettings.Path).Split(';');
+                    for (int i = 0; i < pathList.Length; i++)
                     {
-                        result = JAXLib.JustFullPath(fName2);
-                        break;
+                        if (pathList[i].Length > 0)
+                        {
+                            path = JAXLib.Addbs(pathList[i]);
+                            string fName2 = FixFileCase(path, fName, Program.CurrentApp.CurrentDS.JaxSettings.Naming, Program.CurrentApp.CurrentDS.JaxSettings.NamingAll);
+
+                            if (File.Exists(fName2))
+                            {
+                                result = JAXLib.JustFullPath(fName2);
+                                break;
+                            }
+                        }
                     }
                 }
+                else
+                {
+                    // Already have a path so let's check it out
+                    if (path[..2].Equals("..") || path[..1].Equals("/") || (path[..2].Equals(@"\\") == false && path[..1].Equals(@"\")))
+                    {
+                        // start of a legal relative path in linux or windows
+                        result = GetFullResolvedPath(Program.CurrentApp.CurrentDS.JaxSettings.Default, path);
+
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                        {
+                            // All other OS's use forward slash so clean it up
+                            result = result.Replace(@"\", "/");
+                        }
+                    }
+                    else
+                    {
+                        // Not a legal relative path so test to see if it's a legal path
+                        if (Directory.Exists(path))
+                        {
+                            result = path;
+
+                            // We have a path, does the file live there?
+                            if (File.Exists(result + fName) == false)
+                                result = "";
+                        }
+                        else
+                            result = "";
+                    }
+                }
+            }
+            catch
+            {
+                // Any error returns a blank string
+                result = "";
             }
 
             return result;
         }
+
+
+        /// <summary>
+        /// Get the full path by combining the current path with a relative path
+        /// </summary>
+        /// <param name="defaultPath"></param>
+        /// <param name="relPath"></param>
+        /// <returns>Final full path</returns>
+        public static string GetFullResolvedPath(string defaultPath, string relPath)
+        {
+            if (string.IsNullOrWhiteSpace(defaultPath))
+                throw new ArgumentException("DefaultPath cannot be null or empty.", nameof(defaultPath));
+
+            if (string.IsNullOrWhiteSpace(relPath))
+                return Path.GetFullPath(defaultPath);
+
+            string combined = Path.Combine(defaultPath, relPath);
+            return Path.GetFullPath(combined);
+        }
+
+
 
         /// <summary>
         /// Look for and return a user class based on name of the object

@@ -2,6 +2,13 @@
 using JAXBase.Data;
 using JAXBase.Utilities;
 using JAXBase.XBase;
+using LibVLCSharp.Shared;
+using Microsoft.VisualBasic.FileIO;
+using NBitcoin;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Data;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace JAXBase.Executor
 {
@@ -14,7 +21,7 @@ namespace JAXBase.Executor
          * SAVE
          * 
          */
-        public static string Save(string cmdRest)
+        public static string Save(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 
@@ -154,17 +161,252 @@ namespace JAXBase.Executor
          * SCATTER [FIELDS FieldNameList | FIELDS LIKE Skeleton | FIELDS EXCEPT Skeleton] [MEMO] [BLANK] TO ArrayName | TO ArrayName | MEMVAR | NAME ObjectName [ADDITIVE]
          * 
          */
-        public static string Scatter(string cmdRest)
+        public static async Task<string> Scatter(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
+                if (Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
+                    throw new Exception("52||Scatter");
 
+                if (eCodes.To.Count != 1) throw new Exception("10||Scatter - must have exactly one TO target");
+
+                JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Type);
+                if (answer.Element.Type.Equals("C") == false) throw new Exception("11||Scatter");
+                string toType = answer.AsString();
+                string toName = eCodes.From.Name;
+
+
+                JAXObjectWrapper toObject = new(Program.CurrentApp, "empty", "", []);
+                Dictionary<string, object>? toJson = [];
+                JAXObjects.Token toArray = new()
+                {
+                    Col = 1,
+                    Row = 0,
+                    TType = "A"
+                };
+
+                JAXObjects.Token toVar = await AppVars.GetVarToken(toName);
+
+                // If the toVar does not exist, create it
+                if (toVar.TType.Equals("U"))
+                {
+                    AppVars.SetVarOrMakePrivate(toName, new());
+                    toVar = await AppVars.GetVarToken(toName);
+                }
+
+
+                if (eCodes.Flags.Contains("additive"))
+                {
+                    if (toType.Equals("A"))
+                    {
+                        // Is this an array with something in it?
+                        if (toVar.TType.Equals("A") == false)
+                        {
+                            toVar.TType = "A";
+                            toVar.Col = 1;
+                            toVar.Row = 0;
+                        }
+
+                        toArray = toVar;
+                    }
+                    else if (toType.Equals("N"))
+                    {
+                        toObject = answer.Element.Value as JAXObjectWrapper ?? new(Program.CurrentApp, "empty", "", []);
+                    }
+                    else if (toType.Equals("J"))
+                    {
+                        // Is this a JSON var with something in it?
+                        if (answer.Element.Type.Equals("C"))
+                        {
+
+                            JObject jObj = JObject.Parse(answer.AsString());
+
+                            if (jObj is not null)
+                            {
+                                Dictionary<string, object>? testJson = [];
+                                testJson = jObj.ToObject<Dictionary<string, object>>();
+
+                                if (testJson is not null)
+                                    toJson = jObj.ToObject<Dictionary<string, object>>();
+
+                                testJson = [];
+                            }
+                        }
+                    }
+                }
+
+                string isLike = "";
+                string isNotLike = "";
+                string[] fields = [];
+                bool memoOK = eCodes.Flags.Contains("memo");
+                bool blank = eCodes.Flags.Contains("blank");
+
+                // Copy the current row
+                DataRow thisRow = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.CurrentRow.NewRow();
+                thisRow.ItemArray = (object[])Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.CurrentRow.Rows[0].ItemArray.Clone();
+
+                // Now move the fields to the target object
+                int arrayPtr = 0;
+                int fieldCount = 0;
+                bool copyField = false;
+
+                for (int i = 0; i < Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Fields.Count; i++)
+                {
+                    JAXTables.FieldInfo fieldInfo = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Fields[i];
+                    string fieldName = fieldInfo.FieldName;
+                    string fieldType = fieldInfo.FieldType;
+                    object? fieldValue = thisRow[fieldName];
+
+                    // Is it a system column?
+                    if (fieldInfo.SystemColumn == false)
+                    {
+                        fieldCount++;
+
+                        // No, so we may be updating it
+                        if (string.IsNullOrWhiteSpace(isLike) == false)
+                        {
+                            // We have a like condition, so we need to check it
+                            if (fieldName.Equals(isLike))
+                            {
+                            }
+                        }
+                        else if (string.IsNullOrWhiteSpace(isNotLike) == false)
+                        {
+                            // We have a not like condition, so we need to check it
+                            if (fieldName.Equals(isNotLike))
+                            {
+                            }
+                        }
+                        else if (fields.Contains(fieldName))
+                        {
+                        }
+                        else
+                        {
+                            // No conditions, so we update it
+                            copyField = true;
+                        }
+
+                        answer = new();
+
+
+                        if (copyField)
+                        {
+                            if (eCodes.Flags.Contains("blank"))
+                            {
+                                // Check the type and if it passes, save it, otherwise throw an error
+                                if ("BNFYI".Contains(fieldInfo.FieldType))
+                                {
+                                    // Numeric field
+                                    if (blank)
+                                        fieldValue = 0.00;
+                                }
+                                else if ("CVQMGW".Contains(fieldInfo.FieldType))
+                                {
+                                    // Character field
+                                    if (blank)
+                                        fieldValue = "";
+                                }
+                                else if ("D".Contains(fieldInfo.FieldType))
+                                {
+                                    // Date field
+                                    if (blank)
+                                        fieldValue = DateOnly.MinValue;
+                                }
+                                else if ("T".Contains(fieldInfo.FieldType))
+                                {
+                                    // DateTime field
+                                    if (blank)
+                                        fieldValue = DateTime.MinValue;
+                                }
+                                else if ("L".Contains(fieldInfo.FieldType))
+                                {
+                                    // Logical field
+                                    if (blank)
+                                        fieldValue = false;
+                                }
+                                else
+                                    throw new Exception($"11||Gather");
+                            }
+
+                            // Update the field
+                            if (toType.Equals("A"))
+                            {
+                                if ("MGW".Contains(fieldType) == false)
+                                {
+                                    // ----- TO array ----- 
+                                    toArray.SetDimension(0, ++arrayPtr, true);
+                                    toArray._avalue[arrayPtr - 1].Value = fieldValue;
+                                }
+                            }
+                            else if (toType.Equals("N"))
+                            {
+                                if ("MGW".Contains(fieldType) == false || eCodes.Flags.Contains("memo"))
+                                {
+                                    // ----- NAME object ----- 
+                                    if (toObject.thisObject!.UserProperties.ContainsKey(fieldName) == false)
+                                        await toObject.AddProperty(fieldName, new(fieldValue), 1, "");
+                                    else
+                                        await toObject.AddProperty(fieldName, new(fieldValue), 1, "");
+                                }
+                            }
+                            else if (toType.Equals("J"))
+                            {
+                                if ("MGW".Contains(fieldType) == false || eCodes.Flags.Contains("memo"))
+                                {
+                                    // ----- JSON var ----- 
+                                    if (toJson!.ContainsKey(fieldName) == false)
+                                        toJson.Add(fieldName, fieldValue);
+                                    else
+                                        toJson[fieldName] = fieldValue;
+                                }
+                            }
+                            else if (toType.Equals("M"))
+                            {
+                                if ("MGW".Contains(fieldType) == false || eCodes.Flags.Contains("memo"))
+                                {
+                                    // ----- MEMVAR ----- 
+                                    if (toJson!.ContainsKey(fieldName) == false)
+                                        toJson.Add(fieldName, fieldValue);
+                                    else
+                                        toJson[fieldName] = fieldValue;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (fieldCount > 0)
+                {
+                    // We did some work so finish off by saving the target object
+                    if (toType.Equals("A"))
+                    {
+                        // ----- TO array ----- 
+                        toVar.CopyFrom(toArray);
+
+                    }
+                    else if (toType.Equals("N"))
+                    {
+                        // ----- NAME object ----- 
+                        toVar.Element.Value = toObject;
+                    }
+                    else if (toType.Equals("J"))
+                    {
+                        // ----- JSON var ----- 
+                        toVar.Element.Value = JsonConvert.SerializeObject(toJson);
+                    }
+                    else
+                    {
+                        // ----- MEMVAR -----
+                        foreach (KeyValuePair<string, object> pair in toJson!)
+                            await AppVars.SetVarFromExpression("m." + pair.Key, pair.Value, true);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                AppErrorHandling.HandleException($"{thisFile}.Scatter", ex.Message);
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
             return result;
@@ -386,10 +628,31 @@ namespace JAXBase.Executor
 
         /*
          * 
+         * Sleep nMilliseconds
+         * 
+         * Used to pause the current thread for the specified number of milliseconds.
+         * 
+         */
+        public static string Sleep(ExecutorCodes eCodes)
+        {
+            string result = string.Empty;
+            try
+            {
+            }
+            catch (Exception ex)
+            {
+                AppErrorHandling.HandleException($"{thisFile}.Sleep", ex.Message);
+            }
+            return result;
+        }
+
+
+        /*
+         * 
          * SORT
          * 
          */
-        public static string Sort(string cmdRest)
+        public static string Sort(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 

@@ -1,4 +1,5 @@
 ﻿using DynamicData;
+using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.XBase;
 using Newtonsoft.Json;
@@ -168,7 +169,7 @@ namespace JAXBase.Utilities
         /// <param name="cursor">The DataTable representing the cursor.</param>
         /// <param name="includeData">If true, includes row data. If false, returns structure only.</param>
         /// <param name="formatting">Optional formatting (Indented or None).</param>
-        /// <returns>JSON string representing the cursor.</returns>
+        /// <returns>Number of data records saved to JSON file</returns>
         public static int CursorToJSON(string fileName, JAXDirectDBF dbf, bool includeData)
         {
             int records = 0;
@@ -177,6 +178,21 @@ namespace JAXBase.Utilities
             if (dbf.DbfInfo.DBFStream is null)
                 throw new Exception($"52||CursorToJSON");
 
+            // Check and fix outbound file name
+            string path = JAXLib.JustFullPath(fileName);
+            string fname = JAXLib.JustStem(fileName);
+            string ext = JAXLib.JustExt(fileName);
+
+            if (string.IsNullOrEmpty(fname))
+                throw new Exception($"202||CursorToJSON");
+
+            if (string.IsNullOrEmpty(path))
+                path = Program.CurrentApp.CurrentDS.JaxSettings.Default;
+
+            if (string.IsNullOrEmpty(ext))
+                ext = "json";
+
+            // start the process
             string strJSON;
 
             try
@@ -246,7 +262,7 @@ namespace JAXBase.Utilities
 
                 strJSON = JsonConvert.SerializeObject(result, settings);
 
-                JAXLib.StrToFile(strJSON, fileName, 0);
+                JAXLib.StrToFile(strJSON, path + fileName + "." + ext, 0);
             }
             catch (Exception ex)
             {
@@ -254,6 +270,136 @@ namespace JAXBase.Utilities
             }
 
             return records;
+        }
+
+
+        /* ========================================================================================= *  
+         *  Convert a Cursor/Table to JSON
+         * ========================================================================================= */
+        /// <summary>
+        /// Converts a DataTable (cursor) to a JSON string containing structure and/or data using Newtonsoft.Json.
+        /// </summary>
+        /// <param name="cursor">The DataTable representing the cursor.</param>
+        /// <param name="alias">Alias name</param>
+        /// <param name="includeData">If true, includes row data. If false, returns structure only.</param>
+        /// <returns>Number of data records written.</returns>
+        public static int JSONToCursor(string fileName, string alias, bool includeData)
+        {
+            int result = 0;
+
+            string path = AppHelper.FindPathForFile(fileName);
+            if (string.IsNullOrEmpty(path))
+                path = Program.CurrentApp.CurrentDS.JaxSettings.Default;
+
+            // Does the file exist?
+            if (File.Exists(fileName))
+            {
+                string json = JAXLib.FileToStr(fileName);
+
+                // Is the alias a legal name?
+                if (AppHelper.IsLegalObjectName(alias))
+                    alias = JAXLib.JustStem(alias);
+                else
+                    throw new Exception($"52||JSONToCursor");
+
+                // Does the alias already exist?
+                if (Program.CurrentApp.CurrentDS.IsWorkArea(alias))
+                    throw new Exception($"24|{alias}|JSONToCursor");
+
+                CursorJsonExport? CursorObject=null;
+
+                // Create the object
+                try
+                {
+                    CursorObject = JsonConvert.DeserializeObject<CursorJsonExport>(json);
+                }
+                catch
+                {
+                    CursorObject = null;
+                }
+
+                if (CursorObject is null)
+                    throw new Exception($"2501||JSONToCursor");
+                else
+                {
+                    // The cursor object is created
+                    string Table = CursorObject.TableName;
+
+                    Task<JAXObjects.Token> jaxTask = Program.CurrentApp._jax!.GetProperty("tempfolder");
+                    jaxTask.Wait();
+                    string tempfolder = jaxTask.Result.AsString();
+
+                    // Select a new workarea
+                    Program.CurrentApp.CurrentDS.SelectWorkArea(0);
+
+                    // Set up a new DBFInfo object
+                    JAXDirectDBF.DBFInfo dbfInfo = new();
+                    List<JAXTables.FieldInfo> Fields = [];
+
+                    // Update the dbfInfo to send
+                    for (int i = 0; i < CursorObject.Columns.Count; i++)
+                    {
+                        JAXTables.FieldInfo fld = new()
+                        {
+                            FieldName = CursorObject.Columns[i].Name,
+                            FieldType = CursorObject.Columns[i].FieldType,
+                            FieldLen = CursorObject.Columns[i].FieldWidth,
+                            FieldDec = CursorObject.Columns[i].FieldPrecision
+                        };
+
+                        dbfInfo.Fields.Add(fld);
+                    }
+
+                    // Set up as the cursor
+                    dbfInfo.TableType = "C";
+                    dbfInfo.Exclusive = true;
+                    dbfInfo.Alias = alias;
+                    dbfInfo.VisibleFields = CursorObject.Columns.Count;
+
+                    // Assign the FQFN and make sure it's not duplicated
+                    dbfInfo.TableName = Program.CurrentApp.SystemCounter();
+                    dbfInfo.FQFN = tempfolder + dbfInfo.TableName+".dbf";
+
+                    while (File.Exists(dbfInfo.FQFN))
+                    {
+                        dbfInfo.TableName = Program.CurrentApp.SystemCounter();
+                        dbfInfo.FQFN = tempfolder + dbfInfo.TableName+".dbf";
+                    }
+
+                    // Create the DBF
+                    Task<bool> task = Program.CurrentApp.CurrentDS.CurrentWA.DBFCreateDBF(dbfInfo, true);
+                    task.Wait();
+
+                    if (task.Result)
+                    {
+                        // It was created, do we add data?
+                        if (includeData)
+                        {
+                            result = CursorObject.Rows.Count;
+
+                            // Add each row
+                            for (int i = 0; i < result; i++)
+                            {
+                                DataRow row = dbfInfo.EmptyRow.NewRow();
+                                row.ItemArray = (object[])dbfInfo.EmptyRow.Rows[0].ItemArray.Clone();
+
+                                // Add the columns for each row
+                                for (int j = 0; j < CursorObject.Columns.Count; j++)
+                                    row[CursorObject.Columns[j].Name] = CursorObject.Rows[i][j];
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Failed
+                        throw new Exception($"2450||JSONToCursor");
+                    }
+                }
+            }
+            else
+                throw new Exception($"1|{fileName}|JSONToCursor");
+
+            return result;
         }
 
 

@@ -1,4 +1,5 @@
-﻿using JAXBase.Core;
+﻿using DynamicData;
+using JAXBase.Core;
 using JAXBase.XBase;
 
 namespace JAXBase.Executor
@@ -43,7 +44,7 @@ namespace JAXBase.Executor
                     case "at":
                         rpns = rpn.Split(AppClass.expParam);
                         if (rpns.Length != 2) throw new Exception($"10||Invalid AT expression has {rpns.Length} parameters");
-                        
+
                         answer = await Program.CurrentApp.SolveFromRPNString(rpns[0]);
                         if (answer.Element.Type.Equals("N"))
                             eCodes.At.row = answer.AsInt();
@@ -60,7 +61,7 @@ namespace JAXBase.Executor
 
                     case "command":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("C"))
                             eCodes.COMMAND = rpnValue.AsString();
                         else
@@ -69,7 +70,7 @@ namespace JAXBase.Executor
 
                     case "collate":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("C"))
                             eCodes.COLLATE = rpnValue.AsString();
                         else
@@ -78,7 +79,7 @@ namespace JAXBase.Executor
 
                     case "codepage":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("N"))
                             eCodes.CODEPAGE = rpnValue.AsInt();
                         else
@@ -87,7 +88,7 @@ namespace JAXBase.Executor
 
                     case "database":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("C"))
                             eCodes.DATABASE = rpnValue.AsString();
                         else
@@ -96,7 +97,7 @@ namespace JAXBase.Executor
 
                     case "expressions":
                         rpnSplit = rpn.Split(AppClass.expDelimiter);
-                        
+
                         for (int j = 0; j < rpnSplit.Length; j++)
                         {
                             if (string.IsNullOrWhiteSpace(rpnSplit[j]) == false)
@@ -115,23 +116,26 @@ namespace JAXBase.Executor
                         break;
 
                     case "flags":
-                        eCodes.Flags = rpn.Split(AppClass.expParam);
-                        
-                        for (int j = 0; j < eCodes.Flags.Length; j++)
-                            eCodes.Flags[j] = (await Program.CurrentApp.SolveFromRPNString(eCodes.Flags[j])).AsString();
+                        rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
+                        if (string.IsNullOrWhiteSpace(rpnValue.AsString()) == false)
+                            eCodes.Flags = rpnValue.AsString().Split(AppClass.expDelimiter);
                         break;
 
                     case "from":
                         rpnSplit = rpn.Split(AppClass.expDelimiter);
-                        
-                        if (rpnSplit.Length != 2) throw new Exception("11|");
-                        eCodes.From.Type = rpnSplit[0];
-                        eCodes.From.Name = (await Program.CurrentApp.SolveFromRPNString(rpnSplit[1])).AsString();
+
+                        if (rpnSplit.Length == 2)
+                        {
+                            eCodes.From.Type = (await Program.CurrentApp.SolveFromRPNString(rpnSplit[0])).AsString();
+                            eCodes.From.Name = (await Program.CurrentApp.SolveFromRPNString(rpnSplit[1])).AsString();
+                        }
+                        else
+                            eCodes.From.Name = (await Program.CurrentApp.SolveFromRPNString(rpnSplit[0])).AsString();
                         break;
 
                     case "fname":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("C"))
                             eCodes.FNAME = rpnValue.AsString();
                         else
@@ -204,7 +208,7 @@ namespace JAXBase.Executor
 
                     case "into":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("C"))
                             eCodes.INTO = rpnValue.AsString();
                         else
@@ -225,7 +229,7 @@ namespace JAXBase.Executor
 
                     case "of":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("C"))
                             eCodes.OF = rpnValue.AsString();
                         else
@@ -242,16 +246,25 @@ namespace JAXBase.Executor
 
                     case "order":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("C"))
                             eCodes.ORDER = rpnValue.AsString();
                         else
                             throw new Exception("11|");
                         break;
 
+                    case "pretext":
+                        rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
+
+                        if (rpnValue.Element.Type.Equals("N"))
+                            eCodes.PRETEXT = rpnValue.AsInt();
+                        else
+                            throw new Exception("11|");
+                        break;
+
                     case "record":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("N"))
                             eCodes.RECORD = rpnValue.AsInt();
                         else if (rpnValue.Element.Type.Equals("C"))
@@ -270,7 +283,7 @@ namespace JAXBase.Executor
 
                     case "sesssion":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
-                        
+
                         if (rpnValue.Element.Type.Equals("N"))
                             eCodes.SESSION = rpnValue.AsInt();
                         else
@@ -279,9 +292,9 @@ namespace JAXBase.Executor
 
                     case "scope":
                         rpnSplit = rpn.Split(AppClass.expDelimiter);
-                        
+
                         if (rpnSplit.Length != 2) throw new Exception("11|");
-                        
+
                         eCodes.Scope.Type = rpnSplit[0];
                         answer = await Program.CurrentApp.SolveFromRPNString(rpnSplit[1]);
 
@@ -335,12 +348,16 @@ namespace JAXBase.Executor
                         }
                         break;
 
+                    case "text":
+                        eCodes.TEXT= rpn;
+                        break;
+
                     case "timeout":
                         rpnValue = await Program.CurrentApp.SolveFromRPNString(rpn);
 
                         if (rpnValue.Element.Type.Equals("N"))
                             eCodes.TIME = rpnValue.AsInt();
-                         else
+                        else
                             throw new Exception("11|");
                         break;
 

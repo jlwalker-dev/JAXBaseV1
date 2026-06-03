@@ -376,7 +376,7 @@ using System.Text;
 
 namespace JAXBase.Data
 {
-    public class JAXDirectDBF
+    public class JAXDirectDBF : IDisposable
     {
         const uint ZERO_DATE = 1721426; // 1899-12-31
         const bool PRINTDEBUG = true;
@@ -819,13 +819,6 @@ namespace JAXBase.Data
         }
 
 
-        /*
-         * Make sure everythign is cleaned up
-         */
-        ~JAXDirectDBF()
-        {
-
-        }
 
 
         /*===================================================================================*
@@ -1012,6 +1005,11 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         public async Task<int> DBFUse(string fullFileName, string aliasName, bool exclusive, bool noUpdate, string connecton)
         {
+            return await DBFUse(fullFileName, aliasName, exclusive, noUpdate, connecton, "T");
+        }
+
+        public async Task<int> DBFUse(string fullFileName, string aliasName, bool exclusive, bool noUpdate, string connecton, string type)
+        {
             // Start the setup process
             InSetup = true;
             DbfInfo.VisibleFields = 0;
@@ -1020,6 +1018,9 @@ namespace JAXBase.Data
 
             try
             {
+                // Make sure type is valid
+                type = "TCV".Contains(type.ToUpper()) ? type.ToUpper() : "T";
+
                 // Open up the file if it exists
                 if (File.Exists(FileName))
                 {
@@ -1037,6 +1038,7 @@ namespace JAXBase.Data
                         TableName = JAXLib.JustStem(fullFileName),
                         FQFN = fullFileName,
                         TableRef = fullFileName,
+                        TableType = type,
                         SysID = App.SystemCounter()
                     };
 
@@ -1862,7 +1864,7 @@ namespace JAXBase.Data
                 }
 
                 // Now open it up and populate the DbfInfo
-                llSuccess = await DBFUse(FileName, string.Empty, false, false, string.Empty) == 0;
+                llSuccess = await DBFUse(FileName, string.Empty, false, false, string.Empty, DbfInfo.TableType) == 0;
             }
             catch (Exception ex)
             {
@@ -1884,6 +1886,13 @@ namespace JAXBase.Data
 
             for (int i = 0; i < DbfInfo.IDX.Count; i++)
                 DbfInfo.IDX[i].IDXStream?.Close();
+
+            // If it's a cursor then delete the file
+            if (DbfInfo.TableType.Equals("C"))
+            {
+                if (File.Exists(DbfInfo.FQFN))
+                    File.Delete(DbfInfo.FQFN);
+            }
 
             DbfInfo = new();
         }
@@ -7092,6 +7101,10 @@ namespace JAXBase.Data
             }
 
             return results;
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

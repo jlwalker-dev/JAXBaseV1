@@ -397,10 +397,10 @@ namespace JAXBase.Executor
                 bool additive = Array.IndexOf(eCodes.Flags, "A") >= 0;
                 bool noconsole = Array.IndexOf(eCodes.Flags, "N") >= 0;
 
-                switch (dType.ToLower())
+                switch (dType.ToUpper())
                 {
-                    case "memory":          // Memory
-                    case "objects":         // Objects
+                    case "M":          // Memory
+                    case "O":         // Objects
                         List<string> vars = [];
 
                         // Load all private and local variables for each level
@@ -544,6 +544,27 @@ namespace JAXBase.Executor
                                 }
                             }
 
+                        }
+                        break;
+
+                    case "S":   // Structure
+                        if (Program.CurrentApp.CurrentDS.CurrentWA is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
+                            throw new Exception($"52||Display");
+                        else
+                        {
+                            sb.AppendLine();
+                            sb.AppendLine(string.Format("{0,-30} {1,-4}  {2,2}  {3,2}", "Field Name", "Type", "Length", "Dec"));
+
+                            for (int j = 0; j < Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Fields.Count; j++)
+                            {
+                                var f = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Fields[j];
+
+                                if (f.SystemColumn == false)
+                                {
+                                    sb.AppendLine();
+                                    sb.AppendLine(string.Format("{0,-30} {1,-5}    {2,3}   {3,2}", f.FieldName, f.FieldType, f.FieldLen, "NBIFY".Contains(f.FieldType) ? f.FieldDec : ""));
+                                }
+                            }
                         }
                         break;
 
