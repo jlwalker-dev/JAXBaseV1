@@ -1,6 +1,7 @@
 ﻿using JAXBase.Core;
 using JAXBase.Utilities;
 using System.Diagnostics;
+using System.Reflection;
 using System.Windows.Controls;
 
 namespace JAXBase.XBase
@@ -31,9 +32,24 @@ namespace JAXBase.XBase
             UserProperties["classid"].Element.Value = Program.CurrentApp.MyInstance;
 
             JAXObjects.Token tk = await AppVars.GetVarToken("_jax");
-            
+
             if (tk.Element.Type.Equals("L"))
                 UserProperties["name"].Protected = true;
+
+            string path = Assembly.GetExecutingAssembly().Location;
+            UserProperties["homefolder"].Element.Value = JAXLib.AddBackSlash(path);
+
+            if (Directory.Exists(path + @"tools\"))
+                await SetProperty("toolfolder", JAXLib.AddBackSlash(path) + @"tools\", 0);
+
+            path = JAXLib.AddBackSlash(Program.CurrentApp.UserFolder);
+            if (Directory.Exists(path + @"jaxbase") == false) Directory.CreateDirectory(path + @"jaxbase");
+            if (Directory.Exists(path + @"jaxbase\temp") == false) Directory.CreateDirectory(path + @"jaxbase\temp\");
+            if (Directory.Exists(path + @"jaxbase\work") == false) Directory.CreateDirectory(path + @"jaxbase\work\");
+
+            await SetProperty("userfolder", path, 0);
+            await SetProperty("tempfolder", path + @"jaxbase\temp\", 0);
+            await SetProperty("workfolder", path + @"jaxbase\work\", 0);
 
             return result;
         }
@@ -84,8 +100,12 @@ namespace JAXBase.XBase
 
                         break;
 
+                    case "logfolder":
+                        returnToken.Element.Value = JAXLib.JustFullPath(Program.CurrentApp.AppLogFile);
+                        break;
+
                     case "pathlist":
-                        returnToken.Element.Value = Program.CurrentApp.CurrentDS.JaxSettings.Path;
+                        returnToken.Element.Value = Program.CurrentApp.JaxVariables._LogPath;
                         break;
 
                     case "tempfolder":
@@ -96,12 +116,16 @@ namespace JAXBase.XBase
                         returnToken.Element.Value = Program.CurrentApp.JaxVariables._ToolsPath;
                         break;
 
+                    case "userfolder":
+                        returnToken.Element.Value = Program.CurrentApp.UserFolder;
+                        break;
+
                     case "version":
                         returnToken.Element.Value = Program.Version;
                         break;
 
                     case "workfolder":
-                        returnToken.Element.Value = Program.CurrentApp.AppWorkFolder;
+                        returnToken.Element.Value = Program.CurrentApp.JaxVariables._WorkPath;
                         break;
 
                     case "x64":
@@ -162,6 +186,7 @@ namespace JAXBase.XBase
             int result = 0;
             propertyName = propertyName.ToLower();
             JAXObjects.Token tk = new(objValue);
+            string file = tk.AsString();
 
             if (UserProperties.ContainsKey(propertyName))
             {
@@ -173,9 +198,209 @@ namespace JAXBase.XBase
                 {
                     switch (propertyName)
                     {
+                        case "defaultpath":
+                            if (tk.Element.Type.Equals("C"))
+                                Program.CurrentApp.CurrentDS.JaxSettings.Default = file;
+                            else
+                                result = 11;
+                            break;
+
+                        case "logfolder":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                file = JAXLib.AddBackSlash(file) + JAXLib.JustFName(Program.CurrentApp.AppLogFile);
+
+                                if (File.Exists(file))
+                                    Program.CurrentApp.AppLogFile = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "pathlist":
+                            if (tk.Element.Type.Equals("C"))
+                                Program.CurrentApp.JaxVariables._LogPath = CheckFolder(file);
+                            else
+                                result = 11;
+                            break;
+
+                        case "tempfolder":
+                            if (tk.Element.Type.Equals("C"))
+                                Program.CurrentApp.JaxVariables._TempPath = CheckFolder(file);
+                            else
+                                result = 11;
+                            break;
+
+                        case "toolfolder":
+                            if (tk.Element.Type.Equals("C"))
+                                Program.CurrentApp.JaxVariables._ToolsPath = CheckFolder(file);
+                            else
+                                result = 11;
+                            break;
+
+                        case "userfolder":
+                            if (tk.Element.Type.Equals("C"))
+                                Program.CurrentApp.UserFolder = CheckFolder(file);
+                            else
+                                result = 11;
+                            break;
+
+                        case "workfolder":
+                            if (tk.Element.Type.Equals("C"))
+                                Program.CurrentApp.JaxVariables._WorkPath = CheckFolder(file);
+                            else
+                                result = 11;
+                            break;
+
+                        case "classeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._ClassEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "fileeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._EditPRG = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "formeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._FormEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "imageeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._ImageEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "labeleditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._LabelEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "libraryeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._ClassEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "menueditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._MenuEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "projecteditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._ProjectEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "programeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._PrgEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "queryeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._QueryEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "reporteditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._ReportEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
+                        case "tableeditor":
+                            if (tk.Element.Type.Equals("C"))
+                            {
+                                if (File.Exists(tk.AsString()))
+                                    Program.CurrentApp.JaxVariables._TableEditor = file;
+                                else
+                                    result = 1;
+                            }
+                            else
+                                result = 11;
+                            break;
+
                         default:
-                            // Process standard properties
-                            result = 1;
+                            // skip everything else
+                            result = 9;
                             break;
                     }
 
@@ -206,6 +431,31 @@ namespace JAXBase.XBase
         }
 
 
+        private string CheckFolder(string path)
+        {
+            if (Directory.Exists(path) == false)
+            {
+                int err = 0;
+                string msg = "";
+
+                try
+                {
+                    Directory.CreateDirectory(path);
+                }
+                catch (ArgumentNullException ex) { err = 1886; msg = ex.Message; }
+                catch (ArgumentException ex) { err = 202; msg = ex.Message; }
+                catch (PathTooLongException ex) { err = 2022; msg = ex.Message; }
+                catch (UnauthorizedAccessException ex) { err = 1705; msg = ex.Message; }
+                catch (IOException ex) { err = 0; msg = ex.Message; }
+                catch (Exception ex) { err = 9999; msg = ex.Message; }
+
+                if (err > 0)
+                    throw new Exception($"{err}||{msg}");
+            }
+
+            return path;
+        }
+
         public override string[] JAXMethods()
         {
             return [];
@@ -221,20 +471,23 @@ namespace JAXBase.XBase
             return
             [
                 "activeform,n!,0",
-                "activemonitor,n!,0", 
+                "activemonitor,n!,0",
                 "activeproject,o!,",
                 "baseclass,C!,jax",
                 "class,C!,screen",
                 "classlibrary,C!,",
                 "config,c!,",
-                "defaulpath,c!,",
+                "defaulpath,c,",
                 "fullname,c!,",
+                "homefolder,c!,",
+                "logfolder,c,",
                 "name,c,JAX",
-                "pathlist,c!,",
-                "tempfolder,c!,",
-                "toolfolder,c!,",
+                "pathlist,c,",
+                "tempfolder,c,",
+                "toolfolder,c,",
+                "userfolder,c,",
+                "workfolder,c,",
                 "version,n!,",
-                "workfolder,c!,",
                 "x64,l!,.F.",
                 "classeditor,c,EDIT_CLX.APP",
                 "fileeditor,c,",

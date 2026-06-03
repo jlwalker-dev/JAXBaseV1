@@ -10,22 +10,122 @@ namespace JAXBase.Executor
 
         /* TODO
          * 
-         * TEXT
+         * TEXT TO cVar PRETEXT nExpr NOSHOW ADDITIVE TEXTMERGE
          * 
          */
-        public static string Text(string cmdRest)
+        public static async Task<string> Text(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
+                bool lineFeeds = (eCodes.PRETEXT & 8) == 0;
+                bool carriageReturn = (eCodes.PRETEXT & 4) == 0;
+                bool tabs = (eCodes.PRETEXT & 2) == 0;
+                bool spaces = (eCodes.PRETEXT & 1) == 0;
+
+                bool noshow = eCodes.Flags.Contains("noshow");
+                bool textmerge = eCodes.Flags.Contains("textmerge");
+                bool additive = eCodes.Flags.Contains("additive");
+
+                string varName = "";
+                JAXObjects.Token varToken = new();
+
+                if (eCodes.To.Count == 1)
+                {
+                    JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.To[0].Name);
+                    if (answer.Element.Type.Equals("C"))
+                    {
+                        varName = answer.AsString();
+                        varToken = await AppVars.GetVarToken(varName);
+                        if (varToken.Element.Type.Equals("U"))
+                        {
+                            AppVars.SetVarOrMakePrivate(varName, new(""));
+                            varToken = await AppVars.GetVarToken(varName);
+                        }
+                    }
+                    else
+                        throw new Exception($"11||Text");
+                }
+                else if (eCodes.To.Count > 1)
+                    throw new Exception($"10||Text");
+
+                string text = eCodes.TEXT;
+                string textString = "";
+
+                bool lineStart = true;
+                bool endLine = false;
+                while (text.Length > 0)
+                {
+                    if (lineStart)
+                    {
+                        if (text[0] == '\t' && tabs == false)
+                        {
+                            text = text[1..];
+                            continue;
+                        }
+
+                        if (text[0] == ' ' && spaces == false)
+                        {
+                            text = text[1..];
+                            continue;
+                        }
+                    }
+
+                    if (text[0] == '\r' && carriageReturn == false)
+                    {
+                        // If the CR is removed, put a string in place
+                        // of the first one so everything looks nice
+                        if (endLine == false) textString += ' ';
+                        lineStart = true;
+                        endLine = true;
+                        text = text[1..];
+                        continue;
+                    }
+
+                    if (text[0] == '\n' && lineFeeds == false)
+                    {
+                        lineStart = true;
+                        endLine = true;
+                    }
+
+                    // this check is in case one of them is false and the other is true
+                    if (text[0] != ' ' && text[0] != '\t')
+                    {
+                        lineStart = false;
+                        endLine = false;
+                    }
+
+                    textString += text[0].ToString();
+                    text = text[1..];
+                }
+
+                // Perform the textmerge?
+                if (textmerge)
+                {
+                    // TODO - break out a list of <<>> tags and process them
+                }
+
+                // Allow it to go to the main IDE screen?
+                if (noshow == false)
+                {
+                    // TODO - deal with \n, \r, and Envrionment.NewLine
+                    AppIO.SendToIDE(Environment.NewLine + textString);
+                }
+
+                // Is there a TO Var and is there an ADDITIVE flag?
+                if (string.IsNullOrEmpty(varName) == false)
+                {
+                    if (additive)
+                        varToken.Element.Value += " " + textString;
+                    else
+                        varToken.Element.Value = textString;
+                }
             }
             catch (Exception ex)
             {
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 

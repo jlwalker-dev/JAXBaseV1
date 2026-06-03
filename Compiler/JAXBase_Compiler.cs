@@ -274,7 +274,7 @@ namespace JAXBase.Compiler
                 "store" => BreakStoreStatement(cmdRest),
                 "sum" => Generic_Parser(cmdRest, "XX3,SC0,FR0,WL0,TO1", []),
                 "suspend" => string.Empty,
-                "text" => Generic_Parser(cmdRest, "TO0,FG0,PT0", ["additive", "textmerge", "noshow"]),
+                "text" => JAXBase_Compiler_T.Text(this, cmdRest),
                 "throw" => Generic_Parser(cmdRest, "XX*", []),
                 "total" => Generic_Parser(cmdRest, "TO0,FV1,SC0,FR0,WH0", ["nooptimize"]),
                 "try" => Struct_Parser(cmdRest, "TR", string.Empty, []),
@@ -312,10 +312,34 @@ namespace JAXBase.Compiler
             bool includeSource = Program.CurrentApp.CurrentDS.JaxSettings.IncludeSource && Program.CurrentApp.InCompile;
 
 
-            string[] block = cmdBlock.Replace("\n", "").Split('\r');
-            AppIO.DebugLog($"Compiling {block.Length} lines");
+            string[] block2 = cmdBlock.Replace("\n", "").Split('\r');
 
-            for (int i = 0; i < block.Length; i++)
+            // Go through the lines and pull continuation lines together
+            List<string> block = [];
+
+            for (int ii = 0; ii < block2.Length; ii++)
+            {
+                string blockLine = block2[ii].Trim();
+
+                if (blockLine.Length > 0 && blockLine[^1] == ';')
+                {
+                    // Add this line and look for another
+                    cmpLine.Append(blockLine.TrimEnd(';').TrimEnd() + " ");
+                    continue;
+                }
+                else
+                    cmpLine.Append(blockLine);
+
+                block.Add(cmpLine.ToString());
+                cmpLine = new();
+            }
+
+
+            // Compile the block
+            AppIO.DebugLog($"Compiling {block.Count} lines");
+
+            int i = 0;
+            while (i < block.Count)
             {
                 lineNo++;
                 string blockLine = block[i].Trim();
@@ -331,31 +355,46 @@ namespace JAXBase.Compiler
                     else
                         ln = blockLine;
 
-                    if (ln.Length > 0 && ln[^1] == ';')
+                    // Have we run into a TEXT command?
+                    if ((ln[..4].Equals("text", StringComparison.OrdinalIgnoreCase) && ln.Length == 4) || (ln.Length > 4 && ln[..5].Equals("text ", StringComparison.OrdinalIgnoreCase)))
                     {
-                        // Add this line and look for another
-                        cmpLine.Append(ln.TrimEnd(';').TrimEnd() + " ");
+                        cmpLine = new(ln + Environment.NewLine);
+
+                        // Get the next x lines until ENDTEXT
+                        while (i < block.Count)
+                        {
+                            i++;
+                            ln = block[i].Trim();
+                            if (ln.Length == 7 && ln.Equals("endtext", StringComparison.OrdinalIgnoreCase) || ln.Length > 7 && ln.Equals("endtext ", StringComparison.OrdinalIgnoreCase))
+                            {
+                                ln = "";
+                                i++;    // toss the endtext
+                                break;
+                            }
+                            cmpLine.Append(ln + Environment.NewLine);
+                        }
                     }
                     else
-                    {
                         cmpLine.Append(ln);
-                        AppIO.DebugLog($"{lineNo}: {ln}");
 
-                        string cLine = cmpLine.ToString().Trim();
-                        string cmdLine = CompileLine(cLine, inCompile).Trim();
+                    AppIO.DebugLog($"{lineNo}: {cmpLine}");
 
-                        Program.CurrentApp.utl.Conv64(lineNo, 2, out string lnNo);
+                    string cLine = cmpLine.ToString().Trim();
+                    string cmdLine = CompileLine(cLine, inCompile).Trim();
 
-                        // Process the command
-                        if (Program.CurrentApp.InCompile && includeSource && cLine.Length > 0)
-                            cmpBlock.Append(AppClass.cmdByte + Program.CurrentApp.MiscInfo["sourcecode"] + Program.CurrentApp.CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
+                    Program.CurrentApp.utl.Conv64(lineNo, 2, out string lnNo);
 
-                        // Only append line number if there is something returned
-                        if (cmdLine.Length > 0) cmpBlock.Append(cmdLine + lnNo);
+                    // Process the command
+                    if (Program.CurrentApp.InCompile && includeSource && cLine.Length > 0)
+                        cmpBlock.Append(AppClass.cmdByte + Program.CurrentApp.MiscInfo["sourcecode"] + Program.CurrentApp.CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
 
-                        cmpLine = new();
-                    }
+                    // Only append line number if there is something returned
+                    if (cmdLine.Length > 0) cmpBlock.Append(cmdLine + lnNo);
+
+                    cmpLine = new();
                 }
+
+                i++;
             }
 
             //AppIO.DebugLog($"{cmpBlock.Length} bytes in block");
@@ -1948,6 +1987,47 @@ namespace JAXBase.Compiler
                         cmdRest = StatementBreak_From(allowed, Flags, cmdRest, out cmdOut);
                         code["from"] = cmdOut;
                     }
+                    else if (JAXLib.InListC(s, "memvar"))
+                    {
+                        // ---------------------------------------------
+                        // GATHER MEMVAR
+                        // ---------------------------------------------
+                        if (allowed.Contains("FM1"))
+                        {
+                            if (code["from"].Length > 0) throw new Exception("10||Cannot redefine FROM clause");
+                            code["from"] = AppClass.literalStart + "M" + AppClass.literalEnd;
+                        }
+                        else if (allowed.Contains("TO6"))
+                        {
+                            if (code["to"].Length > 0) throw new Exception("10||Cannot redefine TO clause");
+                            code["to"] = AppClass.literalStart + "M" + AppClass.literalEnd;
+                        }
+                        else
+                            throw new Exception("10||Unexpected MEMVAR keyword");
+
+                    }
+                    else if (JAXLib.InListC(s, "name", "json"))
+                    {
+                        // ---------------------------------------------
+                        // GATHER NAME or GATHER JSON
+                        // ---------------------------------------------
+                        if (allowed.Contains("FM1"))
+                        {
+                            if (code["from"].Length > 0) throw new Exception("10||Cannot redefine FROM clause");
+                            cmdRest = GetNextLiteralOrExpression(cmdRest, string.Empty, out cmdOut);
+                            code["from"] = AppClass.literalStart + s[..1].ToUpper() + AppClass.literalEnd + AppClass.expDelimiter.ToString() + cmdOut;
+                        }
+                        else if (allowed.Contains("TO6"))
+                        {
+                            if (code["to"].Length > 0) throw new Exception("10||Cannot redefine TO clause");
+                            cmdRest = GetNextLiteralOrExpression(cmdRest, string.Empty, out cmdOut);
+                            code["to"] = AppClass.literalStart + s[..1].ToUpper() + AppClass.literalEnd + AppClass.expDelimiter.ToString() + cmdOut;
+
+                        }
+                        else
+                            throw new Exception($"10||Unexpected {s.ToUpper()} keyword");
+
+                    }
                     else if (s.Equals("in", StringComparison.OrdinalIgnoreCase))
                     {
                         // ---------------------------------------------
@@ -2012,7 +2092,7 @@ namespace JAXBase.Compiler
 
                         if (allowed.Contains("ON*"))
                         {
-                            // THIS HAS TO BE CALLED BY STRICTBREAK()
+                            // TODO - THIS HAS TO BE CALLED BY STRICTBREAK()
                             // as we're potentially returning an infix formula
                             cmdOut = AppClass.literalStart + cmdRest + AppClass.literalEnd;
                             cmdRest = string.Empty;
@@ -2021,6 +2101,20 @@ namespace JAXBase.Compiler
                             cmdRest = GetNameLiteralOrExpression(cmdRest, string.Empty, out cmdOut);
 
                         code["on"] = cmdOut;
+                    }
+                    else if (s.Equals("pretext", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // ---------------------------------------------
+                        // PRETEXT expression
+                        // ---------------------------------------------
+                        if (allowed.Contains("PT") == false) throw new Exception("10||Unexpected PRETEXT keyword");
+                        if (code["pretext"].Length > 0) throw new Exception("10||Cannot redfine PRETEXT clause");
+
+                        // TODO - THIS HAS TO BE CALLED BY STRICTBREAK()
+                        // as we're potentially returning an infix formula
+                        cmdOut = GetRPNString(Program.CurrentApp, cmdRest);
+                        cmdRest = string.Empty;
+                        code["pretext"] = cmdOut;
                     }
                     else if (JAXLib.InListC(s, "all", "rest", "next", "top", "record") && allowed.Contains("SC"))
                     {
@@ -2554,20 +2648,16 @@ namespace JAXBase.Compiler
         {
             if (allowed.Contains("FM0"))
                 cmdRest = GetNextExpression(cmdRest, string.Empty, out cmdOut);
-            else if (allowed.Contains("FM1"))
+            else if (allowed.Contains("FM1") || allowed.Contains("TO6"))
             {
+                // Gather From or Scatter To
                 GetNextToken(cmdRest, string.Empty, out string type);
 
-                if (JAXLib.InListC(type, "array", "name", "json"))
+                if (JAXLib.InListC(type, "array", "json"))
                 {
                     cmdRest = GetNextToken(cmdRest, string.Empty, out type);
                     cmdRest = GetNameLiteralOrExpression(cmdRest, string.Empty, out cmdOut);
                     cmdOut = AppClass.literalStart.ToString() + type[0].ToString().ToUpper() + AppClass.literalEnd.ToString() + AppClass.expDelimiter.ToString() + cmdOut;
-                }
-                else if (type.Equals("memvar", StringComparison.OrdinalIgnoreCase))
-                {
-                    cmdRest = GetNextToken(cmdRest, string.Empty, out type);
-                    cmdOut = AppClass.literalStart + "M" + AppClass.literalEnd;
                 }
                 else
                     throw new Exception("10||Unexpected FROM " + type);

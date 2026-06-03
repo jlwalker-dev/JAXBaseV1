@@ -9,7 +9,7 @@ namespace JAXBase.Executor
 {
     public class JAXBase_Executor_C
     {
-        /* TODO NOW?
+        /* 
          * 
          * CALCULATE eExpressionList [Scope] [FOR lExpression1] [WHILE lExpression2] [TO VarList | TO ARRAY ArrayName] [NOOPTIMIZE] [IN nWorkArea | cTableAlias]
          * 
@@ -1224,6 +1224,7 @@ namespace JAXBase.Executor
                     Fields = FieldInfo,
                     TableName = TableName,
                     FQFN = fqfn,
+                    TableType = "CTV".Contains(eCodes.SUBCMD, StringComparison.CurrentCultureIgnoreCase) ? eCodes.SUBCMD.ToUpper() : "T"
                 };
 
                 if (await Program.CurrentApp.CurrentDS.CurrentWA.DBFCreateDBF(dbfInfo, overwrite))

@@ -74,7 +74,6 @@ namespace JAXBase.XBase
             // ----------------------------------------
             // Final setup of properties
             // ----------------------------------------
-
             bool result = await base.PostInit(callBack, parameterList);
 
             return result;
@@ -442,9 +441,17 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public override string[] JAXMethods() => ["addproperty", "connect", "create", "drop","disconnect", "exec", "getobject", "list", "truncate", "update", "writeexpression", "writemethod"];
+        public override string[] JAXMethods() => 
+            [
+            "addproperty", "connect", "create", "drop","disconnect", "exec", "getobject", "list", 
+            "truncate", "update", "writeexpression", "writemethod"
+            ];
 
-        public override string[] JAXEvents() =>  ["afterquery","connected", "disconnected", "destroy", "error", "fail", "init", "load","success"];
+        public override string[] JAXEvents() =>  
+            [
+            "afterquery","connected", "disconnected", "destroy", "error", "fail", "init", 
+            "load","success"
+            ];
 
         /*
          * property data types

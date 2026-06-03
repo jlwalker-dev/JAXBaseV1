@@ -31,8 +31,54 @@ namespace JAXBase.Math
 
             switch (_rpn)
             {
-                case "`JSONTOCURSOR":       // TODO
-                    // --------------------------------------------------------------------------------- TODO
+                case "`JSONTOCURSOR":
+                    if (stype1.Equals("C"))
+                    {
+                        // Does the file exist?
+                        string path = AppHelper.FindPathForFile(string1);
+                        string fName = JAXLib.JustFName(string1);
+
+                        // If there's a path, the file was found
+                        if (string.IsNullOrEmpty(path) == false)
+                        {
+                            if (string.IsNullOrEmpty(stype2))
+                            {
+                                // empty string so give it a alias name
+                                string2 = "X" + Program.CurrentApp.SystemCounter();
+                            }
+                            else if (stype2.Equals("C") == false)
+                                throw new Exception($"11||JSONToCursor");
+                            else
+                            {
+                                string2 = string2.Trim();
+
+                                // Is it a legal name?
+                                if (AppHelper.IsLegalObjectName(string2))
+                                {
+                                    if (Program.CurrentApp.CurrentDS.IsWorkArea(string2))
+                                        throw new Exception($"24|{string2}|JSONToCursor");
+                                }
+                                else
+                                    throw new Exception($"|{string2}|JSONToCursor");
+                            }
+
+                            intval3 = 0;
+                            if (string.IsNullOrEmpty(stype3) == false)
+                            {
+                                if (stype3.Equals("L"))
+                                    intval3 = string3.Contains('T', StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+                                else
+                                    throw new Exception("11||JSONToCursor");
+                            }
+
+                            VFPUtilities.JSONToCursor(path + fName, string2, intval3 > 0);
+                        }
+                        else
+                            throw new Exception($"1|{string1}|JSONToCursor");
+                    }
+                    else
+                        throw new Exception($"1|{string1}|JSONToCursor");
+
                     break;
 
                 case "`JSONTOOBJ":          // TODO

@@ -2,6 +2,7 @@
 using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Utilities;
+using OpenAI.Responses;
 using System.Collections;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -414,48 +415,49 @@ namespace JAXBase.XBase
 
     public class ExecutorCodes
     {
-        public string ALIAS = string.Empty;
+        public string ALIAS = "";
         public List<string> As = [];
         public ExCodeAt At = new();
-        public string BLANK = string.Empty;
-        public string CLASS = string.Empty;
-        public string COLLATE = string.Empty;
+        public string BLANK = "";
+        public string CLASS = "";
+        public string COLLATE = "";
         public int CODEPAGE = 0;
-        public string COMMAND = string.Empty;
-        public string DATABASE = string.Empty;
+        public string COMMAND = "";
+        public string DATABASE = "";
         public List<ExCodeRPN> Expressions = [];
         public List<ExCodeName> Fields = [];
         public List<ExCodeRPN> FileExpr = [];
         public string[] Flags = [];
-        public string FNAME = string.Empty;
-        public string ForExpr = string.Empty;
+        public string FNAME = "";
+        public string ForExpr = "";
         public ExCodeName From = new();
-        public string InExpr = string.Empty;
+        public string InExpr = "";
         public List<ExCodeName> Index = [];
-        public string INTO = string.Empty;
+        public string INTO = "";
         public List<string> Like = [];
-        public string MESSAGE = string.Empty;
-        public string NAME = string.Empty;
-        public string OF = string.Empty;
-        public string ON = string.Empty;
-        public string ORDER = string.Empty;
+        public string MESSAGE = "";
+        public string NAME = "";
+        public string OF = "";
+        public string ON = "";
+        public string ORDER = "";
+        public int PRETEXT = 0;
         public int RECORD = 0;
         public ExCodeScope Scope = new();
         public int SESSION = 0;
-        public string SHEET = string.Empty;
+        public string SHEET = "";
         public ExCodeAt Size = new();
         public double STEP = 0;
-        public string SUBCMD = string.Empty;
-        public string TABLE = string.Empty;
+        public string SUBCMD = "";
+        public string TABLE = "";
         public List<ExCodeName> Tag = [];
+        public string TEXT = "";
         public int TIME = -1;
-        public string TITLE = string.Empty;
+        public string TITLE = "";
         public List<ExCodeName> To = [];
         public List<ExCodeName> Type = [];
-        //public JAXObjects.Token[] ValTokens = [];
         public List<ExCodeRPN> Values = [];
-        public string WhenExpr = string.Empty;
-        public string WhileExpr = string.Empty;
+        public string WhenExpr = "";
+        public string WhileExpr = "";
         public List<ExCodeRPN> With = [];
     }
 
@@ -784,13 +786,14 @@ namespace JAXBase.XBase
         public string _FormEditor = string.Empty;
         public string _GraphicEditor = string.Empty;
         public string _HexEditor = string.Empty;
+        public string _ImageEditor = string.Empty;
         public string _LabelEditor = string.Empty;
         public string _MenuEditor = string.Empty;
         public string _ObjectBrowser = string.Empty;
         public string _PrgEditor = string.Empty;
         public string _ProjectEditor = string.Empty;
         public string _QueryEditor = string.Empty;
-        public string _RepEditor = string.Empty;
+        public string _ReportEditor = string.Empty;
         public string _StartupApp = string.Empty;
         public string _TableEditor = string.Empty;
         public string _Wizard = string.Empty;
@@ -860,7 +863,7 @@ namespace JAXBase.XBase
         public string _WorkPath
         {
             get { return _workPath; }
-            set { _workPath = JAXLib.Addbs(value); }
+            set { _workPath = JAXLib.AddBackSlash(value); }
         }
 
         // Defaults for various class properties

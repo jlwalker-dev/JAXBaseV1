@@ -1128,20 +1128,12 @@ namespace JAXBase.Core
          *-------------------------------------------------------------*/
         public static void CreateSystemVars()
         {
+
             MakePublicVar("_screen", 1, 1, true).Wait();
             Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_screen"].Element.Value = Program.CurrentApp._screen!;
 
             MakePublicVar("_jax", 1, 1, true).Wait();
-            Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_jax"].Element.Value = new JAXObjectWrapper(Program.CurrentApp, "jax", "_jax", []);
-
-            MakePublicVar("_jaxhome", 1, 1, true).Wait();
-            Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_jaxhome"].Element.Value = "";
-
-            MakePublicVar("_jaxfolder", 1, 1, true).Wait();
-            Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_jaxfolder"].Element.Value = "";
-
-            MakePublicVar("_jaxtemp", 1, 1, true).Wait();
-            Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_jaxtemp"].Element.Value = "";
+            Program.CurrentApp.AppLevels[0].PrivateVars.jaxObject["_jax"].Element.Value = Program.CurrentApp._jax!;
         }
 
         public static async Task SetAsType(string varName, string rpn)

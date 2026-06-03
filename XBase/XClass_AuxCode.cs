@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using JAXBase.Core;
 using JAXBase.Executor;
+using JAXBase.Math;
 using JAXBase.Utilities;
 
 namespace JAXBase.XBase
@@ -21,15 +22,19 @@ namespace JAXBase.XBase
             parameterStr = parameterStr.Replace("\r", "");
             string[] parameterString = parameterStr.Split("\r");
 
+            JAXMath jaxMath = new();
+
             foreach (string p in parameterString)
             {
                 if (p.Length > 1 && p.Contains('='))
                 {
                     int f = p.IndexOf('=');
+                    var r = await jaxMath.SolveMath(p[(f + 1)..]);
+
                     xParameters parm = new()
                     {
                         Name = p[..f],
-                        Value = await JAXBase_Executor_M.RawMath(p[(f + 1)..])
+                        Value = r.Result
                     };
 
                     pList.Add(parm);
@@ -38,6 +43,7 @@ namespace JAXBase.XBase
 
             return pList;
         }
+
 
 
         /* -----------------------------------------------------------------------------------

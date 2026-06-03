@@ -87,6 +87,7 @@ namespace JAXBase.Language
                 1115 => "Invalid operation for a cursor",
                 1195 => "Object file {*} was compiled in a previous version of JAXBase",
                 1196 => "{*} is not a JAXBase .EXE file.",
+                1197 => "IO disk or network error",
 
                 // 1200
                 1203 => "Mismatched SCAN/ENDSCAN command structure",
@@ -220,8 +221,12 @@ namespace JAXBase.Language
                 2404 => "Cannot make {!} a private variable",
                 2405 => "{!} cannot be overwritten",
 
+                2450 => "Failed to create table or cursor",
+
                 // 2500 - JSON related errors
-                2500 => "Invalid JSON string",
+                2500 => "Invalid JSON expression {0}",
+                2501 => "Invalid JSON file {0}",
+                2502 => "JSON parsing error {0}",
 
                 // 2600 - JAXEdit errors
                 2600 => "Editor program is not set",

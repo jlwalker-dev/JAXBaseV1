@@ -8,21 +8,6 @@ namespace JAXBase.Executor
 {
     public class JAXBase_Executor_M
     {
-        /*
-         * Takes a string and converts it to an answer via the full math routine
-         * The string can contain a value, like "hello", 10, or .F. or a full expression
-         * like A+B*3
-         * 
-         */
-        public static async Task<JAXObjects.Token> RawMath( string expression)
-        {
-            JAXMath jaxMath = new();
-            GenericClass gc = await jaxMath.SolveMath(expression);
-            return gc.Value;
-        }
-
-
-
         /* TODO
          * 
          * MD
