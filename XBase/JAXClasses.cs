@@ -751,7 +751,8 @@ namespace JAXBase.XBase
         public string Talk_Console = string.Empty;
 
         public bool TextMerge = false;
-        public string TextMerge_Delimiters = "<,>";
+        public string TextMerge_Delimiters_Left = "<<";
+        public string TextMerge_Delimiters_Right = ">>";
         public string TextMerge_Name = string.Empty;
         public bool TextMerge_show = false;
 

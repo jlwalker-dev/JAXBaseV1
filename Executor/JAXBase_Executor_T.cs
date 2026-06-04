@@ -1,6 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.XBase;
-using static System.Runtime.CompilerServices.RuntimeHelpers;
+using System.Text.RegularExpressions;
 
 namespace JAXBase.Executor
 {
@@ -99,9 +99,38 @@ namespace JAXBase.Executor
                 }
 
                 // Perform the textmerge?
-                if (textmerge)
+                if (string.IsNullOrEmpty(textString) == false)
                 {
-                    // TODO - break out a list of <<>> tags and process them
+                    // break out a list of <<>> tags and process them
+                    // Matches <<AnythingHere>> and captures the content inside
+                    string pattern = Program.CurrentApp.CurrentDS.JaxSettings.TextMerge_Delimiters_Left + @"(.+?)" + Program.CurrentApp.CurrentDS.JaxSettings.TextMerge_Delimiters_Right;
+                    MatchCollection matches = Regex.Matches(textString, pattern);
+
+                    List<string> tags = [];
+                    HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (Match match in matches)
+                    {
+                        if (match.Success && match.Groups.Count > 1)
+                        {
+                            string tagContent = match.Groups[1].Value;
+                            if (!string.IsNullOrEmpty(tagContent))
+                            {
+                                if (seen.Add(tagContent))
+                                {
+                                    // This holds a copy of each tag
+                                    tags.Add(tagContent);
+                                }
+                            }
+                        }
+                    }
+
+                    // Replace the tags with their calculated values
+                    for (int i = 0; i < tags.Count; i++)
+                    {
+                        GenericClass answer = await Program.CurrentApp.JaxMath.SolveMath(tags[i].Trim());
+                        textString = textString.Replace(Program.CurrentApp.CurrentDS.JaxSettings.TextMerge_Delimiters_Left + tags[i] + Program.CurrentApp.CurrentDS.JaxSettings.TextMerge_Delimiters_Right, answer.Value.AsString());
+                    }
                 }
 
                 // Allow it to go to the main IDE screen?
