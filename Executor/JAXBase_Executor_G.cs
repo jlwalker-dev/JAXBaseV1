@@ -2,7 +2,6 @@
 using JAXBase.Data;
 using JAXBase.XBase;
 using Newtonsoft.Json.Linq;
-using Renci.SshNet.Messages.Connection;
 using System.Data;
 
 namespace JAXBase.Executor
@@ -21,8 +20,6 @@ namespace JAXBase.Executor
          */
         public static async Task<string> Gather(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
                 if (Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
@@ -253,7 +250,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 

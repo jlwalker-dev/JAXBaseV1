@@ -2,13 +2,9 @@
 using JAXBase.Data;
 using JAXBase.Utilities;
 using JAXBase.XBase;
-using LibVLCSharp.Shared;
-using Microsoft.VisualBasic.FileIO;
-using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Data;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace JAXBase.Executor
 {
@@ -23,8 +19,6 @@ namespace JAXBase.Executor
          */
         public static string Save(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
             }
@@ -33,7 +27,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException($"{thisFile}.Save", ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -163,8 +157,6 @@ namespace JAXBase.Executor
          */
         public static async Task<string> Scatter(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
                 if (Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo is null || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.DBFStream is null)
@@ -409,7 +401,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -421,8 +413,6 @@ namespace JAXBase.Executor
          */
         public static async Task<string> Seek(string cmdRest)
         {
-            string result = string.Empty;
-
             // where are we?
             int ds = Program.CurrentApp.CurrentDataSession;
             int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
@@ -493,9 +483,10 @@ namespace JAXBase.Executor
             }
 
             // Go back to current workarea
+            Program.CurrentApp.SetDataSession(ds);
             Program.CurrentApp.CurrentDS.SelectWorkArea(wa);
 
-            return result;
+            return "";
         }
 
 
@@ -506,7 +497,6 @@ namespace JAXBase.Executor
          */
         public static async Task<string> Select(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
             AppErrorHandling.ClearErrors();
 
             try
@@ -535,7 +525,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException($"{thisFile}.Select", ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -547,8 +537,6 @@ namespace JAXBase.Executor
          */
         public static string SelectSQL(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
 
@@ -558,7 +546,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException($"{thisFile}.SelectSQL", ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -622,7 +610,7 @@ namespace JAXBase.Executor
                 Program.CurrentApp.CurrentDS.SelectWorkArea(wa); // Restore workarea
             }
 
-            return string.Empty;
+            return "";
         }
 
 
@@ -635,7 +623,6 @@ namespace JAXBase.Executor
          */
         public static string Sleep(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
             try
             {
             }
@@ -643,7 +630,7 @@ namespace JAXBase.Executor
             {
                 AppErrorHandling.HandleException($"{thisFile}.Sleep", ex.Message);
             }
-            return result;
+            return "";
         }
 
 
@@ -654,8 +641,6 @@ namespace JAXBase.Executor
          */
         public static string Sort(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
             }
@@ -664,7 +649,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException($"{thisFile}.Sort", ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -675,8 +660,6 @@ namespace JAXBase.Executor
          */
         public static async Task<string> Store(ExecutorCodes eCodes)
         {
-            string result = string.Empty;
-
             try
             {
                 // basic sanity checks
@@ -734,7 +717,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException($"{thisFile}.Store", ex.Message);
             }
 
-            return result;
+            return "";
         }
 
 
@@ -745,8 +728,6 @@ namespace JAXBase.Executor
          */
         public static string Suspend(string cmdRest)
         {
-            string result = string.Empty;
-
             try
             {
             }
@@ -755,7 +736,7 @@ namespace JAXBase.Executor
                 AppErrorHandling.HandleException($"{thisFile}.Suspend", ex.Message);
             }
 
-            return result;
+            return "";
         }
     }
 }

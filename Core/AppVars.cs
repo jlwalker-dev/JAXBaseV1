@@ -869,9 +869,12 @@ namespace JAXBase.Core
                 if (JAXLib.InListC(expr, ".null.", "null"))
                     throw new Exception("41|.null.");
 
+                // Expecting object.property or alias.field
+                if (expr[..2].Equals("m.", StringComparison.OrdinalIgnoreCase))
+                    expr = expr[2..];
+
                 if (expr.Contains('.'))
                 {
-                    // Expecting object.property or alias.field
                     List<string> objList = BreakVar(expr);
                     int WithCount = Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].WithStack.Count - 1;
 
@@ -1202,8 +1205,19 @@ namespace JAXBase.Core
                 int cpos = 0;
                 char endQuote = '\0';
 
-                if (varName.Contains('.'))
+                // If it's an object m.variable then strip the "m."
+                if (varName[..2].Equals("m.", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (varName.Replace(".", "").Length + 1 - varName.Length>0)
+                    {
+                        // It's a m.variable with extra periods
+                        varName = varName[2..];
+                    }
+                }
+
+                if (varName.Contains('.') && varName[..2].Equals("m.", StringComparison.OrdinalIgnoreCase) == false)
+                {
+                    // Break the object variable
                     while (varName.Length > 0 && cpos < varName.Length)
                     {
                         char c = varName[cpos++];

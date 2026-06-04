@@ -327,7 +327,7 @@ namespace JAXBase.Compiler
                     cmpLine.Append(blockLine.TrimEnd(';').TrimEnd() + " ");
                     continue;
                 }
-                else
+                else 
                     cmpLine.Append(blockLine);
 
                 block.Add(cmpLine.ToString());

@@ -628,7 +628,6 @@ namespace JAXBase.Executor
             if (Program.CurrentApp.CurrentAppLevel < Program.CurrentApp.AppLevels.Count && Program.CurrentApp.AppLevels.Count > 1 && cmdCode != 129)
                 Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand = cmdCode;
 
-
             return result;
         }
 
