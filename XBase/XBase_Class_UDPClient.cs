@@ -1,5 +1,5 @@
 ﻿/*
- * UDP Client
+ * Based on Grok's UDP Client
  *
  * Usage Examples
  * ----------------------------------------------------------------------------
@@ -65,19 +65,17 @@
  * * Even if network dies — it auto-rebinds!
  * 
  * Error Handling Features
- *  Feature                 Now Included?
- *  try/catch everywhere    Yes
- *  SocketException codes   Yes
- *  Timeout handling        Yes
- *  ObjectDisposed safety   Yes
- *  NullReference guards    Yes
- *  lock() thread safety    Yes
- *  AutoRebindOnError       Yes
- *  OnError / OnWarning     Yes
- *  LastError property      Yes
- *  Dispose() + finalizer   Yes
- *  DNS fallback            Yes
- *  Port conflict detection Yes
+ *      SocketException codes
+ *      Timeout handling
+ *      ObjectDisposed safety
+ *      NullReference guards
+ *      lock() thread safety
+ *      AutoRebindOnError
+ *      OnError / OnWarning
+ *      LastError property
+ *      Dispose() + finalizer
+ *      DNS fallback
+ *      Port conflict detection
  *  
  */
 using System.Net;

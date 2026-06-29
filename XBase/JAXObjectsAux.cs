@@ -214,6 +214,7 @@ namespace JAXBase.XBase
                     "image" => new XBase_Class_Visual_Image(jow, name),
                     "jax" => new XBase_Class_JAX(jow, name),
                     "jaxedit" => new XBase_Class_Visual_JAXEdit(jow, name),
+                    "robrowser" => new XBase_Class_Visual_JAXROBrowser(jow, name),
                     "ircclient" => new XBase_Class_IRCClient(jow, name),
                     "label" => new XBase_Class_Visual_Label(jow, name),
                     "line" => new XBase_Class_Visual_Line(jow, name),
@@ -242,11 +243,13 @@ namespace JAXBase.XBase
                     "tcpserver" => new XBase_Class_TCPServer(jow, name),
                     "textbox" => new XBase_Class_Visual_TextBox(jow, name),
                     //"timer" => new XClass_Timer(jow, name),
+                    //"tree" => new XClass_Tree(jow, name),
+                    //"treeitem" => new XClass_TreeItem(jow, name),
                     "toolbar" => new XBase_Class_Visual_ToolBar(jow, name),
                     "toolbutton" => new XBase_Class_Visual_ToolButton(jow, name),
                     "udp" => new XBase_Class_UDPClient(jow, name),
                     "video" => new XBase_Class_Visual_Video(jow, name),
-                    _ => null
+                    _ => throw new Exception($"1773|{className}|GetClass")
                 };
             }
             catch (Exception ex)

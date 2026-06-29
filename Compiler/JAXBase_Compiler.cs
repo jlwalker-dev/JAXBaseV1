@@ -1213,6 +1213,11 @@ namespace JAXBase.Compiler
             string result = string.Empty;
             string exprResult = string.Empty;
 
+            if (command.Contains(".exec",StringComparison.OrdinalIgnoreCase))
+            {
+                int iii = 0;
+            }
+
             try
             {
                 // TODO - Last Index isn't good enough

@@ -1,4 +1,5 @@
-﻿using JAXBase.Core;
+﻿using DynamicData;
+using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Language;
 using JAXBase.Utilities;
@@ -525,6 +526,8 @@ namespace JAXBase.Math
             string lastquote = string.Empty;
             List<string> nospacesList = [];
 
+            string probOriginal = prob;
+
             try
             {
                 List<string> arrayPartStack = [];
@@ -586,10 +589,19 @@ namespace JAXBase.Math
                                 vftest = "`" + functions[funcVal].Trim('(');
                                 nospacesList.Add(vftest);
                             }
+                            else
+                            {
+                                // No function match so it must be a UDF call
+                                i++;
+                                lastType = 'F';
+                                arrayPartStack.Add("(");
+                                vftest = "``" + prob[..i].Trim('(');
+                                nospacesList.Add(vftest);
+                            }
                         }
                         else
                         {
-                            // Not a function
+                            // Not a built-in function
                             vftest = prob[..i];
                         }
 
@@ -635,24 +647,35 @@ namespace JAXBase.Math
 
                         if (lastType == 'X')
                         {
+                            if (probOriginal.Contains(".exec", StringComparison.OrdinalIgnoreCase))
+                            {
+                                int iii = 0;
+                            }
+
                             // Not a function so it's a variable which
-                            // may or may not be followed by a [ or (
+                            // may or may not be followed by a [ or a
+                            // method/UDF followed by (
                             lastType = 'V';
 
                             // Make sure nothing is wrong with the var expression
                             if (vftest.Contains('.'))
                             {
-                                string[] parts = vftest.Split('.');
+                                // Create a List<string> because it's easier to adjust
+                                string[] partsA = vftest.Split('.');
+                                List<string> parts = partsA.ToList();
 
                                 // if var starts with a period then
                                 // put it back to the first part
-                                if (vftest[0] == '.')
-                                    parts[0] = "." + parts[0];
+                                if (vftest[0] == '.' && parts.Count > 1)
+                                {
+                                    parts[0] = "." + parts[1];
+                                    parts.RemoveAt(1);
+                                }
 
                                 // mark it as a var
                                 parts[0] = "_" + parts[0];
 
-                                for (int ii = 0; ii < parts.Length; ii++)
+                                for (int ii = 0; ii < parts.Count; ii++)
                                 {
                                     // Won't accept things like ..a, a..b, a.1, or a._
                                     if (parts[ii].Length < 1 || string.IsNullOrWhiteSpace(parts[ii].Replace("_", "")) || "0123456789".Contains(parts[ii][0]))

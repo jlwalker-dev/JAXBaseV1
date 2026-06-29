@@ -51,7 +51,6 @@
 using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Utilities;
-using System.Data;
 using System.Text.RegularExpressions;
 
 namespace JAXBase.XBase
@@ -66,8 +65,10 @@ namespace JAXBase.XBase
         {
             name = string.IsNullOrEmpty(name) ? "sql" : name;
             SetVisualObject(null, "SQL", name, false, UserObject.urw);
-            me.nvObject =  new XBase_ClassSQL_NONE(Program.CurrentApp);
+            me.nvObject = new XBase_ClassSQL_NONE(this);
         }
+
+        public string CurrentCursorName = "";
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
@@ -102,7 +103,7 @@ namespace JAXBase.XBase
             {
                 switch (propertyName.ToLower())
                 {
-                    case "connectionstring":
+                    case "connectstring":
                         if (MyConnection is not null)
                             returnToken.Element.Value = MyConnection.GetConnectionString();
                         else
@@ -152,6 +153,8 @@ namespace JAXBase.XBase
 
             return returnToken;
         }
+
+
         /*------------------------------------------------------------------------------------------*
          * Handle the commmon properties by calling the base and then
          * handle the special cases.
@@ -170,7 +173,7 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override async Task<int> SetProperty(string propertyName, object objValue, int objIdx)
         {
-            int result;
+            int result = 0;
             propertyName = propertyName.ToLower();
             JAXObjects.Token tk = new();
             tk.Element.Value = objValue;
@@ -184,16 +187,39 @@ namespace JAXBase.XBase
                     switch (propertyName)
                     {
                         // Intercept special handling of properties
+                        case "appname":
+                        case "schema":
+                            if (MyConnection is null || MyConnection.GetState() == 0)
+                            {
+                                if (tk.Element.Type.Equals("C") == false)
+                                    result = 11;
+                                else if (AppHelper.IsLegalObjectName(tk.AsString()) == false && tk.AsString().Length < 65)
+                                    result = 41;
+
+                            }
+                            else
+                                result = 3100;
+                            break;
+
+                        case "cursorname":
+                            // Special case, is a string only unless starts with a paren then evaluated
+                            string cname = tk.AsString().Trim();
+
+                            if (cname.Length == 0)
+                                cname = "SQLResult";
+
+                            objValue = cname;
+                            break;
+
                         case "database":
+                        case "driver":
                         case "name":
-                        case "userpw":
+                        case "password":
                         case "server":
                         case "userid":
                             if (MyConnection is null || MyConnection.GetState() == 0)
                             {
-                                if (tk.Element.Type.Equals("C"))
-                                    result = await base.SetProperty(propertyName, objValue, objIdx);
-                                else
+                                if (tk.Element.Type.Equals("C") == false)
                                     result = 11;
                             }
                             else
@@ -202,34 +228,95 @@ namespace JAXBase.XBase
 
                         case "comment":
                         case "tag":
-                            result = await base.SetProperty(propertyName, tk.AsString(), objIdx);
+                            if (tk.Element.Type.Equals("C") == false)
+                                result = 11;
+                            break;
+
+                        case "connectstring":
+                            if (tk.Element.Type.Equals("C") == false)
+                                result = 11;
+                            else
+                                result = await MyConnection.SetParameterString(tk.AsString());
                             break;
 
                         case "authtype":
-                        case "engine":
-                        case "port":
                             if (MyConnection is null || MyConnection.GetState() == 0)
                             {
-                                if (tk.Element.Type.Equals("N"))
-                                    result = await base.SetProperty(propertyName, objValue, objIdx);
-                                else
+                                if (tk.Element.Type.Equals("N") == false)
                                     result = 11;
+                                else if (JAXLib.Between(tk.AsInt(), 0, 2) == false)
+                                    result = 41;
                             }
                             else
                                 result = 3100;
                             break;
 
+
+                        case "engine":
+                            if (MyConnection is null || MyConnection.GetState() == 0)
+                            {
+                                if (tk.Element.Type.Equals("N") == false)
+                                    result = 11;
+                                else if (JAXLib.Between(tk.AsInt(), 0, 3) == false)
+                                    result = 41;
+                            }
+                            else
+                                result = 3100;
+                            break;
+
+
+                        case "port":
+                            if (MyConnection is null || MyConnection.GetState() == 0)
+                            {
+                                if (tk.Element.Type.Equals("N") == false)
+                                    result = 11;
+                                else if (JAXLib.Between(tk.AsInt(), 0, 65535) == false)
+                                    result = 41;
+                            }
+                            else
+                                result = 3100;
+                            break;
+
+                        case "packetsize":
+                            if (MyConnection is null || MyConnection.GetState() == 0)
+                            {
+                                if (tk.Element.Type.Equals("N") == false)
+                                    result = 11;
+                                else if (JAXLib.Between(tk.AsInt(), 512, 32767) == false)
+                                    result = 41;
+                            }
+                            else
+                                result = 3100;
+                            break;
+
+                        case "connecttimeout":
+                        case "idletimeout":
+                        case "querytimeout":
+                            if (MyConnection is null || MyConnection.GetState() == 0)
+                            {
+                                if (tk.Element.Type.Equals("N") == false)
+                                    result = 11;
+                                else if (JAXLib.Between(tk.AsInt(), 0, 86400) == false)
+                                    result = 41;
+                            }
+                            else
+                                result = 3100;
+                            break;
+
+                        case "asynchronous":
+                        case "batchmode":
+                        case "dispwarnings":
                         case "encryption":
-                        case "security":
+                        case "shared":
+                        case "trust":
                             if (MyConnection is null || MyConnection.GetState() == 0)
                             {
                                 if (tk.Element.Type.Equals("L"))
-                                    result = await base.SetProperty(propertyName, objValue, objIdx);
-                                else if (tk.Element.Type.Equals("N"))
                                 {
-                                    objValue = tk.AsInt() == 0 ? 0 : 1;
-                                    result = await base.SetProperty(propertyName, objValue, objIdx);
+                                    // It's a logical so do nothing
                                 }
+                                else if (tk.Element.Type.Equals("N"))
+                                    objValue = tk.AsInt() == 0 ? 0 : 1;
                                 else
                                     result = 11;
                             }
@@ -238,33 +325,17 @@ namespace JAXBase.XBase
                             break;
 
                         default:
-                            // Just update the standard properties
-                            result = await base.SetProperty(propertyName, objValue, objIdx);
+                            result = 1;
                             break;
                     }
 
                     // Do we need to process this property?
-                    if (JAXLib.Between(result, 1, 10))
+                    if (JAXLib.Between(result, 0, 10))
                     {
-                        // First, we check to make sure that the property exists
-                        if (UserProperties.ContainsKey(propertyName))
-                        {
-                            // Visual object common property handler
-                            switch (propertyName)
-                            {
-                                default:
-                                    // We processed it or just need to save the property (perhaps again)
-                                    // Ignore the CA1854 as it won't put the value into the property
-                                    if (UserProperties.ContainsKey(propertyName))
-                                        UserProperties[propertyName].Element.Value = objValue;
-                                    else
-                                        result = 1559;
+                        if (result < 9)
+                            UserProperties[propertyName].Element.Value = objValue;
 
-                                    break;
-                            }
-                        }
-                        else
-                            result = 1559;
+                        result = 0;
                     }
                 }
                 else
@@ -287,54 +358,6 @@ namespace JAXBase.XBase
             return result;
         }
 
-        /*------------------------------------------------------------------------------------------*
-         * Call the JAXCode for a method
-         *------------------------------------------------------------------------------------------*/
-        public override async Task<int> _CallMethod(string methodName)
-        {
-            int result = 0;
-            string msg = "";
-
-            try
-            {
-                if (Methods.ContainsKey(methodName.ToLower()))
-                {
-                    string cCode = Methods[methodName.ToLower()].CompiledCode;
-
-                    // Execute the code
-                    if (cCode.Length > 0)
-                    {
-                        // Call the routine to compile and execute a block of code
-                        _ = Program.CurrentApp.JaxExecutor.ExecuteCodeBlock(me, methodName, cCode);
-                    }
-                    else
-                        await DoDefault(methodName);
-                }
-                else
-                {
-                    msg = methodName;
-                    result = 6501;
-                }
-            }
-            catch (Exception ex)
-            {
-                msg = ex.Message;
-                result = 9999;
-            }
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|{msg}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                result = -1;
-            }
-
-            return result;
-        }
-
         /*
          * This is where the default actions for the methods occur
          */
@@ -343,145 +366,355 @@ namespace JAXBase.XBase
             int result = 0;
             string errMsg = string.Empty;
 
-            switch (methodName.ToLower())
+            // Set up the cursorresult property
+            string cname = UserProperties["cursorname"].AsString();
+
+            UserProperties["cursorresult"].Element.Value = "";
+
+            // Solve for cname?
+            if (cname[0].Equals('('))
             {
-                case "connect":
-                    result = SQLConnect();
-                    break;
+                // Do the math after stripping the parens
+                cname = cname[1..].Trim();
+                cname = cname[..^1].Trim();
 
-                case "createdatabase":
-                    result = SQLCreateDatabase();
-                    break;
+                GenericClass gc = await Program.CurrentApp.JaxMath.SolveMath(cname);
+                cname = gc.Value.AsString();
 
-                case "createtable":
-                    result = SQLCreateTable();
-                    break;
-
-                case "createview":
-                    //result = SQLCreateView();
-                    break;
-
-                case "disconnect":
-                    result = SQLDisconnect();
-                    break;
-
-                case "dropdatabase":
-                    break;
-
-                case "droptable":
-                    break;
-
-                case "dropview":
-                    break;
-
-                case "exec":
-                    result = await SQLExec();
-                    break;
-
-                case "getdatabase":
-                    //result = await SQLGetTable();
-                    break;
-
-                case "getindex":
-                    result = SQLGetIndex();
-                    break;
-
-                case "gettable":
-                    result = await SQLGetTable();
-                    break;
-
-                case "getview":
-                    //result = await SQLGetTable();
-                    break;
-
-                case "listindexes":
-                    result = SQLListIndexes();
-                    break;
-
-                case "listtables":
-                    result = SQLListTables();
-                    break;
-
-                case "listdatabases":
-                    result = SQLListDatabases();
-                    break;
-
-                default:
-                    // Try base code
-                    await base.DoDefault(methodName);
-                    break;
-            }
-
-            string info = "";
-
-            // Process any errors
-            if (result > 0)
-            {
-                info = result switch
+                if (string.IsNullOrWhiteSpace(cname))
+                    result = 41;
+                else
                 {
-                    11 => string.Empty,
-                    333 => JAXLib.JustPath(UserProperties["filename"].AsString()),
-                    401 => string.Empty,
-                    1705 => string.Empty,
-                    1737 => methodName.ToUpper(),
-                    _ => string.Empty,
-                };
+                    if (Program.CurrentApp.CurrentDS.IsWorkArea(cname))
+                        await Program.CurrentApp.CurrentDS.CloseDBF(cname);
+                }
             }
 
-            if (result > 0)
+
+            AppIO.DebugLog($"Calling SQL.{methodName} with cursor result as {cname}");
+
+            int parms = Program.CurrentApp.ParameterClassList.Count;
+
+            JAXObjects.Token parm1 = new("");
+            if (parms > 0)
+                parm1.CopyFrom(Program.CurrentApp.ParameterClassList[0].token);
+
+            JAXObjects.Token parm2 = new("");
+            if (parms > 1)
+                parm2.CopyFrom(Program.CurrentApp.ParameterClassList[1].token);
+
+            JAXObjects.Token parm3 = new("");
+            if (parms > 2)
+                parm3.CopyFrom(Program.CurrentApp.ParameterClassList[2].token);
+
+            JAXObjects.Token parm4 = new("");
+            if (parms > 3)
+                parm4.CopyFrom(Program.CurrentApp.ParameterClassList[3].token);
+
+            JAXObjects.Token parm5 = new("");
+            if (parms > 4)
+                parm5.CopyFrom(Program.CurrentApp.ParameterClassList[4].token);
+
+            JAXObjects.Token parm6 = new("");
+            if (parms > 5)
+                parm6.CopyFrom(Program.CurrentApp.ParameterClassList[5].token);
+
+
+            // Can't connect when you already have a connection
+            if (methodName.Equals("connect", StringComparison.OrdinalIgnoreCase))
             {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|{info}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-
-                result = -1;
+                if (await MyConnection.IsConnected())
+                    result = 1541;
             }
 
-            return result;
+            if (result == 0)
+            {
+                CurrentCursorName = cname;
+
+                switch (methodName.ToLower())
+                {
+                    case "altertable":
+                        if (parms > 0 && parm1.Element.Type.Equals("C") == false)
+                            result = 11;
+
+                        if (result == 0)
+                        {
+                            switch (parm1.AsString().ToUpper())
+                            {
+                                case "F":
+                                    result = await MyConnection.AlterField(parm2.AsString(), parm3.AsString(), parm4.AsString(), parm5.AsInt(), parm6.AsInt());
+                                    break;
+
+                                case "P":
+                                    result = await MyConnection.AlterProperty(parm2.AsString(), parm3.AsString(), parm4.AsString(), parm5);
+                                    break;
+
+                                case "I":
+                                    result = await MyConnection.AlterIndex(parm2.AsString(), parm3.AsString(), parm4.AsString(), parm5.AsString());
+                                    break;
+
+                                case "D":
+                                    result = await MyConnection.DropField(parm2.AsString(), parm3.AsString());
+                                    break;
+
+                                case "R":
+                                    result = await MyConnection.DropIndex(parm2.AsString(), parm3.AsString());
+                                    break;
+
+                                default:
+                                    result = 41;
+                                    errMsg = parm1.AsString().ToUpper();
+                                    break;
+                            }
+
+                            if (result > 0)
+                                _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        }
+                        break;
+
+                    case "connect":
+                        if (parms > 1)
+                        {
+                            result = 96;
+                            errMsg = "1";
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        }
+                        else
+                        {
+                            if (parms == 1)
+                            {
+                                if (parm1.Element.Type.Equals("C") == false)
+                                    result = 11;
+                            }
+                            else
+                                parm1.Element.Value = "";
+                        }
+
+                        if (result == 0)
+                            result = await SQLConnect(parm1.AsString());
+                        break;
+
+                    case "createdatabase":
+                        if (parms == 1)
+                        {
+                            if (parm1.Element.Type.Equals("C"))
+                            {
+                                if (AppHelper.IsLegalObjectName(parm1.AsString()))
+                                    result = await MyConnection.CreateDatabase(parm1.AsString());
+                                else
+                                {
+                                    result = 1575;
+                                    errMsg = parm1.AsString();
+                                    _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                }
+                            }
+                            else
+                            {
+                                result = 11;
+                                _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                            }
+                        }
+                        else
+                        {
+                            result = 96;
+                            errMsg = "1";
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        }
+                        break;
+
+                    case "createtable":
+                        if (parms == 2)
+                        {
+                            if (parm1.Element.Type.Equals("C"))
+                            {
+                                if (AppHelper.IsLegalObjectName(parm1.AsString()))
+                                {
+                                    if (parm2.TType.Equals("A"))
+                                        result = await SQLCreateTable(parm1.AsString(), parm2);
+                                    else
+                                    {
+                                        result = 232;
+                                        errMsg = "Second parameter";
+                                        _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                    }
+                                }
+                                else
+                                {
+                                    result = 1575;
+                                    errMsg = parm1.AsString();
+                                    _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                }
+                            }
+                            else
+                            {
+                                result = 11;
+                                _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                            }
+                        }
+                        else
+                        {
+                            result = 96;
+                            errMsg = "2";
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        }
+                        break;
+
+                    case "sqlcreateindex":
+                        break;
+
+                    case "sqlcreateprocedure":
+                        break;
+
+                    case "createview":
+                        if (parms == 2)
+                        {
+                            if (parm1.Element.Type.Equals("C") && parm2.Element.Type.Equals("C"))
+                            {
+                                if (AppHelper.IsLegalObjectName(parm1.AsString()))
+                                    result = await SQLCreateView(parm1.AsString(), parm2.AsString());
+                                else
+                                {
+                                    result = 1575;
+                                    errMsg = parm1.AsString();
+                                    _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                }
+                            }
+                            else
+                                result = 11;
+                        }
+                        else
+                        {
+                            result = 96;
+                            errMsg = "2";
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        }
+                        break;
+
+                    case "disconnect":
+                        result = await MyConnection.Disconnect();
+                        break;
+
+                    case "drop":
+                        if (parm1.Element.Type.Equals("C") == false || parm2.Element.Type.Equals("C") == false)
+                        {
+                            result = 11;
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        }
+                        else
+                        {
+                            switch (parm1.AsString())
+                            {
+                                case "D":
+                                    result = await MyConnection.DeleteDB(parm2.AsString());
+                                    break;
+
+                                case "I":
+                                    if (parm3.Element.Type.Equals("C"))
+                                        result = await MyConnection.DeleteIndex(parm2.AsString(), parm3.AsString());
+                                    else
+                                    {
+                                        result = 11;
+                                        _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                    }
+                                    break;
+
+                                case "P":
+                                    result = await MyConnection.DeleteSP(parm2.AsString());
+                                    break;
+
+                                case "T":
+                                    result = await MyConnection.DeleteTable(parm2.AsString());
+                                    break;
+
+                                case "V":
+                                    result = await MyConnection.DeleteView(parm2.AsString());
+                                    break;
+
+                                default:
+                                    result = 41;    // Unknown object type
+                                    _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                    break;
+                            }
+                        }
+
+                        break;
+
+                    case "exec":
+                        result = await SQLExec();
+                        break;
+
+                    case "getobjects":
+                        if (parms >= 2)
+                        {
+                            if (parm1.Element.Type.Equals("C") && parm2.Element.Type.Equals("C"))
+                            {
+                                // Is there a parameter 3 and is it a character var?
+                                if (parms > 2)
+                                {
+                                    if (parm3.Element.Type.Equals("C") == false)
+                                    {
+                                        result = 11;
+                                        _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                    }
+                                }
+                                else
+                                    parm3.Element.Value = "";   // No 3rd parameter so blank it out
+
+                                string Name = parm2.AsString().Trim();
+                                string cursorName = parm3.AsString().Trim();
+
+                                if (result == 0)
+                                {
+                                    switch (parm1.AsString())
+                                    {
+                                        case "D":
+                                            result = await MyConnection.GetDatabaseInfo(Name == "*" ? "" : Name, cursorName);
+                                            break;
+
+                                        case "I":
+                                            result = await MyConnection.GetIndex(Name == "*" ? "" : Name, "", cursorName);
+                                            break;
+
+                                        case "P":
+                                            result = await MyConnection.GetSPCode(Name == "*" ? "" : Name, cursorName);
+                                            break;
+
+                                        case "T":
+                                            result = await MyConnection.GetTableStructure(Name == "*" ? "" : Name, cursorName);
+                                            break;
+
+                                        case "V":
+                                            result = await MyConnection.GetView(Name == "*" ? "" : Name, cursorName);
+                                            break;
+
+                                        default:
+                                            result = 41;    // Unknown object type
+                                            _AddError(result, 0, parm1.AsString(), Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                            break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                result = 11;
+                                _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                            }
+                        }
+
+                        break;
+
+                    default:
+                        // Try base code
+                        await base.DoDefault(methodName);
+                        break;
+                }
+
+                if (Program.CurrentApp.CurrentDS.IsWorkArea(CurrentCursorName))
+                    UserProperties["cursorresult"].Element.Value = CurrentCursorName;
+            }
+
+            return result > 0 ? -1 : result;
         }
-
-        public override string[] JAXMethods() => 
-            [
-            "addproperty", "connect", "create", "drop","disconnect", "exec", "getobject", "list", 
-            "truncate", "update", "writeexpression", "writemethod"
-            ];
-
-        public override string[] JAXEvents() =>  
-            [
-            "afterquery","connected", "disconnected", "destroy", "error", "fail", "init", 
-            "load","success"
-            ];
-
-        /*
-         * property data types
-         *      C = Character
-         *      N = Numeric         I=Integer       R=Color
-         *      D = Date
-         *      T = DateTime
-         *      L = Logical         LY = Yes/No logical
-         *      
-         *      Attributes
-         *          ! Protected - can't change after initialization
-         *          $ Special Handling - do not auto process
-         */
-        public override string[] JAXProperties() => 
-                [
-                $"appname,C,{Program.CurrentApp.AppLevels[0].PrgName}",
-                "authtype,n,0",
-                "baseclass,C!,SQL",
-                "class,C!,SQL","classlibrary,C$,","comment,C,","connectionstring,c,",
-                "database,c,", "driver,c,",
-                "encryption,L,.F.", "engine,N,0",
-                "integratedsecurity,L,.F.", "isconnected,L!,.F.",
-                "name,C,SQL",
-                "parent,o$,","parentclass,C$,", "port,n,0",
-                "security,L,.F.", "server,c,", "state,n!,0", "status,n,0",
-                "trust,L,.T.", "tag,C,",
-                "userid,c,", "userpw,c,",
-                "wait,l,true"
-                ];
-        
 
         // --------------------------------------------------------------
         // COMMAND-KIND DETECTION
@@ -511,15 +744,17 @@ namespace JAXBase.XBase
             return CommandKind.Select;
         }
 
-        // --------------------------------------------------------------
-        // Connect to the SQL Engine
-        // --------------------------------------------------------------
-        private int SQLConnect()
+        /* -- Basic tools -----------------------------------------------
+         * 
+         * Connect to the SQL Engine
+         * 
+         * -------------------------------------------------------------- */
+        private async Task<int> SQLConnect(string connString)
         {
             int result = 0;
             string errMsg = string.Empty;
 
-            if (MyConnection is null)
+            if (MyConnection is null || await MyConnection.IsConnected() == false)
             {
                 try
                 {
@@ -528,23 +763,25 @@ namespace JAXBase.XBase
                     {
                         case 0: // Not chosen
                             result = 6005;
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                             break;
 
                         case 1: // SQL Server
-                            me.nvObject = new XBase_ClassSQL_MSSS(Program.CurrentApp);
+                            me.nvObject = new XBase_ClassSQL_MSSS(this);
                             break;
 
                         case 2: // MySQL
-                            me.nvObject = new XBase_ClassSQL_MYSQL(Program.CurrentApp);
+                            me.nvObject = new XBase_ClassSQL_MYSQL(this);
                             break;
 
                         case 3: // PostGreSQL
-                            me.nvObject = new XBase_ClassSQL_POSTGRE(Program.CurrentApp);
+                            me.nvObject = new XBase_ClassSQL_POSTGRE(this);
                             break;
 
                         default:    // Not chosen
                             result = 1999;
                             errMsg = $"Not implemented: Engine={UserProperties["engine"].AsInt()}";
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                             break;
 
                     }
@@ -553,37 +790,33 @@ namespace JAXBase.XBase
                 {
                     result = 9999;
                     errMsg = ex.Message;
+                    _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                 }
 
                 if (result == 0)
                 {
-                    string par = $"authentication={UserProperties["authtype"].AsInt()};";
-                    par += $"port={UserProperties["port"].AsInt()};";
-                    par += $"database={UserProperties["database"].AsString()};";
-                    par += $"datasource={UserProperties["server"].AsString()};";
-                    par += $"password={UserProperties["userpw"].AsString()};";
-                    par += $"userid={UserProperties["userid"].AsString()};";
-                    par += $"encryption={(UserProperties["encryption"].AsBool() ? ".T." : ".F.")};";
-                    par += $"integratedsecurity={(UserProperties["security"].AsBool() ? ".T." : ".F.")};";
-                    par += $"applicationname={UserProperties["appname"]};";
-                    par += $"trustservercertificate={(UserProperties["trustservercertificate"].AsBool() ? ".T." : ".F.")};";
-                    MyConnection!.SetParameterString(par);
-                    result = MyConnection!.Connect();
+                    if (string.IsNullOrWhiteSpace(connString) == false)
+                        UserProperties["connectstring"].Element.Value = connString;
+
+                    if (string.IsNullOrWhiteSpace(connString) && UserProperties["connectstring"].Element.Type.Equals("C"))
+                        connString = UserProperties["connectstring"].AsString();
+                    else
+                        connString = "";
+
+                    result = await MyConnection!.Connect(connString);
+
                 }
             }
-
-            if (result > 0)
+            else
             {
+                result = 1541;
                 _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
             }
 
             return result;
         }
+
+
 
         // --------------------------------------------------------------
         // Execute a SQL command
@@ -591,25 +824,26 @@ namespace JAXBase.XBase
         private async Task<int> SQLExec()
         {
             int result = 0;
-            string msg = string.Empty;
+            string errMsg = string.Empty;
 
             // Returns -1 if error otherwise returns
             // number of rows returned or affected by
             // the sql statement.
-            if (MyConnection is null)
+            if (MyConnection is null || await MyConnection.IsConnected() == false)
             {
                 result = 6004;
+                _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
             }
             else
             {
                 string sqlStmt = string.Empty;
                 string sqlCursor = string.Empty;
-                object? returnObject = null;
 
                 if (Program.CurrentApp.ParameterClassList.Count == 0)
                 {
                     // ERROR!
                     result = 1498;
+                    _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                 }
                 else
                 {
@@ -621,6 +855,7 @@ namespace JAXBase.XBase
                     {
                         // ERROR!
                         result = 11;
+                        _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                     }
 
                     if (Program.CurrentApp.ParameterClassList.Count == 2)
@@ -630,371 +865,237 @@ namespace JAXBase.XBase
                         else
                         {
                             result = 11;
+                            _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                         }
                     }
                     else if (Program.CurrentApp.ParameterClassList.Count > 2)
+                    {
                         result = 1230;
+                        _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                    }
+                    else
+                        sqlCursor = "sqlresult";
                 }
 
 
                 if (result > 0)
                 {
-                    // Deal with errors before trying to execute
-                    _AddError(result, 0, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                    if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                        AppErrorHandling.SetError(result, $"{result}|{msg}", string.Empty);
-
                     Program.CurrentApp.ReturnValue.Element.Value = -1;
                 }
                 else
                 {
-                    sqlCursor = string.IsNullOrWhiteSpace(sqlCursor) ? "sqlresult" : sqlCursor;
-
                     // Execute the SQL Statement
-                    result = MyConnection.Execute(sqlStmt, out returnObject);
+                    result = await MyConnection.Execute(sqlStmt, sqlCursor);
 
                     if (result < 0)
                     {
-                        // Retrieve the error and log it
-                        JAXErrors err = MyConnection.GetErrorMsg();
-                        _AddError(err.ErrorNo, 0, err.ErrorMessage, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                        if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                            AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
+                        // Cursors, tables, and views are all "dbfs"
+                        await Program.CurrentApp.CurrentDS.CloseDBF(sqlCursor);
                         Program.CurrentApp.ReturnValue.Element.Value = -1;
+                    }
+                }
+            }
+
+            return result > 0 ? -1 : 0;
+        }
+
+
+        /* -----------------------------------------------------------------------------------------
+         *  Create a table named by parameter 1 and described in the array reference by parameter 2
+         *  
+         *  The standard JAXBase array references, which is compatible with the VFP 9 standard will
+         *  be converted by the SQL engine and a table will be created.  All tables created via 
+         *  this method will only use field types that are compatible with JAXBase.
+         *  
+         *  The max field name length and other limitations are enforced by the engine.  This 
+         *  method just collects the information and passes it on.
+         *  
+         *  The array in the second parameter can be passed as an array, or as a string referencing
+         *  the array name. If the array has 4 or more columns but less than 18, the first four
+         *  columns (name, type, length, and precision) are used.
+         *  
+         *  If the array has at least 18 columns, all JAXBase supported columns are used.
+         *  
+         *  If any array element used has an invalid type, the whole process ends with an error 11.
+         * ----------------------------------------------------------------------------------------- */
+        private async Task<int> SQLCreateTable(string tableName, JAXObjects.Token tk)
+        {
+            int result = 0;
+            string errMsg = "";
+            List<JAXTables.FieldInfo> fieldList = [];
+
+            if (MyConnection is null || await MyConnection.IsConnected() == false)
+                result = 6004;
+            else
+            {
+                // Make sure the token is an array reference
+                if (tk.TType.Equals("A") == false)
+                {
+                    result = 232;
+                    errMsg = "Second parameter";
+                    _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                }
+
+                if (result == 0)
+                {
+                    // Two dimensional tables have Row>=1 while 1 dimensional have Row=0
+                    // So make sure Row>0 and Col>3
+                    if (tk.Row > 0 && tk.Col > 3)
+                    {
+                        bool typeError = false;
+
+                        for (int i = 0; i < tk.Row; i++)
+                        {
+
+                            JAXTables.FieldInfo fld = new();
+
+                            // Field Name
+                            tk.SetElement(i + 1, 1);
+                            typeError = tk.Element.Type.Equals("C");
+                            fld.FieldName = tk.AsString();
+
+                            // Field Type
+                            tk.SetElement(i + 1, 2);
+                            typeError = typeError & tk.Element.Type.Equals("C");
+                            fld.FieldType = tk.AsString();
+
+                            // Field Length
+                            tk.SetElement(i + 1, 3);
+                            typeError = typeError & tk.Element.Type.Equals("N");
+                            fld.FieldLen = tk.AsInt();
+
+                            // Field Precision
+                            tk.SetElement(i + 1, 4);
+                            typeError = typeError & tk.Element.Type.Equals("N");
+                            fld.FieldDec = tk.AsInt();
+
+                            // At least 18 columns are required to add extended properties
+                            if (tk.Col > 17)
+                            {
+                                // Nulls allowed if true
+                                tk.SetElement(i + 1, 5);
+                                typeError = typeError & tk.Element.Type.Equals("L");
+                                fld.NullOK = tk.AsBool();
+
+                                // CP Translation not allowed if true
+                                tk.SetElement(i + 1, 6);
+                                typeError = typeError & tk.Element.Type.Equals("L");
+                                fld.NoCPTrans = tk.AsBool();
+
+                                // Default Value string
+                                tk.SetElement(i + 1, 9);
+                                typeError = typeError & tk.Element.Type.Equals("C");
+                                fld.DefaultValue = tk.AsString();
+
+                                // Table Name
+                                tk.SetElement(i + 1, 12);
+                                typeError = typeError & tk.Element.Type.Equals("C");
+                                fld.TableName = tk.AsString();
+
+                                // Comment
+                                tk.SetElement(i + 1, 16);
+                                typeError = typeError & tk.Element.Type.Equals("C");
+                                fld.Comment = tk.AsString();
+
+                                // AutoInc Next Value
+                                tk.SetElement(i + 1, 17);
+                                typeError = typeError & tk.Element.Type.Equals("N");
+                                fld.AutoIncNext = tk.AsInt();
+
+                                // AutoInc Step
+                                tk.SetElement(i + 1, 18);
+                                typeError = typeError & tk.Element.Type.Equals("N");
+                                fld.AutoIncStep = tk.AsInt();
+                                fld.AutoIncrement = fld.AutoIncStep > 0;
+                            }
+
+                            // If a type error was encountered, then set the
+                            // error and drop out of the loop
+                            if (typeError)
+                            {
+                                result = 11;
+                                _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                                break;
+                            }
+                        }
                     }
                     else
                     {
-                        if (returnObject is not null)
-                        {
-                            string type = returnObject.GetType().Name;
-
-                            // Only valid right after Execute
-                            switch (MyConnection.GetKind())
-                            {
-                                // Data Table
-                                case 1:
-                                    DataTable dt = (DataTable)returnObject;
-                                    Program.CurrentApp.ReturnValue.Element.Value = dt.Rows.Count;
-
-                                    // Create a cursor for the datatable
-                                    await TableHelper.MakeCursorForDataTable(Program.CurrentApp, dt, sqlCursor);
-                                    break;
-
-                                // Scalar
-                                case 2:
-                                    Program.CurrentApp.ReturnValue.Element.Value = 1;
-
-                                    // Create a cursor
-                                    break;
-
-                                // NonQuery
-                                case 3:
-                                    Program.CurrentApp.ReturnValue.Element.Value = result;
-                                    break;
-
-                                default:
-                                    _AddError(1400, 0, "Invalid or unknown sql statement type", Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                                    Program.CurrentApp.ReturnValue.Element.Value = -1;
-                                    break;
-                            }
-                        }
+                        result = 7002;
+                        errMsg = "4";
+                        _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                     }
                 }
+
+                if (result == 0)
+                    result = await MyConnection.CreateTable(tableName, fieldList);
             }
 
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
+            return result > 0 ? -1 : 0;
         }
 
 
         // --------------------------------------------------------------
-        // Create a table
+        // Create a view in the database
         // --------------------------------------------------------------
-        private int SQLCreateTable()
+        private async Task<int> SQLCreateView(string viewName, string procCode)
         {
             int result = 0;
-            if (MyConnection is null)
+            string errMsg = "";
+
+            if (MyConnection is null || await MyConnection.IsConnected() == false)
             {
                 result = 6004;
-            }
-            else
-                result = MyConnection.CreateTable("", []);
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
-        }
-
-        // --------------------------------------------------------------
-        // Create a database
-        // --------------------------------------------------------------
-        private int SQLCreateDatabase()
-        {
-            int result = 0;
-            if (MyConnection is null)
-            {
-                result = 6004;
-            }
-            else
-                result = MyConnection.CreateDatabase("");
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
-        }
-
-        // --------------------------------------------------------------
-        // Disconnect engine connection
-        // --------------------------------------------------------------
-        private int SQLDisconnect()
-        {
-            int result = 0;
-            if (MyConnection is null)
-            {
-                result = 6004;
-            }
-            else
-                result = MyConnection.Disconnect();
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
-        }
-
-        // --------------------------------------------------------------
-        // Get an index and return the creation string
-        // --------------------------------------------------------------
-        private int SQLGetIndex()
-        {
-            int result = 0;
-            if (MyConnection is null)
-            {
-                result = 6004;
-                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
+                _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
             }
             else
             {
-                result = MyConnection.GetIndex("", out string idxInfo);
-                Program.CurrentApp.ReturnValue.Element.Value = idxInfo;
-            }
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
             }
 
             return result;
         }
 
-        // --------------------------------------------------------------
-        // Get a table structure an place it into an array
-        // --------------------------------------------------------------
-        private async Task<int> SQLGetTable()
-        {
-            int result = 0;
-            if (MyConnection is null)
-            {
-                result = 6004;
-            }
-            else
-            {
-                if (Program.CurrentApp.ParameterClassList.Count == 1)
-                {
-                    if (Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
-                    {
-                        string varName = Program.CurrentApp.ParameterClassList[0].token.AsString();
 
-                        // Is it a variable?
 
-                        result = MyConnection.GetTableStructure("", out List<JAXTables.FieldInfo> fldList);
+        public override string[] JAXMethods() =>
+            [
+            "addproperty", "connect", "create", "drop", "disconnect", "exec", "getobjects",
+            "truncate", "update", "writeexpression", "writemethod"
+            ];
 
-                        if (fldList.Count > 0)
-                        {
-                            // Update the variable as an array
-                            AppVars.SetVarOrMakePrivate(varName, fldList.Count, 18, true);
-                            JAXObjects.Token tk = await AppVars.GetVarToken(varName);
+        public override string[] JAXEvents() =>
+            [
+            "afterquery", "connected", "disconnected", "destroy", "error", "fail", "init", "load", "success"
+            ];
 
-                            int i = 0;
-                            foreach (JAXTables.FieldInfo fld in fldList)
-                            {
-                                tk._avalue[i * 18 + 0].Value = fld.FieldName;
-                                tk._avalue[i * 18 + 1].Value = fld.FieldType;
-                                tk._avalue[i * 18 + 2].Value = fld.FieldLen;
-                                tk._avalue[i * 18 + 3].Value = fld.FieldDec;
-                                tk._avalue[i * 18 + 4].Value = fld.NullOK;
-                                tk._avalue[i * 18 + 5].Value = fld.NoCPTrans;
-                                tk._avalue[i * 18 + 6].Value = fld.BinaryData;
-                                tk._avalue[i * 18 + 7].Value = fld.EmptyValue;
-                                tk._avalue[i * 18 + 8].Value = fld.DefaultValue;
-                                //tk._avalue[i * 18 + 9].Value = fld.;
-                                //tk._avalue[i * 18 + 10].Value = fld.;
-                                //tk._avalue[i * 18 + 11].Value = fld.;
-                                tk._avalue[i * 18 + 12].Value = fld.TableName;
-                                //tk._avalue[i * 18 + 13].Value = fld.;
-                                tk._avalue[i * 18 + 14].Value = fld.Caption;
-                                tk._avalue[i * 18 + 15].Value = fld.Comment;
-                                tk._avalue[i * 18 + 16].Value = fld.AutoIncNext;
-                                tk._avalue[i * 18 + 17].Value = fld.AutoIncStep;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
-        }
-
-        // --------------------------------------------------------------
-        // Return list of indexes
-        // --------------------------------------------------------------
-        private int SQLListIndexes()
-        {
-            int result = 0;
-            if (MyConnection is null)
-            {
-                result = 6004;
-                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
-            }
-            else
-            {
-                result = MyConnection.ListIndexes(out List<string> idxList);
-                string idxlist = string.Empty;
-                foreach (string idx in idxList)
-                    idxlist += idx + ";";
-
-                Program.CurrentApp.ReturnValue.Element.Value = idxlist;
-            }
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
-        }
-
-        // --------------------------------------------------------------
-        // Return list of tables
-        // --------------------------------------------------------------
-        private int SQLListTables()
-        {
-            int result = 0;
-            if (MyConnection is null)
-            {
-                result = 6004;
-                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
-            }
-            else
-            {
-                result = MyConnection.ListTables(out List<string> tblList);
-                string tbllist = string.Empty;
-                foreach (string tbl in tblList)
-                    tbllist += tbl + ";";
-
-                Program.CurrentApp.ReturnValue.Element.Value = tbllist;
-            }
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
-        }
-
-        // --------------------------------------------------------------
-        // Return list of databases
-        // --------------------------------------------------------------
-        private int SQLListDatabases()
-        {
-            int result = 0;
-            if (MyConnection is null)
-            {
-                result = 6004;
-                Program.CurrentApp.ReturnValue.Element.Value = string.Empty;
-            }
-            else
-            {
-                result = MyConnection.ListDatabases(out List<string> dbList);
-                string dblist = string.Empty;
-                foreach (string db in dbList)
-                    dblist += db + ";";
-
-                Program.CurrentApp.ReturnValue.Element.Value = dbList;
-            }
-
-            if (result > 0)
-            {
-                _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-
-                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
-                    AppErrorHandling.SetError(result, $"{result}|", string.Empty);
-
-                result = -1;
-            }
-
-            return result;
-        }
+        /*
+         * property data types
+         *      C = Character
+         *      N = Numeric         I=Integer       R=Color
+         *      D = Date
+         *      T = DateTime
+         *      L = Logical         LY = Yes/No logical
+         *      
+         *      Attributes
+         *          ! Protected - can't change after initialization
+         *          $ Special Handling - do not auto process
+         */
+        public override string[] JAXProperties() =>
+                [
+                $"appname,C,{Program.CurrentApp.AppLevels[1].PrgName}", "asynchronous,L,F", "authtype,n,1",
+                "baseclass,C!,SQL","batchmode,L,true",
+                "class,C!,SQL", "classlibrary,C$,", "comment,C,", "connectstring,c,", "connecttimeout,n,30", "cursorname,c,SQLResult", "cursorresult,c!,",
+                "database,c,", "disconnectrollback,l,F", "displogin,n,1", "dispwarnings,L,F", "driver,c,",
+                "encryption,L,F", "engine,N,0",
+                "idletimeout,n,0", "isconnected,L!,F",
+                "manual,n,1",
+                "name,C,SQL",
+                "packetsize,n,4096","parent,o$,","parentclass,C$,", "password,c,", "port,n,0",
+                "querytimeout,n,30",
+                "server,c,", "schema,c,dbo", "shared,l,f", "state,n!,0", "status,n!,0",
+                "tag,C,", "thumbprint,c,", "transactions,n,1", "trust,L,T",
+                "userid,c,",
+                "waittime,n,100"
+                ];
     }
 }

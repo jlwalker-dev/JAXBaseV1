@@ -668,6 +668,11 @@ namespace JAXBase.Executor
                 // get the expression to store to the var list
                 JAXObjects.Token ExprValue = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);
 
+                if (eCodes.Expressions[0].RNPExpr.Contains("exec(",StringComparison.OrdinalIgnoreCase))
+                {
+                    int iii = 0;
+                }
+
                 if ("EM".Contains(ExprValue.TType))
                     ExprValue = new("");
 
@@ -675,6 +680,8 @@ namespace JAXBase.Executor
                 {
                     // Get the VarName literal or (expression)
                     JAXObjects.Token varName = await Program.CurrentApp.SolveFromRPNString(eCodes.To[i].Name);
+
+                    AppIO.DebugLog($"store {ExprValue.AsString()} to {varName.AsString()}");
 
                     // Make sure we have a character expression and there's something in it
                     if (varName.Element.Type.Equals("C") && string.IsNullOrWhiteSpace(varName.AsString()) == false)

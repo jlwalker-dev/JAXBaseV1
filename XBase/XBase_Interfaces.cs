@@ -15,45 +15,6 @@ namespace JAXBase.XBase
      * For the most part, you cannot access any property without going through
      * one of these calls
      *-------------------------------------------------------------------------------------------------*/
-    //public interface IJAXClass
-    //{
-    //    public Dictionary<string, JAXObjects.Token> UserProperties { get; }
-    //    public Dictionary<string, MethodClass> Methods { get; }
-    //    public bool PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList);
-    //    public int GetProperty(string propertyName, out JAXObjects.Token returnToken);
-    //    public int GetProperty(string propertyName, int idx, out JAXObjects.Token returnToken);
-    //    public List<GenericClass> GetPEMList();
-    //    public JAXObjectWrapper? GetObject(string propertyName, out int idx);
-    //    public JAXObjectWrapper GetObject(int idx);
-    //    public int GetObjectIDX();
-    //    public int GetObjectProperty(int idx, string propertyName, out JAXObjects.Token returnToken);
-    //    public int AddObject(JAXObjectWrapper token);
-    //    public bool HasProperty(string propertyName);
-    //    public string IsMember(string name);
-    //    public int InsertObjectAt(JAXObjectWrapper obj, int moveIDX);
-    //    public int ResetPropertyToDefault(string name);
-    //    public int RemoveObject(int idx);
-    //    public int SetDefault(string cmd);
-    //    public int SetObjectIDX(int idx);
-    //    public int SetObjectProperty(int idx, string propertyName, JAXObjects.Token value);
-    //    //public int SetProperty(string propertyName, object value);
-    //    public int SetProperty(string propertyName, object value, int objIdx);
-    //    public int AddProperty(string propertyName);
-    //    public int AddProperty(string propertyName, string lockType, string lockValue);
-    //    public int AddProperty(string propertyName, JAXObjects.Token token);
-    //    public int AddProperty(string propertyName, JAXObjectWrapper token);
-    //    public string DefaultName();
-    //    public int _CallMethod(string methodName);
-    //    public int DoDefault(string methodName);
-    //    public int _SetMethod(string methodName, string sourceCode, string CompiledCode, string Type);
-    //    public void _AddError(int errorNo, int lineNo, string message, string procedure);
-    //    public void SetAllOfClass(string className, string property, JAXObjects.Token objtk);
-    //    public void SetAllOfBaseClass(string baseClassName, string property, JAXObjects.Token objtk);
-    //    public string[] JAXMethods();
-    //    public string[] JAXEvents();
-    //    public string[] JAXProperties();
-    //}
-
     public interface IJAXAvaClass
     {
         public Dictionary<string, JAXObjects.Token> UserProperties { get; }
@@ -97,77 +58,53 @@ namespace JAXBase.XBase
         public string[] JAXProperties();
     }
 
-    //public interface IJAXClasses
-    //{
-    //    public Dictionary<string, JAXObjects.Token> UserProperties { get; }
-    //    public Dictionary<string, MethodClass> Methods { get; }
-    //    public bool PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList);
-    //    public int GetProperty(string propertyName, out JAXObjects.Token returnToken);
-    //    public int GetProperty(string propertyName, int idx, out JAXObjects.Token returnToken);
-    //    public List<GenericClass> GetPEMList();
-    //    public JAXObjectWrapper? GetObject(string propertyName, out int idx);
-    //    public JAXObjectWrapper GetObject(int idx);
-    //    public int GetObjectIDX();
-    //    public int GetObjectProperty(int idx, string propertyName, out JAXObjects.Token returnToken);
-    //    public int AddObject(JAXObjectWrapper token);
-    //    public bool HasProperty(string propertyName);
-    //    public string IsMember(string name);
-    //    public int InsertObjectAt(JAXObjectWrapper obj, int moveIDX);
-    //    public int ResetPropertyToDefault(string name);
-    //    public int RemoveObject(int idx);
-    //    public int SetDefault(string cmd);
-    //    public int SetObjectIDX(int idx);
-    //    public int SetObjectProperty(int idx, string propertyName, JAXObjects.Token value);
-    //    //public int SetProperty(string propertyName, object value);
-    //    public int SetProperty(string propertyName, object value, int objIdx);
-    //    public int AddProperty(string propertyName);
-    //    public int AddProperty(string propertyName, string lockType, string lockValue);
-    //    public int AddProperty(string propertyName, JAXObjects.Token token);
-    //    public int AddProperty(string propertyName, JAXObjectWrapper token);
-    //    public string DefaultName();
-    //    public int _CallMethod(string methodName);
-    //    public int DoDefault(string methodName);
-    //    public int _SetMethod(string methodName, string sourceCode, string CompiledCode, string Type);
-    //    public void _AddError(int errorNo, int lineNo, string message, string procedure);
-    //    public void SetAllOfClass(string className, string property, JAXObjects.Token objtk);
-    //    public void SetAllOfBaseClass(string baseClassName, string property, JAXObjects.Token objtk);
-    //    public int GetPrivateProperty(string propertyName, out JAXObjects.Token value);
-    //    public int SetPrivateProperty(string propertyName, object? value);
-    //    public string[] JAXMethods();
-    //    public string[] JAXEvents();
-    //    public string[] JAXProperties();
-    //}
 
 
 
-    // SQL Classes are wrapped by XBase_Class_SQL so that JAXObjectWrapper can use them
+    /*
+     * This interface is the SQL engines that are wrapped by the XBase_Class_SQL 
+     * so that the SQL engines are then compatible with the JAXBase system.
+     * 
+     * All core JAXBase classes have to use the IJAXAvaClass interface in order 
+     * to be treated as objects that can be stored in a variable.
+     * 
+     */
     public interface SQLClass
     {
-        public int Execute(string sql, out object? returnObject);
-        public int Connect();
-        public int Disconnect();
-        public int DropTable(string tableName);
-        public int CreateTable(string tableName, List<JAXTables.FieldInfo> Fields);
-        public int AlterTable(string tableName, List<JAXTables.FieldInfo> Fields);
-        public int GetTableStructure(string tableName, out List<JAXTables.FieldInfo> Fields);
-        public int CreateIndex(string tableName, string indexinfo);
-        public int DeleteIndex(string tableName, string indexinfo);
-        public int CreateSP(string procName, string procCode);
-        public int ExecuteSP(string procName, List<xParameters> parameters);
-        public int GetSPCode(string procName);
-        public int Setup(List<xParameters> parameters);
-        public int SetParameterString(string Parameters);
-        public int SetParameter(string parameter, JAXObjects.Token value);
-        public JAXErrors GetErrorMsg();
+        public Task<int> AlterTable(string tableName, List<JAXTables.FieldInfo> Fields);
+        public Task<int> AlterField(string parm1, string parm2, string parm3, int parm4, int parm5);
+        public Task<int> AlterProperty(string parm1, string parm2, string parm3, JAXObjects.Token parm4);
+        public Task<int> AlterIndex(string parm1, string parm2, string parm3, string parm4);
+        public Task<int> DropField(string parm1, string parm2);
+        public Task<int> DropIndex(string parm1, string parm2);
+        public Task<int> Connect(string connString);
+        public Task<int> CreateDatabase(string name);
+        public Task<int> CreateIndex(string indexName, string tableName, string indexExpression, string filter, string attribs);
+        public Task<int> CreateSP(string procName, string procCode);
+        public Task<int> CreateTable(string tableName, List<JAXTables.FieldInfo> Fields);
+        public Task<int> CreateView(string viewName, string viewCode);
+        public Task<int> DeleteDB(string dbName);
+        public Task<int> DeleteIndex(string indexName, string tableName);
+        public Task<int> DeleteSP(string procName);
+        public Task<int> DeleteTable(string tableName);
+        public Task<int> DeleteView(string viewName);
+        public Task<int> Disconnect();
+        public Task<int> Execute(string sql, string sqlCursor);
+        public Task<int> ExecuteSP(string procName, List<xParameters> parameters);
+        public Task<int> GetDatabaseInfo(string dbName, string cursorName);
+        public Task<int> GetIndex(string tableName, string indexName, string cursorName);
         public int GetKind();
-        public int CreateDatabase(string name);
-        public int GetIndex(string name, out string idxInfo);
-        public int ListDatabases(out List<string> dbList);
-        public int ListIndexes(out List<string> idxList);
-        public int ListTables(out List<string> tblList);
+        public Task<int> GetTableStructure(string tableName, string cursorName);
+        public Task<int> GetView(string viewName, string cursorName);
         public int GetState();
         public string GetConnectionString();
-        public int SetConnectionString(string connString);
-
+        public Task<int> GetSPCode(string procName, string cursorName);
+        public Task<bool> IsConnected();
+        public int ListDatabases(out List<string> dbList);
+        public int ListIndexes(string tableName, out List<string> idxList);
+        public int ListTables(out List<string> tblList);
+        public Task<int> SetParameterString(string Parameters);
+        public Task<int> SetParameter(string parameter, JAXObjects.Token value);
+        public Task<int> SetConnectionString(string connString);
     }
 }

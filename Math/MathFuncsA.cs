@@ -930,13 +930,13 @@ namespace JAXBase.Math
 
             switch (_rpn)
             {
-                case "!":                                                                   // Not expression
-                                                                                            // TODO - this is full logical now!
-                    if (stype1.Equals("L"))
-                        tAnswer._avalue[0].Value = string1.Equals(".F.") ? ".T." : ".F.";
-                    else
-                        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-                    break;
+                //case "!":                                                                   // Not expression
+                //                                                                            // TODO - this is full logical now!
+                //    if (stype1.Equals("L"))
+                //        tAnswer._avalue[0].Value = string1.Equals(".F.") ? ".T." : ".F.";
+                //    else
+                //        AppErrorHandling.SetError(11, string.Empty, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                //    break;
 
                 case "`ABS":                                                                // Get the absolute value of the number
                     if (stype1.Equals("N"))

@@ -2,9 +2,9 @@
  * Classes and helper routines for the JAX Tables
  */
 using JAXBase.Core;
-using Newtonsoft.Json;
-using System.Data;
 using JAXBase.Utilities;
+using System.Data;
+using System.Reflection;
 
 namespace JAXBase.Data
 {
@@ -22,11 +22,16 @@ namespace JAXBase.Data
          *      B = Double                      8 bytes
          *      F = Float                       Text in <FieldLenx>.<FieldDec> format
          *      G = General                     Bytes
+         *      H = High Precision Double       emulates COBOL high precision values
          *      I = Integer                     4 bytes
+         *      J = JSON (future)               4 bytes - number of blocks * block size
          *      L = Logical                     "T"/"F" or space as false
          *      M = Memo                        Text
          *      N = Numeric                     Text in <FieldLenx>.<FieldDec> format
+         *      O = Long                        8 byte integer (High Precision compatible)
          *      Q = Varbinary                   Text
+         *      S = TimeStamp (future)          8 bytes
+         *      T = DateTime                    8 bytes
          *      V = Varchar (Text/Binary)       Bytes, 0 filled right, last byte is length
          *      W = Blob                        Bytes
          *      0 = NullField (system)          Bytes
@@ -59,141 +64,6 @@ namespace JAXBase.Data
             public bool AutoIncrement = false;          // Is this an auto increment field
         }
 
-        /* TODO: 2025-07-07 - First thoughts on Del Field class
-         * 
-         * This class is for the delete field and also holds information
-         * on the record so that we can create buffered tables.
-         * 
-         */
-        [Serializable]
-        public class JAXRecInfo
-        {
-            public bool DelFlag = false;
-            public bool Appended = false;
-            public long RecNo = 0;          // future 64 bit capabilities
-        }
-
-        /* TODO: 2025-07-07 - This has some promise
-         * 
-         * This class will handle all of the simple fields (String, Date, Double, Integer, etc)
-         * and makes it easier to to create buffered tables.  More thought and testing will
-         * need to go into this before we're done.
-         * 
-         */
-        [Serializable]
-        public class JAXField
-        {
-            // If buffered is set to true, will keep a copy of the oringal
-            // value when initialized to the _originalValue Token
-            public JAXField(bool buffered)
-            {
-                _buffered = buffered;
-            }
-
-            // Initialize the object with a value, and if buffered then
-            // store a copy of the value to the _originaValue Token
-            public JAXField(object val, bool buffered)
-            {
-                _buffered = buffered;
-                Value = val;
-            }
-
-            // Initialize the object with a value, and if buffered then
-            // store a copy of the value to the _originaValue Token
-            public JAXField(bool buffered, string type)
-            {
-                _buffered = buffered;
-                switch (type.ToUpper())
-                {
-                    case "V":
-                    case "C": Value = string.Empty; break;
-                    case "D": Value = DateOnly.MinValue; break;
-                    case "L": Value = false; break;
-                    case "T": Value = DateTime.MinValue; break;
-                    case "N": Value = 0; break;
-                    case "F":
-                    case "B":
-                    case "Y": Value = 0D; break;
-                    default:
-                        throw new Exception("9|");
-                }
-            }
-
-            // Properties for class
-            public int Changed = 0; //  0=not loaded, 1=loaded, 2=changed
-            public bool IsNull { get; private set; }
-            public string Type { get; private set; } = string.Empty;
-            public object? Value
-            {
-                get { return _value.Element.Value; }
-
-                set
-                {
-                    if (value is null)
-                    {
-                        if (Type.Length == 0)
-                            throw new Exception("4001|");   // Can't initialize value as null
-                        else
-                        {
-                            IsNull = true;
-                            Changed = Changed == 0 ? 1 : 2;
-                        }
-                    }
-                    else
-                    {
-                        // Now handle what was given
-                        string vType = value.GetType().Name.ToLower() switch
-                        {
-                            "char" => "C",
-                            "string" => "C",
-                            "int32" => "N",
-                            "int64" => "N",
-                            "single" => "N",
-                            "double" => "N",
-                            "boolean" => "L",
-                            "dateonly" => "D",
-                            "datetime" => "T",
-                            _ => throw new Exception("9|")
-                        };
-
-                        // Deal with it
-                        if (Changed < 1)
-                        {
-                            Type = vType;
-                            _value.Element.Value = value;
-
-                            if (_buffered)
-                                _originalValue.Element.Value = _value.Element.Value;
-                        }
-                        else
-                        {
-                            Changed = 2;
-
-                            if (_value.Element.Type.Equals(vType))
-                                _value.Element.Value = string.Empty;
-                            else
-                                throw new Exception("9|");
-                        }
-                    }
-                }
-            }
-
-            private bool _buffered = false;
-            private JAXObjects.Token _value = new();
-            private JAXObjects.Token _originalValue = new();
-
-            // Used for buffered tables
-            // Only reverts original value if _buffered = true
-            public void RevertValue()
-            {
-                if (_buffered && Changed > 0)
-                {
-                    _value.Element.Value = _originalValue.Element.Value;
-                    Changed = 0;
-                }
-            }
-        }
-
 
         /*
          * Class to handle memo fields.
@@ -207,10 +77,15 @@ namespace JAXBase.Data
         }
     }
 
+
+
+    /*
+     * This is a class I'm using to tinker around with for SQL support
+     */
     public class ColumnInfo
     {
-        public string SqlType { get; set; } = string.Empty;
-        public string DotNetType { get; set; } = string.Empty;
+        public string SqlType { get; set; } = "";
+        public string DotNetType { get; set; } = "";
         public int MaxLength { get; set; } = -1;
         public bool AllowDBNull { get; set; } = true;
         public object SampleValue { get; set; } = DBNull.Value;
@@ -219,40 +94,65 @@ namespace JAXBase.Data
             $"{SqlType} ({DotNetType}) {(AllowDBNull ? "NULL" : "NOT NULL")}";
     }
 
-    /*
-     * Take a data table and create a JAXBase compatible cursor using 
-     * information already in the data table.
-     * 
-     * WARNING #1: This is not intended to be a end-all be-all solution 
-     * as JAXBase data types do not map one-to-one nor do they have the
-     * max size and attributes of SQL Server, MySQL, or PostgreSQL. You
-     * are expected to work with tables that are compatible with JAXBase
-     * data types and limits.
-     * 
-     * WARNING #2: This is a basic implementation and does not handle
-     * the full range of data types and attributes that may be present,
-     * take into account the actual maximum range and lengths of the SQL
-     * fields, nor does it handle error conditions.
-     * 
-     * One glaring example is the different INT types which can be
-     * less than 4 bytes in length, but here we assume all INT types
-     * are 4 bytes, except for the 8 byte type which are pushed
-     * over as double, which is a large floating point data type.
-     * 
-     * Another is that text types may be larger than the capacity of
-     * a memo field, but here we assume anything over 254 characters
-     * is a memo field and anything that's too large will be truncated.
-     * 
-     * Note: I would like to see Version 2 attempt to address most of 
-     * these issues by including several new data types to match more 
-     * closely with SQL Server, MySQL, and PostgreSQL data types.
-     * 
-     */
+
     public class TableHelper()
     {
-        public static async Task MakeCursorForDataTable(AppClass app, DataTable dt, string alias)
+
+        /* -----------------------------------------------------------------------------------------
+         * Create a cursor from a JAXBase table description string such as:
+         * "Name C(30), Address M, City C(30), State C(2), Zip C(5), Balance N(10,2)"
+         * ----------------------------------------------------------------------------------------- */
+        public static async Task<int> CreateCursor(string lcSQL, string cursorName)
+        {
+            JAXDirectDBF thisDBF = Program.CurrentApp.CurrentDS.GetWorkAreaObject(Program.CurrentApp.CurrentDS.CurrentWorkArea());
+            JAXDirectDBF.DBFInfo dbfInfo = new()
+            {
+                FQFN = Program.CurrentApp.AppWorkFolder + Program.CurrentApp.SystemCounter()+".dbf",    // All cursors go into the work folder
+                Fields = MakeFieldsFromString(lcSQL),   // Get the fields
+                TableType = "C",                        // Mark it as a cursor
+                Alias = cursorName                      // And finally the alias name
+            };
+
+            int result = 0;
+
+            // Create the cursor
+            if (await thisDBF.DBFCreateDBF(dbfInfo, true) == false)
+                result = 1554;
+
+            return result;
+        }
+
+
+        /* -----------------------------------------------------------------------------------------
+         * Take a data table and create a JAXBase compatible cursor using information already in 
+         * the data table.
+         * 
+         * WARNING #1: This is not intended to be a end-all be-all solution as JAXBase data types 
+         * do not map one-to-one nor do they have the max size and attributes of SQL Server, MySQL, 
+         * or PostgreSQL. You are expected to work with tables that are compatible with JAXBase
+         * data types and limits.
+         * 
+         * WARNING #2: This is a basic implementation and does not handle the full range of data 
+         * types and attributes that may be present, take into account the actual maximum range 
+         * and lengths of the SQL fields, nor does it handle error conditions.
+         * 
+         * One glaring example is the different INT types which can be less than 4 bytes in 
+         * length, but here we assume all INT types are 4 bytes, except for the 8 byte type
+         * which are pushed over as double, which is a large floating point data type.
+         * 
+         * Another is that text types may be larger than the capacity of a memo field, but here 
+         * we assume anything over 254 characters is a memo field and anything that's too large 
+         * will be truncated.
+         * 
+         * Note: I would like to see Version 2 attempt to address most of these issues by 
+         * including several new data types to match more closely with teh rrange of datatypes 
+         * found in SQL Server, MySQL, PostgreSQL, Oracle, and MongoDB.
+         * 
+         * ----------------------------------------------------------------------------------------- */
+        public static async Task MakeCursorForDataTable(DataTable dt, string alias)
         {
             int i = 0;
+            AppClass app = Program.CurrentApp;
 
             // Ensure we have a work area
             if (app.CurrentDS.CurrentWA is null || app.CurrentDS.CurrentWA.DbfInfo.DBFStream is not null)
@@ -370,12 +270,69 @@ namespace JAXBase.Data
                 i++;
             }
 
-            JAXLib.StrToFile(JsonConvert.SerializeObject(dt, Formatting.Indented),@"c:\temp\JSONCursor.txt",2);
-
             // At this point we have the field info and are ready to create the cursor
             await app.CurrentDS.CurrentWA!.DBFCreateDBF(dbInfo, false);
             await app.CurrentDS.CurrentWA!.DBFAppendForeignRecord(dt);
+            await app.CurrentDS.CurrentWA!.DBFGotoRecord("top");
         }
 
+
+
+
+        /* -----------------------------------------------------------------------------------------
+         * Create a List<JAXTables.FieldInfo> based on a table description string such as:
+         * "Name C(30), Address M, City C(30), State C(2), Zip C(5), Balance N(10,2)"
+         * ----------------------------------------------------------------------------------------- */
+        public static List<JAXTables.FieldInfo> MakeFieldsFromString(string fieldString)
+        {
+            List<JAXTables.FieldInfo> fields = [];
+
+            while (fieldString.Length > 0)
+            {
+                // get the next field definition
+                fieldString = Program.CurrentApp.JaxCompiler.GetNextToken(fieldString, ",", out string fld);
+
+                if (fld.Length > 0)
+                {
+                    // break up the field definition
+                    fld = Program.CurrentApp.JaxCompiler.GetNextToken(fld, " ", out string fname);
+                    string type = "";
+
+                    if (fld.Length > 0)
+                    {
+                        type = fld[..1];
+
+                        if (fld.Length > 1)
+                            fld = fld[1..];
+                        else
+                            fld = "";
+                    }
+
+                    int w = 0;
+                    int d = 0;
+
+                    if (fld.Length > 0)
+                    {
+                        string[] c = fld.Split(',');
+                        int.TryParse(c[0], out w);
+
+                        if (c.Length > 1)
+                            int.TryParse(c[1], out d);
+                    }
+
+                    JAXTables.FieldInfo f = new()
+                    {
+                        FieldName = fld,
+                        FieldType = type,
+                        FieldLen = w,
+                        FieldDec = d
+                    };
+
+                    fields.Add(f);
+                }
+            }
+
+            return fields;
+        }
     }
 }

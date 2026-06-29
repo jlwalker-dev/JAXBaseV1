@@ -5,6 +5,7 @@ using JAXBase.Core;
 using JAXBase.UI;
 using JAXBase.Utilities;
 using System.ComponentModel;
+using System.Windows.Controls;
 
 namespace JAXBase.XBase
 {
@@ -30,6 +31,7 @@ namespace JAXBase.XBase
             {
                 "editform" => "EditForm",
                 "browseform" => "BrowseForm",
+                "robrowser" => "ROBrowser",
                 _ => MyBaseClass
             };
 
@@ -502,13 +504,47 @@ namespace JAXBase.XBase
 
             AppIO.DebugLog($">>> FixObjects for {thisJOW.JOWName} - baseclass {thisJOW.BaseClass}");
 
-            if (thisJOW.BaseClass.Equals("editform", StringComparison.OrdinalIgnoreCase))
+            if (JAXLib.InListC(thisJOW.BaseClass, "editform", "robrowser"))
             {
                 // EditForm has one child which is a grid.  This routine ties the grid
                 // to the form and sets a resize event to keep it sized correctly.
                 XBase_Class_Visual_Form form = (XBase_Class_Visual_Form)thisJOW.thisObject;
 
                 Avalonia.Controls.Control _grid = (Avalonia.Controls.Grid)form.InnerCanvas.Children[0];
+
+                if (thisJOW.BaseClass.Equals("robrowser", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_grid is Avalonia.Controls.Grid layoutGrid)
+                    {
+                        if (layoutGrid.Children.Count > 0)
+                        {
+                            Avalonia.Controls.DataGrid? _dataGrid = layoutGrid.Children[0] as Avalonia.Controls.DataGrid;
+
+                            if (_dataGrid is not null)
+                            {
+                                // Force column regeneration and refresh
+                                _dataGrid.AutoGenerateColumns = false;
+                                _dataGrid.Columns.Clear();
+                                _dataGrid.AutoGenerateColumns = true;
+
+                                _dataGrid.InvalidateVisual();
+                                _dataGrid.InvalidateMeasure();
+                                _dataGrid.InvalidateArrange();
+
+                                // Additional layout refresh for Canvas scenario
+                                if (InnerCanvas != null)
+                                {
+                                    InnerCanvas.InvalidateVisual();
+                                    InnerCanvas.InvalidateMeasure();
+                                    InnerCanvas.InvalidateArrange();
+                                }
+                            }
+                            else
+                                throw new Exception("9999|");
+                        }
+                    }
+                }
+
                 Avalonia.Controls.Canvas.SetLeft(_grid, 0);
                 Avalonia.Controls.Canvas.SetTop(_grid, 0);
 

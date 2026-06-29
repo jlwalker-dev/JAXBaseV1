@@ -8,12 +8,11 @@
 using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Utilities;
+using JAXBase.XBase;
+using Newtonsoft.Json;
 using System.Globalization;
 using static JAXBase.Core.AppClass;
 using static JAXBase.Utilities.JAXUtilities;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using JAXBase.XBase;
 
 namespace JAXBase.Math
 {

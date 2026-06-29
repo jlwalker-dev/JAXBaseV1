@@ -1,4 +1,9 @@
-﻿using JAXBase.Core;
+﻿/*
+ * 2026.06.09 - JLW
+ *      Used to provide information on the header of the current cursor, table, or (in the future) a database.
+ *      
+ */
+using JAXBase.Core;
 using JAXBase.Data;
 
 namespace JAXBase.XBase

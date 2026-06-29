@@ -337,6 +337,11 @@ namespace JAXBase.XBase
             {
                 try
                 {
+                    if (cClass.Equals("sql", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int iii = 0;
+                    }
+
                     // ----------------------------------------------------------------------------------
                     // The following is for all classes except the EMPTY class
                     // ----------------------------------------------------------------------------------
@@ -373,9 +378,20 @@ namespace JAXBase.XBase
                         // via SetProperty except for those that are arrays or protected
                         foreach (KeyValuePair<string, JAXObjects.Token> tok in thisObject.UserProperties)
                         {
+                            if (tok.Key.Equals("connectstring"))
+                            {
+                                int iii = 0;
+                            }
+
+
                             //AppIO.DebugLog($"Upating {tok.Key} = {tok.Value.AsString()}");
                             if (tok.Value.Protected == false && tok.Value.TType.Equals("A") == false && JAXLib.InListC(tok.Key, "datasession") == false)
                                 thisObject.SetProperty(tok.Key, tok.Value.Element.Value, 0);
+
+                            if (Program.CurrentApp.Errors.Count>0)
+                            {
+                                int iii = 0;
+                            }
                         }
 
                         // Load the methods

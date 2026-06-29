@@ -11,58 +11,44 @@
  */
 using JAXBase.Core;
 using JAXBase.Data;
+using JAXBase.Utilities;
 using Npgsql;
 using System.Data;
-using JAXBase.Utilities;
-using JAXBase.Language;
 
 namespace JAXBase.XBase
 {
     public class XBase_ClassSQL_POSTGRE : SQLClass
     {
-        AppClass App;
+        XBase_Class_SQL SQLBase;
 
-        private int ErrorNo = 0;
-        private string ErrorMsg = string.Empty;
-        private string ErrorProc = string.Empty;
-        private int ErrorLine = 0;
+        public int ErrorCode { get; private set; } = 0;
+        public string ErrorMsg { get; private set; } = "";
 
         private string _appName = string.Empty;
         NpgsqlConnection? SQLCon = null;
         private string ApplicationName
         {
             get { return _appName; }
-            set { _appName = $"{value}:{App.MyInstance}"; }
+            set { _appName = $"{value}:{Program.CurrentApp.MyInstance}"; }
         }
 
         //SqlAuthenticationMethod AuthenticationMethod = SqlAuthenticationMethod.SqlPassword;
-        private int Port = 0;
-        private string Database = string.Empty;
-        private string DataSource = string.Empty;
-        private bool Encryption = false;
-        private bool IntegratedSecurity = false;
-        private string ConnectionPassword = string.Empty;
-        private int ConnectionTimeout = 30;
-        private string ConnectionUserID = string.Empty;
-        private bool TrustServerCertificate = false;
         private string WorkStation;
-
         private string ConnectionString = string.Empty;
 
-        public XBase_ClassSQL_POSTGRE(AppClass app)
+        public XBase_ClassSQL_POSTGRE(XBase_Class_SQL app)
         {
-            App = app;
+            SQLBase = app;
 
             ApplicationName = "JAXBase";
             WorkStation = Environment.MachineName;
 
         }
 
-        public int AlterTable(string tableName, List<JAXTables.FieldInfo> Fields)
+        public async Task<int> AlterTable(string tableName, List<JAXTables.FieldInfo> Fields)
         {
             int result = 0;
             string msg = string.Empty;
-            SetError(0, msg, msg);
 
             try
             {
@@ -73,29 +59,26 @@ namespace JAXBase.XBase
                 msg = ex.Message;
             }
 
-            if (result > 0)
-                SetError(result, msg, "AlterTable");
 
             return result;
         }
 
-        public int Connect()
+        public async Task<int> Connect(string connString)
         {
             int result = 0;
             string msg = string.Empty;
-            SetError(0, string.Empty, string.Empty);
 
             // Try to make the connection
             if (result == 0)
             {
                 try
                 {
-                    ConnectionString = $"Host={DataSource};Database={Database};Username={ConnectionUserID};Password={ConnectionPassword}";
+                    //ConnectionString = $"Host={DataSource};Database={Database};Username={ConnectionUserID};Password={ConnectionPassword}";
 
                     var builder = new NpgsqlConnectionStringBuilder(ConnectionString)
                     {
                         SslMode = SslMode.Prefer,
-                        ApplicationName = $"{ApplicationName}|WS:{WorkStation}|User:{ConnectionUserID}"
+                        ApplicationName = $"{ApplicationName}|WS:{WorkStation}|User:{"ConnectionUserID"}"
                     };
 
                     SQLCon = new(builder.ConnectionString);
@@ -111,8 +94,6 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                SetError(result, ErrorMsg, "Connect");
-
                 if (SQLCon is not null)
                 {
                     // Make sure things get closed up on an error
@@ -124,17 +105,21 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public int CreateIndex(string tableName, string indexinfo)
+        public async Task<bool> IsConnected()
+        {
+            return SQLCon is not null && JAXLib.InList(SQLCon.State, ConnectionState.Open, ConnectionState.Executing, ConnectionState.Fetching);
+        }
+
+
+        public async Task<int> CreateIndex(string indexName, string tableName, string indexExpression, string filter = "", string attribs = "")
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
 
             try
             {
                 if (SQLCon is null || SQLCon.State != ConnectionState.Open)
                 {
                     result = 6001;
-                    SetError(6001, string.Empty, "ExecuteSelect");
                 }
                 else
                 {
@@ -144,23 +129,20 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                SetError(9999, ex.Message, "CreateIndex");
             }
 
             return result;
         }
 
-        public int CreateSP(string procName, string procCode)
+        public async Task<int> CreateSP(string procName, string procCode)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
 
             try
             {
                 if (SQLCon is null || SQLCon.State != ConnectionState.Open)
                 {
                     result = 6001;
-                    SetError(6001, string.Empty, "ExecuteSelect");
                 }
                 else
                 {
@@ -170,7 +152,6 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                SetError(9999, ex.Message, "CreateSP");
             }
 
             return result;
@@ -180,17 +161,15 @@ namespace JAXBase.XBase
         /*
          * Create a table using JAXBase field information
          */
-        public int CreateTable(string tableName, List<JAXTables.FieldInfo> Fields)
+        public async Task<int> CreateTable(string tableName, List<JAXTables.FieldInfo> Fields)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
 
             try
             {
                 if (SQLCon is null || SQLCon.State != ConnectionState.Open)
                 {
                     result = 6001;
-                    SetError(6001, string.Empty, "ExecuteSelect");
                 }
                 else
                 {
@@ -200,23 +179,71 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                SetError(9999, ex.Message, "CreateTable");
             }
 
             return result;
         }
 
-        public int DeleteIndex(string tableName, string indexinfo)
+        public async Task<int> CreateView(string viewName, string viewCode)
+        {
+            int result = ErrorCode = 0;
+
+            return result;
+        }
+
+
+        public async Task<int> DeleteDB(string Name)
+        {
+            string schema = SQLBase.UserProperties["schema"].AsString();
+            string[] test = Name.Split('.');
+
+            if (test.Length == 1)
+                Name = string.IsNullOrWhiteSpace(schema) ? Name : schema + "." + Name;
+
+            return 1999;
+        }
+
+        public async Task<int> DeleteSP(string Name)
+        {
+            string schema = SQLBase.UserProperties["schema"].AsString();
+            string[] test = Name.Split('.');
+
+            if (test.Length == 1)
+                Name = string.IsNullOrWhiteSpace(schema) ? Name : schema + "." + Name;
+
+            return 1999;
+        }
+        public async Task<int> DeleteTable(string Name)
+        {
+            string schema = SQLBase.UserProperties["schema"].AsString();
+            string[] test = Name.Split('.');
+
+            if (test.Length == 1)
+                Name = string.IsNullOrWhiteSpace(schema) ? Name : schema + "." + Name;
+
+            return 1999;
+        }
+        public async Task<int> DeleteView(string Name)
+        {
+            string schema = SQLBase.UserProperties["schema"].AsString();
+            string[] test = Name.Split('.');
+
+            if (test.Length == 1)
+                Name = string.IsNullOrWhiteSpace(schema) ? Name : schema + "." + Name;
+
+            return 1999;
+        }
+
+
+        public async Task<int> DeleteIndex(string indexName, string Name)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
 
             try
             {
                 if (SQLCon is null || SQLCon.State != ConnectionState.Open)
                 {
                     result = 6001;
-                    SetError(6001, string.Empty, "ExecuteSelect");
                 }
                 else
                 {
@@ -226,23 +253,20 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                SetError(9999, ex.Message, "DeleteIndex");
             }
 
             return result;
         }
 
-        public int Disconnect()
+        public async Task<int> Disconnect()
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
 
             try
             {
                 if (SQLCon is null)
                 {
                     result = 6001;
-                    SetError(6001, string.Empty, "ExecuteSelect");
                 }
                 else
                 {
@@ -253,7 +277,6 @@ namespace JAXBase.XBase
             catch (Exception ex)
             {
                 result = 9999;
-                SetError(9999, ex.Message, "Disconnect");
             }
 
             return result;
@@ -262,28 +285,9 @@ namespace JAXBase.XBase
         /*
          * Drop a table from the database
          */
-        public int DropTable(string tableName)
+        public async Task<int> DropTable(string tableName)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
-
-            try
-            {
-                if (SQLCon is null || SQLCon.State != ConnectionState.Open)
-                {
-                    result = 6001;
-                    SetError(6001, string.Empty, "ExecuteSelect");
-                }
-                else
-                {
-
-                }
-            }
-            catch (Exception ex)
-            {
-                result = 9999;
-                SetError(9999, ex.Message, "DropTable");
-            }
 
             return result;
         }
@@ -291,29 +295,10 @@ namespace JAXBase.XBase
         /*
          * Return the table structure using JAXBase field codes
          */
-        public int GetTableStructure(string tableName, out List<JAXTables.FieldInfo> Fields)
+        public async Task<int> GetTableStructure(string tableName, string varName)
         {
             int result = 0;
-            Fields = [];
-            SetError(0, string.Empty, string.Empty);
 
-            try
-            {
-                if (SQLCon is null || SQLCon.State != ConnectionState.Open)
-                {
-                    result = 6001;
-                    SetError(result, string.Empty, "GetTableStructure");
-                }
-                else
-                {
-
-                }
-            }
-            catch (Exception ex)
-            {
-                result = 9999;
-                SetError(9999, ex.Message, "GetTableStructure");
-            }
 
             return result;
         }
@@ -322,9 +307,8 @@ namespace JAXBase.XBase
          * Execute a SQL statement and return a datatable, scalar result,
          * or the number of affected rows.
          */
-        public int Execute(string sql, out object? returnObject)
+        public async Task<int> Execute(string sql, string cursorName)
         {
-            SetError(0, string.Empty, string.Empty);
 
             int result = 0;
             sql = sql.Trim();
@@ -332,23 +316,6 @@ namespace JAXBase.XBase
             using var cmd = new NpgsqlCommand(sql, SQLCon) { CommandType = CommandType.Text };
             var kind = XBase_Class_SQL.DetectCommandKind(sql);
 
-            try
-            {
-                returnObject = kind switch
-                {
-                    XBase_Class_SQL.CommandKind.Select => ExecuteSelect(sql, out result),
-                    XBase_Class_SQL.CommandKind.Scalar => cmd.ExecuteScalar(),
-                    _ => cmd.ExecuteNonQuery()
-                };
-
-                if (result < 0) returnObject = null;
-            }
-            catch (Exception ex)
-            {
-                result = -1;
-                SetError(9999, ex.Message, "Execute");
-                returnObject = null;
-            }
 
             return result;
         }
@@ -363,7 +330,6 @@ namespace JAXBase.XBase
                 if (SQLCon is null || SQLCon.State != ConnectionState.Open)
                 {
                     result = -1;
-                    SetError(6001, string.Empty, "ExecuteSelect");
                 }
                 else
                 {
@@ -379,340 +345,90 @@ namespace JAXBase.XBase
             {
                 dt.Clear();
                 result = -1;
-                SetError(9999, ex.Message, "ExecuteSelect");
             }
 
             return dt;
         }
 
-        public int ExecuteSP(string procName, List<xParameters> parameters)
+        public async Task<int> ExecuteSP(string procName, List<xParameters> parameters)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
-
-            try
-            {
-                if (SQLCon is null || SQLCon.State != ConnectionState.Open)
-                {
-                    result = -1;
-                    SetError(6001, string.Empty, "ExecuteSelect");
-                }
-                else
-                {
-
-                }
-            }
-            catch (Exception ex)
-            {
-                result = -1;
-                SetError(9999, ex.Message, "ExecuteSP");
-            }
 
             return result;
         }
 
-        public JAXErrors GetErrorMsg()
+
+        public async Task<int> GetSPCode(string procName, string cursorName)
         {
-            JAXErrors result = new();
-            result.ErrorMessage = ErrorMsg;
-            result.ErrorNo = ErrorNo;
-            result.ErrorProcedure = ErrorProc;
+            int result = 0;
             return result;
         }
 
-        public int GetSPCode(string procName)
+
+        public async Task<int> Setup(List<xParameters> parameters)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
-
-            try
-            {
-                if (SQLCon is null || SQLCon.State != ConnectionState.Open)
-                {
-                    result = 6001;
-                    SetError(6001, "SQL not connected", "ExecuteSelect");
-                }
-                else
-                {
-
-                }
-            }
-            catch (Exception ex)
-            {
-                result = 9999;
-                SetError(9999, ex.Message, "GetSPCode");
-            }
-
-            return result;
-        }
-
-        public int Setup(List<xParameters> parameters)
-        {
-            int result = 0;
-            SetError(0, string.Empty, string.Empty);
 
             try
             {
                 foreach (xParameters param in parameters)
                 {
-                    result = SetParameter(param.Name, param.Value);
+                    result = await SetParameter(param.Name, param.Value);
                     if (result != 0) break;
                 }
             }
             catch (Exception ex)
             {
                 result = 9999;
-                SetError(9999, ex.Message, "Setup");
             }
 
             return result;
         }
 
-        public int SetParameterString(string Parameters)
+        public async Task<int> SetParameterString(string Parameters)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
-
-            try
-            {
-                string[] ParamStrings = Parameters.Split(';');
-                for (int i = 0; i < ParamStrings.Length; i++)
-                {
-                    JAXObjects.Token tk = new();
-
-                    if (ParamStrings[i].Contains("="))
-                    {
-                        string[] param = ParamStrings[i].Split("=");
-                        param[0] = param[0].Trim();
-                        param[1] = param[1].Trim();
-
-                        if (param[1].Length > 0)
-                        {
-                            if ("0123456789".Contains(param[1][0]))
-                            {
-                                // It's a numeric value
-                                if (int.TryParse(param[1], out int iVal) == false) iVal = 0;
-                                tk.Element.Value = iVal;
-                            }
-                            else if (JAXLib.InListC(param[1], ".t.", ".f."))
-                            {
-                                // It's a boolean
-                                tk.Element.Value = param[1].ToLower().Equals(".t.");
-                            }
-                            else
-                            {
-                                // Assuming it's a character value
-                                tk.Element.Value = param[1];
-                            }
-                        }
-                        else
-                        {
-                            // Received an empty string
-                            tk.Element.Value = string.Empty;
-                        }
-
-                        // Now parse it
-                        result = SetParameter(param[0], tk);
-                    }
-                    else
-                    {
-                        result = 1232;
-                        SetError(1232, $"", "SetParameter");
-                    }
-
-
-                    // Break out on any error found
-                    if (result != 0) break;
-                }
-            }
-            catch (Exception ex)
-            {
-                result = 9999;
-                SetError(9999, ex.Message, "SetParameterString");
-            }
 
             return result;
         }
 
-        public int SetParameter(string parameter, JAXObjects.Token value)
+        public async Task<int> SetParameter(string parameter, JAXObjects.Token value)
         {
-            SetError(0, string.Empty, string.Empty);
 
             int result = 0;
             string type = value.Element.Type;
 
-            try
-            {
-                switch (parameter.ToLower())
-                {
-                    case "applicationname":
-                        ApplicationName = type.Equals("C") ? value.AsString() : throw new Exception($"11|");
-                        break;
-
-                    case "authtype":
-                        int authType = type.Equals("N") ? value.AsInt() : throw new Exception($"11|");
-                        break;
-
-                    case "port":
-                        Port = type.Equals("N") ? value.AsInt() : throw new Exception("11|");
-                        if (JAXLib.Between(Port, 1, 65535) == false) throw new Exception($"3003|");
-                        break;
-
-                    case "database":
-                        Database = type.Equals("C") ? value.AsString() : throw new Exception("11|");
-                        break;
-
-                    case "datasource":
-                        DataSource = type.Equals("C") ? value.AsString() : throw new Exception("11|");
-                        break;
-
-                    case "integratedsecurity":
-                        IntegratedSecurity = type.Equals("L") ? value.AsBool() : throw new Exception("11|");
-                        break;
-
-                    case "connectionpassword":
-                        ConnectionPassword = type.Equals("C") ? value.AsString() : throw new Exception($"11|");
-                        break;
-
-                    case "connectiontimeout":
-                        ConnectionTimeout = type.Equals("N") ? value.AsInt() : throw new Exception("11|");
-                        if (ConnectionTimeout < 0) throw new Exception("3003|");
-                        break;
-
-                    case "connectionuserid":
-                        ConnectionUserID = type.Equals("C") ? value.AsString() : throw new Exception("11|");
-                        break;
-
-                    case "trustservercertificate":
-                        TrustServerCertificate = type.Equals("L") ? value.AsBool() : throw new Exception("11|");
-                        break;
-
-                    case "encryption":
-                        Encryption = type.Equals("L") ? value.AsBool() : throw new Exception("11|");
-                        break;
-
-                    case "workstation":
-                        WorkStation = type.Equals("C") ? value.AsString() : throw new Exception("11|");
-                        break;
-
-                    default:
-                        result = 6003;
-                        ErrorMsg = $"Invalid or unknown SQL connection property {parameter.ToUpper()}";
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                if (ex.Equals("11|"))
-                {
-                    result = 11;
-                    ErrorMsg = $"Function argument value, type, or count is invalid {parameter.ToUpper()}";
-                    SetError(11, ErrorMsg, "SetParameter");
-                }
-                else if (ex.Equals("3003|"))
-                {
-                    result = 11;
-                    ErrorMsg = "Value or index is out of range|" +
-                        (parameter.Equals("port", StringComparison.OrdinalIgnoreCase) ? $"Port ={Port}"
-                            : $"ConnectionTimeout={ConnectionTimeout}");
-                    SetError(3003, ErrorMsg, "SetParameter");
-                }
-                else
-                {
-                    result = 11;
-                    SetError(9999, ex.Message, "SetParameter");
-                }
-            }
 
             return result;
         }
 
-        public int CreateDatabase(string name) { return 1999; }
-        public int GetIndex(string name, out string idxInfo) { idxInfo = string.Empty; return 1999; }
+        public async Task<int> CreateDatabase(string name) { return 1999; }
+
+        public async Task<int> GetIndex(string tableName, string indexName = "", string cursorName = "")
+        {
+            return 0;
+        }
 
         public int ListDatabases(out List<string> dbList)
         {
-            SetError(0, string.Empty, string.Empty);
+            int result = 0;
 
             dbList = [];
-            int result = Execute("SELECT datname AS \"Database\" FROM pg_database WHERE datistemplate = false AND datname NOT IN ('postgres') ORDER BY datname;", out object? returnObject);
+            //int result = Execute("SELECT datname AS \"Database\" FROM pg_database WHERE datistemplate = false AND datname NOT IN ('postgres') ORDER BY datname;", out object? returnObject);
 
-            if (result >= 0)
-            {
-                if (returnObject is not null)
-                {
-                    if (GetKind() == 1)
-                    {
-                        DataTable dt = (DataTable)returnObject;
-                        foreach (DataRow row in dt.Rows)
-                        {
-                            string n = row["datname"].ToString() ?? string.Empty;
-                            if (string.IsNullOrWhiteSpace(n) == false)
-                                dbList.Add(n);
-                        }
-
-                        // Get the final tally
-                        result = dbList.Count;
-                    }
-                    else
-                    {
-                        // Error
-                        result = 6007;
-                        SetError(6007, string.Empty, "ListDatabase");
-                    }
-                }
-                else
-                {
-                    // Error
-                    result = 9999;
-                    SetError(6006, string.Empty, "ListDatabase");
-                }
-            }
 
             return result;
         }
 
-        public int ListIndexes(out List<string> idxList) { idxList = []; return 1999; }
+        public int ListIndexes(string tableName, out List<string> idxList)  { idxList = []; return 1999; }
 
 
         public int ListTables(out List<string> tblList)
         {
+            int result = 0;
             tblList = [];
-            SetError(0, string.Empty, string.Empty);
 
-            int result = Execute("SELECT table_schema AS \"Schema\", table_name AS \"Table\" FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema') ORDER BY table_schema, table_name;", out object? returnObject);
-
-            if (result >= 0)
-            {
-                if (returnObject is not null)
-                {
-                    if (GetKind() == 1)
-                    {
-                        DataTable dt = (DataTable)returnObject;
-                        foreach (DataRow row in dt.Rows)
-                        {
-                            string n = row["table_name"].ToString() ?? string.Empty;
-                            if (string.IsNullOrWhiteSpace(n) == false)
-                                tblList.Add(n);
-                        }
-
-                        // Get the final tally
-                        result = tblList.Count;
-                    }
-                    else
-                    {
-                        // Error
-                        result = 6007;
-                        SetError(6007, string.Empty, "ListTables");
-                    }
-                }
-                else
-                {
-                    // Error
-                    result = 9999;
-                    SetError(6006, string.Empty, "ListTables");
-                }
-            }
+            //int result = Execute("SELECT table_schema AS \"Schema\", table_name AS \"Table\" FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema') ORDER BY table_schema, table_name;", out object? returnObject);
 
             return result;
         }
@@ -721,7 +437,6 @@ namespace JAXBase.XBase
         public int GetState()
         {
             int result;
-            SetError(0, string.Empty, string.Empty);
 
             if (SQLCon is null)
                 result = -1;
@@ -742,32 +457,58 @@ namespace JAXBase.XBase
             return result;
         }
 
-        private void SetError(int errno, string msg, string proc)
-        {
-            ErrorNo = errno;
-            ErrorMsg = JAXErrorList.JAXErrMsg(errno, msg);
-            ErrorProc = proc;
-            ErrorLine = 0;
-        }
 
-        public int GetKind() { return ErrorLine; }
+        public int GetKind() { return 0; }
 
 
         public string GetConnectionString() { return SQLCon is null ? string.Empty : SQLCon.ConnectionString; }
-        public int SetConnectionString(string connString)
+        public async Task<int> SetConnectionString(string connString)
         {
             int result = 0;
-            SetError(0, string.Empty, string.Empty);
 
             if (SQLCon is null || SQLCon.State == ConnectionState.Closed)
-                result = SetParameterString(connString);
+                result = await SetParameterString(connString);
             else
                 result = 6004;
 
-            if (result > 0 && ErrorNo == 0)
-                SetError(result, string.Empty, "SetConnectionString");
-
             return result;
+        }
+
+        public async Task<int> GetDatabaseInfo(string dbName, string cursorName)
+        {
+            int result = 0;
+            return result;
+        }
+
+        public async Task<int> GetView(string viewName, string cursorName)
+        {
+            int result = 0;
+            return result;
+        }
+
+        public async Task<int> AlterField(string parm1, string parm2, string parm3, int parm4, int parm5)
+        {
+            return 0;
+        }
+
+        public async Task<int> AlterProperty(string parm1, string parm2, string parm3, JAXObjects.Token parm4)
+        {
+            return 0;
+        }
+
+        public async Task<int> AlterIndex(string parm1, string parm2, string parm3, string parm4)
+        {
+            return 0;
+        }
+
+        public async Task<int> DropField(string parm1, string parm2)
+        {
+            return 0;
+        }
+
+        public async Task<int> DropIndex(string parm1, string parm2)
+        {
+            return 0;
         }
     }
 }

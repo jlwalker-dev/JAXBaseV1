@@ -149,8 +149,8 @@ namespace JAXBase.Language
         /// </summary>
         public static string[] JAXObjects = ["barcode","browser","checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container",
             "custom","editbox","empty","file","form","formset","ftp","grid","httpclient","hyperlink","image","jax","jaxedit","ipc","ircclient","label","line","listbox",
-            "menu","menuitem","mqttclient","nostrclient","optionbutton","optiongroup","page","pageframe","pgp","pipe","pop3","printer","screen","separator","shape","sms",
-            "smtp","sound","spinner","sql","textbox","toolbar","toolbutton","tcpclient","tcpserver","timer","udp","video"];
+            "menu","menuitem","mqttclient","nostrclient","optionbutton","optiongroup","page","pageframe","pgp","pipe","pop3","printer","robrowser","screen","separator",
+            "shape","sms","smtp","sound","spinner","sql","textbox","toolbar","toolbutton","tcpclient","tcpserver","timer","tree","treeitem","udp","video"];
 
 
         /// <summary>

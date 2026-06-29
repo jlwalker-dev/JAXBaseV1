@@ -17,7 +17,7 @@ using ZXing;
 
 namespace JAXBase.XBase
 {
-    public class XBase_Class_HTMLViewer : XBase_Class_Avalonia
+    public class XBase_Class_Visual_HTMLViewer : XBase_Class_Avalonia
     {
         public new string MyBaseClass { get; } = "HTMLViewer";
         public new string MyDefaultName { get; } = "htmlviewer";
@@ -26,7 +26,7 @@ namespace JAXBase.XBase
 
         public List<WebHistory> history = new();
 
-        public XBase_Class_HTMLViewer(JAXObjectWrapper jow, string name) : base(jow, name)
+        public XBase_Class_Visual_HTMLViewer(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             _webView = new NativeWebView();
             SetVisualObject(_webView, MyBaseClass, name, true, UserObject.urw);

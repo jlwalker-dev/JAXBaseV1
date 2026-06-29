@@ -8,134 +8,204 @@ namespace JAXBase.XBase
 {
     public class XBase_ClassSQL_NONE : SQLClass
     {
-        public XBase_ClassSQL_NONE(AppClass app)
+        public int ErrorCode { get; private set; } = 6004;
+        public string ErrorMsg { get; private set; } = "";
+
+        public XBase_ClassSQL_NONE(XBase_Class_SQL app)
         {
         }
 
-        public int AlterTable(string tableName, List<JAXTables.FieldInfo> Fields)
+        public async Task<bool> IsConnected()
         {
-            return 1999;
+            return false;
         }
 
-        public int Connect()
+        public async Task<int> AlterTable(string tableName, List<JAXTables.FieldInfo> Fields)
         {
-            return 1999;
+            return 6004;
         }
 
-        public int CreateIndex(string tableName, string indexinfo)
+        public async Task<int> Connect(string connString)
         {
-            return 1999;
+            return 6009;
         }
 
-        public int CreateSP(string procName, string procCode)
+        public async Task<int> CreateIndex(string indexName, string tableName, string indexExpression, string filter = "", string attribs = "")
         {
-            return 1999;
+            return 6004;
+        }
+
+        public async Task<int> CreateSP(string procName, string procCode)
+        {
+            return 6004;
         }
 
 
-        public int CreateTable(string tableName, List<JAXTables.FieldInfo> Fields)
+        public async Task<int> CreateTable(string tableName, List<JAXTables.FieldInfo> Fields)
         {
-            return 1999;
+            return 6004;
         }
 
-        public int DeleteIndex(string tableName, string indexinfo)
+        public async Task<int> CreateView(string viewName, string viewCode)
         {
-            return 1999;
+            return 6004;
         }
 
-        public int Disconnect()
+
+        public async Task<int> DeleteDB(string dbName)
         {
-            return 1999;
+            return 6004;
+        }
+
+        public async Task<int> DeleteSP(string ProcName)
+        {
+            return 6004;
+        }
+        public async Task<int> DeleteTable(string tableName)
+        {
+            return 6004;
+        }
+        public async Task<int> DeleteView(string viewName)
+        {
+            return 6004;
+        }
+
+        public async Task<int> DeleteIndex(string indexName, string Name)
+        {
+            return 6004;
+        }
+
+        public async Task<int> Disconnect()
+        {
+            return 0;
         }
 
         /*
          * Drop a table from the database
          */
-        public int DropTable(string tableName)
+        public async Task<int> DropTable(string tableName)
         {
-            return 1999;
+            return 6004;
         }
 
         /*
          * Return the table structure using JAXBase field codes
          */
-        public int GetTableStructure(string tableName, out List<JAXTables.FieldInfo> Fields)
-        {
-            Fields = [];
-            return 1999;
-        }
+        public async Task<int> GetTableStructure(string tableName, string varName) { return 6004; }
 
 
         /*
          * Execute a SQL statement and return a datatable, scalar result,
          * or the number of affected rows.
          */
-        public int Execute(string sql, out object? returnObject)
+        public async Task<int> Execute(string sql, string cursorName)
         {
-            returnObject= null;
-            return 1999;
+            return 6004;
         }
 
 
-        public int ExecuteSP(string procName, List<xParameters> parameters)
+        public async Task<int> ExecuteSP(string procName, List<xParameters> parameters)
         {
-            return 1999;
+            return 6004;
         }
 
         public JAXErrors GetErrorMsg()
         {
-            throw new Exception("1999||No SQL engine defined");
+            throw new Exception("6004||No SQL engine defined");
         }
 
-        public int GetSPCode(string procName)
+        public async Task<int> GetSPCode(string procName, string cursorName)
         {
-            return 1999;
+            int result = 6004;
+            return result;
         }
 
-        public int Setup(List<xParameters> parameters)
+        public async Task<int> Setup(List<xParameters> parameters)
         {
-            return 1999;
+            return 0;
         }
 
-        public int SetParameterString(string Parameters)
+        public async Task<int> SetParameterString(string Parameters)
         {
-            return 1999;
+            return 0;
         }
 
-        public int SetParameter(string parameter, JAXObjects.Token value)
+        public async Task<int> SetParameter(string parameter, JAXObjects.Token value)
         {
-            return 1999;
+            return 0;
         }
 
-        public int CreateDatabase(string name) { return 1999; }
-        public int GetIndex(string name, out string idxInfo) { idxInfo = string.Empty; return 1999; }
+        public async Task<int> CreateDatabase(string name) { return 6004; }
+
+        public async Task<int> GetIndex(string tableName, string indexName = "", string cursorName = "")
+        {
+            return 0;
+        }
+
         public int ListDatabases(out List<string> dbList)
         {
             dbList = [];
-            return 1999;
+            return 6004;
         }
 
 
-        public int ListIndexes(out List<string> idxList) { idxList = []; return 1999; }
+        public int ListIndexes(string tableName, out List<string> idxList) { idxList = []; return 6004; }
 
         public int ListTables(out List<string> tblList)
         {
             tblList = [];
-            return 1999;
+            return 6004;
         }
 
-        public int GetState()
+        public int GetState() { return 0; }
+
+        public int GetKind() { return 0; }
+
+        public string GetConnectionString() { return ""; }
+
+        public async Task<int> SetConnectionString(string connString)
         {
-            return 1999;
+            return 0;
         }
 
-        public int GetKind() { return 1999; }
-
-        public string GetConnectionString() { return string.Empty; }
-
-        public int SetConnectionString(string connString)
+        public async Task<int> GetDatabaseInfo(string dbName, string cursorName)
         {
-            return 1999;
+            int result = 0;
+            return result;
         }
+
+        public async Task<int> GetView(string viewName, string cursorName)
+        {
+            int result = 6004;
+            return result;
+        }
+
+
+
+        public async Task<int> AlterField(string parm1, string parm2, string parm3, int parm4, int parm5)
+        {
+            return 6004;
+        }
+
+        public async Task<int> AlterProperty(string parm1, string parm2, string parm3, JAXObjects.Token parm4)
+        {
+            return 6004;
+        }
+
+        public async Task<int> AlterIndex(string parm1, string parm2, string parm3, string parm4)
+        {
+            return 6004;
+        }
+
+        public async Task<int> DropField(string parm1, string parm2)
+        {
+            return 6004;
+        }
+
+        public async Task<int> DropIndex(string parm1, string parm2)
+        {
+            return 6004;
+        }
+
     }
 }

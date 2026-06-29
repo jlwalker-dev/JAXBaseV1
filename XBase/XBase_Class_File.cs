@@ -1,9 +1,19 @@
-﻿using JAXBase.Core;
+﻿/*
+ * 2026.06.09 - JLW
+ *      Finally getting around to documenting this class.
+ *      
+ *      This class is used to provide the low level file manipulation capabilities
+ *      in JAXBase, eliminating all sorts of commands from the language.  Further, it
+ *      will make it a lot easier to handle files as they will be objects rather than
+ *      an integer value to track.
+ *      
+ *      
+ */
+using JAXBase.Core;
+using JAXBase.Utilities;
 using System.Security;
 using System.Text;
 using static JAXBase.XBase.JAXObjectsAux;
-using JAXBase.Utilities;
-using System.Windows.Interop;
 
 namespace JAXBase.XBase
 {
@@ -151,13 +161,11 @@ namespace JAXBase.XBase
             int result = methodName.ToLower() switch
             {
                 "close" => FileClose(),
-                "closed" => 1999,
                 "goto" => FileLocate(),
                 "open" => FileOpen(),
-                "opened" => 1999,
                 "read" => FileRead(),
                 "write" => FileWrite(),
-                _ => IsMember(methodName).Equals("M") ? 0 : 1737    // TODO - calling the dodefault of other methods?
+                _ => IsMember(methodName).Equals("M") ? await _CallMethod(methodName) : 1737
             };
 
             string info = "";
@@ -190,10 +198,7 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public override string[] JAXMethods()
-        {
-            return ["close", "goto", "open", "read", "write", "writeexpression", "writemethod"];
-        }
+        public override string[] JAXMethods() => ["addproperty","close", "goto", "open", "read", "write", "writeexpression", "writemethod"];
 
         public override string[] JAXEvents()
         {
@@ -311,6 +316,8 @@ namespace JAXBase.XBase
                                             AutoFlush = true
                                         };
                                     }
+
+                                    _CallMethod("opened").Wait();
                                 }
                                 catch (DirectoryNotFoundException) { result = 1963; }
                                 catch (FileNotFoundException) { result = 1; }
@@ -365,6 +372,8 @@ namespace JAXBase.XBase
                 sw?.Dispose();
                 sr?.Dispose();
                 fs?.Dispose();
+
+                _CallMethod("closed").Wait();
             }
 
             if (result > 0)
