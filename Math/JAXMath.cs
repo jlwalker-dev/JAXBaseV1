@@ -453,6 +453,11 @@ namespace JAXBase.Math
 
             foreach (string _rpn in rpn)
             {
+                if (_rpn.Contains("phone", StringComparison.OrdinalIgnoreCase))
+                {
+                    int iii = 0;
+                }
+
                 // Handle the NOT operator
                 if (_rpn.Equals("!", StringComparison.OrdinalIgnoreCase))
                 {
@@ -981,6 +986,7 @@ namespace JAXBase.Math
                                 // we're comparing T/F
                                 switch (_rpn[..1])
                                 {
+                                    case "?":
                                     case "=":
                                         boolAnswer = string1 == string2;
                                         break;
@@ -1015,6 +1021,7 @@ namespace JAXBase.Math
                                 // we're comparing date/datetime strings
                                 switch (_rpn[..1])
                                 {
+                                    case "?":
                                     case "=":
                                         boolAnswer = string1 == string2;
                                         break;
@@ -1046,6 +1053,7 @@ namespace JAXBase.Math
 
                                 switch (_rpn[..1])
                                 {
+                                    case "?":
                                     case "=":
                                         boolAnswer = val1 == val2;
                                         break;
@@ -1077,8 +1085,70 @@ namespace JAXBase.Math
                     {
                         inVar = false;
 
-                        // We're left with functions - handle the array based functions separately
-                        if (JAXLib.InList(_rpn, "`ACLASS", "`ACLASS", "`ACOPY", "`ADATABASES", "`ADBOBJECTS", "`ADDBS", "`ADDPROPERTY", "`ADEL", "`ADIR", "`ADLLS", "`ADOCKSTATE", "`AELEMENT", "`AERROR", "`AEVENTS",
+                        // We're left with built-in and UDF functions or methods
+                        if (_rpn[..2].Equals("``"))
+                        {
+                            string udf = _rpn[2..];
+                            pop = PopStackItems(100);
+
+                            //if (udf[0] == '.')
+                            //{
+
+                            // It's a udf or method call
+                            // ------------------------------------
+                            udf += "(";
+
+                            for (int p = 0; p < pop.Count; p++)
+                            {
+                                switch (pop[0][0])
+                                {
+                                    case 'C':
+                                        if (pop[p].Contains('"'))
+                                        {
+                                            if (pop[p].Contains("'"))
+                                                udf += "[" + pop[p][1..] + "],";
+                                            else
+                                                udf += "'" + pop[p][1..] + "',";
+                                        }
+                                        else
+                                            udf += "\"" + pop[p][1..] + "\",";
+                                        break;
+
+                                    case 'N':
+                                        udf += pop[p][1..] + ",";
+                                        break;
+
+                                    case 'L':
+                                        udf += pop[p][1..] + ",";
+                                        break;
+
+                                    case 'D':
+                                    case 'T':
+                                        udf += "{" + pop[p][1..] + "},";
+                                        break;
+
+                                    default:
+                                        throw new Exception($"10||Can't handle Method call parameter type {pop[0]}");
+                                }
+                            }
+
+                            udf = AppClass.literalStart.ToString() + udf.Trim(',') + ")" + AppClass.literalEnd.ToString();
+
+                            // Call the udf/method
+                            JAXObjects.Token udfVal = new();
+                            udfVal = await AppVars.ObjectCall(udf, true);
+
+                            // Put the answer onto the stack
+                            mathStack.Token.CopyFrom(Program.CurrentApp.ReturnValue);
+
+                            //}
+                            //else
+                            //{
+                            // It's a UDF - TODO
+                            // ------------------------------------
+                            //}
+                        }
+                        else if (JAXLib.InList(_rpn, "`ACLASS", "`ACLASS", "`ACOPY", "`ADATABASES", "`ADBOBJECTS", "`ADDBS", "`ADDPROPERTY", "`ADEL", "`ADIR", "`ADLLS", "`ADOCKSTATE", "`AELEMENT", "`AERROR", "`AEVENTS",
                             "`AFIELDS", "`AFONT", "`AGETCLASS", "`AGETFILEVERSION", "`AINS", "`AINSTANCE", "`ALEN", "`ALINES", "`AMEMBERS", "`AMOUSEOBJ", "`ANETRECOURCES", "`APRINTERS", "`APROCINFO", "`ASCAN",
                             "`ASELOBJ", "`ASESSIONS", "`ASORT", "`ASQLHANDLES", "`ASTACKINFO", "`ASUBSCRIPT", "`ATAGINFO", "`AUSED", "`AVCXCLASSES", "`REMOVEPROPERTY", "`OBJTOJSON", "`OBJTOCLIENT"))
                         {

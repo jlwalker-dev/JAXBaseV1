@@ -551,8 +551,17 @@ namespace JAXBase.XBase
                         // then just return the value from UserProperties
                         // TODO - drop to base for user final property processing?
 
-                        UserProperties[propertyName].ElementNumber = idx;
-                        resultToken.Element.Value = UserProperties[propertyName].Element.Value;
+                        if (idx < 0)
+                        {
+                            // get the entire token
+                            resultToken.CopyFrom(UserProperties[propertyName]);
+                        }
+                        else
+                        {
+                            // get the idx location of the token
+                            UserProperties[propertyName].ElementNumber = idx;
+                            resultToken.Element.Value = UserProperties[propertyName].Element.Value;
+                        }
                     }
                 }
                 else
@@ -597,8 +606,13 @@ namespace JAXBase.XBase
                             break;
 
                         case "objects":
-                            UserProperties["objects"].ElementNumber = idx;
-                            resultToken.Element.Value = UserProperties["objects"].Element.Value;
+                            if (JAXLib.Between(idx, 0, UserProperties["objects"].Count))
+                            {
+                                UserProperties["objects"].ElementNumber = idx;
+                                resultToken.Element.Value = UserProperties["objects"].Element.Value;
+                            }
+                            else
+                                result = 3028;
                             break;
 
                         case "parent":

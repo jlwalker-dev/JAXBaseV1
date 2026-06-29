@@ -298,24 +298,7 @@ namespace JAXBase.Utilities
                 {
                     for (int i = 1; i < args.Length; i++)
                     {
-                        if (args0.GetType() == typeof(string))
-                            llReturn = args0.ToString()!.Equals(args[i].ToString()!);
-                        else if (args[0].GetType() == typeof(double))
-                            llReturn = (double)args[0] == (double)args[i];
-                        else if (args[0].GetType() == typeof(bool))
-                            llReturn = (bool)args[0] == (bool)args[i];
-                        else if (args[0].GetType() == typeof(DateTime))
-                            llReturn = (DateTime)args[0] == (DateTime)args[i];
-                        else if (args[0].GetType() == typeof(char))
-                            llReturn = (char)args[0] == (char)args[i];
-                        else if (args[0].GetType() == typeof(int))
-                            llReturn = (int)args[0] == (int)args[i];
-                        else if (args[0].GetType() == typeof(long))
-                            llReturn = (long)args[0] == (long)args[i];
-                        else if (args[0].GetType() == typeof(float))
-                            llReturn = (float)args[0] == (float)args[i];
-                        else if (args[0].GetType() == typeof(decimal))
-                            llReturn = (decimal)args[0] == (decimal)args[i];
+                        llReturn = args0.Equals(args[i]);
 
                         if (llReturn) break;
                     }
@@ -337,11 +320,13 @@ namespace JAXBase.Utilities
         public static bool InListC(params string[] args)
         {
             bool llReturn = false;
-            string slSearchFor = args[0].ToString();
+            string slSearchFor = args[0].ToString().Trim();
 
             for (int i = 1; i < args.Length; i++)
             {
-                if (slSearchFor.Equals(args[i].ToString(), StringComparison.OrdinalIgnoreCase))
+                string current = args[i].ToString().Trim();
+
+                if (slSearchFor.Equals(current, StringComparison.OrdinalIgnoreCase))
                 {
                     llReturn = true;
                     break;
@@ -358,6 +343,9 @@ namespace JAXBase.Utilities
         // the different types transparently
         //
         // Returns true if the obj is between lower and upper inclusively
+        //
+        // You cannot test anything other than enums and basic variable types
+        // such as (bool, int, char, string, etc).
         // ---------------------------------------------------------------------
         public static bool Between(object obj, object lower, object upper)
         {
@@ -365,38 +353,47 @@ namespace JAXBase.Utilities
 
             try
             {
-                if (obj.GetType() == typeof(string))
-                    llReturn = (string.Compare(obj.ToString(), lower.ToString()) >= 0 && string.Compare(obj.ToString(), upper.ToString()) <= 0);
+                if (obj is Enum)
+                {
+                    // Added enum support
+                    llReturn = (Convert.ToInt32(obj) >= Convert.ToInt32(lower) && Convert.ToInt32(obj) <= Convert.ToInt32(upper));
+                }
+                else
+                {
 
-                if (obj.GetType() == typeof(char))
-                    llReturn = (char)obj >= (char)lower && (char)obj <= (char)upper;
+                    if (obj.GetType() == typeof(string))
+                        llReturn = (string.Compare(obj.ToString(), lower.ToString()) >= 0 && string.Compare(obj.ToString(), upper.ToString()) <= 0);
 
-                if (obj.GetType() == typeof(int))
-                    llReturn = ((int)obj >= (int)lower && (int)obj <= (int)upper);
+                    if (obj.GetType() == typeof(char))
+                        llReturn = (char)obj >= (char)lower && (char)obj <= (char)upper;
 
-                if (obj.GetType() == typeof(long))
-                    llReturn = ((long)obj >= (long)lower && (long)obj <= (long)upper);
+                    if (obj.GetType() == typeof(int))
+                        llReturn = ((int)obj >= (int)lower && (int)obj <= (int)upper);
 
-                if (obj.GetType() == typeof(float))
-                    llReturn = ((float)obj >= (float)lower && (float)obj <= (float)upper);
+                    if (obj.GetType() == typeof(long))
+                        llReturn = ((long)obj >= (long)lower && (long)obj <= (long)upper);
 
-                if (obj.GetType() == typeof(double))
-                    llReturn = ((double)obj >= (double)lower && (double)obj <= (double)upper);
+                    if (obj.GetType() == typeof(float))
+                        llReturn = ((float)obj >= (float)lower && (float)obj <= (float)upper);
 
-                if (obj.GetType() == typeof(decimal))
-                    llReturn = ((decimal)obj >= (decimal)lower && (decimal)obj <= (decimal)upper);
+                    if (obj.GetType() == typeof(double))
+                        llReturn = ((double)obj >= (double)lower && (double)obj <= (double)upper);
 
-                if (obj.GetType() == typeof(DateTime))
-                    llReturn = (DateTime)obj >= (DateTime)lower && (DateTime)obj <= (DateTime)upper;
+                    if (obj.GetType() == typeof(decimal))
+                        llReturn = ((decimal)obj >= (decimal)lower && (decimal)obj <= (decimal)upper);
 
-                if (obj.GetType() == typeof(DateTimeOffset))
-                    llReturn = (DateTimeOffset)obj >= (DateTimeOffset)lower && (DateTimeOffset)obj <= (DateTimeOffset)upper;
+                    if (obj.GetType() == typeof(DateTime))
+                        llReturn = (DateTime)obj >= (DateTime)lower && (DateTime)obj <= (DateTime)upper;
 
-                if (obj.GetType() == typeof(DateOnly))
-                    llReturn = (DateOnly)obj >= (DateOnly)lower && (DateOnly)obj <= (DateOnly)upper;
+                    if (obj.GetType() == typeof(DateTimeOffset))
+                        llReturn = (DateTimeOffset)obj >= (DateTimeOffset)lower && (DateTimeOffset)obj <= (DateTimeOffset)upper;
 
-                if (obj.GetType() == typeof(TimeSpan))
-                    llReturn = (TimeSpan)obj >= (TimeSpan)lower && (TimeSpan)obj <= (TimeSpan)upper;
+                    if (obj.GetType() == typeof(DateOnly))
+                        llReturn = (DateOnly)obj >= (DateOnly)lower && (DateOnly)obj <= (DateOnly)upper;
+
+                    if (obj.GetType() == typeof(TimeSpan))
+                        llReturn = (TimeSpan)obj >= (TimeSpan)lower && (TimeSpan)obj <= (TimeSpan)upper;
+                }
             }
             catch (Exception ex)
             {

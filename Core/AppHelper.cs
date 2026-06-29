@@ -47,10 +47,14 @@ namespace JAXBase.Core
          */
 
         /* --------------------------------------------------------------------------------------------------*
-         * Crucial logic for variables and other names.  Checks to
-         * make sure the name is legal.  May begin with one or more
-         * underscores, but otherwise must start with a letter
+         * Crucial logic for variables and other names.  Checks to make sure the name is legal.  
+         * May begin with one or more underscores, but otherwise must start with a letter
          * and may contain letters, numbers, and underscores.
+         * 
+         * Ths routine only looks at name parts, so "object.property" will return false.
+         * 
+         * Since different names have different maximum allowed lengths, length is not checked
+         * as long as there is at least 1 character.
          * --------------------------------------------------------------------------------------------------*/
         public static bool IsLegalObjectName(string name)
         {
@@ -65,12 +69,15 @@ namespace JAXBase.Core
                     {
                         if ("abcdefghijklmnopqrstuvwxyz012345678_".Contains(name[i]) == false)
                         {
+                            // Found an invalid character
                             result = false;
                             break;
                         }
                     }
                 }
             }
+            else
+                result= false;  // Blank names not allowed
 
             return result;
         }

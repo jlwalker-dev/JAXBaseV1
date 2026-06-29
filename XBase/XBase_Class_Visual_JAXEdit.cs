@@ -268,7 +268,7 @@ namespace JAXBase.XBase
 
 
             // Layout
-            Avalonia.Controls.Grid mainGrid = new Avalonia.Controls.Grid();
+            Avalonia.Controls.Grid mainGrid = new();
             mainGrid.RowDefinitions.Add(new Avalonia.Controls.RowDefinition { Height = GridLength.Auto });
             mainGrid.RowDefinitions.Add(new Avalonia.Controls.RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             mainGrid.RowDefinitions.Add(new Avalonia.Controls.RowDefinition { Height = GridLength.Auto });

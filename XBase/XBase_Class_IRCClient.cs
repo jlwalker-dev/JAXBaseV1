@@ -111,7 +111,7 @@ namespace JAXBase.XBase
 
         public override bool Connect()
         {
-            hostAddress = UserProperties["host"].AsString();
+            string hostAddress = UserProperties["host"].AsString();
             int port = UserProperties["port"].AsInt();
             bool useSecure = UserProperties["secure"].AsBool();
 
@@ -310,7 +310,7 @@ namespace JAXBase.XBase
         private void HandleDisconnect()
         {
             _joinedChannels.Clear();
-            if (AutoReconnect && !string.IsNullOrEmpty(Server))
+            if (UserProperties["autoreconnect"].AsBool() && !string.IsNullOrEmpty(Server))
             {
                 Task.Delay(ReconnectDelayMs).ContinueWith(_ =>
                 {

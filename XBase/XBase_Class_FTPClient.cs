@@ -1,19 +1,13 @@
 ﻿/*
- * JAXBase FTP/SFTP Client Class
- * Exact pattern of XBase_Class_TCPClient.cs
- * Uses FluentFTP (FTP/FTPS) + SSH.NET (SFTP)
- * All user-facing state in UserProperties
+ * 2026.06.09 - JLW
+ *      Taking a stab at creating a FTP client.
+ *      
  */
 
 using FluentFTP;
 using JAXBase.Core;
 using JAXBase.Utilities;
-using NodaTime.Calendars;
-using Org.BouncyCastle.Utilities.Collections;
 using Renci.SshNet;
-using System.Reflection;
-using System.Windows.Interop;
-using static System.Net.WebRequestMethods;
 
 namespace JAXBase.XBase
 {

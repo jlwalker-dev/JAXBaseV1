@@ -104,7 +104,7 @@ namespace JAXBase.XBase
 
         public override bool Connect()
         {
-            hostAddress = UserProperties["host"].AsString();
+            string hostAddress = UserProperties["host"].AsString();
             int port = UserProperties["port"].AsInt();
             bool useSecure = UserProperties["secure"].AsBool();
             

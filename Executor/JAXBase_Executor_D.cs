@@ -36,9 +36,6 @@ namespace JAXBase.Executor
                 // Now handle the define
                 switch (var.ToString())
                 {
-                    case "B":
-                        throw new Exception("1999|DEFINE BAR");
-
                     case "C":
                         Program.CurrentApp.InDefine = "C" + className;
 
@@ -50,18 +47,6 @@ namespace JAXBase.Executor
                         Program.CurrentApp.ClassDefinitions.Add(cd);
                         Program.CurrentApp.InDefineObject = new(Program.CurrentApp, classType, className, []);
                         break;
-
-                    case "M":
-                        throw new Exception("1999|DEFINE MENU");
-
-                    case "P":
-                        throw new Exception("1999|DEFINE PAD");
-
-                    case "U":
-                        throw new Exception("1999|DEFINE POPUP");
-
-                    case "W":
-                        throw new Exception("1999|DEFINE WINDOW");
 
                     default:
                         throw new Exception("1999|DEFINE " + var);

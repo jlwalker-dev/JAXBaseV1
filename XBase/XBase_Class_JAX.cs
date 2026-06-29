@@ -1,8 +1,14 @@
-﻿using JAXBase.Core;
+﻿/*
+ * 2026.06.09 - JLW
+ *      Similar to the _VFP variable which provides information on the 
+ *      application's environment.
+ * 
+ * 
+ */
+using JAXBase.Core;
 using JAXBase.Utilities;
 using System.Diagnostics;
 using System.Reflection;
-using System.Windows.Controls;
 
 namespace JAXBase.XBase
 {
@@ -490,6 +496,7 @@ namespace JAXBase.XBase
                 "version,n!,",
                 "x64,l!,.F.",
                 "classeditor,c,EDIT_CLX.APP",
+                "connectioneditor,c,EDIT_SCF.APP",
                 "fileeditor,c,",
                 "formeditor,c,EDIT_SCX.APP",
                 "imageeditor,c,EDIT_IMG.APP",

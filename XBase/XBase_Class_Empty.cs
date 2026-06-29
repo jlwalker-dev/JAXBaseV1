@@ -1,5 +1,7 @@
 ﻿/*
  * The Empty Class.  It's a thing of beauty!
+ * 
+ * 
  */
 namespace JAXBase.XBase
 {
@@ -16,5 +18,7 @@ namespace JAXBase.XBase
             me.ClassID = jow.App.SystemCounter();
             me.nvObject = new EmptyFactory();
         }
+
+        public override string[] JAXMethods() => ["addproperty", "readexpression", "writeexpression"];
     }
 }

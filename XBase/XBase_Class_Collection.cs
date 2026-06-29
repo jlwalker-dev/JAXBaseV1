@@ -1,4 +1,11 @@
-﻿// TODO - this class needs work!
+﻿/*
+ * 2026.06.09 - JLW
+ *      Finally getting round to finishing this class.
+ *
+ *      This emulates the VFP collection class.  Using the DataDictionary JAXObjects.Token type
+ *      it will allow you to support a collection of objects.
+ *
+ */
 using JAXBase.Core;
 using JAXBase.Utilities;
 
@@ -131,25 +138,20 @@ namespace JAXBase.XBase
         /*------------------------------------------------------------------------------------------*
          * 
          *------------------------------------------------------------------------------------------*/
-        public override string[] JAXMethods()
-        {
-            return
+        public override string[] JAXMethods() =>
                 [
                 "add", "addproperty", "getkey", "item", "readexpression", "readmethod", "remove", "resettodefault",
                 "saveasclass", "writeexpression", "writemethod"
                 ];
-        }
+
 
         /*------------------------------------------------------------------------------------------*
          * 
          *------------------------------------------------------------------------------------------*/
-        public override string[] JAXEvents()
-        {
-            return
+        public override string[] JAXEvents() =>
                 [
                 "destroy","error","init"
                 ];
-        }
 
         /*------------------------------------------------------------------------------------------*
          * property data types
@@ -163,9 +165,7 @@ namespace JAXBase.XBase
          *          ! Protected - can't change after initialization
          *          * Array
          *------------------------------------------------------------------------------------------*/
-        public override string[] JAXProperties()
-        {
-            return
+        public override string[] JAXProperties() =>
                 [
                 "BaseClass,C!,collection",
                 "Class,C!,collection","ClassLibrary,C,","count,n!,0","comment,C,",
@@ -175,7 +175,5 @@ namespace JAXBase.XBase
                 "parent,o!,","parentclass,C!,",
                 "tag,C,"
                 ];
-        }
-
     }
 }

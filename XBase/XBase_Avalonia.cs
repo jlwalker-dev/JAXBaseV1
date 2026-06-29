@@ -1110,6 +1110,11 @@ namespace JAXBase.XBase
         {
             string isMember = "U";
 
+            if (name.Equals("exec",StringComparison.OrdinalIgnoreCase))
+            {
+                int iii = 0;
+            }
+
             if (UserProperties.ContainsKey(name.ToLower())) // Is it a property?
                 isMember = "P";
             else if (Methods.ContainsKey(name.ToLower()))   // Is it a method/event?

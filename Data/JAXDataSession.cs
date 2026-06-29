@@ -73,9 +73,9 @@
  * ================================================================================================= */
 using JAXBase.Core;
 using JAXBase.Math;
-using System.Text;
 using JAXBase.Utilities;
 using JAXBase.XBase;
+using System.Text;
 
 namespace JAXBase.Data
 {
@@ -85,6 +85,8 @@ namespace JAXBase.Data
 
         readonly AppClass App;
         public JAXSettings JaxSettings = new();
+        public Dictionary<int,XBase_Class_SQL> SQLConnections = [];
+        private int SQLHandle = 0;
 
         /*---------------------------------------------------------------------------------*
          *---------------------------------------------------------------------------------*/
@@ -210,8 +212,12 @@ namespace JAXBase.Data
             }
         }
 
-        /*---------------------------------------------------------------------------------*
-         *---------------------------------------------------------------------------------*/
+        // ------------------------------------------------------------------------------------------
+        /// <summary>
+        /// Close a work area based on alias name and if not found, do nothing
+        /// </summary>
+        /// <param name="alias"></param>
+        /// <returns></returns>
         public async Task CloseDBF(string alias)
         {
             foreach (KeyValuePair<int, JAXDirectDBF> dbf in WorkAreas)
@@ -224,15 +230,23 @@ namespace JAXBase.Data
             }
         }
 
-        /*---------------------------------------------------------------------------------*
-         *---------------------------------------------------------------------------------*/
-        public async Task CloseDB(string dbname)
+
+        /// <summary>
+        /// Close a database and if not open, throw an exception unless second parameter is true
+        /// </summary>
+        /// <param name="dbname"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task CloseDB(string dbname, bool noError = false)
         {
             if (dbname.ToLower().Equals(DEFAULT) == false && Databases.ContainsKey(dbname.ToLower()))
                 await Databases[dbname].DBFClose();
             else
-                throw new Exception("Database is not open");
+                if (noError == false)
+                    throw new Exception("Database is not open");
         }
+
+
 
         /*---------------------------------------------------------------------------------*
          * Open a DBF, and if appropriate, the Memo and structural CDX files
@@ -336,7 +350,16 @@ namespace JAXBase.Data
          * Return the work area number which holds the specified alias in the current
          * data session.  If the alias is not found, an error is raise.
          *---------------------------------------------------------------------------------*/
-        public int GetWorkArea(string alias)
+
+        /// <summary>
+        /// Get a work area based on alilas.  If the alias is not found then an exception
+        /// is thrown unless the second parameter is true i which case -1 is returned.
+        /// </summary>
+        /// <param name="alias"></param>
+        /// <param name="noError"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public int GetWorkArea(string alias, bool noError = false)
         {
             int wa = -1;
 
@@ -349,7 +372,7 @@ namespace JAXBase.Data
             {
                 foreach (KeyValuePair<int, JAXDirectDBF> dbf in WorkAreas)
                 {
-                    if (dbf.Key>0 && dbf.Value.DbfInfo.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase))
+                    if (dbf.Key > 0 && dbf.Value.DbfInfo.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase))
                     {
                         wa = dbf.Key;
                         break;
@@ -357,7 +380,7 @@ namespace JAXBase.Data
                 }
             }
 
-            if (wa < 0) throw new Exception("Alias not found");
+            if (noError == false && wa < 0) throw new Exception("Alias not found");
             return wa;
         }
 
@@ -635,7 +658,7 @@ namespace JAXBase.Data
                     else
                     {
                         // No records or out of range
-                        if (DbfInfo.RecCount==0)
+                        if (DbfInfo.RecCount == 0)
                         {
                             // No records, so return empty value
                             token.Element.Value = DbfInfo.CurrentRow.Rows[0][field];
@@ -827,7 +850,7 @@ namespace JAXBase.Data
             int nResult = -1;
 
             int i = 1;
-            while (i<int.MaxValue)
+            while (i < int.MaxValue)
             {
                 if (WorkAreas.ContainsKey(i) == false)
                 {
@@ -852,7 +875,7 @@ namespace JAXBase.Data
             // Go through each work area and compare the key
             foreach (KeyValuePair<int, JAXDirectDBF> dbf in WorkAreas)
             {
-                if (dbf.Key>0 && dbf.Key > nResult)
+                if (dbf.Key > 0 && dbf.Key > nResult)
                 {
                     nResult = dbf.Key;
                     break;

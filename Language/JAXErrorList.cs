@@ -48,8 +48,10 @@ namespace JAXBase.Language
                 67 => "Invalid color string - expecting 'r,g,b' format",
                 94 => "Must specify additional parameters",
                 95 => "Must specify at least {0} parameter(s)",
+                96 => "Must specify {0} parameter(s)",
                 97 => "Invalid parameter {!}",
                 98 => "Too many parameters recieved",
+
 
                 // 100
                 107 => "Operator/operand type mismatch {0}",
@@ -125,7 +127,9 @@ namespace JAXBase.Language
                 1541 => "Connection already established",
                 1552 => "File {*} is not a database",
                 1553 => "File {*} is a database",
+                1554 => "Error instantiating cursor",
                 1559 => "Property {*} is not found",
+                1563 => "Cannot find view {!} in the current database",
                 1564 => "Table {*} already exists",
                 1575 => "Object name is invalid: {0}",
                 1590 => "Already in a transaction",
@@ -151,6 +155,7 @@ namespace JAXBase.Language
                 1753 => "Event/method {*} is already defined",
                 1766 => "Object {*} is not found",
                 1771 => "Method/Event/Property {0} already exists",
+                1773 => "Class definition {!} not found",
                 1777 => "Function is not supported on remote tables or views",
                 1778 => "Illegal assignment to table",
 
@@ -165,6 +170,11 @@ namespace JAXBase.Language
                 1807 => "SQL: Not authorized",
                 1808 => "SQL: Invalid SQL statement",
                 1809 => "SQL: Invalid SQL command",
+
+                1820 => "Trigger or contraint error, could not create record",
+                1821 => "Trigger or contraint error, could not update record",
+                1822 => "Trigger or contraint error, could not delete record",
+
                 1866 => "SQL: Invalid {0} specification",
                 1879 => "Missing Primary key",
 
@@ -203,6 +213,8 @@ namespace JAXBase.Language
                 2091 => "Table {!} has become corrupted.  The table will need to be repaired before using again",
 
                 // 2200 - Free to create any JAX Errors after 2201
+                2202 => "Names must start with a underscore and/or letter and then only contain letters and numbers",
+                2203 => "Name is too long ({0} characters maximum)",
                 2220 => "A negative value is not accepted for this request",
                 2222 => "You are not authorized to access {0}",
                 2223 => "IO Exception with {0}",
@@ -293,9 +305,12 @@ namespace JAXBase.Language
                 6005 => "Must select SQL Engine type",
                 6006 => "The SQL engine returned a null response",
                 6007 => "The SQL engine returned unexpected results",
-
+                
+                6009 => "Invalid SQL engine",
                 6100 => "Invalid SQL data type {0}",
                 6101 => "SQL data type not supported for this operation {0}",
+                6105 => "Field name must be between 1 and {0} characters",
+
                 6200 => "SQL command execution error: {0}",
                 6201 => "SQL command preparation error: {0}",
                 6202 => "SQL parameter binding error: {0}",
@@ -324,7 +339,16 @@ namespace JAXBase.Language
                 6700 => "User canceled the operation",
 
 
-                // 7000 block is reserved for user created errors
+                //------------------------------------------------------------------------------
+                // 7000 - 7999 is reserved for class related errors
+                //------------------------------------------------------------------------------
+                // 7000 - 70999 - Generic errors
+                7000 => "Array must be {0} dimensional",
+                7001 => "Array must have {0} columns",
+                7002 => "Array must have at least {0} columns",
+                7003 => "Array must have {0} rows",
+                7004 => "Array must have at least {0} rows",
+
 
                 // 8000
                 8000 => "Invalid Form Table definition - {0}",
@@ -395,6 +419,7 @@ namespace JAXBase.Language
                 8225 => "Key genearation error {0}",
                 8226 => "Invalid key",
                 8227 => "Invalid or emtpy content",
+                8230 => "Invalid TCP client",
 
 
                 // 9000
@@ -506,7 +531,7 @@ namespace JAXBase.Language
             {
                 sErr = sErr.Replace("{*}", "'{0}'");
                 sErr = string.Format(sErr, arg.ToUpper());
-                sErr = sErr.Replace("''", string.Empty);
+                sErr = sErr.Replace("''", "");
             }
             else if (sErr.Contains("{!}"))
             {

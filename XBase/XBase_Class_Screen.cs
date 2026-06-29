@@ -1,4 +1,12 @@
-﻿using Avalonia;
+﻿/*
+ * Screen class for _Screens environment object
+ * 
+ * 2026.06.09 - JLW
+ *      Add DoDefault()
+ *      Clean up properties
+ *      
+ */
+using Avalonia;
 using JAXBase.Core;
 using JAXBase.Utilities;
 
@@ -9,8 +17,6 @@ namespace JAXBase.XBase
         public new string MyBaseClass = "Screen";
         public new string MyDefaultName = "screen";
         public new bool Register = false;
-
-        //public MainWindow _screen => (MainWindow)me.nvObject!;
 
         // This list holds the row source array followed by important related values
         public ObservableSortedDictionary<int, JAXObjects.Token> Screens = [];
@@ -867,19 +873,28 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public override string[] JAXMethods()
+        public override async Task<int> DoDefault(string methodName)
         {
-            return ["addproperty", "readexpression", "readmethod", "writeexpression", "writemethod"];
+            int result = 0;
+
+            methodName = methodName.ToLower();
+
+            switch (methodName)
+            {
+                default:
+                    result = await base.DoDefault(methodName);
+                    break;
+            }
+
+            return result;
         }
 
-        public override string[] JAXEvents()
-        {
-            return ["destroy", "error", "init", "load", "unload"];
-        }
+        public override string[] JAXMethods() => ["addproperty", "readexpression", "readmethod", "writeexpression", "writemethod"];
 
-        public override string[] JAXProperties()
-        {
-            return
+
+        public override string[] JAXEvents() => ["destroy", "error", "init", "load"];
+
+        public override string[] JAXProperties() =>
             [
                 "activecontrol,o!,","activeform,n!,","alwaysontop,L,false", "autocenter,L,false",
                 "backcolor,R,255|255|255","baseclass,C!,form","borderstyle,N!,3",
@@ -900,7 +915,7 @@ namespace JAXBase.XBase
                 "visible,L,true",
                 "width,N,300","windowstate,N,0"
             ];
-        }
     }
 }
+
 

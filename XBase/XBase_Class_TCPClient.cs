@@ -28,7 +28,10 @@
  *   - Full secure/non-secure, TCP Keep-Alive, TLS validation unchanged
  *   - Thread-safe LinesWaiting (prevents concurrent access)
  *   
- *   
+ * 2026-06-09 - JLW
+ *      TODO
+ *          Finish properties cleanup
+ *          Finish Events/Methods cleanup
  *
  *
  *  --------------------------------------------------------
@@ -68,25 +71,10 @@ namespace JAXBase.XBase
         private bool _disposed = false;
 
         public CancellationTokenSource? _readCts;
-        public bool _isConnected = false;
 
         public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
         public Encoding Encoding { get; set; } = Encoding.UTF8;
         public string LastError { get; set; } = "";
-        public bool AutoReconnect { get; set; } = true;
-
-        // TCP Keep-Alive
-        public bool TcpKeepAlive { get; set; } = true;
-        public int TcpKeepAliveTime { get; set; } = 120;
-        public int TcpKeepAliveInterval { get; set; } = 30;
-        public int TcpKeepAliveRetryCount { get; set; } = 5;
-
-        // TLS
-        public bool ValidateServerCertificate { get; set; } = true;
-        public string PinnedThumbprint { get; set; } = "";
-
-        // Binary support
-        public bool BinaryMode { get; set; } = false;
 
         public event Action? OnConnected;
         public event Action? OnDisconnected;
@@ -95,9 +83,9 @@ namespace JAXBase.XBase
         public event Action<string>? OnError;
         public event Action<string>? OnWarning;
 
-        public int historyMax = 100;
+        //public int historyMax = 100;
         public List<WebHistory> history = [];
-        public string hostAddress = "";
+        //public string hostAddress = "";
 
         public new string MyBaseClass = "TCPClient";
         public new string MyDefaultName = "tcpclient";
@@ -159,7 +147,7 @@ namespace JAXBase.XBase
                         }
                         break;
 
-                    case "historymax": returnToken.Element.Value = historyMax; break;
+                    //case "historymax": returnToken.Element.Value = historyMax; break;
 
                     case "lineswaiting":
                         lock (_linesLock)
@@ -171,13 +159,13 @@ namespace JAXBase.XBase
                         }
                         break;
 
-                    case "tcpkeepalive": returnToken.Element.Value = TcpKeepAlive; break;
-                    case "tcpkeepalivetime": returnToken.Element.Value = TcpKeepAliveTime; break;
-                    case "tcpkeepaliveinterval": returnToken.Element.Value = TcpKeepAliveInterval; break;
-                    case "tcpkeepaliveretrycount": returnToken.Element.Value = TcpKeepAliveRetryCount; break;
-                    case "validateservercertificate": returnToken.Element.Value = ValidateServerCertificate; break;
-                    case "pinnedthumbprint": returnToken.Element.Value = PinnedThumbprint; break;
-                    case "binarymode": returnToken.Element.Value = BinaryMode; break;
+                    //case "tcpkeepalive": returnToken.Element.Value = TcpKeepAlive; break;
+                    //case "tcpkeepalivetime": returnToken.Element.Value = TcpKeepAliveTime; break;
+                    //case "tcpkeepaliveinterval": returnToken.Element.Value = TcpKeepAliveInterval; break;
+                    //case "tcpkeepaliveretrycount": returnToken.Element.Value = TcpKeepAliveRetryCount; break;
+                    //case "validateservercertificate": returnToken.Element.Value = ValidateServerCertificate; break;
+                    //case "pinnedthumbprint": returnToken.Element.Value = PinnedThumbprint; break;
+                    //case "binarymode": returnToken.Element.Value = BinaryMode; break;
 
                     case "parent":
                         if (me.parent is null) returnToken.Element.MakeNull();
@@ -189,7 +177,9 @@ namespace JAXBase.XBase
                         break;
 
 
-                    default: result = 1; break;
+                    default:
+                        result = 1;
+                        break;
                 }
 
                 if (JAXLib.Between(result, 1, 10))
@@ -198,7 +188,7 @@ namespace JAXBase.XBase
                     returnToken.CopyFrom(UserProperties[propertyName]);
                 }
             }
-            else 
+            else
                 result = 1559;
 
             if (result > 10)
@@ -224,63 +214,34 @@ namespace JAXBase.XBase
             {
                 switch (propertyName)
                 {
+                    case "autoreconnect":
                     case "tcpkeepalive":
-                        if (tk.Element.Type.Equals("L"))
-                            TcpKeepAlive = tk.AsBool();
-                        else
+                    case "validateservercertificate":
+                        if (tk.Element.Type.Equals("L") == false)
                             result = 11;
                         break;
 
                     case "tcpkeepalivetime":
-                        if (tk.Element.Type.Equals("N"))
-                            if (tk.AsInt() > 0)
-                                TcpKeepAliveTime = tk.AsInt();
-                            else
-                                result = 41;
-                        else
-                            result = 11;
-                        break;
-
                     case "tcpkeepaliveinterval":
-                        if (tk.Element.Type.Equals("L"))
-                            if (tk.AsInt() > 0)
-                                TcpKeepAliveInterval = tk.AsInt();
-                            else
-                                result = 41;
-                        else
-                            result = 11;
-                        break;
-
                     case "tcpkeepaliveretrycount":
-                        if (tk.Element.Type.Equals("L"))
-                            if (tk.AsInt() > 0)
-                                TcpKeepAliveRetryCount = tk.AsInt();
-                            else
+                        if (tk.Element.Type.Equals("N"))
+                        {
+                            if (tk.AsInt() < 1)
                                 result = 41;
-                        else
-                            result = 11;
-                        break;
-
-                    case "validateservercertificate":
-                        if (tk.Element.Type.Equals("L"))
-                            ValidateServerCertificate = tk.AsBool();
+                        }
                         else
                             result = 11;
                         break;
 
                     case "pinnedthumbprint":
-                        if (tk.Element.Type.Equals("C"))
-                            PinnedThumbprint = tk.AsString();
-                        else
+                        if (tk.Element.Type.Equals("C") == false)
                             result = 11;
                         break;
 
                     case "binarymode":
                         if (IsConnected)
                             result = 1541;
-                        else if (tk.Element.Type.Equals("L"))
-                            BinaryMode = tk.AsBool();
-                        else
+                        else if (tk.Element.Type.Equals("L") == false)
                             result = 11;
                         break;
 
@@ -303,6 +264,7 @@ namespace JAXBase.XBase
                         else
                             result = 11;
                         break;
+
                     default: result = 1; break;
                 }
 
@@ -327,7 +289,7 @@ namespace JAXBase.XBase
                 case "connect":
                     if (IsConnected)
                         result = 1541;
-                    else 
+                    else
                         await Task.Run(Connect);
                     break;
 
@@ -342,7 +304,7 @@ namespace JAXBase.XBase
                         byte[] data = ReadBinary(Program.CurrentApp.ParameterClassList[0].token.AsInt());
                         Program.CurrentApp.ReturnValue.Element.Value = data;
                     }
-                    else 
+                    else
                         result = 11;
                     break;
 
@@ -376,7 +338,7 @@ namespace JAXBase.XBase
 
                         }
                     }
-                    else 
+                    else
                         result = 1541;
                     break;
 
@@ -384,7 +346,7 @@ namespace JAXBase.XBase
                     if (Program.CurrentApp.ParameterClassList.Count > 0 &&
                         Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
                         SendLine(Program.CurrentApp.ParameterClassList[0].token.AsString());
-                    else 
+                    else
                         result = 11;
                     break;
 
@@ -396,10 +358,10 @@ namespace JAXBase.XBase
                             SendBinary(p.AsString());
                         else if (p.Element.Value is byte[] bytes)
                             SendBinary(bytes);
-                        else 
+                        else
                             result = 11;
                     }
-                    else 
+                    else
                         result = 1558;
                     break;
 
@@ -410,18 +372,18 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public bool IsConnected => _isConnected && !_disposed && _client?.Connected == true;
+        public bool IsConnected => UserProperties["isconnected"].AsBool() && !_disposed && _client?.Connected == true;
 
         public virtual bool Connect()
         {
             // ... (unchanged from your version - kept for brevity) ...
             // (full Connect method is identical to what you posted)
-            hostAddress = UserProperties["host"].AsString();
+            UserProperties["hostaddress"].Element.Value = UserProperties["host"].AsString();
             int port = UserProperties["port"].AsInt();
             bool useSecure = UserProperties["secure"].AsBool();
 
             if (_disposed) throw new ObjectDisposedException(nameof(XBase_Class_TCPClient));
-            if (string.IsNullOrWhiteSpace(hostAddress) || port <= 0) return false;
+            if (string.IsNullOrWhiteSpace(UserProperties["hostaddress"].AsString()) || port <= 0) return false;
 
             lock (_lock)
             {
@@ -431,7 +393,7 @@ namespace JAXBase.XBase
                     _client = new TcpClient();
                     ApplyTcpKeepAlive();
 
-                    var connectTask = _client.ConnectAsync(hostAddress, port);
+                    var connectTask = _client.ConnectAsync(UserProperties["hostaddress"].AsString(), port);
                     if (!connectTask.Wait(Timeout))
                     {
                         LastError = "Connection timeout";
@@ -446,7 +408,7 @@ namespace JAXBase.XBase
                     if (useSecure)
                     {
                         _sslStream = new SslStream(_networkStream, false, ValidateServerCertificateCallback);
-                        _sslStream.AuthenticateAsClientAsync(hostAddress).Wait(Timeout);
+                        _sslStream.AuthenticateAsClientAsync(UserProperties["hostaddress"].AsString()).Wait(Timeout);
                         _stream = _sslStream;
                     }
                     else
@@ -458,7 +420,7 @@ namespace JAXBase.XBase
                     _writer = new StreamWriter(_stream, Encoding) { AutoFlush = true };
 
                     _readCts = new CancellationTokenSource();
-                    _isConnected = true;
+                    UserProperties["isconnected"].Element.Value = true;
 
                     _CallMethod("connected").Wait();
                     OnConnected?.Invoke();
@@ -486,7 +448,7 @@ namespace JAXBase.XBase
             {
                 while (!_disposed && !cancellationToken.IsCancellationRequested && _stream != null)
                 {
-                    if (BinaryMode)
+                    if (UserProperties["binarymode"].AsBool())
                     {
                         if (_stream.CanRead && _stream is NetworkStream ns && ns.DataAvailable)
                         {
@@ -644,7 +606,7 @@ namespace JAXBase.XBase
         public virtual void Disconnect()
         {
             lock (_lock) DisconnectInternal();
-            _isConnected = false;
+            UserProperties["isconnected"].Element.Value = false;
             SetStatus(0, "Disconnected");
             OnDisconnected?.Invoke();
         }
@@ -671,20 +633,20 @@ namespace JAXBase.XBase
 
         public virtual void TryAutoReconnect(string? host = null, int port = 0)
         {
-            if (!AutoReconnect || _disposed) return;
+            if (UserProperties["autoreconnect"].AsBool() == false || _disposed) return;
             OnWarning?.Invoke("Auto-reconnecting in 2s...");
             Task.Delay(2000).ContinueWith(_ => Connect());
         }
 
         private bool ValidateServerCertificateCallback(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslPolicyErrors)
         {
-            if (!ValidateServerCertificate) return true;
+            if (UserProperties["validateservercertificate"].AsBool() == false) return true;
             if (sslPolicyErrors == SslPolicyErrors.None) return true;
 
-            if (!string.IsNullOrEmpty(PinnedThumbprint) && certificate != null)
+            if (string.IsNullOrEmpty(UserProperties["pinnedthumbprint"].AsString()) == false && certificate != null)
             {
                 string thumb = certificate.GetCertHashString();
-                if (thumb.Equals(PinnedThumbprint, StringComparison.OrdinalIgnoreCase))
+                if (thumb.Equals(UserProperties["pinnedthumbprint"].AsString(), StringComparison.OrdinalIgnoreCase))
                     return true;
             }
 
@@ -694,13 +656,13 @@ namespace JAXBase.XBase
 
         private void ApplyTcpKeepAlive()
         {
-            if (_client?.Client == null || !TcpKeepAlive) return;
+            if (_client?.Client == null) return;
             try
             {
                 var socket = _client.Client;
-                socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, TcpKeepAliveTime);
-                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, TcpKeepAliveInterval);
+                socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, UserProperties["tcpkeepalive"].AsBool());
+                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, UserProperties["tcpkeepalivetime"].AsInt());
+                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, UserProperties["tcpkeepaliveinterval"].AsInt());
             }
             catch { }
         }
@@ -709,14 +671,14 @@ namespace JAXBase.XBase
         {
             WebHistory webHistory = new()
             {
-                URL = hostAddress,
+                URL = UserProperties["hostaddress"].AsString(),
                 Status = statuscode,
                 Content = message
             };
 
             AppIO.DebugLog($"Status: {statuscode} - {message}");
             history.Insert(0, webHistory);
-            if (historyMax > 0 && history.Count > historyMax)
+            if (JAXLib.Between(UserProperties["historymax"].AsInt(), 0, history.Count))
                 history.RemoveAt(history.Count - 1);
         }
 
@@ -731,34 +693,32 @@ namespace JAXBase.XBase
         ~XBase_Class_TCPClient() => Dispose();
 
         public override string[] JAXMethods() =>
-            ["addproperty", "command", "connect", "disconnect",
+            [
+            "addproperty", "command", "connect", "disconnect",
              "readexpression", "readbytes", "readline", "readmethod", "resettodefault", "saveasclass", "sendline", "sendbinary",
-             "writeexpression", "writemethod"];
+             "writeexpression", "writemethod"
+            ];
 
         public override string[] JAXEvents() =>
-            ["bytesreceived", "connected", "destroy", "disconnected", "error", "init", "linereceived", "load", "statuschanged"];
-
-        public override string[] JAXProperties()
-        {
-            return [
-                "active,l!,false", "available,l!,false",
-                "baseclass,C!,TCPClient", "byteswaiting,n!,0",
-                "class,C!,", "classlibrary,C$,",
-                "history,c!,", "historymax,n,100", "host,c,",
-                "lineswaiting,n!,0",
-                "name,C,SQL",
-                "parent,o$,","parentclass,C$,","pinnedthumbprint,c,","port,n,80",
-                "secure,l,false",
-                "tcpkeepalive,l,true", "tcpkeepalivetime,n,120", "tcpkeepaliveinterval,n,30", "tcpkeepaliveretrycount,n,5",
-                "validateservercertificate,l,true", "pinnedthumbprint,c,",
-                "binarymode,l,false",
-                "receivebuffersize,n,1024", "receivetimeout,n,10000",
-                "sendbuffersize,n,1024", "sendtimeout,n,10000",
-                "tcpkeepalive,l,true", "tcpkeepalivetime,n,120", "tcpkeepaliveinterval,n,30", "tcpkeepaliveretrycount,n,5",
-                "status,n!,0", "statusmessage,c!,",
-                "tag,C,",
-                "validateservercertificate,l,true",
+            [
+            "bytesreceived", "connected", "destroy", "disconnected", "error", "init", "linereceived", "load", "statuschanged"
             ];
-        }
+
+        public override string[] JAXProperties() =>
+            [
+            "active,l!,false", "available,l!,false","autoreconnect,l,true",
+            "baseclass,C!,TCPClient", "binarymode,l,false", "byteswaiting,n!,0",
+            "class,C!,", "classlibrary,C$,",
+            "history,c!,", "historymax,n,100", "host,c,",
+            "isconnected,l!,false",
+            "lineswaiting,n!,0",
+            "name,C,SQL",
+            "parent,o$,","parentclass,C$,","pinnedthumbprint,c,","port,n,80",
+            "receivebuffersize,n,1024", "receivetimeout,n,10000",
+            "secure,l,false", "sendbuffersize,n,1024", "sendtimeout,n,10000", "status,n!,0", "statusmessage,c!,",
+            "tag,C,", "tcpkeepalive,l,true", "tcpkeepalivetime,n,120", "tcpkeepaliveinterval,n,30", "tcpkeepaliveretrycount,n,5",
+            "validateservercertificate,l,true"
+            ];
+
     }
 }

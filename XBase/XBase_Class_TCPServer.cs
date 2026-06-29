@@ -1,12 +1,28 @@
 ﻿/*
  * GROK created 2026-05-19
+ *      Poor beast has been dumbed down again so I can get sample code easy enough 
+ *      but I'm afraid getting class code from whole cloth is no longer an option.
+ *      
  * 
  * 2026-05-19 - JLW
  *      Updated to work with JAXBase.  Unfortunately GROK still hasn't quite figured 
  *      out how to properly handle the JAXObjectWrapper and related complexities.
  *      
+ * 2026-06-04 - JLW
+ *      Finished converting to JAXBase template
+ *      
+ * 2026-06-09 - JLW
+ *      Some clean up and TODO list
+ *          Set up myIP address(es) in _JAX or _OS?
+ *          UseSSL needs implementation
+ *          Ask Grok what Command is supposed to do
+ *          Autostart bind address checking
+ *          Make sure BindAddress assignment is valid
+ *          Tie in events
+ *      
  */
 using JAXBase.Core;
+using JAXBase.Utilities;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -18,19 +34,10 @@ namespace JAXBase.XBase
     {
         private TcpListener? _listener;
         private CancellationTokenSource? _listenCts;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private readonly ConcurrentDictionary<string, XBase_Class_TCPClient> _activeClients = new();
         private bool _isListening = false;
         private bool _disposed = false;
-
-        public bool AutoStart { get; set; } = false;
-        public string BindAddress { get; set; } = "0.0.0.0";
-        public int Port { get; set; } = 0;
-        public int Backlog { get; set; } = 10;
-        public int MaxConnections { get; set; } = 50;
-        public bool UseSSL { get; set; } = false;
-        public string CertificateThumbprint { get; set; } = "";
-        public string CertificatePath { get; set; } = ""; // Optional PFX file path
 
         public int ActiveConnections => _activeClients.Count;
 
@@ -45,7 +52,6 @@ namespace JAXBase.XBase
         public event Action? OnStopped;
         public event Action<string>? OnError;
 
-        public int historyMax = 100;
         public List<WebHistory> history = [];
         public new string MyBaseClass = "TCPServer";
         public new string MyDefaultName = "tcpserver";
@@ -57,14 +63,6 @@ namespace JAXBase.XBase
             name = string.IsNullOrEmpty(name) ? MyDefaultName : name;
             SetVisualObject(null, MyBaseClass, name, false, UserObject.urw);
             me.nvObject = new EmptyFactory();
-
-            // Default properties
-            UserProperties["port"] = new JAXObjects.Token(0);
-            UserProperties["bindaddress"] = new JAXObjects.Token("0.0.0.0");
-            UserProperties["maxconnections"] = new JAXObjects.Token(50);
-            UserProperties["backlog"] = new JAXObjects.Token(10);
-            UserProperties["autostart"] = new JAXObjects.Token(false);
-            UserProperties["usessl"] = new JAXObjects.Token(false);
         }
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
@@ -72,7 +70,8 @@ namespace JAXBase.XBase
             bool result = await base.PostInit(callBack, parameterList);
             SetStatus(0, "Initialized");
 
-            if (AutoStart && Port > 0)
+            // TODO - Is bind address valid?
+            if (UserProperties["autostart"].AsBool() && UserProperties["port"].AsInt() > 0)
                 Start();
 
             return result;
@@ -103,7 +102,7 @@ namespace JAXBase.XBase
                         // Returns count when idx=0, or client reference when idx > 0
                         if (idx == 0)
                             returnToken.Element.Value = ActiveConnections;
-                        else if (idx > 0 && idx <= ActiveConnections)
+                        else if (JAXLib.Between(idx, 0 , ActiveConnections))
                             returnToken.Element.Value = Clients[idx - 1];
                         else
                             returnToken.Element.MakeNull();
@@ -126,19 +125,13 @@ namespace JAXBase.XBase
                         }
                         break;
 
-                    case "historymax": returnToken.Element.Value = historyMax; break;
-                    case "maxconnections": returnToken.Element.Value = MaxConnections; break;
-                    case "backlog": returnToken.Element.Value = Backlog; break;
-                    case "port": returnToken.Element.Value = Port; break;
-                    case "bindaddress": returnToken.Element.Value = BindAddress; break;
-                    case "usessl": returnToken.Element.Value = UseSSL; break;
                     default:
                         result = 1;
                         break;
                 }
 
-                if (result == 0 && UserProperties.ContainsKey(propertyName))
-                    returnToken.CopyFrom(UserProperties[propertyName]);
+                if (result == 1)
+                    returnToken.Element.Value = UserProperties[propertyName].Element.Value;
             }
             else
                 result = 1559;
@@ -150,6 +143,7 @@ namespace JAXBase.XBase
             }
             return returnToken;
         }
+
 
         public override async Task<int> SetProperty(string propertyName, object objValue, int objIdx)
         {
@@ -163,51 +157,61 @@ namespace JAXBase.XBase
             {
                 switch (propertyName)
                 {
-                    case "port":
-                        if (IsListening) result = 1541;
-                        else if (tk.Element.Type.Equals("N"))
-                            Port = tk.AsInt();
-                        else 
-                            result = 11;
-                        break;
-
-                    case "bindaddress":
-                        if (IsListening) result = 1541;
-                        else if (tk.Element.Type.Equals("C"))
-                            BindAddress = tk.AsString();
-                        else 
-                            result = 11;
-                        break;
-
-                    case "maxconnections":
-                        if (tk.Element.Type.Equals("N") && tk.AsInt() > 0)
-                            MaxConnections = tk.AsInt();
-                        else 
+                    case "autostart":
+                        if (tk.Element.Type.Equals("L") == false)
                             result = 11;
                         break;
 
                     case "backlog":
-                        if (tk.Element.Type.Equals("N") && tk.AsInt() > 0)
-                            Backlog = tk.AsInt();
-                        else 
+                        if (tk.Element.Type.Equals("N"))
+                            result = 11;
+                        else if (tk.AsInt() < 0)
+                            result = 41;
+                        break;
+
+                    case "bindaddress": // TODO - check to see if a valid address
+                        if (IsListening)
+                            result = 1541;
+                        else if (tk.Element.Type.Equals("C") == false)
                             result = 11;
                         break;
 
-                    case "autostart":
-                        if (tk.Element.Type.Equals("L"))
-                            AutoStart = tk.AsBool();
-                        else 
+                    case "historymax":
+                    case "maxconnections":
+                        if (tk.Element.Type.Equals("N"))
+                            result = 11;
+                        else if (tk.AsInt() < 0)
+                            result = 41;
+                        break;
+
+                    case "name":
+                        if (IsListening)
+                            result = 1541;
+                        else if (tk.Element.Type.Equals("C") == false)
+                            result = 11;
+                        break;
+
+                    case "port":
+                        if (IsListening)
+                            result = 1541;
+                        else if (tk.Element.Type.Equals("N"))
+                        {
+                            if (JAXLib.Between(tk.AsInt(), 0, 65535) == false)
+                                result = 41;
+                        }
+                        else
                             result = 11;
                         break;
 
                     case "usessl":
-                        if (tk.Element.Type.Equals("L"))
-                            UseSSL = tk.AsBool();
-                        else 
+                        if (IsListening)
+                            result = 1541;
+                        else if (tk.Element.Type.Equals("L") == false)
                             result = 11;
                         break;
 
-                    default: result = 1; 
+                    default:
+                        result = 1;
                         break;
                 }
 
@@ -224,26 +228,61 @@ namespace JAXBase.XBase
             return result;
         }
 
+
+        /*
+         *  TODO - command?
+         */
         public override async Task<int> DoDefault(string methodName)
         {
             int result = 0;
             switch (methodName.ToLower())
             {
-                case "start":
-                    Start();
-                    break;
-
-                case "stop":
-                    Stop();
+                case "clientconnected":
+                case "clientdisconnected":
+                case "clientlinereceived":
+                case "clientbinaryreceived":
+                case "clienterror":
                     break;
 
                 case "closeclient":
                     if (Program.CurrentApp.ParameterClassList.Count > 0)
                     {
-                        var client = Program.CurrentApp.ParameterClassList[0].token.Element.Value as XBase_Class_TCPClient;
-                        if (client != null) CloseClient(client);
+                        JAXObjects.Token answer = new();
+                        answer.Element.Value = Program.CurrentApp.ParameterClassList[0].token.Element.Value;
+
+                        int j = -1;
+
+                        if (answer.Element.Type.Equals("C"))
+                        {
+                            // Looking for a name
+                            for (int i = 0; i < Clients.Count; i++)
+                            {
+                                if (answer.AsString().Equals(Clients[i].me.JOWName))
+                                {
+                                    // Found the name, close it
+                                    CloseClient(Clients[i]);
+                                    j = i;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Looking for a client position
+                            if (JAXLib.Between(answer.AsInt() - 1, 0, Clients.Count))
+                            {
+                                CloseClient(Clients[answer.AsInt()]);
+                                j = answer.AsInt();
+                            }
+                        }
+
+                        if (j == -1)
+                        {
+                            // didn't find the client
+                            result = 8230;
+                        }
                     }
-                    else 
+                    else
                         result = 11;
                     break;
 
@@ -251,19 +290,44 @@ namespace JAXBase.XBase
                     CloseAllClients();
                     break;
 
-                case "broadcastline":
-                    if (Program.CurrentApp.ParameterClassList.Count > 0 &&
-                        Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
-                        BroadcastLine(Program.CurrentApp.ParameterClassList[0].token.AsString());
-                    else 
-                        result = 11;
+
+                case "sendline":
+                    if (Program.CurrentApp.ParameterClassList.Count != 1)
+                    {
+                        if (Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
+                            BroadcastLine(Program.CurrentApp.ParameterClassList[0].token.AsString());
+                        else
+                            result = 11;
+                    }
+                    else
+                        result = Program.CurrentApp.ParameterClassList.Count==0?94:98;
+
                     break;
 
-                case "broadcastbinary":
-                    if (Program.CurrentApp.ParameterClassList.Count > 0)
-                        BroadcastBinary(Program.CurrentApp.ParameterClassList[0].token.Element.Value);
-                    else 
-                        result = 11;
+                case "sendbinary":
+                    if (Program.CurrentApp.ParameterClassList.Count != 1)
+                    {
+                        if (Program.CurrentApp.ParameterClassList[0].token.Element.Type.Equals("C"))
+                            BroadcastBinary(Program.CurrentApp.ParameterClassList[0].token.Element.Value);
+                        else
+                            result = 11;
+                    }
+                    else
+                        result = Program.CurrentApp.ParameterClassList.Count == 0 ? 94 : 98;
+
+                    break;
+
+                case "start":
+                    Start();
+                    break;
+
+                case "started":
+                case "stopped":
+                case "statuschanged":
+                    break;
+
+                case "stop":
+                    Stop();
                     break;
 
                 default:
@@ -282,17 +346,17 @@ namespace JAXBase.XBase
             {
                 try
                 {
-                    IPAddress address = string.IsNullOrEmpty(BindAddress) || BindAddress == "0.0.0.0"
+                    IPAddress address = string.IsNullOrEmpty(UserProperties["bindaddress"].AsString()) || UserProperties["bindaddress"].AsString() == "0.0.0.0"
                         ? IPAddress.Any
-                        : IPAddress.Parse(BindAddress);
+                        : IPAddress.Parse(UserProperties["bindaddress"].AsString());
 
-                    _listener = new TcpListener(address, Port);
-                    _listener.Start(Backlog);
+                    _listener = new TcpListener(address, UserProperties["port"].AsInt());
+                    _listener.Start(UserProperties["backlog"].AsInt());
 
                     _listenCts = new CancellationTokenSource();
                     _isListening = true;
 
-                    SetStatus(1, $"Server listening on {BindAddress}:{Port}");
+                    SetStatus(1, $"Server listening on {UserProperties["bindaddress"].AsString()}:{UserProperties["port"].AsInt()}");
                     OnStarted?.Invoke();
                     _CallMethod("started").Wait();
 
@@ -333,7 +397,7 @@ namespace JAXBase.XBase
                 {
                     TcpClient tcpClient = await _listener.AcceptTcpClientAsync(cancellationToken);
 
-                    if (_activeClients.Count >= MaxConnections)
+                    if (_activeClients.Count >= UserProperties["maxconnections"].AsInt())
                     {
                         tcpClient.Close();
                         SetStatus(12, "Connection rejected - MaxConnections reached");
@@ -351,7 +415,7 @@ namespace JAXBase.XBase
                     client._stream = client._networkStream;
                     client._reader = new StreamReader(client._stream, client.Encoding);
                     client._writer = new StreamWriter(client._stream, client.Encoding) { AutoFlush = true };
-                    client._isConnected = true;
+                    client.me.thisObject!.UserProperties["isconnected"].Element.Value = true;
 
                     string clientKey = tcpClient.Client.RemoteEndPoint?.ToString() ?? Guid.NewGuid().ToString();
                     _activeClients[clientKey] = client;
@@ -408,12 +472,14 @@ namespace JAXBase.XBase
         {
             WebHistory wh = new()
             {
-                URL = $"Server:{Port}",
+                URL = $"Server: Port {UserProperties["port"].AsInt()}",
                 Status = statuscode,
                 Content = message
             };
+
             history.Insert(0, wh);
-            if (historyMax > 0 && history.Count > historyMax)
+
+            if (UserProperties["historymax"].AsInt() > 0 && history.Count > UserProperties["historymax"].AsInt())
                 history.RemoveAt(history.Count - 1);
         }
 
@@ -431,14 +497,13 @@ namespace JAXBase.XBase
 
         public override string[] JAXMethods() =>
             [
-            "addproperty", "broadcastbinary", "broadcastline", "closeallclients", "closeclient", "command", 
-            "readexpression", "readmethod", "resettodefault", "saveasclass", "start", "stop", 
-            "writeexpression", "writemethod"
+            "addproperty", "closeallclients", "closeclient", "command", "readexpression", "readmethod", "resettodefault", 
+            "saveasclass", "sendbinary", "sendline", "start", "stop", "writeexpression", "writemethod"
             ];
 
         public override string[] JAXEvents() =>
             [
-            "clientconnected", "clientdisconnected", "clientlinereceived", "clientbinaryreceived", "clienterror", 
+            "clientconnected", "clientdisconnected", "clientlinereceived", "clientbinaryreceived", "clienterror",
             "destroy", "error", "init", "load", "started", "stopped", "statuschanged"
             ];
 
@@ -449,11 +514,11 @@ namespace JAXBase.XBase
             "class,C!,TCPServer", "clients,n!,0",
             "history,c!,", "historymax,n,100",
             "maxconnections,n,50",
-            "name,C,TCPServer", 
+            "name,C,TCPServer",
             "parent,o$","parentclass,C$,", "port,n,0", "usessl,l,false",
             "status,n!,0", "statusmessage,c!,",
             "tag,C,",
             ];
-        
+
     }
 }

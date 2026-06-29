@@ -1,5 +1,6 @@
 ﻿using JAXBase.Utilities;
 using JAXBase.XBase;
+using ZXing;
 
 namespace JAXBase.Core
 {
@@ -276,7 +277,7 @@ namespace JAXBase.Core
                 // Is it a Table.Field reference?
                 if (varName.Contains('.'))
                 {
-                    // TODO - Get the table and field name
+                    // Get the table and field name
                     string[] varParts = varName.Split('.');
 
                     if (Program.CurrentApp.CurrentDS.IsWorkArea(varParts[0]))
@@ -299,7 +300,7 @@ namespace JAXBase.Core
                     else
                     {
                         // Assume it's an object and we're using the wrong tool
-                        tk = new() { TType = "U" };
+                        tk = await AppVars.ObjectCall(varName, true);
                     }
                 }
                 else
@@ -1284,25 +1285,27 @@ namespace JAXBase.Core
          * 
          * Call an object.method or return a object.property
          * 
-         * It can be something simple like FORM1.SHOW, FORM1.REFRESH(), 
-         * FORM1.Caption, or something complex like 
-         * FORM1.PGFRAME1.PAGE1.CONTAINER1.OBJECT[4].Value
+         * It can be something simple like FORM1.SHOW, FORM1.REFRESH(),  FORM1.Caption, or 
+         * something complex like FORM1.PGFRAME1.PAGE1.CONTAINER1.OBJECT[4].Value
          * 
-         * The eCodes.Expressions[0] holds the entire string for the
-         * call and is broken down by element.
+         * These three routines work together to accept different inputs and return the final value.
+         *-------------------------------------------------------------------------------------------*/
+
+
+
+        /*-------------------------------------------------------------------------------------------*
+         * The eCodes.Expressions[0] holds the entire string for the call and is broken down by element.
          * 
          * Parameter ExpectingValue = false means it has to be an
          * event or method call, which may still return a value.
          * 
          * Out parameter objResult will hold the property/object
          * returned at the end.
-         * 
          *-------------------------------------------------------------------------------------------*/
         public static async Task<GenericClass> ObjectCall(ExecutorCodes eCodes, bool expectingValue)
         {
             GenericClass result = new();
             result.Result.Element.Value = "U";
-
 
             try
             {
@@ -1324,9 +1327,43 @@ namespace JAXBase.Core
                 if (JAXLib.InListC(expr, ".null.", "null"))
                     throw new Exception("10|.NULL.");
 
-                // Set up the object list
-                List<string> objList = BreakVar(expr);
+                answer = await ObjectCall(expr, expectingValue);
+                result.Value.CopyFrom(answer);
+            }
+            catch (Exception ex)
+            {
+                AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+            }
 
+            // Return the token
+            return result;
+        }
+
+        /*-------------------------------------------------------------------------------------------*
+         * String expression is changed to a List<string> and then calls the next method
+         * to solve the expression
+         *-------------------------------------------------------------------------------------------*/
+        public static async Task<JAXObjects.Token> ObjectCall(string expr, bool expectingValue)
+        {
+            // Set up the object list
+            List<string> objList = BreakVar(expr.Trim(AppClass.literalStart).Trim(AppClass.literalEnd));
+
+            return await ObjectCall(objList, expectingValue);
+        }
+
+
+        /*-------------------------------------------------------------------------------------------*
+         * Receive a List<string> and solve - object leads the list and ends with an object,
+         * method call return value, or property value
+         *-------------------------------------------------------------------------------------------*/
+        public static async Task<JAXObjects.Token> ObjectCall(List<string> objList, bool expectingValue)
+        {
+            JAXObjects.Token result = new();
+            result.Element.Value = "U";
+
+
+            try
+            {
                 // If anything was sent, process it
                 if (objList.Count > 0)
                 {
@@ -1376,8 +1413,7 @@ namespace JAXBase.Core
                         if (expectingValue)
                         {
                             // If we're expecting a value, send back the object
-                            result.Result.Element.Value = "O";
-                            result.Value.Element.Value = currentVar.Element.Value;
+                            result.Element.Value = currentVar.Element.Value;
                         }
                         else
                             throw new Exception("10|Expecting a method/event call for " + objList[0]);
@@ -1437,8 +1473,7 @@ namespace JAXBase.Core
                                         await thisObject.MethodCall(objList[i]);
 
                                         // Return what was sent back as a token
-                                        result.Value.Element.Value = Program.CurrentApp.ReturnValue.Element.Value;
-                                        result.Result.Element.Value = memberType;
+                                        result.Element.Value = Program.CurrentApp.ReturnValue.Element.Value;
                                         break;
 
                                     case "O":   // We're looking for an OBJECT[]
@@ -1451,24 +1486,22 @@ namespace JAXBase.Core
                                         // Get the object index by name since we know it exists
                                         JAXObjectWrapper? jow = await thisObject.GetObject(objList[i]);
                                         if (jow is not null)
-                                            result.Value.Element.Value = jow;
+                                            result.Element.Value = jow;
                                         else
                                             throw new Exception($"1901|{objList}");
 
-                                        result.Result.Element.Value = memberType;
                                         currentVar = new();
-                                        currentVar = result.Value;
+                                        currentVar = result;
                                         break;
 
-                                    case "P":   // Property - array properties are handled above
-                                                // If we're not expecting a value, then we have a
-                                                // problem being here and will toss an exception.
+                                    case "P":   // Property - array properties with indexes are handled above  
+                                                // If we're not expecting a value, then we have a problem being
+                                                // here and will toss an exception.
                                         if (i + 1 >= objList.Count && expectingValue == false)
                                             throw new Exception("1738|" + objList[i].ToUpper());
 
                                         // Get the property token and return it
-                                        result.Value = await thisObject.GetProperty(objList[i], 0);
-                                        result.Result.Element.Value = memberType;
+                                        result = await thisObject.GetProperty(objList[i], -1);
                                         break;
 
                                     default:

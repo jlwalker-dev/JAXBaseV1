@@ -1,4 +1,13 @@
-﻿using JAXBase.Core;
+﻿/*
+ * 2026.06.09 - JLW
+ *      While supporting KAFKA and RABBITMQ would be terrific, I'll leave that
+ *      for Version 2.  Right now I'm just setting up a simple Subscription
+ *      Client class and will ship a simple server with the system.  The idea
+ *      is to allow you to have multiple JAXBase programs interacting
+ *      together.
+ * 
+ */
+using JAXBase.Core;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
@@ -44,6 +53,7 @@ namespace JAXBase.XBase
         public override string[] JAXProperties() =>
             [
             "autoreconnect,l,true", "autoreconnectdelayseconds,n,5", "broker,c,", "cleansession,l,",
+            "historymax,N,100",
             "keepaliveseconds,n,60","lasterror,c,", "messageswaiting,n,0", "port,n,0", "password,c,",
             "secure,l,false", "status,c,", "username,c,"
             ];
@@ -167,7 +177,7 @@ namespace JAXBase.XBase
                 switch (methodName)
                 {
                     case "connect":
-                        result = await ConnectAsync();   // Blocking for JAXBase compatibility; internal is async
+                        result = await ConnectAsync();
                         break;
 
                     case "disconnect":

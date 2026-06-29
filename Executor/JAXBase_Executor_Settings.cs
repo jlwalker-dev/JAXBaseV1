@@ -75,7 +75,7 @@ namespace JAXBase.Executor
                     }
 
                     // SET the setting's value
-                    switch (settingName.ToLower())
+                    switch (settingName.ToUpper())
                     {
                         // -------------------------------------
                         // ON/OFF Settings
@@ -132,7 +132,7 @@ namespace JAXBase.Executor
                             status += "is " + (IsOn ? "ON" : "OFF");
                             break;
 
-                        case "DBG":     // Debug
+                        case "DEB":     // Debug
                             if (HasOnOff == false) throw new Exception("11|");
                             Program.CurrentApp.CurrentDS.JaxSettings.Debug = IsOn;
                             status += "is " + (IsOn ? "ON" : "OFF");
@@ -854,7 +854,7 @@ namespace JAXBase.Executor
                 if (string.IsNullOrEmpty(settingName) == false)
                 {
                     // SET the setting's value
-                    switch (settingName.ToLower())
+                    switch (settingName.ToUpper())
                     {
                         // ON/OFF Settings
                         case "ANS": answer.Element.Value = App.CurrentDS.JaxSettings.ANSI; break;

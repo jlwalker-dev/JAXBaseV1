@@ -27,7 +27,7 @@
  *      something that looked like what I wanted if I was writing a C# class.
  *      
  *      After thinking it over, I believe returning a result object will be a much better design than 
- *      trying create a bunch of extra properties.  So, thank you GROK for that idea.  I know that's the
+ *      trying to create a bunch of extra properties.  So, thank you GROK for that idea.  I know that's the
  *      way it's done in a lot of other languages, but I was, as they say, "thinking in 2 dimensions".
  * 
  */

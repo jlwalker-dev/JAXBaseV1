@@ -1,6 +1,13 @@
-﻿/*
+﻿
+/*
  * Create a video player object
- * Uses LibVLCSharp for cross-platform compatibility.
+ * Uses LibVLCSharp for cross-platform compatibility and JAXBase will recognize the
+ * following formats:
+ * 
+ * MP4 / MOV / AVI / WMV / WMA / MPEG 
+ * 
+ * Many others are supported, but these will be "supported" in the docs. 
+ * 
  * 
  */
 using JAXBase.Core;
@@ -67,20 +74,9 @@ namespace JAXBase.XBase
         }
 
         /*------------------------------------------------------------------------------------------*
-         * Handle the commmon properties by calling the base and then
-         * handle the special cases.
-         * 
-         * Return result from XBase_Visual_Class
-         *      0   - Successfully proccessed
-         *      1   - Did not process
-         *      2   - Requires special processing
-         *      >10 - Error code
-         * 
-         * 
-         * Return from here
-         *      0   - Successfully processed
-         *     -1  - Error Code
-         *      
+         * Set the special properties here, otherwise call the base to deal with the
+         * commmon properties (left, top, etc).  Only supported properties get looked
+         * at while unsupported properties throw an error.
          *------------------------------------------------------------------------------------------*/
         public override async Task<int> SetProperty(string propertyName, object objValue, int objIdx)
         {
@@ -101,6 +97,7 @@ namespace JAXBase.XBase
                         case "playrate":
                             if (tk.Element.Type.Equals("N"))
                             {
+                                objValue = tk.AsInt();
                                 if (JAXLib.Between(tk.AsInt(), -4, 4))
                                     mediaPlayer.SetRate(tk.AsInt());
                                 else
@@ -116,6 +113,8 @@ namespace JAXBase.XBase
                             {
                                 if (tk.AsInt() >= 0)
                                 {
+                                    objValue = tk.AsInt();
+
                                     switch (tk.AsInt())
                                     {
                                         case 0: // Stop
@@ -143,7 +142,6 @@ namespace JAXBase.XBase
                                                 rate = -1;
 
                                             UserProperties["rate"].Element.Value = rate;
-                                            result = 9;
                                             break;
 
                                         case 6: // Fast Forward (progressive)
@@ -156,10 +154,9 @@ namespace JAXBase.XBase
                                                     rate = 1;
                                             }
                                             else
-                                                rate = 2;
+                                                rate = 1;
 
                                             UserProperties["rate"].Element.Value = rate;
-                                            result = 9;
                                             break;
 
                                         case 7: // Skip back 10 seconds
@@ -170,8 +167,6 @@ namespace JAXBase.XBase
 
                                             if (mediaPlayer.IsPlaying == false)
                                                 mediaPlayer.Play();
-
-                                            result = 9;
                                             break;
 
                                         case 8: // Skip forward 30 seconds
@@ -182,15 +177,12 @@ namespace JAXBase.XBase
 
                                             if (mediaPlayer.IsPlaying == false)
                                                 mediaPlayer.Play();
-
-                                            result = 9;
                                             break;
 
                                         case 9: // Rewind to beginning and start playing
                                             mediaPlayer.Stop();
                                             mediaPlayer.Time = 0;
                                             mediaPlayer.Play();
-                                            result = 9;
                                             break;
 
                                         default:
@@ -220,7 +212,10 @@ namespace JAXBase.XBase
                                     if (tk.AsInt() < 0)
                                         result = 41;
                                     else
+                                    {
                                         mediaPlayer.Time = (tk.AsInt() < mediaPlayer.Length) ? tk.AsInt() : mediaPlayer.Length;
+                                        objValue = mediaPlayer.Time;
+                                    }
                                 }
                             }
                             else
@@ -242,12 +237,14 @@ namespace JAXBase.XBase
 
                                     if (media is not null)
                                     {
+                                        // Set up the media
                                         mediaPlayer.Media = media;
                                         await media.Parse();
 
                                         UserProperties["framerate"].Element.Value = -1;
                                         UserProperties["bitrate"].Element.Value = -1;
 
+                                        // Get the FrameReate and BitRate
                                         foreach (var track in media.Tracks)
                                         {
                                             if (track.TrackType == TrackType.Video)
@@ -276,7 +273,7 @@ namespace JAXBase.XBase
                                     }
                                     else
                                     {
-                                        // Invalid media location
+                                        // Invalid media or location
                                         result = 8950;
                                         msg = tk.AsString();
                                     }
@@ -288,7 +285,6 @@ namespace JAXBase.XBase
                             break;
 
 
-                        // Intercept special handling of properties
                         default:
                             // Process standard properties
                             result = await base.SetProperty(propertyName, objValue, objIdx);
@@ -342,6 +338,13 @@ namespace JAXBase.XBase
             {
                 switch (propertyName)
                 {
+                    case "time":
+                        if (mediaPlayer.Media is not null)
+                            returnToken.Element.Value = mediaPlayer.Media;
+                        else
+                            result = 9851;
+                        break;
+
                     case "duration":
                         returnToken.Element.Value = mediaPlayer.Length < 0 ? 0 : System.Math.Round(Convert.ToDouble(mediaPlayer.Length) / 1000.00, 1);
                         break;
@@ -349,9 +352,6 @@ namespace JAXBase.XBase
                     default:
                         // Process standard properties
                         returnToken = await base.GetProperty(propertyName, idx);
-
-                        if (returnToken.Element.IsNull()==false)
-                            returnToken.Element.Value = UserProperties[propertyName].Element.Value; 
                         break;
                 }
             }
@@ -375,27 +375,21 @@ namespace JAXBase.XBase
         /*------------------------------------------------------------------------------------------*
          * 
          *------------------------------------------------------------------------------------------*/
-        public override string[] JAXMethods()
-        {
-            return
+        public override string[] JAXMethods()=>
                 [
                 "addproperty","move","readexpression","readmethod","refresh","resettodefault",
                 "saveasclass","settooriginalvalue","setfocus","writeexpression","writemethod","zorder"
                 ];
-        }
 
         /*------------------------------------------------------------------------------------------*
          * 
          *------------------------------------------------------------------------------------------*/
-        public override string[] JAXEvents()
-        {
-            return
+        public override string[] JAXEvents()=>
                 [
                 "click","destroy","error","gotfocus","init","load","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "paused","rightclick","playing","saveaudio","savevideo","stopped","visiblechanged","when"
                 ];
-        }
 
         /*------------------------------------------------------------------------------------------*
          * property data types
@@ -415,14 +409,14 @@ namespace JAXBase.XBase
             return
                 [
                 "anchor,n,0","autosize,l,false",
-                "BaseClass,C!,image","bitrate,n!,0","bordercolor,R,0","borderstyle,n,0","borderwidth,N,0",
-                "Class,C!,Grid","ClassLibrary,C!,","Comment,C,",
+                "baseClass,C!,video","bitrate,n!,0","bordercolor,R,0","borderstyle,n,0","borderwidth,N,0",
+                "class,C!,video","classlibrary,C!,","comment,C,",
                 "duration,n,0",
                 "framerate,n!,0",
-                "Height,N,0",
+                "height,N,0",
                 "left,N,0","location,n,0",
                 "name,c,command",
-                "parent,o!,","parentclass,C!,","picture,c,","playrate,n,1",
+                "parent,o!,","parentclass,C!,","playrate,n,1",
                 "soundlevel,n,50","status,n,0",
                 "tabstop,L!,false","tag,C,","top,N,0","tooltiptext,c,",
                 "video,c,","visible,l,true",

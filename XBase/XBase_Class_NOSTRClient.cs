@@ -10,13 +10,24 @@
  *      JAXBase ecosystem.
  *      
  *      Eventually get good C# code?  Yeah, I can eventually get good code without falling into 
- *      a doom loop (which was a reocurring problem up to the end of February), but yesterday 
+ *      a doom loop (which was a common problem up to the end of February), but yesterday 
  *      and today I keep being forced to paste error after error to the chat, as if GROK would 
  *      guess at what was right and then give me the old "that error is caused by the fact 
  *      that XXX is not a function of...".
  *      
  *      I'm wondering if GROK lost some of it's processing power when Anthropic leased out
  *      Elon's big data centers on the KY/TN border?
+ *      
+ *      
+ *  2026.06.09 - JLW
+ *      For the most part this is working the way I want but I need to set up another 
+ *      workstation so I can get two machines to talk through a NOSTR server.  I'm
+ *      about to order a Pi 5 with 16GB RAM and will load with Ubuntu and GNOME as
+ *      the "other client".  My 8GB Pi with Raspian is great, but seems to be
+ *      unwilling to load everything I need to get .Net working.
+ *      
+ *      If everything goes as I hope, I'll also set up a Debian image with KDE
+ *      so I can test two common flavors.
  *      
  *      
  */
@@ -27,7 +38,6 @@ using Nostr.Client.Communicator;
 using Nostr.Client.Keys;
 using Nostr.Client.Messages;
 using Nostr.Client.Requests;
-using ZXing;
 
 namespace JAXBase.XBase
 {

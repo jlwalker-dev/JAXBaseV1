@@ -1,4 +1,10 @@
-﻿using JAXBase.Core;
+﻿/*
+ * 2026.06.09 - JLW
+ *      The FormSet is a class that ties multiple forms into a group.
+ *      
+ *      
+ */
+using JAXBase.Core;
 using JAXBase.Utilities;
 
 namespace JAXBase.XBase

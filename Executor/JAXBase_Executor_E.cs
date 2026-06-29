@@ -350,6 +350,8 @@ namespace JAXBase.Executor
          * 
          * ENDTEXT
          * 
+         * SHOULD NEVER BE CALLED
+         * 
          */
         public static string EndText(JAXBase_Executor jbe, ExecutorCodes eCodes)
         {
@@ -358,6 +360,7 @@ namespace JAXBase.Executor
             try
             {
                 if (Program.CurrentApp.AppLevels.Count < 2) throw new Exception("2|");
+                throw new Exception("10||EndText");
             }
             catch (Exception ex)
             {
