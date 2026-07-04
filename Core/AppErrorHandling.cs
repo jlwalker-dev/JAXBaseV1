@@ -209,14 +209,14 @@ namespace JAXBase.Core
             {
                 if (Program.CurrentApp.Errors.Count > 0)
                 {
-                    int i = 0;
-                    if (Program.CurrentApp.CurrentError >= 0)
-                        i = Program.CurrentApp.CurrentError;
+                    int i = Program.CurrentApp.CurrentError >= 0 ? Program.CurrentApp.CurrentError : 0;
+                    if (i < 0) i = 0;
+                    if (i >= Program.CurrentApp.Errors.Count) i = Program.CurrentApp.Errors.Count - 1;
 
                     result.ErrorNo = Program.CurrentApp.Errors[i].ErrorNo;
                     result.ErrorLine = Program.CurrentApp.Errors[i].ErrorLine;
-                    result.ErrorMessage=Program.CurrentApp.Errors[i].ErrorMessage;
-                    result.ErrorProcedure=Program.CurrentApp.Errors[i].ErrorProcedure;
+                    result.ErrorMessage = Program.CurrentApp.Errors[i].ErrorMessage;
+                    result.ErrorProcedure = Program.CurrentApp.Errors[i].ErrorProcedure;
                 }
             }
 
