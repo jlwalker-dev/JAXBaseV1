@@ -504,46 +504,16 @@ namespace JAXBase.XBase
 
             AppIO.DebugLog($">>> FixObjects for {thisJOW.JOWName} - baseclass {thisJOW.BaseClass}");
 
-            if (JAXLib.InListC(thisJOW.BaseClass, "editform", "robrowser"))
+            if (JAXLib.InListC(thisJOW.BaseClass, "editform"))
             {
+                // There has GOT TO BE a better way!  Do I have to rethinking all of this?
+                // I absolutely wish I had found Avalonia before I got into making the classes.
+
+
                 // EditForm has one child which is a grid.  This routine ties the grid
                 // to the form and sets a resize event to keep it sized correctly.
                 XBase_Class_Visual_Form form = (XBase_Class_Visual_Form)thisJOW.thisObject;
-
                 Avalonia.Controls.Control _grid = (Avalonia.Controls.Grid)form.InnerCanvas.Children[0];
-
-                if (thisJOW.BaseClass.Equals("robrowser", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (_grid is Avalonia.Controls.Grid layoutGrid)
-                    {
-                        if (layoutGrid.Children.Count > 0)
-                        {
-                            Avalonia.Controls.DataGrid? _dataGrid = layoutGrid.Children[0] as Avalonia.Controls.DataGrid;
-
-                            if (_dataGrid is not null)
-                            {
-                                // Force column regeneration and refresh
-                                _dataGrid.AutoGenerateColumns = false;
-                                _dataGrid.Columns.Clear();
-                                _dataGrid.AutoGenerateColumns = true;
-
-                                _dataGrid.InvalidateVisual();
-                                _dataGrid.InvalidateMeasure();
-                                _dataGrid.InvalidateArrange();
-
-                                // Additional layout refresh for Canvas scenario
-                                if (InnerCanvas != null)
-                                {
-                                    InnerCanvas.InvalidateVisual();
-                                    InnerCanvas.InvalidateMeasure();
-                                    InnerCanvas.InvalidateArrange();
-                                }
-                            }
-                            else
-                                throw new Exception("9999|");
-                        }
-                    }
-                }
 
                 Avalonia.Controls.Canvas.SetLeft(_grid, 0);
                 Avalonia.Controls.Canvas.SetTop(_grid, 0);

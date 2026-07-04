@@ -324,7 +324,7 @@ namespace JAXBase.Executor
                 dInfo = new();
             }
 
-            AppIO.Talk(dInfo.ToString());
+            AppIO.SendToIDE(dInfo.ToString());
             return "";
         }
 

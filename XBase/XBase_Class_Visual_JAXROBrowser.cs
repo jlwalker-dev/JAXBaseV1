@@ -9,6 +9,12 @@
  * Further, unlike WinForms, Avalonia does not really care for data alterations after setup.  It's possible, but so 
  * far it's turning out to be a royal pain.
  * 
+ * TODO
+ *      Detect when the table is closed
+ *      Detect and update table changes (add, delete, modify)
+ *      Tie into the BROWSE command
+ *      Throw error if no alias is specified/found or no table is open in the current workarea
+ *       
  */
 using JAXBase.Core;
 using JAXBase.Data;
@@ -31,6 +37,8 @@ namespace JAXBase.XBase
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
             bool result = await base.PostInit(callBack, parameterList);
+
+            await SetProperty("name",$"robrowser_{Program.CurrentApp.CurrentDS.CurrentWorkArea()}",0);
 
             // Populate JAXTABLE with sample columns and rows
             string alias = UserProperties["alias"].AsString();
@@ -109,6 +117,18 @@ namespace JAXBase.XBase
                 await thisWorkArea.DBFSkipRecord(1);
             }
 
+            // Create simple POCO rows for reliable binding
+            var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
+
+            foreach (System.Data.DataRow row in _jaxTable.Rows)
+            {
+                var simpleRow = new SimpleDataRow();
+                foreach (System.Data.DataColumn col in _jaxTable.Columns)
+                {
+                    simpleRow.Values[col.ColumnName] = row[col] ?? DBNull.Value;
+                }
+                rowList.Add(simpleRow);
+            }
 
             // Create the read-only DataGrid
             _dataGrid = new Avalonia.Controls.DataGrid
@@ -118,7 +138,7 @@ namespace JAXBase.XBase
                 GridLinesVisibility = Avalonia.Controls.DataGridGridLinesVisibility.All,
                 BorderThickness = new Avalonia.Thickness(1),
                 BorderBrush = Avalonia.Media.Brushes.Gray,
-                AutoGenerateColumns = true,
+                AutoGenerateColumns = false,
                 CanUserResizeColumns = true,
                 CanUserReorderColumns = true,
                 VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
@@ -128,13 +148,47 @@ namespace JAXBase.XBase
                 MinWidth = 1200
             };
 
-            // Bind to the DataTable
-            _dataGrid.ItemsSource = _jaxTable.DefaultView;
+            // Explicit columns using dictionary lookup
+            _dataGrid.Columns.Clear();
+            var testColumn = new Avalonia.Controls.DataGridTextColumn
+            {
+                Header = "All Data",
+                Binding = new Avalonia.Data.Binding(".")   // binds to ToString()
+            };
+            _dataGrid.Columns.Add(testColumn);
+            _dataGrid.ItemsSource = rowList;
+            _dataGrid.LoadingRow += (sender, e) =>
+            {
+                // This can help force rendering
+            };
+
+            AppIO.DebugLog($"RowList Count: {rowList.Count}");
 
             // Force column regeneration and refresh
             _dataGrid.AutoGenerateColumns = false;
+
+            // Bind the list
+            _dataGrid.ItemsSource = rowList;
+
+            AppIO.DebugLog($"RowList Count: {rowList.Count}");
+
+            // Explicit columns using DictionaryValueConverter (add the converter class first)
             _dataGrid.Columns.Clear();
-            _dataGrid.AutoGenerateColumns = true;
+            var converter = new DictionaryValueConverter();
+
+            foreach (System.Data.DataColumn dataCol in _jaxTable.Columns)
+            {
+                var textColumn = new Avalonia.Controls.DataGridTextColumn
+                {
+                    Header = dataCol.ColumnName,
+                    Binding = new Avalonia.Data.Binding("Values")
+                    {
+                        Converter = converter,
+                        ConverterParameter = dataCol.ColumnName
+                    }
+                };
+                _dataGrid.Columns.Add(textColumn);
+            }
 
             _dataGrid.InvalidateVisual();
             _dataGrid.InvalidateMeasure();
@@ -159,18 +213,48 @@ namespace JAXBase.XBase
                 AppIO.DebugLog($"Column: {col.ColumnName} ({col.DataType.Name})");
             }
 
-            // Layout
-            Avalonia.Controls.Grid mainGrid = new();
+            // Layout with ScrollViewer for reliable sizing and scrolling
+            Avalonia.Controls.ScrollViewer scrollViewer = new Avalonia.Controls.ScrollViewer
+            {
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                Width = UserProperties["width"].AsInt() - 20,
+                Height = UserProperties["height"].AsInt() - 20
+            };
+
+            Avalonia.Controls.Grid mainGrid = new Avalonia.Controls.Grid();
             mainGrid.Children.Add(_dataGrid);
 
-            Avalonia.Controls.Canvas.SetLeft(mainGrid, double.NaN);
-            Avalonia.Controls.Canvas.SetTop(mainGrid, double.NaN);
+            scrollViewer.Content = mainGrid;
 
-            mainGrid.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
-            mainGrid.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch;
+            Avalonia.Controls.Canvas.SetLeft(scrollViewer, 10);
+            Avalonia.Controls.Canvas.SetTop(scrollViewer, 10);
+
+            scrollViewer.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            scrollViewer.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch;
 
             if (InnerCanvas is not null)
-                InnerCanvas.Children.Add(mainGrid);
+                InnerCanvas.Children.Add(scrollViewer);
+            else
+                throw new Exception("9999|");
+
+            // Make sure the grid is set to the correct dimensions
+            if (_dataGrid != null)
+            {
+                _dataGrid.Width = UserProperties["width"].AsInt() - 20;
+                _dataGrid.Height = UserProperties["height"].AsInt() - 20;
+                _dataGrid.IsVisible = true;
+            }
+            else
+                throw new Exception("9999|");
+
+            if (mainGrid != null)
+            {
+                mainGrid.IsVisible = true;
+                mainGrid.InvalidateVisual();
+                mainGrid.InvalidateMeasure();
+                mainGrid.InvalidateArrange();
+            }
             else
                 throw new Exception("9999|");
 
@@ -355,6 +439,13 @@ namespace JAXBase.XBase
                                 result = 11;
                             break;
 
+                        case "name":
+                            if (objtk.Element.Type == "C")
+                                me.SetName(objtk.AsString());
+                            else
+                                result = 41;
+                            break;
+
                         case "showwindow":
                             if (windowLocked)
                                 result = 9702;
@@ -484,8 +575,35 @@ namespace JAXBase.XBase
                 "scalefactor,N,0","scrollbars,n,3","showintaskbar,L,.T.","showwindow,N,2",
                 "tabindex,N,1","tabstop,L,true","tag,C,","top,N,0","tooltiptext,c,",
                 "visible,L,true",
-                "width,N,800","windowstate,N,0","windowtype,N,0",
+                "width,N,1200","windowstate,N,0","windowtype,N,0",
             ];
+        }
+
+        private class SimpleDataRow
+        {
+            public System.Collections.Generic.Dictionary<string, object> Values { get; } = new();
+
+            public override string ToString()
+            {
+                return string.Join(" | ", Values.Values);
+            }
+        }
+
+        private class DictionaryValueConverter : Avalonia.Data.Converters.IValueConverter
+        {
+            public object? Convert(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+            {
+                if (value is System.Collections.Generic.Dictionary<string, object> dict && parameter is string key)
+                {
+                    return dict.TryGetValue(key, out var val) ? val : null;
+                }
+                return value?.ToString();
+            }
+
+            public object? ConvertBack(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+            {
+                return value;  // Simple passthrough for read-only grid
+            }
         }
     }
 }

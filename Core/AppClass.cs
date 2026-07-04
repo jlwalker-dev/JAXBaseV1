@@ -403,7 +403,7 @@ namespace JAXBase.Core
 
             _jax = new(this, "jax", "_jax", []);
             _jaxClass = (XBase_Class_JAX)_jax.thisObject!;
-
+            
             // Create system variables
             AppVars.CreateSystemVars();
 
