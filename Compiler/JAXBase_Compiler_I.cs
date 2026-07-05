@@ -23,7 +23,7 @@ namespace JAXBase.Compiler
 
             try
             {
-                Dictionary<string, string> code = [];
+                Dictionary<string, string> code = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 string cmd = string.Empty;
 
                 if (cmdLine.Replace(" ", string.Empty).Contains(")VALUES(", StringComparison.OrdinalIgnoreCase))

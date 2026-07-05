@@ -32,7 +32,7 @@ namespace JAXBase.Executor
 
                 JAXObjects.Token fromArray = new();
                 JAXObjectWrapper fromObject = new(Program.CurrentApp, "empty", "", []);
-                Dictionary<string, object>? fromJson = [];
+                Dictionary<string, object>? fromJson = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
                 if (fromType.Equals("A"))
                 {

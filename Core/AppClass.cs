@@ -8,6 +8,7 @@
  */
 using DeftSharp.Windows.Input.Mouse;
 using JAXBase.Compiler;
+using JAXBase.Core.Extensions;
 using JAXBase.Data;
 using JAXBase.Executor;
 using JAXBase.Language;
@@ -63,9 +64,16 @@ namespace JAXBase.Core
         // Used for var assignments
         public readonly Token NullToken;
 
-        public Dictionary<string, string> OnKeyLabel = [];
-        public Dictionary<string, string> MiscInfo = [];
-        public Dictionary<string, string> SysObjects = [];
+        // Language pack extensions
+        public string ISOLanguage { get; private set; } = "en";
+        public ILanguagePack ActiveLanguagePack { get; set; } = new EnglishLanguagePack();
+
+
+        // References for OnKeyLable, SysObjects, etc.  These are used to store information
+        // that is needed for the runtime, but not needed for the compiler.
+        public Dictionary<string, string> OnKeyLabel = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> MiscInfo = new Dictionary<string, string>();
+        public Dictionary<string, string> SysObjects = new Dictionary<string, string>();
         //public Dictionary<string, TryClass> TryStack = [];
         public List<ParameterClass> ParameterClassList = [];
         public List<string> CmdList = [];
@@ -97,8 +105,8 @@ namespace JAXBase.Core
         //public Dictionary<string, JAXConsole> JAXConsoles = []; // Console windows
 
         public Dictionary<char, string> XRef4Runtime = []; // Convert compler byte to runtime codes
-        public Dictionary<string, string> RunTimeCodes = []; // Runtime codes - Human readable runtime statement elements
-        public Dictionary<string, char> CompilerXRef = [];         // Convert compiler code to byte
+        public Dictionary<string, string> RunTimeCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); // Runtime codes - Human readable runtime statement elements
+        public Dictionary<string, char> CompilerXRef = new Dictionary<string, char>(StringComparer.OrdinalIgnoreCase);         // Convert compiler code to byte
 
         //public readonly JAXSettings JaxSettings = new();
         public readonly JAXVariables JaxVariables = new();
@@ -140,7 +148,7 @@ namespace JAXBase.Core
         public JAXObjectWrapper? _jax = null;
         public XBase_Class_JAX? _jaxClass = null;
 
-        public JAXObjectWrapper? _screen=null;
+        public JAXObjectWrapper? _screen = null;
         public XBase_Class_Screen? _screenClass = null;
 
         //-------------------------------------------------------------
@@ -157,7 +165,7 @@ namespace JAXBase.Core
         public readonly string HostName = Dns.GetHostName();
         public readonly string ComputerName = Environment.GetEnvironmentVariable("COMPUTERNAME") ?? Environment.MachineName;
         public readonly OSType OS = OSType.Unknown;
-        public readonly string ExeFolder = string.Empty;
+        public readonly string ExeFolder = JAXLib.JustFullPath(Application.ExecutablePath);
 
         public Avalonia.Controls.Window? WaitWindow = null;
 
@@ -195,7 +203,7 @@ namespace JAXBase.Core
         public List<FileHandle> FileHandles = [];
 
         public List<CCodeCache> CodeCache = [];
-        public Dictionary<string, CCodeCache> ClassLibs = [];
+        public Dictionary<string, CCodeCache> ClassLibs = new Dictionary<string, CCodeCache>(StringComparer.OrdinalIgnoreCase);
         public List<string> PRGCache = [];
 
         public List<ClassDef> ClassDefinitions = [];
@@ -233,8 +241,6 @@ namespace JAXBase.Core
         // ------------------------------------------------------------
         public MouseListener mouseListener = new();
         //public KeyboardListener keyboardListener = new();
-
-
 
 
         /*-----------------------------------------------------------*
@@ -403,7 +409,7 @@ namespace JAXBase.Core
 
             _jax = new(this, "jax", "_jax", []);
             _jaxClass = (XBase_Class_JAX)_jax.thisObject!;
-            
+
             // Create system variables
             AppVars.CreateSystemVars();
 
@@ -426,6 +432,15 @@ namespace JAXBase.Core
                                 string[] iLine = iniLine.Split('=');
                                 switch (iLine[0])
                                 {
+                                    case "language":
+                                        ISOLanguage = iLine[1].Trim();
+                                        if (ISOLanguage.Equals("en", StringComparison.OrdinalIgnoreCase) == false)
+                                        {
+                                            // Load the language pack
+                                            ActiveLanguagePack = JAXLanguageLists.GetLanguagePack(ISOLanguage);
+                                        }
+                                        break;
+
                                     case "logfolder":
                                         iLine[1] = JAXLib.Addbs(AppIO.FixDirectory(iLine[1].Trim()));
                                         bool logErr = false;

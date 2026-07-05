@@ -343,12 +343,12 @@ namespace JAXBase.Executor
 
                 // Once the user choses, write the assert and choice 
                 // to the debug console, a variable, or append to a text file
-                msg = msg + Environment.NewLine + "User selected " + res switch
+                msg = msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[34]+" " + res switch
                 {
-                    2 => "Cancel",
-                    3 => "Ingore",
-                    4 => "Ignore All",
-                    _ => "Debug"
+                    2 => Program.CurrentApp.ActiveLanguagePack.Phrase[35],
+                    3 => Program.CurrentApp.ActiveLanguagePack.Phrase[36],
+                    4 => Program.CurrentApp.ActiveLanguagePack.Phrase[37],
+                    _ => Program.CurrentApp.ActiveLanguagePack.Phrase[38]
                 };
 
                 string toType = string.Empty;
@@ -370,12 +370,12 @@ namespace JAXBase.Executor
                         throw new Exception("11|");
                 }
 
-                AppIO.DebugLog("ASSERT: " + result);
+                AppIO.DebugLog(Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper() + ": " + result);
 
                 // Always write to debug file if DEBUG is ON
                 if (Program.CurrentApp.CurrentDS.JaxSettings.Debug && string.IsNullOrWhiteSpace(Program.CurrentApp.CurrentDS.JaxSettings.DebugOut) == false)
                 {
-                    string filestr = "ASSERT:" + msg + Environment.NewLine + "RESPONSE: " + res.ToString() + Environment.NewLine;
+                    string filestr = Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper()+": " + msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[5].ToUpper() + ": " + res.ToString() + Environment.NewLine;
                     JAXLib.StrToFile(filestr, Program.CurrentApp.CurrentDS.JaxSettings.DebugOut, 1);
                 }
 
@@ -390,7 +390,7 @@ namespace JAXBase.Executor
 
                         if (string.IsNullOrWhiteSpace(toName) == false)
                         {
-                            string filestr = "ASSERT:" + msg + Environment.NewLine + "RESPONSE: " + res.ToString();
+                            string filestr = Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper() + ": " + msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[5].ToUpper() + ": " + res.ToString();
                             JAXLib.StrToFile(filestr, toName, 3);
                             //jbe.App.JAXConsoles[toName].WriteLine(filestr);
                         }
@@ -401,7 +401,7 @@ namespace JAXBase.Executor
                         if (string.IsNullOrWhiteSpace(toName))
                             throw new Exception("10|");
 
-                        string filestr = "ASSERT:" + msg + Environment.NewLine + "RESPONSE: " + res.ToString() + Environment.NewLine;
+                        string filestr = Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper() + ": " + msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[5].ToUpper() + ": " + res.ToString() + Environment.NewLine;
                         JAXLib.StrToFile(filestr, toName, 1);
                     }
                     else if (toType.Equals("var", StringComparison.OrdinalIgnoreCase))

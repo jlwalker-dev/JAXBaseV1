@@ -39,7 +39,7 @@ namespace JAXBase.Utilities
 {
     public class JAXMediaLibrary
     {
-        Dictionary<string, MediaEntry> MediaLibrary = [];
+        Dictionary<string, MediaEntry> MediaLibrary = new Dictionary<string, MediaEntry>(StringComparer.OrdinalIgnoreCase);
         AppClass App;
 
         public JAXMediaLibrary(AppClass app)

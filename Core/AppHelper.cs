@@ -1024,7 +1024,7 @@ namespace JAXBase.Core
                     // ------------------------------------------------------------------------------------
 
                     // Class=form: get class, baseclass, classloc, objname, properties, reserved3, and methods
-                    Dictionary<string, string> ParentChild = [];
+                    Dictionary<string, string> ParentChild = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     dt = await jdbf.DBFSelect("*", "all", "platform='WINDOWS' and not deleted()", true);
 
                     for (int i = 0; i < dt.Rows.Count; i++)

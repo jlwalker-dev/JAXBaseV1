@@ -120,8 +120,8 @@ namespace JAXBase.XBase
         public string SourceFile = string.Empty;        // Source file name
         public DateTime CompileDT = DateTime.MinValue;  // Date compiled
         public string StartProc = string.Empty;         // Starting Procedure
-        public Dictionary<string, int> Procedures = []; // Procedure pointers
-        public Dictionary<string, int> Classes = [];    // Class definition pointers
+        public Dictionary<string, int> Procedures = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase); // Procedure pointers
+        public Dictionary<string, int> Classes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);    // Class definition pointers
     }
 
     /*-----------------------------------------------------------*
@@ -133,7 +133,7 @@ namespace JAXBase.XBase
         public string ParentClass = string.Empty;
         public string ClassLibrary = string.Empty;
         public string PropertyCode = string.Empty;
-        public Dictionary<string, ClassMethod> methods = [];
+        public Dictionary<string, ClassMethod> methods = new Dictionary<string, ClassMethod>(StringComparer.OrdinalIgnoreCase);
     }
 
     public class ClassMethod
@@ -281,7 +281,7 @@ namespace JAXBase.XBase
 
         // User defined objects created via DEFINE.  Other objects
         // are attached to variables and don't show up here
-        public Dictionary<string, JAXObjectWrapper> UserObjects = [];
+        public Dictionary<string, JAXObjectWrapper> UserObjects = new Dictionary<string, JAXObjectWrapper>(StringComparer.OrdinalIgnoreCase);
 
         public JAXObjectWrapper? ThisObject = null;
         public string ThisObjectMethod = string.Empty;
@@ -289,8 +289,8 @@ namespace JAXBase.XBase
 
         public int LoopCounter = 0;
         public List<string> LoopStack = [];         // Loop stacks
-        public Dictionary<string, LoopClass> ForLoops = [];
-        public Dictionary<string, LoopClass> ScanLoops = [];
+        public Dictionary<string, LoopClass> ForLoops = new Dictionary<string, LoopClass>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, LoopClass> ScanLoops = new Dictionary<string, LoopClass>(StringComparer.OrdinalIgnoreCase);
         public List<TryClass> TryStack = [];
         public List<string> WithStack = [];         // With statements
 

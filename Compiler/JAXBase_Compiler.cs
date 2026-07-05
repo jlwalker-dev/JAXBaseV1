@@ -20,9 +20,9 @@ namespace JAXBase.Compiler
 {
     public class JAXBase_Compiler
     {
-        public readonly Dictionary<string, string> CompilerCodes = [];      // Compiler Code / Dictionary Code translation
+        public readonly Dictionary<string, string> CompilerCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);      // Compiler Code / Dictionary Code translation
         public readonly List<string> CodeDictionary = [];                   // Compiler Code Dictionary
-        public readonly Dictionary<string, string> KeyLabels = [];          // Holds the code to execute for active key handlers
+        public readonly Dictionary<string, string> KeyLabels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);          // Holds the code to execute for active key handlers
 
         private int lineNo = 0;
 
@@ -1588,7 +1588,7 @@ namespace JAXBase.Compiler
             int cmdRestLen = cmdRest.Length;
 
             // Create the codes dictionary
-            Dictionary<string, string> codes = [];
+            Dictionary<string, string> codes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < JAXLanguageLists.JAXCompilerDictionary.Length; i++)
                 codes.Add(CodeDictionary[i], string.Empty);
 
@@ -1728,7 +1728,7 @@ namespace JAXBase.Compiler
         {
             string HoldMe = cmdRest;
 
-            Dictionary<string, string> code = [];
+            Dictionary<string, string> code = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < JAXLanguageLists.JAXCompilerDictionary.Length; i++)
                 code.Add(CodeDictionary[i], string.Empty);
 
@@ -1807,6 +1807,8 @@ namespace JAXBase.Compiler
                         // Get next token to decide what to do with it
                         cmdRest = GetNextToken(cmdRest, string.Empty, out s);
                     }
+
+                    s = JAXLanguageLists.ToCanonicalKeyword(s, "commandparts");
 
                     // ------------------------------------------------------------------------------
                     // Process the next token by stepping through this massive

@@ -116,7 +116,7 @@ namespace JAXBase.Data
         // TODO - VFP 9 allows for 32,767 work areas.  We'll give unlimited
         // and then use a sorteddictionary to handle everything
         public Dictionary<int, JAXDirectDBF> WorkAreas = [];
-        public readonly Dictionary<string, JAXDirectDBF> Databases = [];
+        public readonly Dictionary<string, JAXDirectDBF> Databases = new Dictionary<string, JAXDirectDBF>(StringComparer.OrdinalIgnoreCase);
 
         public int CurrentWorkArea()
         {

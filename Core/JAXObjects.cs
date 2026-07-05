@@ -82,7 +82,8 @@ namespace JAXBase.Core
     public class JAXObjects
     {
         // This dictionary contains all token names and values for this object
-        public readonly Dictionary<string, Token> jaxObject = [];
+        public readonly Dictionary<string, Token> jaxObject = new Dictionary<string, Token>(StringComparer.OrdinalIgnoreCase);
+
         private bool AllowNew = true;
 
         public List<string> GetVarNames()

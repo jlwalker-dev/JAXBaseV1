@@ -3,14 +3,12 @@ using JAXBase.XBase;
 using System.Text;
 using System.Text.RegularExpressions;
 using JAXBase.Utilities;
+using JAXBase.Core.Extensions;
 
 namespace JAXBase.Executor
 {
     public class JAXBase_Executor_D
     {
-        const char literalEnd = (char)3;
-        const char paramEnd = (char)4;
-
         public static async Task<string> Define(string cmdLine)
         {
             try
@@ -251,6 +249,7 @@ namespace JAXBase.Executor
         public static async Task<string> Directory(ExecutorCodes eCodes)
         {
             StringBuilder dInfo = new();     // String to return to calling routine
+            ILanguagePack lang = Program.CurrentApp.ActiveLanguagePack;
 
             try
             {
@@ -283,13 +282,14 @@ namespace JAXBase.Executor
                             if (r == 1)
                             {
                                 dInfo.AppendLine();
-                                dInfo.AppendLine("File                                              Length Last Modified    Attributes");
+                                string title = string.Format(lang.Phrase[23], lang.Phrase[20], lang.Phrase[25], lang.Phrase[21], lang.Phrase[22]);
+                                dInfo.AppendLine(title);
                             }
 
                             if (int.TryParse(fileEntry[1], out int fsize) == false) fsize = 0;
 
                             dInfo.AppendLine();
-                            dInfo.AppendLine(string.Format("{0} {1} {2} {3}", fileEntry[0].Length > 40 ? fileEntry[0][..36] + "..." : fileEntry[0].PadRight(40), string.Format("{0,15:N0}", fsize), fileEntry[2].ToUpper().Replace("T", " ")[..16], fileEntry[3]));
+                            dInfo.AppendLine(string.Format(lang.Phrase[23], fileEntry[0].Length > 40 ? fileEntry[0][..36] + "..." : fileEntry[0].PadRight(40), fsize, fileEntry[2].ToUpper().Replace("T", " ")[..16], fileEntry[3]));
                         }
                         else
                         {
@@ -299,7 +299,7 @@ namespace JAXBase.Executor
                     }
 
                     dInfo.AppendLine();
-                    dInfo.AppendLine(string.Format("{0} files found", r > 0 ? r : "No"));
+                    dInfo.AppendLine(string.Format("{0} files", r > 0 ? r : 0));
                 }
 
                 if (eCodes.To.Count > 0)
@@ -370,6 +370,7 @@ namespace JAXBase.Executor
         public static async Task<string> Display(ExecutorCodes eCodes, bool display)
         {
             StringBuilder sb = new(Environment.NewLine);
+            ILanguagePack lang = Program.CurrentApp.ActiveLanguagePack;
 
             try
             {
@@ -520,12 +521,12 @@ namespace JAXBase.Executor
 
                                     // Program variable
                                     sb.AppendLine();
-                                    sb.AppendLine(string.Format("{0} {1}  {2} (Name: {3})", vars[j], t.Element.Type, typ, nam));
+                                    sb.AppendLine(string.Format(lang.Phrase[39], vars[j], t.Element.Type, typ, nam));
                                 }
                                 else
                                 {
                                     sb.AppendLine();
-                                    sb.AppendLine(string.Format("{0} {1}  {2}", vars[j], t.Element.Type, t.Element.Value));
+                                    sb.AppendLine(string.Format(lang.Phrase[40], vars[j], t.Element.Type, t.Element.Value));
                                 }
                             }
 
@@ -538,7 +539,7 @@ namespace JAXBase.Executor
                         else
                         {
                             sb.AppendLine();
-                            sb.AppendLine(string.Format("{0,-30} {1,-4}  {2,2}  {3,2}", "Field Name", "Type", "Length", "Dec"));
+                            sb.AppendLine(string.Format(lang.Phrase[41], lang.Phrase[15], lang.Phrase[16], lang.Phrase[17], lang.Phrase[18]));
 
                             for (int j = 0; j < Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Fields.Count; j++)
                             {
@@ -547,7 +548,7 @@ namespace JAXBase.Executor
                                 if (f.SystemColumn == false)
                                 {
                                     sb.AppendLine();
-                                    sb.AppendLine(string.Format("{0,-30} {1,-5}    {2,3}   {3,2}", f.FieldName, f.FieldType, f.FieldLen, "NBIFY".Contains(f.FieldType) ? f.FieldDec : ""));
+                                    sb.AppendLine(string.Format(lang.Phrase[42], f.FieldName, f.FieldType, f.FieldLen, "NBIFY".Contains(f.FieldType) ? f.FieldDec : ""));
                                 }
                             }
                         }

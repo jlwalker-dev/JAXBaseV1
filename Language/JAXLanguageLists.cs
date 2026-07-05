@@ -10,6 +10,8 @@
  *
  */
 using JAXBase.Core;
+using JAXBase.Core.Extensions;
+using JAXBase.Language.es;
 using JAXBase.Utilities;
 
 namespace JAXBase.Language
@@ -99,6 +101,27 @@ namespace JAXBase.Language
             "THROW","TOTAL", "TRY","UNLOCK","UNTIL","UPDATE","USE","WAIT","WITH","ZAP",
             "?","??","!", "=","~~~","*sc"];
 
+        public static string[] JAXCommandParts =
+            [
+            "alias","at","as","all","codepage","collate","datasession","index",
+            "for","field","fields","from","in", "into","json","like",
+            "memvar","message","next","name","of","on","order",
+            "pretext", "rest", "record", "size","step","session","tag","timeout",
+            "top","to", "type","values","when","with","while",
+            "ascending", "descending","exclusive", "shared", "noupdate", "unique",
+            "candidate", "nooptimioze", "validate", "additive", "again","array",
+            "file", "debug", "var","avg(", "cnt(", "max(","min(","npv(","std(","sum(","var(",
+            "null","not","autoinc","nocase","noconsole","noshow"
+            ];
+
+        public static string[] eCodeCommands =
+            [
+            "as","command","collate","codepage","database","expressions","flags","from","fname",
+            "for","fields","fileexpr","in","index","into","like","of","on","order","pretext",
+            "record","session","scope","sheet","subcmd","size","session","step","table","tag","timeout",
+            "to","type","text","values","when","while","with"
+            ];
+
 
         /// <summary>
         /// List of all supported SET commands - TODO: Validate against JAXBase_Executor_settings
@@ -132,15 +155,15 @@ namespace JAXBase.Language
         // Language code is abreviated in the lexxer AS0, AT3, etc
         // Language component is the name used for the dictionary
         // Byte code is what's written into the tokenized code identifying the statement component
-        public static string[] JAXCompilerDictionary = 
+        public static string[] JAXCompilerDictionary =
             [
-            "AL|alias|0x80","AS|as|0x82", "AT|at|0x84", "CS|subcmd|0x86", "CM|command|0x88", "CO|collate|0x8A", "CP|codepage|0x8C", 
-            "DB|database|0x90", "FG|flags|0x92", "FM|from|0x94", "FN|fname|0x96", "FR|for|0x98", "FV|fields|0x9A", 
-            "IN|in|0xA0", "IT|into|0xA2","IX|index|0xA4", "LK|like|0xa6", "MS|message|0xA8","xx|xxxx|0xAC","NM|name|0xAD",
-            "OF|of|0xB0", "ON|on|0xB4", "OR|order|0xB8","PT|pretext|0xB9", "RC|record|0xBA", 
-            "SC|scope|0xC0", "SH|sheet|0xC2", "SI|size|0xC4", "SS|session|0xC6", "ST|step|0xC8", 
+            "AL|alias|0x80","AS|as|0x82", "AT|at|0x84", "CS|subcmd|0x86", "CM|command|0x88", "CO|collate|0x8A", "CP|codepage|0x8C",
+            "DB|database|0x90", "FG|flags|0x92", "FM|from|0x94", "FN|fname|0x96", "FR|for|0x98", "FV|fields|0x9A",
+            "IN|in|0xA0", "IT|into|0xA2","IX|index|0xA4", "LK|like|0xa6", "MS|message|0xA8","NM|name|0xAD",
+            "OF|of|0xB0", "ON|on|0xB4", "OR|order|0xB8","PT|pretext|0xB9", "RC|record|0xBA",
+            "SC|scope|0xC0", "SH|sheet|0xC2", "SI|size|0xC4", "SS|session|0xC6", "ST|step|0xC8",
             "TB|table|0xD0", "TG|tag|0xD2", "TI|timeout|0xD4", "TO|to|0xD6", "TY|type|0xD8", "TX|text|0xDA",
-            "VL|values|0xE0", "WL|while|0xE2", "WH|when|0xE4", "WI||0xE6", "WT|with|0xE8", 
+            "VL|values|0xE0", "WL|while|0xE2", "WH|when|0xE4", "WI||0xE6", "WT|with|0xE8",
             "XF|fileexpr|0xF0", "XX|expressions|0xF2"
             ];
 
@@ -175,151 +198,109 @@ namespace JAXBase.Language
            "INS","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","BACKSPACE",
         "RIGHTMOUSE","LEFTMOUSE","MOUSE"];
 
-        /*-------------------------------------------------------------------------------------------*
-         * DEBUG ROUTINE
-         *-------------------------------------------------------------------------------------------*/
-        public static void Decompile(string fileStem, string block)
+
+        public static readonly Dictionary<int, string> JAXPrases = new Dictionary<int, string>
         {
-            int f;
+            { 1, "Command Window" },
+            { 2, "Main window has not been created" },
+            { 3, "default" },
+            { 4, "assert" },
+            { 5, "response"  },
+            { 6, "Current directory is" },
+            { 7, "Default directory is" },
+            { 8, "Session"},
+            { 9, "Workarea" },
+            { 10, "Local" },
+            { 11, "Private" },
+            { 12, "Public" },
+            { 13, "None" },
+            { 14, "Name" },
+            { 15, "Field Name" },
+            { 16, "Type" },
+            { 17, "Length" },
+            { 18, "Dec" },
+            { 19, "Created folder" },
+            { 20, "File" },
+            { 21, "Last Modified" },
+            { 22, "Attributes" },
+            { 23, "{0,40} {1,36} {2,-16} {3:20}" },
+            { 24, "" },
+            { 25, "Length" },
+            { 26, "Records" },
+            { 27, "" },
+            { 28, "" },
+            { 29, "Total" },
+            { 30, "{0} files" },
+            { 31, "{0} folders" },
+            { 32, "{0} records" },
+            { 33, "{0} bytes free" },
+            { 34, "User selected" },
+            { 35, "Cancel"  },
+            { 36, "Ignore" },
+            { 37, "Ignore All" },
+            { 38, "Debug" },
+            { 39, "{0} {1}  {2} (Name: {3})" },
+            { 40, "{0} {1}  {2}" },
+            { 41, "{0,-30} {1,-4}  {2,2}  {3,2}" },
+            { 42, "JAXBase Version" },
+            { 43, "" },
+            { 44, "" },
+            { 45, "" },
+            { 46, "" },
+            { 47, "" },
+            { 48, "" },
+            { 49, "" },
+            { 50, "" }
+        };
 
-            // Clear the file
-            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 0);
-
-            // Strip the header and map
-            char cmdByte = block[0];
-
-            // Is it a header?
-            if (cmdByte == AppClass.headerStartByte)
+        public static string GetWord(string input, string dictionary)
+        {
+            var pack = dictionary.ToUpper() switch
             {
-                f = block.IndexOf(AppClass.headerEndByte);
-                if (f < 0) throw new Exception("Missing header end byte");
-                f++;
+                "MATH" => Program.CurrentApp.ActiveLanguagePack.MathFunctions,
+                "COMMAND" => Program.CurrentApp.ActiveLanguagePack.JAXCommands,
+                "COMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.CommandParts,
+                "ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
+                "SET" => Program.CurrentApp.ActiveLanguagePack.SetCommands,
+                "OBJECT" => Program.CurrentApp.ActiveLanguagePack.JaxObjects,
+                "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
+                _ => throw new ArgumentException("Invalid dictionary specified")
+            };
 
-                if (block.Length > f)
-                    block = block[f..];
-                else
-                    block = string.Empty;
-            }
+            if (pack.TryGetValue(input, out string? canonical))
+                return canonical ?? input;
 
-            cmdByte = block[0];
-            if (cmdByte == AppClass.headerMapStartByte)
+            return input;  // fallback
+        }
+
+
+        public static string ToCanonicalKeyword(string input, string dictionary)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            var pack = dictionary.ToUpper() switch
             {
-                f = block.IndexOf(AppClass.headerMapEndByte);
-                if (f < 0) throw new Exception("Missing header map end byte");
-                f++;
+                "MATH" => Program.CurrentApp.ActiveLanguagePack.MathFunctions,
+                "COMMAND" => Program.CurrentApp.ActiveLanguagePack.JAXCommands,
+                "COMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.CommandParts,
+                "ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
+                "SET" => Program.CurrentApp.ActiveLanguagePack.SetCommands,
+                "OBJECT" => Program.CurrentApp.ActiveLanguagePack.JaxObjects,
+                "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
+                _ => throw new ArgumentException("Invalid dictionary specified")
+            };
 
-                if (block.Length > f)
-                    block = block[f..];
-                else
-                    block = string.Empty;
-            }
+            if (pack.TryGetValue(input, out string? canonical))
+                return canonical ?? input;
 
-            // Create the dump
-            string c = string.Empty;
-            string d = string.Empty;
-            string h = string.Empty;
-            int bt = 0;
+            return input;
+        }
 
-            for (int i = 0; i < block.Length; i++)
-            {
-                int b = block[i];
+        public static ILanguagePack GetLanguagePack(string languageCode)
+        {
+            //bool found = File.Exists("LanguagePacks/JAXBase-Lang-" + languageCode + ".dll");
 
-                // Start of a new command?cd c:\
-                if (b == AppClass.cmdByte && i > 0)
-                {
-                    JAXLib.StrToFile("      " + c, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile("      " + d, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile(bt.ToString("D4") + ": " + h, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-
-                    c = string.Empty;
-                    d = string.Empty;
-                    h = string.Empty;
-                    bt = i;
-                }
-
-                h += " " + b.ToString("X2") + " ";
-                d += JAXLib.Right("    " + b.ToString("D3").TrimStart('0', ' ') + " ", 4);
-                c += b > 32 && b < 127 ? " " + (char)b + "  " : "    ";
-            }
-
-            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-            JAXLib.StrToFile(string.Empty, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-
-            // Line by line decompilation
-            while (block.Length > 0)
-            {
-                // Get the start byte
-                cmdByte = block[0];
-
-                if (cmdByte == AppClass.cmdByte)
-                {
-                    f = block.IndexOf(AppClass.cmdEnd);
-                    while (block[f] == AppClass.cmdEnd) f++;
-
-                    if (f + 2 < 0) throw new Exception("Missing End bytes");
-                    f += 2;
-                    string cmdLine = block[..f];
-
-                    if (block.Length > f)
-                        block = block[f..];
-                    else
-                        block = string.Empty;
-
-                    string stmt = string.Empty;
-                    for (int i = 0; i < cmdLine.Length; i++)
-                    {
-                        stmt += (((int)cmdLine[i]).ToString("X2") + "/" + ((int)cmdLine[i]).ToString("D3").TrimStart('0', ' ') + "      ")[..8];
-                        if (i > 0 && i % 10 == 0) stmt += Environment.NewLine;
-                    }
-
-                    // Write the line
-                    JAXLib.StrToFile(stmt, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-
-                    cmdLine = cmdLine.TrimStart(AppClass.cmdByte); // get rid of the leading/trailing Statement Delimiters
-                    string[] stmts = cmdLine.Split(AppClass.stmtDelimiter, StringSplitOptions.RemoveEmptyEntries);
-                    string[] estmt = stmts[^1].Split(AppClass.cmdEnd);
-                    stmts[^1] = estmt[0];
-
-                    int cmdIdx = Program.CurrentApp.utl.Conv64ToInt(stmts[0][..2]);
-                    stmts[0] = stmts[0][2..];
-
-                    int lineNo = Program.CurrentApp.utl.Conv64ToInt(estmt[1]);
-                    string cmd = JAXCommands[cmdIdx].ToString() + " ";
-
-                    if (lineNo == 49) lineNo = lineNo - 0;
-
-                    // Build on the command
-                    for (int i = 0; i < stmts.Length; i++)
-                    {
-                        if (stmts[i].Length > 0)
-                        {
-                            stmt = stmts[i];
-                            char stmtCode = stmt[0];
-                            stmt = stmt[1..];
-
-                            if (Program.CurrentApp.XRef4Runtime.ContainsKey(stmtCode))
-                                cmd += Program.CurrentApp.XRef4Runtime[stmtCode] + " ";
-                            else
-                                cmd += "?" + stmtCode + "? ";
-
-
-                            stmt = stmt.Replace(AppClass.expByte.ToString(), "<xs>").Replace(AppClass.expEnd.ToString(), "<xe>")
-                                       .Replace(AppClass.expParam.ToString(), "<xp>").Replace(AppClass.expDelimiter.ToString(), "<XD>" + Environment.NewLine + "               ")
-                                       .Replace(AppClass.literalStart.ToString(), "<ls>").Replace(AppClass.literalEnd.ToString(), "<le>") + " ";
-
-                            cmd += stmt + Environment.NewLine + "            ";
-                        }
-                    }
-
-                    // Write the line
-                    JAXLib.StrToFile(lineNo.ToString("D5") + ": " + cmd, Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                    JAXLib.StrToFile("", Program.CurrentApp.JaxVariables._WorkPath + fileStem + "_cdf.txt", 3);
-                }
-                else
-                    throw new Exception(string.Format("Unknown command byte {0}", (int)cmdByte));
-            }
+            return languageCode=="es" ? new SpanishLanguagePack() : new EnglishLanguagePack();
         }
     }
 }

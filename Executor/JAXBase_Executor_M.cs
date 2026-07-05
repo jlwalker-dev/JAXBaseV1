@@ -1,8 +1,6 @@
 ﻿using JAXBase.Core;
-using JAXBase.Math;
 using JAXBase.Utilities;
 using JAXBase.XBase;
-using System.Windows.Annotations;
 
 namespace JAXBase.Executor
 {
@@ -13,7 +11,7 @@ namespace JAXBase.Executor
          * MD
          * 
          */
-        public static async Task<string> MD( ExecutorCodes eCodes)
+        public static async Task<string> MD(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 
@@ -33,7 +31,7 @@ namespace JAXBase.Executor
                     else
                     {
                         Directory.CreateDirectory(path);
-                        result = "Created folder " + path;
+                        result = Program.CurrentApp.ActiveLanguagePack.Phrase[19] + " " + path;
                     }
                 }
             }
@@ -66,7 +64,7 @@ namespace JAXBase.Executor
          * MODIFY VIEW ViewName
          * 
          */
-        public static async Task<string> Modify( ExecutorCodes eCodes)
+        public static async Task<string> Modify(ExecutorCodes eCodes)
         {
             string result = string.Empty;
             string editor, fPath, fName, fExt, name;

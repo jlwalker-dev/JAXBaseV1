@@ -56,7 +56,7 @@ namespace JAXBase.XBase
 
         public CookieContainer Cookies { get; private set; } = new CookieContainer();
 
-        public Dictionary<string, string> DefaultHeaders { get; } = new();
+        public Dictionary<string, string> DefaultHeaders { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 
         public JsonSerializerSettings JsonSettings { get; set; } = new JsonSerializerSettings
@@ -717,7 +717,7 @@ namespace JAXBase.XBase
         public int StatusCode { get; set; }
         public string ReasonPhrase { get; set; } = "";
         public string Content { get; set; } = "";
-        public Dictionary<string, string> Headers { get; } = new();
+        public Dictionary<string, string> Headers { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public bool IsSuccessStatusCode { get; set; }
 
         public static async Task<XBase_HttpResponse> FromHttpResponseAsync(HttpResponseMessage response, JsonSerializerSettings? settings = null)

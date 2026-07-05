@@ -50,7 +50,7 @@ namespace JAXBase.Core
                 string[] msg = ErrMessage.Split("|");
                 if (int.TryParse(msg[0], out int err)) jaxErr = err;
 
-                jaxErrMsg = JAXErrorList.JAXErrMsg(jaxErr, msg.Length > 1 ? msg[1] : string.Empty);
+                jaxErrMsg = JAXError.JAXErrMsg(jaxErr, msg.Length > 1 ? msg[1] : string.Empty);
             }
 
             JAXErrors e = new()

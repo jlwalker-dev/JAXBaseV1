@@ -71,7 +71,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.AlterTable()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.AlterTable()");
                 result = -1;
             }
             return result;
@@ -176,7 +176,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.Connect()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.Connect()");
                 result = -1;
             }
 
@@ -272,7 +272,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.CreateIndex()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.CreateIndex()");
                 result = -1;
             }
 
@@ -307,7 +307,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.CreateSP()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.CreateSP()");
                 result = -1;
             }
 
@@ -508,7 +508,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.CreateTable()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.CreateTable()");
                 result = -1;
             }
 
@@ -551,7 +551,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.DeleteIndex()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.DeleteIndex()");
                 result = -1;
             }
 
@@ -591,7 +591,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.DropTable()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.DropTable()");
                 result = -1;
             }
 
@@ -646,7 +646,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.Disconnect()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.Disconnect()");
                 result = -1;
             }
 
@@ -752,7 +752,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.Execute()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.Execute()");
                 result = -1;
             }
 
@@ -842,7 +842,7 @@ namespace JAXBase.XBase
                 ErrorCode = ex.ErrorCode;
                 ErrorMsg = ex.Message;
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, ErrorMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {result} - {JAXErrorList.JAXErrMsg(ErrorCode, ErrorMsg)} in XBase_ClassSQL_MSSS.ExecuteSelect()");
+                AppIO.DebugLog($"Error {result} - {JAXError.JAXErrMsg(ErrorCode, ErrorMsg)} in XBase_ClassSQL_MSSS.ExecuteSelect()");
                 result = -1;
             }
             catch (Exception ex)
@@ -852,7 +852,7 @@ namespace JAXBase.XBase
                 ErrorCode = 9999;
                 ErrorMsg = ex.Message;
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, ErrorMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {result} - {JAXErrorList.JAXErrMsg(ErrorCode, ErrorMsg)} in XBase_ClassSQL_MSSS.ExecuteSelect()");
+                AppIO.DebugLog($"Error {result} - {JAXError.JAXErrMsg(ErrorCode, ErrorMsg)} in XBase_ClassSQL_MSSS.ExecuteSelect()");
             }
 
             return dt;
@@ -966,7 +966,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.ExecuteSP()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.ExecuteSP()");
                 result = -1;
             }
 
@@ -1065,7 +1065,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.GetSPCode()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.GetSPCode()");
             }
 
             return result;
@@ -1134,7 +1134,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetParameterString()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetParameterString()");
                 result = -1;
             }
 
@@ -1287,7 +1287,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetParameter()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetParameter()");
             }
 
             return result;
@@ -1408,7 +1408,7 @@ namespace JAXBase.XBase
                     ErrorCode=1554;
                     result = -1;
                     SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, ErrorMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                    AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, ErrorMsg)} in XBase_ClassSQL_MSSS.SetParameter()");
+                    AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, ErrorMsg)} in XBase_ClassSQL_MSSS.SetParameter()");
                 }
             }
 
@@ -1457,7 +1457,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.ListDatabases()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.ListDatabases()");
                 result = -1;
             }
 
@@ -1546,7 +1546,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.ListTables()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.ListTables()");
                 result = -1;
             }
             return result;
@@ -1576,7 +1576,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.GetState()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.GetState()");
                 result = -1;
             }
 
@@ -1600,7 +1600,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetConnection()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetConnection()");
                 result = -1;
             }
 
@@ -1629,7 +1629,7 @@ namespace JAXBase.XBase
                     if (result < 0)
                     {
                         SQLBase._AddError(1526, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                        AppIO.DebugLog($"Error {result} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetConnection()");
+                        AppIO.DebugLog($"Error {result} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetConnection()");
                         result = -1;
                     }
                     else
@@ -1687,7 +1687,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.GetTableStructure()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.GetTableStructure()");
                 result = -1;
             }
 
@@ -1781,7 +1781,7 @@ namespace JAXBase.XBase
             if (ErrorCode > 0)
             {
                 SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
-                AppIO.DebugLog($"Error {ErrorCode} - {JAXErrorList.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SQLDatabaseInfo()");
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SQLDatabaseInfo()");
                 result = -1;
             }
 
