@@ -223,7 +223,7 @@ namespace JAXBase.Language
             { 20, "File" },
             { 21, "Last Modified" },
             { 22, "Attributes" },
-            { 23, "{0,40} {1,36} {2,-16} {3:20}" },
+            { 23, "{0,40} {1,36}  {2,-16}  {3:20}" },
             { 24, "" },
             { 25, "Length" },
             { 26, "Records" },

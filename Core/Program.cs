@@ -121,6 +121,7 @@
 
 using Avalonia;
 using JAXBase.Core.Extensions;
+using JAXBase.Language;
 
 namespace JAXBase.Core
 {
@@ -142,12 +143,12 @@ namespace JAXBase.Core
 
             App.SetEnvironment().Wait();
 
-            // === Extension System Wiring ===
-            var extensionContext = new DefaultExtensionContext();   // We'll create this next
-            ExtensionManager.Initialize(extensionContext);
-
-            // Load language pack (uses ISOLanguage from ini)
-            ExtensionManager.LoadLanguagePackAsync(CurrentApp.ISOLanguage).Wait();
+            // Init the english language pack and register it with the extension manager
+            var englishPack = new EnglishLanguagePack();
+            var context = new DefaultExtensionContext();
+            ExtensionManager.Initialize(context);
+            englishPack.Initialize(context);
+            CurrentApp.ActiveLanguagePack = englishPack;
 
             // Determine mode
             bool parm1IsRT = parm1.Equals("/rt", StringComparison.OrdinalIgnoreCase) ||
