@@ -10,11 +10,11 @@ namespace JAXBase.Executor
 {
     public class JAXBase_Executor
     {
-        readonly private Dictionary<string, string> Code = [];
+        readonly private Dictionary<string, string> Code = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         //JAXObjectWrapper? CallingObject = null;
         bool ContainsSource = false;
 
-        public Dictionary<string, int> CmdNum = [];
+        public Dictionary<string, int> CmdNum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         public JAXBase_Executor()
         {
@@ -507,11 +507,11 @@ namespace JAXBase.Executor
                                 "blank" => await JAXBase_Executor_B.Blank(eCodes),              // Version 0.8
                                 "browse" => await JAXBase_Executor_B.Browse(eCodes),            // Version 1
                                 "build" => JAXBase_Executor_B.Build(cmdRest),              // Version 1
-                                "cancel" => await JAXBase_Executor_C.Cancel(this, eCodes),
-                                "calculate" => await JAXBase_Executor_C.Calculate(this, eCodes),
-                                "case" => JAXBase_Executor_C.Case(this, eCodes),
-                                "catch" => await JAXBase_Executor_C.Catch(this, eCodes),
-                                "cd" => await JAXBase_Executor_C.CD(this, eCodes),
+                                "cancel" => await JAXBase_Executor_C.Cancel(eCodes),
+                                "calculate" => await JAXBase_Executor_C.Calculate(eCodes),
+                                "case" => JAXBase_Executor_C.Case(eCodes),
+                                "catch" => await JAXBase_Executor_C.Catch(eCodes),
+                                "cd" => await JAXBase_Executor_C.CD(eCodes),
                                 "clear" => await JAXBase_Executor_C.Clear(eCodes),
                                 "close" => await JAXBase_Executor_C.Close(eCodes),
                                 "compile" => await JAXBase_Executor_C.Compile(eCodes),

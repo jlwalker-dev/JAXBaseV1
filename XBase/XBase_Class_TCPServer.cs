@@ -35,7 +35,7 @@ namespace JAXBase.XBase
         private TcpListener? _listener;
         private CancellationTokenSource? _listenCts;
         private readonly Lock _lock = new();
-        private readonly ConcurrentDictionary<string, XBase_Class_TCPClient> _activeClients = new();
+        private readonly ConcurrentDictionary<string, XBase_Class_TCPClient> _activeClients = new(StringComparer.OrdinalIgnoreCase);
         private bool _isListening = false;
         private bool _disposed = false;
 

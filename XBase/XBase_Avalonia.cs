@@ -52,9 +52,9 @@ namespace JAXBase.XBase
 
         public JAXObjectWrapper me;
         public JAXObjectWrapper? Parent = null;
-        public Dictionary<string, JAXObjects.Token> UserProperties { get; private set; } = [];
-        public Dictionary<string, JAXObjects.Token> PrivateProperties { get; private set; } = [];
-        public Dictionary<string, MethodClass> Methods { get; private set; } = [];
+        public Dictionary<string, JAXObjects.Token> UserProperties { get; private set; } = new Dictionary<string, JAXObjects.Token>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, JAXObjects.Token> PrivateProperties { get; private set; } = new Dictionary<string, JAXObjects.Token>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, MethodClass> Methods { get; private set; } = new Dictionary<string, MethodClass>(StringComparer.OrdinalIgnoreCase);
 
         public double DIPScaling = 1D;
         public int MyIDX = -1;
@@ -222,7 +222,7 @@ namespace JAXBase.XBase
                     // Add the error to the array
                     aerr._avalue[i + 0].Value = errorNo;
                     aerr._avalue[i + 1].Value = lineNo;
-                    aerr._avalue[i + 2].Value = errorNo < 9999 ? JAXErrorList.JAXErrMsg(errorNo, message) : message;
+                    aerr._avalue[i + 2].Value = errorNo < 9999 ? JAXError.JAXErrMsg(errorNo, message) : message;
                     aerr._avalue[i + 3].Value = procedure;
                 }
             }

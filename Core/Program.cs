@@ -120,6 +120,7 @@
  * ----------------------------------------------------------------------------------------------------------*/
 
 using Avalonia;
+using JAXBase.Core.Extensions;
 
 namespace JAXBase.Core
 {
@@ -134,12 +135,19 @@ namespace JAXBase.Core
         static int Main(string[] args)
         {
             // Create the App class and parse any command line parameters
-            AppClass App = new AppClass();
+            AppClass App = new();
             CurrentApp = App;  // Set the static reference
             string appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name ?? "IDE";
             string parm1 = args.Length > 0 ? args[0] : string.Empty;
 
             App.SetEnvironment().Wait();
+
+            // === Extension System Wiring ===
+            var extensionContext = new DefaultExtensionContext();   // We'll create this next
+            ExtensionManager.Initialize(extensionContext);
+
+            // Load language pack (uses ISOLanguage from ini)
+            ExtensionManager.LoadLanguagePackAsync(CurrentApp.ISOLanguage).Wait();
 
             // Determine mode
             bool parm1IsRT = parm1.Equals("/rt", StringComparison.OrdinalIgnoreCase) ||

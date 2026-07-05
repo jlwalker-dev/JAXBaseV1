@@ -115,7 +115,7 @@ namespace JAXBase
                 // Initial text can be added via Inlines instead
             };
 
-            _mainOutputText.Inlines!.Add(new Avalonia.Controls.Documents.Run($"JAXBase Version {Program.Version}\n"));
+            _mainOutputText.Inlines!.Add(new Avalonia.Controls.Documents.Run($"{App.ActiveLanguagePack.Phrase[42]} {Program.Version}\n"));
 
             _mainOutputScroll = new ScrollViewer
             {
@@ -139,7 +139,7 @@ namespace JAXBase
             this.Closing += OnMainWindowClosing;
 
             // Bring up the command window (unchanged)
-            commandWindow = CommandWindow.Create(app, "Command Window");
+            commandWindow = CommandWindow.Create(app, app.ActiveLanguagePack.Phrase[1]);
         }
 
 

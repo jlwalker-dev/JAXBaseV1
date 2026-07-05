@@ -29,7 +29,7 @@ namespace JAXBase.Executor
          *      <literalStart>Code1<literalEnd><expStart>expressionList1<expEnd>[<exprDelimiter><literalStart>Code2<literalEnd><expStart>expressionList2<expEnd>]...
          *      
          */
-        public static async Task<string> Calculate(JAXBase_Executor jbe, ExecutorCodes eCodes)
+        public static async Task<string> Calculate(ExecutorCodes eCodes)
         {
             string editor = string.Empty;
 
@@ -232,7 +232,7 @@ namespace JAXBase.Executor
         /* 
          *  CANCEL
          */
-        public static async Task<string> Cancel(JAXBase_Executor jbe, ExecutorCodes? eCodes)
+        public static async Task<string> Cancel(ExecutorCodes? eCodes)
         {
             // If in runtime mode, then quit the application
             if (Program.CurrentApp.RuntimeFlag) await JAXBase_Executor_Q.Quit(null);
@@ -259,7 +259,7 @@ namespace JAXBase.Executor
          * it finds another related case structure statement.
          * 
          */
-        public static string Case(JAXBase_Executor jbe, ExecutorCodes eCodes)
+        public static string Case(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 
@@ -291,7 +291,7 @@ namespace JAXBase.Executor
          * 
          * CATCH [TO VarName] [WHEN lExpression]
          */
-        public static async Task<string> Catch(JAXBase_Executor jbe, ExecutorCodes eCodes)
+        public static async Task<string> Catch( ExecutorCodes eCodes)
         {
             string result = string.Empty;
             bool tryDone = false;
@@ -433,7 +433,7 @@ namespace JAXBase.Executor
         /*  
          * CD Path
          */
-        public static async Task<string> CD(JAXBase_Executor jbe, ExecutorCodes eCodes)
+        public static async Task<string> CD(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 
@@ -456,7 +456,7 @@ namespace JAXBase.Executor
                         if (Directory.Exists(path))
                         {
                             Program.CurrentApp.CurrentDS.JaxSettings.Default = path;
-                            result = "Default directory is " + path;
+                            result = Program.CurrentApp.ActiveLanguagePack.Phrase[7]+" " + path;
                         }
                     }
                     else
@@ -484,12 +484,12 @@ namespace JAXBase.Executor
                         if (string.IsNullOrWhiteSpace(path))
                         {
                             // Nothing to do, so just return the default
-                            AppIO.Talk("Current directory is " + Program.CurrentApp.CurrentDS.JaxSettings.Default);
+                            AppIO.Talk(Program.CurrentApp.ActiveLanguagePack.Phrase[8]+" " + Program.CurrentApp.CurrentDS.JaxSettings.Default);
                         }
                         else if (Directory.Exists(path))
                         {
                             Program.CurrentApp.CurrentDS.JaxSettings.Default = path;
-                            AppIO.Talk("Default directory is " + path);
+                            AppIO.Talk(Program.CurrentApp.ActiveLanguagePack.Phrase[7]+" " + path);
                         }
                         else
                             throw new Exception("202|" + path);

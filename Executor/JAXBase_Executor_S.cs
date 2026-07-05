@@ -171,7 +171,7 @@ namespace JAXBase.Executor
 
 
                 JAXObjectWrapper toObject = new(Program.CurrentApp, "empty", "", []);
-                Dictionary<string, object>? toJson = [];
+                Dictionary<string, object>? toJson = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
                 JAXObjects.Token toArray = new()
                 {
                     Col = 1,
@@ -217,13 +217,13 @@ namespace JAXBase.Executor
 
                             if (jObj is not null)
                             {
-                                Dictionary<string, object>? testJson = [];
+                                Dictionary<string, object>? testJson = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
                                 testJson = jObj.ToObject<Dictionary<string, object>>();
 
                                 if (testJson is not null)
                                     toJson = jObj.ToObject<Dictionary<string, object>>();
 
-                                testJson = [];
+                                testJson = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
                             }
                         }
                     }

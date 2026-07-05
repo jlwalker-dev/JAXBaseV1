@@ -467,7 +467,7 @@ namespace JAXBase.XBase
                                                 if (r == 0) App.CurrentError = Program.CurrentApp.Errors.Count;
 
                                                 string errMsg = err._avalue[r * err.Col + 2].ValueAsString;
-                                                string jaxErrMsg = JAXErrorList.JAXErrMsg(errNo, errMsg);
+                                                string jaxErrMsg = JAXError.JAXErrMsg(errNo, errMsg);
 
                                                 // Push them to the App error silently
                                                 JAXErrors e = new()
@@ -1841,7 +1841,7 @@ namespace JAXBase.XBase
 
             if (result > 0)
             {
-                msg = JAXErrorList.JAXErrMsg(result, msg);
+                msg = JAXError.JAXErrMsg(result, msg);
                 thisObject!._AddError(result, App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
 
                 if (string.IsNullOrWhiteSpace(App.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
