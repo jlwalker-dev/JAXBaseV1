@@ -44,7 +44,7 @@ namespace JAXBase.Core
             if (Program.CurrentApp.CurrentDS.JaxSettings.Debug)
             {
                 string debugText = DateTime.Now.ToString("MM/dd HH:mm:ss.ffff").PadRight(20) + text;
-                
+
                 lock (_logLock)
                 {
                     JAXLib.StrToFile(debugText, Program.CurrentApp.AppLogFile, 3);
@@ -148,10 +148,10 @@ namespace JAXBase.Core
             _currentSettings.IconName = Program.CurrentApp._screen!.thisObject!.UserProperties["icon"].AsString();
 
             // Save current command window settings
-            JAXObjects.Token setting =await Program.CurrentApp._screen!.GetProperty("commandWindowLeft");
-            _currentSettings.CommandWindowLeft =setting.AsInt();
+            JAXObjects.Token setting = await Program.CurrentApp._screen!.GetProperty("commandWindowLeft");
+            _currentSettings.CommandWindowLeft = setting.AsInt();
 
-            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowTop",0);
+            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowTop", 0);
             _currentSettings.CommandWindowTop = setting.AsInt();
 
             setting = await Program.CurrentApp._screen!.GetProperty("commandWindowWidth");
@@ -240,188 +240,166 @@ namespace JAXBase.Core
             }
             else
             {
-                int splkey = JAXLanguageLists.SpecialKeys.IndexOf(key) + 1;
-                result.keyLabel = key;
-
-                if (splkey > 0)
+                if (Program.CurrentApp.ActiveLanguagePack.SpecialKeys.ContainsKey(key))
                 {
-                    if (splkey < 10)
+                    switch (key.ToUpper())
                     {
-                        switch (splkey)
-                        {
-                            case 0:
-                                result.iKey = 9;
-                                result.aKey = Avalonia.Input.Key.Tab;
-                                if (CTRL) throw new Exception("10|");
-                                break;
-                            case 1:
-                                result.iKey = 15;
-                                result.aKey = Avalonia.Input.Key.Tab;
-                                if (CTRL) throw new Exception("10|");
-                                break;
-                            case 2:
-                                result.iKey = 9;
-                                result.aKey = (Avalonia.Input.Key)'{';
-                                if (CTRL || ALT || SHIFT) throw new Exception("10|");
-                                break;
-                            case 3:
-                                result.iKey = 15;
-                                result.aKey = (Avalonia.Input.Key)'}';
-                                if (CTRL || ALT || SHIFT) throw new Exception("10|");
-                                break;
-                            case 4:
-                                result.iKey = 13;
-                                result.aKey = Avalonia.Input.Key.Enter;
-                                if (ALT || SHIFT) throw new Exception("10|");
-                                break;
-                            case 5:
-                                result.iKey = 33;
-                                result.aKey = Avalonia.Input.Key.Space;
-                                if (ALT || SHIFT) throw new Exception("10|");
-                                break;
-                            case 6:
-                                result.iKey = 27;
-                                result.aKey = Avalonia.Input.Key.Escape;
-                                if (CTRL || ALT || SHIFT) throw new Exception("10|");
-                                break;
-                            case 7:
-                                result.iKey = 7;
-                                result.aKey = Avalonia.Input.Key.Delete;
-                                if (SHIFT) throw new Exception("10|");
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        switch (key)
-                        {
-                            case "F1":
-                                result.iKey = 28;
-                                result.aKey = Avalonia.Input.Key.F1;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F2":
-                                result.iKey = -1;
-                                result.aKey = Avalonia.Input.Key.F2;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F3":
-                                result.iKey = -2;
-                                result.aKey = Avalonia.Input.Key.F3;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F4":
-                                result.iKey = -3;
-                                result.aKey = Avalonia.Input.Key.F4;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F5":
-                                result.iKey = -4;
-                                result.aKey = Avalonia.Input.Key.F5;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F6":
-                                result.iKey = -5;
-                                result.aKey = Avalonia.Input.Key.F6;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F7":
-                                result.iKey = -6;
-                                result.aKey = Avalonia.Input.Key.F7;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F8":
-                                result.iKey = -7;
-                                result.aKey = Avalonia.Input.Key.F8;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F9":
-                                result.iKey = -8;
-                                result.aKey = Avalonia.Input.Key.F9;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F10":
-                                result.iKey = -9;
-                                result.aKey = Avalonia.Input.Key.F10;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F11":
-                                result.iKey = 133;
-                                result.aKey = Avalonia.Input.Key.F11;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "F12":
-                                result.iKey = 134;
-                                result.aKey = Avalonia.Input.Key.F12;
-                                if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "LEFTARROW":
-                                result.iKey = 19;
-                                result.aKey = Avalonia.Input.Key.Left;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "RIGHTARROW":
-                                result.iKey = 4;
-                                result.aKey = Avalonia.Input.Key.Right;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "UPARROW":
-                                result.iKey = 5;
-                                result.aKey = Avalonia.Input.Key.Up;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "DOWNARROW":
-                                result.iKey = 24;
-                                result.aKey = Avalonia.Input.Key.Down;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "HOME":
-                                result.iKey = 1;
-                                result.aKey = Avalonia.Input.Key.Home;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "END":
-                                result.iKey = 6;
-                                result.aKey = Avalonia.Input.Key.End;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "PGUP":
-                                result.iKey = 18;
-                                result.aKey = Avalonia.Input.Key.PageUp;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "PGDN":
-                                result.iKey = 3;
-                                result.aKey = Avalonia.Input.Key.PageDown;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "INS":
-                                result.iKey = 22;
-                                result.aKey = Avalonia.Input.Key.Insert;
-                                if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
-                                break;
-                            case "BACKSPACE":
-                                result.iKey = 127;
-                                result.aKey = Avalonia.Input.Key.Back;
-                                if (SHIFT || ALT) throw new Exception("10|");
-                                break;
-                            case "LEFTMOUSE":
-                                result.iKey = 251;
-                                if (SHIFT || ALT || CTRL) throw new Exception("10|");
-                                break;
-                            case "RIGHTMOUSE":
-                                result.iKey = 252;
-                                if (SHIFT || ALT || CTRL) throw new Exception("10|");
-                                break;
-                            case "MIDDLEMOUSE":
-                                result.iKey = 253;
-                                if (SHIFT || ALT || CTRL) throw new Exception("10|");
-                                break;
-                            case "MOUSE":
-                                result.iKey = 255;
-                                if (SHIFT || ALT || CTRL) throw new Exception("10|");
-                                break;
-                        }
+                        case "TAB":
+                            result.iKey = 9;
+                            result.aKey = (Avalonia.Input.Key)'{';
+                            if (CTRL || ALT || SHIFT) throw new Exception("10|");
+                            break;
+                        case "BACKTAB":
+                            result.iKey = 15;
+                            result.aKey = (Avalonia.Input.Key)'}';
+                            if (CTRL || ALT || SHIFT) throw new Exception("10|");
+                            break;
+                        case "ENTER":
+                            result.iKey = 13;
+                            result.aKey = Avalonia.Input.Key.Enter;
+                            if (ALT || SHIFT) throw new Exception("10|");
+                            break;
+                        case "SPACE":
+                            result.iKey = 33;
+                            result.aKey = Avalonia.Input.Key.Space;
+                            if (ALT || SHIFT) throw new Exception("10|");
+                            break;
+                        case "ESCAPE":
+                            result.iKey = 27;
+                            result.aKey = Avalonia.Input.Key.Escape;
+                            if (CTRL || ALT || SHIFT) throw new Exception("10|");
+                            break;
+                        case "DELETE":
+                            result.iKey = 7;
+                            result.aKey = Avalonia.Input.Key.Delete;
+                            if (SHIFT) throw new Exception("10|");
+                            break;
+                        case "F1":
+                            result.iKey = 28;
+                            result.aKey = Avalonia.Input.Key.F1;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F2":
+                            result.iKey = -1;
+                            result.aKey = Avalonia.Input.Key.F2;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F3":
+                            result.iKey = -2;
+                            result.aKey = Avalonia.Input.Key.F3;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F4":
+                            result.iKey = -3;
+                            result.aKey = Avalonia.Input.Key.F4;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F5":
+                            result.iKey = -4;
+                            result.aKey = Avalonia.Input.Key.F5;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F6":
+                            result.iKey = -5;
+                            result.aKey = Avalonia.Input.Key.F6;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F7":
+                            result.iKey = -6;
+                            result.aKey = Avalonia.Input.Key.F7;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F8":
+                            result.iKey = -7;
+                            result.aKey = Avalonia.Input.Key.F8;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F9":
+                            result.iKey = -8;
+                            result.aKey = Avalonia.Input.Key.F9;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F10":
+                            result.iKey = -9;
+                            result.aKey = Avalonia.Input.Key.F10;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F11":
+                            result.iKey = 133;
+                            result.aKey = Avalonia.Input.Key.F11;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "F12":
+                            result.iKey = 134;
+                            result.aKey = Avalonia.Input.Key.F12;
+                            if ((SHIFT && CTRL) || (SHIFT && ALT) || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "LEFTARROW":
+                            result.iKey = 19;
+                            result.aKey = Avalonia.Input.Key.Left;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "RIGHTARROW":
+                            result.iKey = 4;
+                            result.aKey = Avalonia.Input.Key.Right;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "UPARROW":
+                            result.iKey = 5;
+                            result.aKey = Avalonia.Input.Key.Up;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "DOWNARROW":
+                            result.iKey = 24;
+                            result.aKey = Avalonia.Input.Key.Down;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "HOME":
+                            result.iKey = 1;
+                            result.aKey = Avalonia.Input.Key.Home;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "END":
+                            result.iKey = 6;
+                            result.aKey = Avalonia.Input.Key.End;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "PGUP":
+                            result.iKey = 18;
+                            result.aKey = Avalonia.Input.Key.PageUp;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "PGDN":
+                            result.iKey = 3;
+                            result.aKey = Avalonia.Input.Key.PageDown;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "INS":
+                            result.iKey = 22;
+                            result.aKey = Avalonia.Input.Key.Insert;
+                            if (SHIFT || (CTRL && ALT)) throw new Exception("10|");
+                            break;
+                        case "BACKSPACE":
+                            result.iKey = 127;
+                            result.aKey = Avalonia.Input.Key.Back;
+                            if (SHIFT || ALT) throw new Exception("10|");
+                            break;
+                        case "LEFTMOUSE":
+                            result.iKey = 251;
+                            if (SHIFT || ALT || CTRL) throw new Exception("10|");
+                            break;
+                        case "RIGHTMOUSE":
+                            result.iKey = 252;
+                            if (SHIFT || ALT || CTRL) throw new Exception("10|");
+                            break;
+                        case "MIDDLEMOUSE":
+                            result.iKey = 253;
+                            if (SHIFT || ALT || CTRL) throw new Exception("10|");
+                            break;
+                        case "MOUSE":
+                            result.iKey = 255;
+                            if (SHIFT || ALT || CTRL) throw new Exception("10|");
+                            break;
                     }
                 }
                 else

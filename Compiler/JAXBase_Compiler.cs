@@ -9,6 +9,7 @@
  * 
  * -------------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
+using JAXBase.Core.Extensions;
 using JAXBase.Language;
 using JAXBase.Math;
 using JAXBase.Utilities;
@@ -24,7 +25,14 @@ namespace JAXBase.Compiler
         public readonly List<string> CodeDictionary = [];                   // Compiler Code Dictionary
         public readonly Dictionary<string, string> KeyLabels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);          // Holds the code to execute for active key handlers
 
+        public readonly Dictionary<string, string> RevCommandParts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);  // Holds the reverse of the command parts for parsing
+
         private int lineNo = 0;
+        public ILanguagePack? lang = null;
+
+        private string toCmd = "";
+        private string endtextCMD = "";
+        private string textCmd = "";
 
         /* -----------------------------------------------------------------------------------------*
          * Instantiate the compiler class
@@ -145,6 +153,14 @@ namespace JAXBase.Compiler
          * -----------------------------------------------------------------------------------------*/
         private string ParseRest(string cmd, string cmdRest)
         {
+            if (string.IsNullOrWhiteSpace(toCmd))
+            {
+                toCmd = Program.CurrentApp.ActiveLanguagePack.RevCommandParts.TryGetValue("to", out string? t) ? t : " to ";
+                endtextCMD = Program.CurrentApp.ActiveLanguagePack.RevCommandParts.TryGetValue("endtext", out t) ? t : "endtext";
+                textCmd = Program.CurrentApp.ActiveLanguagePack.RevCommandParts.TryGetValue("text", out t) ? t : "text";
+            }
+
+
             //Function and EndFunction are the same as Procedure and EndProcedure
             switch (cmd.ToLower())
             {
@@ -159,6 +175,7 @@ namespace JAXBase.Compiler
                     break;
             }
 
+
             string result = cmd.ToLower() switch
             {
                 "activate" => JAXBase_Compiler_A.Activate(this, cmdRest),
@@ -168,7 +185,7 @@ namespace JAXBase.Compiler
                 "append" => JAXBase_Compiler_A.Append(this, cmdRest),
                 "assert" => Generic_Parser(cmdRest, "XX*,MS0,TO8", ["nodialog"]),
                 "average" => Generic_Parser(cmdRest, "XX3,SC0,FR0,WL0,TO1", ["nooptimize"]),
-                "begin" => Generic_Parser(cmdRest, string.Empty, ["TRANSACTION"]),
+                "begin" => Generic_Parser(cmdRest, string.Empty, ["transaction"]),
                 "blank" => Generic_Parser(cmdRest, "FV1,SC0,FR0,WL0,IN0", ["default", "autoinc"]),
                 "browse" => Generic_Parser(cmdRest, "FV1,SC0,FR0", ["noappend", "nodelete", "noshow", "nowait"]),
                 "build" => throw new Exception("1999|BUILD"),
@@ -327,7 +344,7 @@ namespace JAXBase.Compiler
                     cmpLine.Append(blockLine.TrimEnd(';').TrimEnd() + " ");
                     continue;
                 }
-                else 
+                else
                     cmpLine.Append(blockLine);
 
                 block.Add(cmpLine.ToString());
@@ -356,7 +373,7 @@ namespace JAXBase.Compiler
                         ln = blockLine;
 
                     // Have we run into a TEXT command?
-                    if ((ln[..4].Equals("text", StringComparison.OrdinalIgnoreCase) && ln.Length == 4) || (ln.Length > 4 && ln[..5].Equals("text ", StringComparison.OrdinalIgnoreCase)))
+                    if ((ln[..4].Equals(textCmd, StringComparison.OrdinalIgnoreCase) && ln.Length == 4) || (ln.Length > 4 && ln[..5].Equals("text ", StringComparison.OrdinalIgnoreCase)))
                     {
                         cmpLine = new(ln + Environment.NewLine);
 
@@ -365,7 +382,7 @@ namespace JAXBase.Compiler
                         {
                             i++;
                             ln = block[i].Trim();
-                            if (ln.Length == 7 && ln.Equals("endtext", StringComparison.OrdinalIgnoreCase) || ln.Length > 7 && ln.Equals("endtext ", StringComparison.OrdinalIgnoreCase))
+                            if (ln.Length == endtextCMD.Length && ln.Equals(endtextCMD, StringComparison.OrdinalIgnoreCase) || ln.Length > endtextCMD.Length+1 && ln.Equals(endtextCMD+" ", StringComparison.OrdinalIgnoreCase))
                             {
                                 ln = "";
                                 i++;    // toss the endtext
@@ -385,8 +402,8 @@ namespace JAXBase.Compiler
                     Program.CurrentApp.utl.Conv64(lineNo, 2, out string lnNo);
 
                     // Process the command
-                    if (Program.CurrentApp.InCompile && includeSource && cLine.Length > 0)
-                        cmpBlock.Append(AppClass.cmdByte + Program.CurrentApp.MiscInfo["sourcecode"] + Program.CurrentApp.CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
+                    //if (Program.CurrentApp.InCompile && includeSource && cLine.Length > 0)
+                    //    cmpBlock.Append(AppClass.cmdByte + Program.CurrentApp.MiscInfo["sourcecode"] + Program.CurrentApp.CompilerXRef["CM"].ToString() + AppClass.literalStart.ToString() + cLine + AppClass.literalEnd.ToString() + AppClass.cmdEnd + lnNo);
 
                     // Only append line number if there is something returned
                     if (cmdLine.Length > 0) cmpBlock.Append(cmdLine + lnNo);
@@ -469,6 +486,30 @@ namespace JAXBase.Compiler
                 // Get the leading token or variable/object name
                 string c = GetNextToken(cmdLine, " )]=", out string cmd);
 
+
+                // ------------------------------------------------------------------------
+                // Convert command from the language pack to English
+                // ------------------------------------------------------------------------
+                string jaxCmd = cmd;
+
+                // One time check to see if the language pack has been set
+                if (lang is null)
+                {
+                    lang = Program.CurrentApp.ActiveLanguagePack;
+
+                    foreach (var cpart in lang.CommandParts)
+                        RevCommandParts.Add(cpart.Value, cpart.Key);
+                }
+
+                // Is this a recognized abbreviation?
+                if (lang.Abreviations.TryGetValue(jaxCmd, out string? abbr))
+                    jaxCmd = abbr;
+
+                // Convert the command to the english equivalent
+                if (lang.JAXCommands.TryGetValue(jaxCmd, out string? translatedCmd))
+                    jaxCmd = translatedCmd;
+                // ------------------------------------------------------------------------
+
                 // Special case for something like a[b[1]]=4 as
                 // we actually want the last paren/bracket to
                 // be part of the command
@@ -483,14 +524,14 @@ namespace JAXBase.Compiler
 
                 // cmdRest should now have the rest of the line of code
                 // and cmd should have the command token
-                if (JAXLib.InListC(cmd, "~~~", "*sc"))
+                if (JAXLib.InListC(cmd, "~~~"))
                 {
                     throw new Exception("10||Internal commands are not allowed in source code: " + cmd);
                 }
 
                 if ((cmd.Length > 1 && cmd[..2] == "&&") || (cmd.Length > 0 && cmd[0] == '*'))
                 {
-                    // Remark
+                    // It's a remark
                     iCmd = 10000;
                 }
                 else if (cmd == "&")
@@ -504,10 +545,11 @@ namespace JAXBase.Compiler
                     // it's a variable and make it into a store command
                     // The variable could also be an object.property,
                     // object.object.property, and so on.
+
                     iCmd = Program.CurrentApp.CmdList.IndexOf("store");
 
                     if (cmd.Length > 0)
-                        cmdRest = cmdRest[1..].Trim() + " to " + cmd;
+                        cmdRest = cmdRest[1..].Trim() + toCmd + cmd;
                 }
                 else if (cmd.Contains("."))
                 {
@@ -530,39 +572,11 @@ namespace JAXBase.Compiler
                 }
                 else
                 {
-                    switch (cmd.ToLower())
-                    {
-                        case "aparameter": cmd = "aparameters"; break;
-                        case "brow": cmd = "browse"; break;
-                        case "calc": cmd = "calculate"; break;
-                        case "comp": cmd = "compile"; break;
-                        case "def": cmd = "define"; break;
-                        case "del": cmd = "delete"; break;
-                        case "dim": cmd = "dimension"; break;
-                        case "dir": cmd = "directory"; break;
-                        case "doevent": cmd = "doevents"; break;
-                        case "enddef": cmd = "enddefine"; break;
-                        case "endfunc": cmd = "endfunction"; break;
-                        case "endproc": cmd = "endprocedure"; break;
-                        case "endtran": cmd = "endtransaction"; break;
-                        case "func": cmd = "function"; break;
-                        case "gath": cmd = "gather"; break;
-                        case "keyb": cmd = "keyboard"; break;
-                        case "loc": cmd = "locate"; break;
-                        case "lparameter": cmd = "lparameters"; break;
-                        case "lproc": cmd = "lprocedure"; break;
-                        case "modi": cmd = "modify"; break;
-                        case "parameter": cmd = "parameters"; break;
-                        case "proc": cmd = "procedure"; break;
-                        case "repl": cmd = "replace"; break;
-                        case "scat": cmd = "scatter"; break;
-                    }
-
-                    // Expecting a command to parse here
-                    iCmd = Program.CurrentApp.CmdList.IndexOf(cmd.ToLower());
+                    // Expecting a command to parse here from jaxCmd
+                    iCmd = Program.CurrentApp.CmdList.IndexOf(jaxCmd.ToLower());
                     if (iCmd < 0 && cmd.Length > 2)
                     {
-                        iCmd = Program.CurrentApp.CmdList.FindIndex(a => a.StartsWith(cmd, StringComparison.OrdinalIgnoreCase)); // TODO - Needs work to deal with (
+                        iCmd = Program.CurrentApp.CmdList.FindIndex(a => a.StartsWith(jaxCmd, StringComparison.OrdinalIgnoreCase)); // TODO - Needs work to deal with (
                     }
 
                     if (iCmd < 0)
@@ -864,6 +878,7 @@ namespace JAXBase.Compiler
                 if (string.IsNullOrWhiteSpace(cmdRest) == false)
                 {
                     cmdRest = GetNextToken(cmdRest, string.Empty, out string onCmd);
+                    onCmd = Program.CurrentApp.ActiveLanguagePack.CommandParts.TryGetValue(onCmd, out string? cp) ? cp : onCmd; // Translate it
 
                     switch (onCmd.ToLower())
                     {
@@ -940,6 +955,8 @@ namespace JAXBase.Compiler
                 if (string.IsNullOrWhiteSpace(cmdRest) == false)
                 {
                     cmdRest = GetNextToken(cmdRest, string.Empty, out string key);
+
+                    key = Program.CurrentApp.ActiveLanguagePack.CommandParts.TryGetValue(key, out string? k) ? k : (Program.CurrentApp.ActiveLanguagePack.SetCommands.TryGetValue(key, out k) ? k!: key);
 
                     // Some commands assume an empty key means something
                     for (int i = 0; i < keys.Length; i++)
@@ -1213,7 +1230,7 @@ namespace JAXBase.Compiler
             string result = string.Empty;
             string exprResult = string.Empty;
 
-            if (command.Contains(".exec",StringComparison.OrdinalIgnoreCase))
+            if (command.Contains(".exec", StringComparison.OrdinalIgnoreCase))
             {
                 int iii = 0;
             }
@@ -1230,7 +1247,12 @@ namespace JAXBase.Compiler
                 }
                 else
                 {
-                    int f = command.ToLower().LastIndexOf(" to ");
+                    // Get the TO translation and look for it in the code
+                    // It's up to the user to write the code without ambiguity because
+                    // I still don't grok the logic to a context sensitive lexar.
+                    string toCmd = RevCommandParts.TryGetValue("TO", out string? cmd) ? " " + cmd + " " : throw new Exception("1999|TO command not found in language command parts");
+
+                    int f = command.ToLower().LastIndexOf(toCmd);
                     if (f > 0)
                     {
                         target = command[(f + 3)..].Trim();
@@ -1808,6 +1830,7 @@ namespace JAXBase.Compiler
                         cmdRest = GetNextToken(cmdRest, string.Empty, out s);
                     }
 
+                    // TODO - this needs to be thought over a bit
                     s = JAXLanguageLists.ToCanonicalKeyword(s, "commandparts");
 
                     // ------------------------------------------------------------------------------

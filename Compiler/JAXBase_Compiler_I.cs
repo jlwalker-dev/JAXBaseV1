@@ -26,12 +26,15 @@ namespace JAXBase.Compiler
                 Dictionary<string, string> code = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 string cmd = string.Empty;
 
-                if (cmdLine.Replace(" ", string.Empty).Contains(")VALUES(", StringComparison.OrdinalIgnoreCase))
+                string values = jbc.lang!.CommandParts.TryGetValue("values", out string? val) ? ")" + val + "(" : throw new Exception("1999|VALUES");
+                string from = jbc.lang!.CommandParts.TryGetValue("from", out string? frm) ? " " + frm + " " : throw new Exception("1999|FROM");
+
+                if (cmdLine.Replace(" ", string.Empty).Contains(values, StringComparison.OrdinalIgnoreCase))
                 {
                     cmd = "F";  // Varlist
                     result = jbc.Generic_Parser(cmdLine, "IT0,XX#,VL0", []);
                 }
-                else if (cmdLine.Contains(" from ", StringComparison.OrdinalIgnoreCase))
+                else if (cmdLine.Contains(from, StringComparison.OrdinalIgnoreCase))
                 {
                     cmd = "A";  // memory vars
                     result = jbc.Generic_Parser(cmdLine, "IT0,FM1", []);

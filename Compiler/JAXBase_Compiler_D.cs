@@ -18,8 +18,15 @@ namespace JAXBase.Compiler
 
             try
             {
-                jbc.GetNextToken(cmdLine, string.Empty, out string defType);
-                switch (defType.ToLower())
+                jbc.GetNextToken(cmdLine, string.Empty, out string token);
+
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+                switch (token.ToLower())
                 {
                     case "class": result = DefineClass(jbc, cmdLine); break;
                     default:
@@ -83,14 +90,20 @@ namespace JAXBase.Compiler
 
             try
             {
-                jbc.GetNextToken(cmdLine, string.Empty, out string cmd);
+                jbc.GetNextToken(cmdLine, string.Empty, out string token);
 
-                switch (cmd.ToLower())
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+                switch (token.ToLower())
                 {
                     case "database":
                     case "table":
                     case "file":
-                        result = jbc.Key_Parser(JAXLib.Proper(cmdLine), [cmd], "XX0", []);
+                        result = jbc.Key_Parser(JAXLib.Proper(cmdLine), [token], "XX0", []);
                         break;
 
                     default:
@@ -140,10 +153,17 @@ namespace JAXBase.Compiler
 
             try
             {
-                jbc.GetNextToken(cmdLine, " ", out string tok);
-                tok = tok.ToLower();
+                jbc.GetNextToken(cmdLine, " ", out string token);
 
-                switch (tok)
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+                token = token.ToLower();
+
+                switch (token)
                 {
                     case "database":
                     case "data":
@@ -198,7 +218,7 @@ namespace JAXBase.Compiler
                         break;
 
                     default:
-                        throw new Exception("1999|" + tok);
+                        throw new Exception("1999|" + token);
                 }
             }
             catch (Exception ex)
@@ -264,21 +284,27 @@ namespace JAXBase.Compiler
 
             try
             {
-                jbc.GetNextToken(cmdLine, " (", out string nextToken);
+                jbc.GetNextToken(cmdLine, " (", out string token);
 
-                switch (nextToken.ToLower())
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+                switch (token.ToLower())
                 {
                     case "label":
                     case "report":
                         int f1 = cmdLine.ToLower().IndexOf(" with ");
                         int f2 = f1 > 0 ? cmdLine.ToLower().IndexOf('=', f1) : -1;
 
-                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + nextToken[..1].ToUpper() + AppClass.stmtDelimiter;
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + token[..1].ToUpper() + AppClass.stmtDelimiter;
 
                         if (f2 < 0)
-                            result += jbc.Key_Parser(cmdLine, [nextToken], "XX0,WT1", ["noconsole"]);    // WITH reportObj
+                            result += jbc.Key_Parser(cmdLine, [token], "XX0,WT1", ["noconsole"]);    // WITH reportObj
                         else
-                            result += jbc.Key_Parser(cmdLine, [nextToken], "XX0,WT0", ["noconsole"]);    // WITH paramList
+                            result += jbc.Key_Parser(cmdLine, [token], "XX0,WT0", ["noconsole"]);    // WITH paramList
                         break;
 
                     case "form":    // DO FORM FormName | ? [NAME VarName [LINKED]] [WITH cParameterList] [TO VarName] [NOREAD] [NOSHOW]
@@ -290,7 +316,7 @@ namespace JAXBase.Compiler
                         break;
 
                     case "while":   // DO WHILE lExpression 
-                        cmdLine = jbc.GetNextToken(cmdLine, string.Empty, out nextToken);
+                        cmdLine = jbc.GetNextToken(cmdLine, string.Empty, out token);
                         expression = jbc.GetRPNString(Program.CurrentApp, cmdLine);
                         result = Program.CurrentApp.CompilerXRef["CS"].ToString() + AppLoop.AddLoop("W") + AppClass.stmtDelimiter +Program.CurrentApp.CompilerXRef["XX"].ToString()+ expression;
                         break;

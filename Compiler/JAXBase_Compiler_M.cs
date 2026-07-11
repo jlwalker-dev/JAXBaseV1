@@ -26,10 +26,17 @@ namespace JAXBase.Compiler
 
             try
             {
-                cmdRest = jbc.GetNextToken(cmdRest, " ", out string mType);
-                mType = mType.ToLower().Trim();
+                cmdRest = jbc.GetNextToken(cmdRest, " ", out string token);
 
-                mType = mType switch
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+                token = token.ToLower().Trim();
+
+                string mType = token switch
                 {
                     "blob" => "B",
                     "class" => "C",

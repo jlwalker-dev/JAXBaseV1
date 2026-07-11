@@ -7,8 +7,6 @@ namespace JAXBase.Executor
     {
         public static void Stepper()
         {
-            //if (App.CurrentDS.JaxSettings.Step && cmdString.Equals("*sc", StringComparison.OrdinalIgnoreCase) == false)
-            //{
             //    // If debugger screen is not active, start it up
             //    if (App.JaxDebugger is null)
             //    {
@@ -49,8 +47,6 @@ namespace JAXBase.Executor
             //                break;
             //        }
             //    }
-            //}
-
         }
     }
 }

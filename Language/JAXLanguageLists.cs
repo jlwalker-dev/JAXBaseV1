@@ -12,7 +12,6 @@
 using JAXBase.Core;
 using JAXBase.Core.Extensions;
 using JAXBase.Language.es;
-using JAXBase.Utilities;
 
 namespace JAXBase.Language
 {
@@ -34,7 +33,6 @@ namespace JAXBase.Language
                 "CANDIDATE(", "CAPSLOCK(", "CAST(", "CD(", "CDOW(", "CEILING(", "CHR(", "CHRSAW(", "CHRTRAN(",
                 "CHRTRANC(", "CLEARRESULTSET(", "CMONTH(", "CNTBAR(", "CNTPAD(", "COL(", "COM(", "COMARRAY(",
                 "COMCLASSINFO(", "COMPOBJ(", "COMPROP(", "COMRETURNERROR(", "COS(", "CPCONVERT(", "CPCURRENT(",
-                "CONVERT(", // TODO - Convert integer to Base xx
                 "CPDBF(", "CREATEBINARY(", "CREATEOBJECT(", "CREATEOBJECTEX(", "CREATOFFLINE(", "CTOBIN(", "CTOD(",
                 "CTOT(", "CURSORGETPROP(", "CURSORSETPROP(", "CURSORTOJSON(", "CURSORTOXML(", "CURVAL(",
                 "DATE(", "DATETIME(", "DAY(", "DBC(", "DBF(", "DBGETPROP(", "DBUSED(", "DEFAULTEXT(", "DELETED(",
@@ -47,7 +45,7 @@ namespace JAXBase.Language
                 "GETAUTOINCVALUE(", "GETCP(", "GETDATE(", "GETDIR(", "GETENV(", "GETFILE(", "GETFLDSTATE(", "GETFONT(",
                 "GETNEXTMODIFIED(", "GETJSON(", "GETOBJECT(", "GETPICT(", "GETPRINTER(", "GETWORDCOUNT(", "GETWORDNUM(", "GETCURSORADAPTER(",
                 "GOMONTH(", "GUID(",
-                "HEADER(", "HOME(", "HOUR(",
+                "HEADER(", "HOME(", "HOUR(","HEX(",
                 "ICASE(", "IDXCOLLATE(", "IIF(", "INDBC(", "INDEXSEEK(", "INKEY(", "INLIST(", "INLISTC(", "INPUTBOX(", "INSMODE(",
                 "INT(", "ISALPHA(", "ISBLANK(", "ISCOLOR(", "ISDIGIT(", "ISEXCUSIVE(", "ISFLOCKED(", "ISLEADBYTE(", "ISLOWER(",
                 "ISNULL(", "ISODD(", "ISPEN(", "ISREADONLY(", "ISRLOCKED(", "ISUPPER(",
@@ -99,7 +97,7 @@ namespace JAXBase.Language
             "RESTORE","RESUME","RETRY","RETURN","ROLLBACK","RUN","SAVE","SCAN","SCATTER",
             "SEEK","SELECT","SET", "SKIP","SORT","STORE","SUM","SUSPEND","TEXT",
             "THROW","TOTAL", "TRY","UNLOCK","UNTIL","UPDATE","USE","WAIT","WITH","ZAP",
-            "?","??","!", "=","~~~","*sc"];
+            "?","??","!", "=","~~~"];
 
         public static string[] JAXCommandParts =
             [
@@ -114,13 +112,13 @@ namespace JAXBase.Language
             "null","not","autoinc","nocase","noconsole","noshow"
             ];
 
-        public static string[] eCodeCommands =
-            [
-            "as","command","collate","codepage","database","expressions","flags","from","fname",
-            "for","fields","fileexpr","in","index","into","like","of","on","order","pretext",
-            "record","session","scope","sheet","subcmd","size","session","step","table","tag","timeout",
-            "to","type","text","values","when","while","with"
-            ];
+        //public static string[] eCodeCommands =
+        //    [
+        //    "as","command","collate","codepage","database","expressions","flags","from","fname",
+        //    "for","fields","fileexpr","in","index","into","like","of","on","order","pretext",
+        //    "record","session","scope","sheet","subcmd","size","session","step","table","tag","timeout",
+        //    "to","type","text","values","when","while","with"
+        //    ];
 
 
         /// <summary>
@@ -193,65 +191,65 @@ namespace JAXBase.Language
         public static string[] RunTimeExtensions = ["jxs", "jxv", "jxd", "jxm", "jxp", "jxq"];
 
 
-        public static List<string> SpecialKeys = ["TAB","BACKTAB","LBRACE","RBRACE","ENTER","SPACEBAR","ESC","DEL",
-            "LEFTARROW","RIGHTARROW","UPARROW","DNARROW","HOME","END","PGUP","PGDN",
-           "INS","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","BACKSPACE",
-        "RIGHTMOUSE","LEFTMOUSE","MOUSE"];
+        //public static List<string> SpecialKeys = ["TAB","BACKTAB","LBRACE","RBRACE","ENTER","SPACEBAR","ESC","DEL",
+        //    "LEFTARROW","RIGHTARROW","UPARROW","DNARROW","HOME","END","PGUP","PGDN",
+        //    "INS","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","BACKSPACE",
+        //    "RIGHTMOUSE","LEFTMOUSE","MOUSE"];
 
 
-        public static readonly Dictionary<int, string> JAXPrases = new Dictionary<int, string>
-        {
-            { 1, "Command Window" },
-            { 2, "Main window has not been created" },
-            { 3, "default" },
-            { 4, "assert" },
-            { 5, "response"  },
-            { 6, "Current directory is" },
-            { 7, "Default directory is" },
-            { 8, "Session"},
-            { 9, "Workarea" },
-            { 10, "Local" },
-            { 11, "Private" },
-            { 12, "Public" },
-            { 13, "None" },
-            { 14, "Name" },
-            { 15, "Field Name" },
-            { 16, "Type" },
-            { 17, "Length" },
-            { 18, "Dec" },
-            { 19, "Created folder" },
-            { 20, "File" },
-            { 21, "Last Modified" },
-            { 22, "Attributes" },
-            { 23, "{0,40} {1,36}  {2,-16}  {3:20}" },
-            { 24, "" },
-            { 25, "Length" },
-            { 26, "Records" },
-            { 27, "" },
-            { 28, "" },
-            { 29, "Total" },
-            { 30, "{0} files" },
-            { 31, "{0} folders" },
-            { 32, "{0} records" },
-            { 33, "{0} bytes free" },
-            { 34, "User selected" },
-            { 35, "Cancel"  },
-            { 36, "Ignore" },
-            { 37, "Ignore All" },
-            { 38, "Debug" },
-            { 39, "{0} {1}  {2} (Name: {3})" },
-            { 40, "{0} {1}  {2}" },
-            { 41, "{0,-30} {1,-4}  {2,2}  {3,2}" },
-            { 42, "JAXBase Version" },
-            { 43, "" },
-            { 44, "" },
-            { 45, "" },
-            { 46, "" },
-            { 47, "" },
-            { 48, "" },
-            { 49, "" },
-            { 50, "" }
-        };
+        //public static readonly Dictionary<int, string> JAXPrases = new Dictionary<int, string>
+        //{
+        //    { 1, "Command Window" },
+        //    { 2, "Main window has not been created" },
+        //    { 3, "default" },
+        //    { 4, "assert" },
+        //    { 5, "response"  },
+        //    { 6, "Current directory is" },
+        //    { 7, "Default directory is" },
+        //    { 8, "Session"},
+        //    { 9, "Workarea" },
+        //    { 10, "Local" },
+        //    { 11, "Private" },
+        //    { 12, "Public" },
+        //    { 13, "None" },
+        //    { 14, "Name" },
+        //    { 15, "Field Name" },
+        //    { 16, "Type" },
+        //    { 17, "Length" },
+        //    { 18, "Dec" },
+        //    { 19, "Created folder" },
+        //    { 20, "File" },
+        //    { 21, "Last Modified" },
+        //    { 22, "Attributes" },
+        //    { 23, "{0,40} {1,36}  {2,-16}  {3:20}" },
+        //    { 24, "" },
+        //    { 25, "Length" },
+        //    { 26, "Records" },
+        //    { 27, "" },
+        //    { 28, "" },
+        //    { 29, "Total" },
+        //    { 30, "{0} files" },
+        //    { 31, "{0} folders" },
+        //    { 32, "{0} records" },
+        //    { 33, "{0} bytes free" },
+        //    { 34, "User selected" },
+        //    { 35, "Cancel"  },
+        //    { 36, "Ignore" },
+        //    { 37, "Ignore All" },
+        //    { 38, "Debug" },
+        //    { 39, "{0} {1}  {2} (Name: {3})" },
+        //    { 40, "{0} {1}  {2}" },
+        //    { 41, "{0,-30} {1,-4}  {2,2}  {3,2}" },
+        //    { 42, "JAXBase Version" },
+        //    { 43, "" },
+        //    { 44, "" },
+        //    { 45, "" },
+        //    { 46, "" },
+        //    { 47, "" },
+        //    { 48, "" },
+        //    { 49, "" },
+        //    { 50, "" }
+        //};
 
         public static string GetWord(string input, string dictionary)
         {
@@ -260,11 +258,11 @@ namespace JAXBase.Language
                 "MATH" => Program.CurrentApp.ActiveLanguagePack.MathFunctions,
                 "COMMAND" => Program.CurrentApp.ActiveLanguagePack.JAXCommands,
                 "COMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.CommandParts,
-                "ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
+                //"ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
                 "SET" => Program.CurrentApp.ActiveLanguagePack.SetCommands,
                 "OBJECT" => Program.CurrentApp.ActiveLanguagePack.JaxObjects,
                 "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
-                _ => throw new ArgumentException("Invalid dictionary specified")
+                _ => throw new ArgumentException($"Invalid dictionary specified: {dictionary}")
             };
 
             if (pack.TryGetValue(input, out string? canonical))
@@ -283,11 +281,11 @@ namespace JAXBase.Language
                 "MATH" => Program.CurrentApp.ActiveLanguagePack.MathFunctions,
                 "COMMAND" => Program.CurrentApp.ActiveLanguagePack.JAXCommands,
                 "COMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.CommandParts,
-                "ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
+                //"ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
                 "SET" => Program.CurrentApp.ActiveLanguagePack.SetCommands,
                 "OBJECT" => Program.CurrentApp.ActiveLanguagePack.JaxObjects,
                 "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
-                _ => throw new ArgumentException("Invalid dictionary specified")
+                _ => throw new ArgumentException($"Invalid dictionary specified: {dictionary}")
             };
 
             if (pack.TryGetValue(input, out string? canonical))
@@ -299,8 +297,22 @@ namespace JAXBase.Language
         public static ILanguagePack GetLanguagePack(string languageCode)
         {
             //bool found = File.Exists("LanguagePacks/JAXBase-Lang-" + languageCode + ".dll");
+            int iii = 0;
 
-            return languageCode=="es" ? new SpanishLanguagePack() : new EnglishLanguagePack();
+            ILanguagePack pack;
+
+            try
+            {
+                pack = languageCode == "es" ? new SpanishLanguagePack() : new EnglishLanguagePack();
+               
+            }
+            catch (Exception ex)
+            {
+                string exstr= $"Language pack for '{languageCode}' could not be loaded. {ex.Message}";
+                pack = new EnglishLanguagePack();
+            }
+
+            return pack;
         }
     }
 }

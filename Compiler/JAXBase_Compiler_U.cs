@@ -50,8 +50,11 @@ namespace JAXBase.Compiler
             string result = string.Empty;
             try
             {
+                string join = jbc.RevCommandParts.TryGetValue("join", out var joinValue) ? " " + joinValue + " " : throw new Exception("1999|JOIN");
+                string where = jbc.RevCommandParts.TryGetValue("where", out var whereValue) ? " " + whereValue + " " : throw new Exception("1999|WHERE");
+
                 // Is it the old update with no where or join?
-                if (cmdLine.Contains(" join ", StringComparison.OrdinalIgnoreCase) == false && cmdLine.Contains(" where ", StringComparison.OrdinalIgnoreCase) == false)
+                if (cmdLine.Contains(join, StringComparison.OrdinalIgnoreCase) == false && cmdLine.Contains(where, StringComparison.OrdinalIgnoreCase) == false)
                 {
                     // Backwards compatible UPDATE (same as replace)
                     // result=JAXBase_Compile_R.Replace(app,cmdLine);
