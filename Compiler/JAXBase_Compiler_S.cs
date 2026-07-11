@@ -28,7 +28,9 @@ namespace JAXBase.Compiler
 
             try
             {
-                if (cmdLine.Contains("FROM ", StringComparison.OrdinalIgnoreCase))
+                string from = jbc.RevCommandParts.TryGetValue("FROM", out var fromValue) ? fromValue+" " : throw new Exception("1999|FROM");
+
+                if (cmdLine.Contains(from, StringComparison.OrdinalIgnoreCase))
                 {
                     // SELECT SQL command
                 }

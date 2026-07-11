@@ -18,6 +18,12 @@
  *      Needed a few GROK sessions to help me figure things out.  But I've
  *      got a better grip on sub classing. 
  *      
+ * 2026.07.08 - JLW
+ *      Supports language pack code during creation of a class by converting the
+ *      properties, events, and methods to the controlling language.
+ *      
+ *      Propeties, events, and methods are updated to the correct language upon initialization.
+ *      
  *--------------------------------------------------------------------------------------------------*/
 using JAXBase.Core;
 using JAXBase.Language;
@@ -48,6 +54,34 @@ namespace JAXBase.XBase
         // Quick references so we don't have to do a GetProperty
         // and so we can still handle the EMPTY baseclass correctly
         public JAXObjectWrapper? parent = null;
+
+        // Commonly used property names translated from english
+        private readonly string cPropLanguage;
+        private readonly string cPropName;
+        private readonly string cPropClass;
+        private readonly string cPropBaseClass;
+        private readonly string cMethodAddObject;
+        private readonly string cPropRendered;
+        private readonly string cPropClassID;
+        private readonly string cPropAError;
+        private readonly string cPropControlCount;
+        private readonly string cPropParent;
+
+        private readonly string cObjForm;
+        private readonly string cObjOptionButton;
+        private readonly string cObjMenuItem;
+        private readonly string cObjToolButton;
+        private readonly string cObjFormSet;
+        private readonly string cObjOptionGroup;
+        private readonly string cObjMenu;
+        private readonly string cObjToolbar;
+        private readonly string cObjTree;
+        private readonly string cObjTreeItem;
+
+        private readonly string cMethError;
+        private readonly string cMethShow;
+        private readonly string cMethAddProperty;
+
         public JAXObjectWrapper? Parent
         {
             get { return parent; }
@@ -155,10 +189,40 @@ namespace JAXBase.XBase
 
         public JAXObjectWrapper(AppClass app, string cClass, string cName, List<ParameterClass>? parameterList)
         {
-            App = app;
+            App = Program.CurrentApp;
             Class = cClass;
             THIS = this;
             string lastProp;
+
+            cPropLanguage = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("language", out string? pem) ? pem : "language";
+            cPropName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("name", out pem) ? pem : "name";
+            cPropClass = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("class", out pem) ? pem : "class";
+            cPropBaseClass = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("baseclass", out pem) ? pem : "baseclass";
+            cMethodAddObject = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("addobject", out pem) ? pem : "addobject";
+            cPropRendered = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("rendered", out pem) ? pem : "rendered";
+            cPropClassID = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("classid", out pem) ? pem : "classid";
+            cPropAError = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("aerror", out pem) ? pem : "aerror";
+            cPropControlCount = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("controlcount", out pem) ? pem : "controlcount";
+            cPropParent = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("parent", out pem) ? pem : "parent";
+
+            cObjForm = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("form", out pem) ? pem : "form";
+            cObjOptionButton = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("optionbutton", out pem) ? pem : "optionbutton";
+            cObjMenuItem = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("menuitem", out pem) ? pem : "menuitem";
+            cObjToolButton = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("toolbutton", out pem) ? pem : "toolbutton";
+            cObjFormSet = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("formset", out pem) ? pem : "formset";
+            cObjOptionGroup = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("optiongroup", out pem) ? pem : "optiongroup";
+            cObjMenu = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("menu", out pem) ? pem : "menu";
+            cObjToolbar = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("toolbar", out pem) ? pem : "toolbar";
+            cObjTree = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("tree", out pem) ? pem : "tree";
+            cObjTreeItem = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("treeitem", out pem) ? pem : "treeitem";
+
+            cMethError = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("error", out pem) ? pem : "error";
+            cMethShow = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("show", out pem) ? pem : "show";
+            cMethAddProperty = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("addproperty", out pem) ? pem : "addproperty";
+
+            string cPropLocked = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("locked", out pem) ? pem : "locked";
+            string cMethLoad = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("load", out pem) ? pem : "load";
+            string cMethInit = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("init", out pem) ? pem : "init";
 
             int CurrentErrCount = Program.CurrentApp.Errors.Count;
             int Err = 0;
@@ -207,19 +271,24 @@ namespace JAXBase.XBase
 
             if (Err == 0)
             {
+
                 // All visual objects get this property
                 if (VisualClass)
-                    SetPrivateProperty("rendered", false);
+                    SetPrivateProperty(cPropRendered, false);
 
                 string[] JAXProperties = thisObject!.JAXProperties();
+
+                // Load the properties into the class
                 for (int i = 0; i < JAXProperties.Length; i++)
                 {
-
+                    // Convert the property from English to the current language pack
                     string[] prop = JAXProperties[i].Split(',');
 
                     if (prop.Length == 3)
                     {
-                        string p0 = prop[0].ToLower().Trim();
+                        prop[0] = prop[0].Trim();
+                        string cProp = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue(prop[0], out pem) ? pem : prop[0];
+                        string p0 = cProp.ToLower().Trim();
                         string p1 = prop[1].Replace("!", "").ToUpper().Trim();
                         JAXObjects.Token tk = new();
 
@@ -328,202 +397,252 @@ namespace JAXBase.XBase
                 }
 
                 // Make sure the name gets set
-                if (thisObject is not null && thisObject.UserProperties.ContainsKey("name"))
+                if (thisObject is not null && thisObject.UserProperties.ContainsKey(cPropName))
                     if ((VisualClass && avaloniaObject is not null) || (VisualClass == false && nvObject is not null))
-                        thisObject.SetProperty("name", string.IsNullOrWhiteSpace(cName) ? cClass : cName, 0);
+                        thisObject.SetProperty(cPropName, string.IsNullOrWhiteSpace(cName) ? cClass : cName, 0);
             }
 
             if (Err == 0)
             {
-                try
+                // ----------------------------------------------------------------------------------
+                // The following is for all classes except the EMPTY class
+                // ----------------------------------------------------------------------------------
+                if (cClass.Equals("empty", StringComparison.OrdinalIgnoreCase) == false)
                 {
-                    if (cClass.Equals("sql", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int iii = 0;
-                    }
+                    // ------------------------------------------------------------------------------
+                    // Add common properties across all classes except EMPTY
+                    // ------------------------------------------------------------------------------
 
-                    // ----------------------------------------------------------------------------------
-                    // The following is for all classes except the EMPTY class
-                    // ----------------------------------------------------------------------------------
-                    if (cClass.Equals("empty", StringComparison.OrdinalIgnoreCase) == false)
+                    try
                     {
-                        // ------------------------------------------------------------------------------
-                        // The ID, AError, and Locked properties need to be added
-                        // to all properties except the EMPTY property.
-                        // ------------------------------------------------------------------------------
-                        if (thisObject!.HasProperty("classid") == false)
+                        // Language
+                        if (thisObject!.HasProperty(cPropLanguage) == false)
                         {
                             ClassID = app.SystemCounter();
-                            thisObject.AddProperty("classid", "P", ClassID);
+                            thisObject.AddProperty(cPropLanguage, "P", Program.CurrentApp.ActiveLanguagePack.LanguageCode);
                             AppIO.DebugLog($"Adding classid property with value {ClassID}");
                         }
 
-                        if (thisObject!.HasProperty("aerror") == false)
+                        // ClassID
+                        if (thisObject!.HasProperty(cPropClassID) == false)
                         {
-                            thisObject.AddProperty("aerror");
+                            ClassID = app.SystemCounter();
+                            thisObject.AddProperty(cPropClassID, "P", ClassID);
+                            AppIO.DebugLog($"Adding classid property with value {ClassID}");
+                        }
+
+                        // AError
+                        if (thisObject!.HasProperty(cPropAError) == false)
+                        {
+                            thisObject.AddProperty(cPropAError);
                             ClearErrors();
                         }
 
-                        if (thisObject!.HasProperty("locked") == false)
-                            thisObject.AddProperty("locked", "L", "false");
+                        // Locked
+                        if (thisObject!.HasProperty(cPropLocked) == false)
+                            thisObject.AddProperty(cPropLocked, "L", "false");
 
-                        thisObject.UserProperties["classid"].Tag = "N";
-                        thisObject.UserProperties["aerror"].Tag = "N";
+                        // Mark them as native properties
+                        thisObject.UserProperties[cPropLanguage].Tag = "N";
+                        thisObject.UserProperties[cPropClassID].Tag = "N";
+                        thisObject.UserProperties[cPropAError].Tag = "N";
                         thisObject.UserProperties["locked"].Tag = "N";
-
-                        // Set the AError array to its empty setting
-                        ClearErrors();
-
-                        // Now force the object to be updated by running through all the properties
-                        // via SetProperty except for those that are arrays or protected
-                        foreach (KeyValuePair<string, JAXObjects.Token> tok in thisObject.UserProperties)
-                        {
-                            if (tok.Key.Equals("connectstring"))
-                            {
-                                int iii = 0;
-                            }
-
-
-                            //AppIO.DebugLog($"Upating {tok.Key} = {tok.Value.AsString()}");
-                            if (tok.Value.Protected == false && tok.Value.TType.Equals("A") == false && JAXLib.InListC(tok.Key, "datasession") == false)
-                                thisObject.SetProperty(tok.Key, tok.Value.Element.Value, 0);
-
-                            if (Program.CurrentApp.Errors.Count>0)
-                            {
-                                int iii = 0;
-                            }
-                        }
-
-                        // Load the methods
-                        string[] JAXMethods = thisObject.JAXMethods();
-                        for (int i = 0; i < JAXMethods.Length; i++)
-                        {
-                            //AppIO.DebugLog($"Adding method {JAXMethods[i]}");
-                            thisObject._SetMethod(JAXMethods[i], string.Empty, true, "M!");
-                            thisObject.Methods[JAXMethods[i]].Tag = "N";
-                        }
-
-                        // Load the events
-                        string[] JAXEvents = thisObject.JAXEvents();
-                        for (int i = 0; i < JAXEvents.Length; i++)
-                        {
-                            //AppIO.DebugLog($"Adding event {JAXEvents[i]}");
-                            thisObject._SetMethod(JAXEvents[i], string.Empty, true, "E!");
-                            thisObject.Methods[JAXEvents[i]].Tag = "N";
-                        }
-
-                        // ------------------------------------------------------------------------------
-                        // The following methods need to be added to all objects
-                        // automatically if they have not already been added
-                        // ------------------------------------------------------------------------------
-
-
-                        // ------------------------------------------------------------------------------
-                        // Now call the load method, if it exists
-                        // ------------------------------------------------------------------------------
-                        if (thisObject.Methods.ContainsKey("load"))
-                            thisObject._CallMethod("load");
+                    }
+                    catch (Exception ex)
+                    {
+                        msg = ex.Message;
+                        Err = 9999;
                     }
 
-                    // ------------------------------------------------------------------------------
-                    // Perform post cleanup
-                    // ------------------------------------------------------------------------------
-                    if (parameterList is not null)
-                        thisObject!.PostInit(parent, parameterList);
-                    else
-                        thisObject!.PostInit(null, []);
 
-                    if (thisObject is not null)
+                    if (Err == 0)
                     {
-                        // Now process the JAX init method
-                        if (thisObject.Methods.ContainsKey("init"))
+                        // Set the AError array to its empty setting
+                        ClearErrors();
+                        string key = "";
+
+                        try
                         {
-                            thisObject._CallMethod("init");
-
-                            if ("NL".Contains(App.ReturnValue.Element.Type) == false)
-                                AppErrorHandling.SetError(11, $"11||{BaseClass}.INIT returned value of type {App.ReturnValue.Element.Type}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-                            else
+                            // Now force the object to be updated by running through all the properties
+                            // via SetProperty except for those that are arrays or protected
+                            foreach (KeyValuePair<string, JAXObjects.Token> tok in thisObject!.UserProperties)
                             {
-                                // The init only accepts a bool or number for return
-                                // If .F. or 0, then the init fails
-                                if (App.ReturnValue.AsBool() == false || App.ReturnValue.AsInt() != 0)
+                                if (tok.Value.Protected == false && tok.Value.TType.Equals("A") == false && JAXLib.InListC(tok.Key, "datasession") == false)
                                 {
-                                    // Kill the class.  This doesn't cause an error unless AError has something
-                                    // in it, which we'll then push them to the Errors list
-                                    JAXObjects.Token err = thisObject.UserProperties["aerror"];
-
-                                    // Check the first column of the first row for an error number
-                                    err.SetElement(1, 1);
-                                    if (err.AsInt() > 0)
-                                    {
-                                        for (int r = 0; r < err.Row; r++)
-                                        {
-                                            int errNo = err._avalue[r * err.Col].ValueAsInt;
-
-                                            // If the error number > 0
-                                            if (errNo > 0)
-                                            {
-                                                // Update CurrentError pointer
-                                                if (r == 0) App.CurrentError = Program.CurrentApp.Errors.Count;
-
-                                                string errMsg = err._avalue[r * err.Col + 2].ValueAsString;
-                                                string jaxErrMsg = JAXError.JAXErrMsg(errNo, errMsg);
-
-                                                // Push them to the App error silently
-                                                JAXErrors e = new()
-                                                {
-                                                    ErrorNo = errNo,
-                                                    ErrorMessage = jaxErrMsg,
-                                                    ErrorProcedure = err._avalue[r * err.Col + 3].ValueAsString,
-                                                    ErrorLine = err._avalue[r * err.Col + 1].ValueAsInt
-                                                };
-
-                                                Program.CurrentApp.Errors.Add(e);
-                                            }
-                                        }
-
-                                        thisObject = null;
-                                    }
+                                    key = $"Setting property {tok.Key} to {tok.Value.Element.ValueAsString}";
+                                    thisObject.SetProperty(tok.Key, tok.Value.Element.Value, 0);
                                 }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            AppIO.DebugLog($"Failed forced update of class {Class} named {JOWName} with ID {classid} property {key}");
+                            msg = ex.Message;
+                            Err = 9999;
+                        }
+                    }
 
-                        // Various classes have other methods that need
-                        // to be called after their init method completes
-                        thisObject?.PostClassInit();
+                    if (Err == 0)
+                    {
+                        string meName = "";
+
+                        try
+                        {
+                            // Load the methods
+                            string[] JAXMethods = thisObject!.JAXMethods();
+                            for (int i = 0; i < JAXMethods.Length; i++)
+                            {
+                                meName = JAXMethods[i];
+                                thisObject._SetMethod(meName, "", true, "M!");
+                                thisObject.Methods[JAXMethods[i]].Tag = "N";
+                            }
+
+                            // Load the events
+                            string[] JAXEvents = thisObject.JAXEvents();
+                            for (int i = 0; i < JAXEvents.Length; i++)
+                            {
+                                meName = JAXEvents[i];
+                                thisObject._SetMethod(meName, "", true, "E!");
+                                thisObject.Methods[JAXEvents[i]].Tag = "N";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AppIO.DebugLog($"Failed to load Method/Event {meName} for class {Class} named {JOWName} with ID {classid}");
+                            msg = ex.Message;
+                            Err = 9999;
+                        }
+                    }
+
+                    // ------------------------------------------------------------------------------
+                    // Now call the load method, if it exists
+                    // ------------------------------------------------------------------------------
+                    if (Err == 0)
+                    {
+                        try
+                        {
+                            if (thisObject!.Methods.ContainsKey(cMethLoad))
+                                thisObject._CallMethod(cMethLoad);
+                        }
+                        catch (Exception ex)
+                        {
+                            AppIO.DebugLog($"Failed to execute LOAD Event for class {Class} named {JOWName} with ID {classid}");
+                            msg = ex.Message;
+                            Err = 9999;
+                        }
+                    }
+
+                    if (Err == 0)
+                    {
+                        try
+                        {
+                            // ------------------------------------------------------------------------------
+                            // Perform post cleanup
+                            // ------------------------------------------------------------------------------
+                            if (parameterList is not null)
+                                thisObject!.PostInit(parent, parameterList);
+                            else
+                                thisObject!.PostInit(null, []);
+
+                            if (thisObject is not null)
+                            {
+                                // Now process the JAX init method
+                                if (thisObject.Methods.ContainsKey(cMethInit))
+                                {
+                                    thisObject._CallMethod(cMethInit);
+
+                                    if ("NL".Contains(App.ReturnValue.Element.Type) == false)
+                                        AppErrorHandling.SetError(11, $"11||{BaseClass}.INIT returned value of type {App.ReturnValue.Element.Type}", "JAXObjectWrapper");
+                                    else
+                                    {
+                                        // The init only accepts a bool or number for return
+                                        // If .F. or 0, then the init fails
+                                        if (App.ReturnValue.AsBool() == false || App.ReturnValue.AsInt() != 0)
+                                        {
+                                            // Kill the class.  This doesn't cause an error unless AError has something
+                                            // in it, which we'll then push them to the Errors list
+                                            JAXObjects.Token err = thisObject.UserProperties[cPropAError];
+
+                                            // Check the first column of the first row for an error number
+                                            err.SetElement(1, 1);
+                                            if (err.AsInt() > 0)
+                                            {
+                                                for (int r = 0; r < err.Row; r++)
+                                                {
+                                                    int errNo = err._avalue[r * err.Col].ValueAsInt;
+
+                                                    // If the error number > 0
+                                                    if (errNo > 0)
+                                                    {
+                                                        // Update CurrentError pointer
+                                                        if (r == 0) App.CurrentError = Program.CurrentApp.Errors.Count;
+
+                                                        string errMsg = err._avalue[r * err.Col + 2].ValueAsString;
+                                                        string jaxErrMsg = JAXError.JAXErrMsg(errNo, errMsg);
+
+                                                        // Push them to the App error silently
+                                                        JAXErrors e = new()
+                                                        {
+                                                            ErrorNo = errNo,
+                                                            ErrorMessage = jaxErrMsg,
+                                                            ErrorProcedure = err._avalue[r * err.Col + 3].ValueAsString,
+                                                            ErrorLine = err._avalue[r * err.Col + 1].ValueAsInt
+                                                        };
+
+                                                        Program.CurrentApp.Errors.Add(e);
+                                                    }
+                                                }
+
+                                                thisObject = null;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Various classes have other methods that need
+                                // to be called after their init method completes
+                                thisObject?.PostClassInit();
+                            }
+                            else
+                            {
+                                Err = 1901;
+                                msg = $"Class {Class}";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AppIO.DebugLog($"Failed in cleanup of {Class} class named {JOWName} with ID {classid}");
+                            msg = ex.Message;
+                            Err = 9999;
+                        }
                     }
                 }
-                catch (Exception ex)
+
+                // Did the object initialize correctly?
+                // If not, null out thisObject to signal a failure
+                if (Err == 0 && Program.CurrentApp.Errors.Count > CurrentErrCount)
+                    Err = AppErrorHandling.LastErrorNo();
+
+                if (Err > 0)
                 {
-                    msg = ex.Message;
-                    Err = 9999;
+                    thisObject = null;
+                    AppErrorHandling.SetError(Err, $"{Err}||{msg}", "JAXObjectWrapper");
                 }
-            }
+                else
+                {
+                    if (baseclass.Contains(cObjForm))
+                        App._screenClass!.AddForm(this);
 
-            // Did the object initialize correctly?
-            // If not, null out thisObject to signal a failure
-            if (Err == 0 && Program.CurrentApp.Errors.Count > CurrentErrCount)
-                Err = AppErrorHandling.LastErrorNo();
-
-            if (Err > 0)
-            {
-                thisObject = null;
-                AppErrorHandling.SetError(Err, $"{Err}||{msg}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
-            }
-            else
-            {
-                if (baseclass.Contains("form"))
-                    App._screenClass!.AddForm(this);
-
-                thisObject!.PostClassInit().Wait();
-            }
+                    thisObject!.PostClassInit().Wait();
+                }
+            } 
         }
 
 
         // All objects should call this when shutting down
         public void Release()
         {
-            if (baseclass.Contains("form"))
+            if (baseclass.Equals(cObjForm,StringComparison.OrdinalIgnoreCase))
                 App._screenClass!.RemoveForm(ClassID);
         }
 
@@ -531,19 +650,22 @@ namespace JAXBase.XBase
         {
             if (Parent is not null)
             {
-                if (baseclass.Equals("formset", StringComparison.OrdinalIgnoreCase))
+                if (baseclass.Equals(cObjFormSet, StringComparison.OrdinalIgnoreCase))
                     throw new Exception($"3300|{Class}/{Parent.BaseClass}");
 
-                if (baseclass.Equals("optionbutton", StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals("optiongroup", StringComparison.OrdinalIgnoreCase) == false)
+                if (baseclass.Equals(cObjOptionButton, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(cObjOptionGroup, StringComparison.OrdinalIgnoreCase) == false)
                     throw new Exception($"3300|{Class}/{Parent.BaseClass}");
 
-                if (baseclass.Equals("menuitem", StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Contains("menu", StringComparison.OrdinalIgnoreCase) == false)
+                if (baseclass.Equals(cObjMenuItem, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Contains(cObjMenu, StringComparison.OrdinalIgnoreCase) == false)
                     throw new Exception($"3300|{Class}/{Parent.BaseClass}");
 
-                if (baseclass.Equals("toolbutton", StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals("toolbar", StringComparison.OrdinalIgnoreCase) == false)
+                if (baseclass.Equals(cObjToolButton, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(cObjToolbar, StringComparison.OrdinalIgnoreCase) == false)
                     throw new Exception($"3300|{Class}/{Parent.BaseClass}");
 
-                if (baseclass.Equals("form", StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals("formset", StringComparison.OrdinalIgnoreCase) == false)
+                if (baseclass.Equals(cObjForm, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(cObjFormSet, StringComparison.OrdinalIgnoreCase) == false)
+                    throw new Exception($"3300|{Class}/{Parent.BaseClass}");
+
+                if (baseclass.Equals(cObjTreeItem, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(cObjTree, StringComparison.OrdinalIgnoreCase) == false)
                     throw new Exception($"3300|{Class}/{Parent.BaseClass}");
 
                 if (VisualClass && Parent.VisualClass == false)
@@ -557,17 +679,16 @@ namespace JAXBase.XBase
         {
             JOWName = name.Trim().ToLower();
 
-            if (thisObject is not null && thisObject.UserProperties.TryGetValue("name", out JAXObjects.Token? value))
+            if (thisObject is not null && thisObject.UserProperties.TryGetValue(cPropName, out JAXObjects.Token? value))
                 value.Element.Value = JOWName;
         }
-
 
         /*
          * Clear the aError array by creating it from scratch
          */
         public void ClearErrors()
         {
-            if (thisObject is not null && thisObject.HasProperty("aerror"))
+            if (thisObject is not null && thisObject.HasProperty(cPropAError))
             {
                 JAXObjects.Token tk = new();
                 tk._avalue[0].Value = 0;
@@ -581,7 +702,7 @@ namespace JAXBase.XBase
                 // Have to set the property directly so that the
                 // property is the array.  Otherwise SetProperty()
                 // will put the array in the element, like an object.
-                thisObject.UserProperties["aerror"] = tk;
+                thisObject.UserProperties[cPropAError] = tk;
             }
         }
 
@@ -593,7 +714,7 @@ namespace JAXBase.XBase
                 result = 1901;
             else
             {
-                JAXObjects.Token? tk = await thisObject.GetProperty("aerror", 0);
+                JAXObjects.Token? tk = await thisObject.GetProperty(cPropAError, 0);
 
                 if (tk is not null)
                     result = tk._avalue[0].ValueAsInt;
@@ -617,8 +738,8 @@ namespace JAXBase.XBase
                 {
                     thisObject._AddError(errorNo, lineNo, message, procedure);
 
-                    if (thisObject.Methods.ContainsKey("error"))
-                        result = await MethodCall("error");
+                    if (thisObject.Methods.ContainsKey(cMethError))
+                        result = await MethodCall(cMethError);
                 }
 
             }
@@ -751,10 +872,10 @@ namespace JAXBase.XBase
                             // Execute the coded method
                             result = await thisObject._CallMethod(methodName);
 
-                            if (methodName.Equals("error", StringComparison.OrdinalIgnoreCase) && result != 0)
+                            if (methodName.Equals(cMethError, StringComparison.OrdinalIgnoreCase) && result != 0)
                             {
                                 result = 3099;
-                                AppErrorHandling.SetError(3099, $"Name (BaseClass: {BaseClass}, ID:{ClassID})", string.Empty);
+                                AppErrorHandling.SetError(3099, $"{cPropName} ({cPropBaseClass}: {BaseClass}, ID:{ClassID})", string.Empty);
                             }
                         }
                         else
@@ -889,14 +1010,14 @@ namespace JAXBase.XBase
             {
 
                 // Does this object support the objects array?
-                tk = await thisObject.GetProperty("controlcount");
+                tk = await thisObject.GetProperty(cPropControlCount);
                 if (tk.Element.IsNull() == false)
                     ccount = tk.AsInt();
 
                 try
                 {
                     string className = string.Empty;
-                    tk = await thisObject.GetProperty("class");
+                    tk = await thisObject.GetProperty(cPropClass);
                     if (tk.Element.IsNull() == false)
                         className = tk.AsString();
 
@@ -906,10 +1027,10 @@ namespace JAXBase.XBase
                     {
                         // Can't add an object with no name or class defined as an object
                         // must be defined as a property to be included in this class
-                        if ((await eClass.IsMember("name")).Equals("P") && (await eClass.IsMember("class")).Equals("P"))
+                        if ((await eClass.IsMember(cPropName)).Equals("P") && (await eClass.IsMember(cPropClass)).Equals("P"))
                         {
                             result = 0;// TODO - fix error detection
-                            tk = await eClass.GetProperty("name");
+                            tk = await eClass.GetProperty(cPropName);
 
                             if (result == 0)
                             {
@@ -928,19 +1049,19 @@ namespace JAXBase.XBase
                                     {
                                         string nameTry = string.Format(nameTemplate, i);
                                         result = 0;  // TODO - Fix error detection
-                                        tk = await eClass.GetProperty("baseclass");
+                                        tk = await eClass.GetProperty(cPropBaseClass);
 
                                         if (result == 0)
                                         {
                                             result = 0;  // TODO - here too
                                             JAXObjectWrapper? obj = await thisObject.GetObject(i);
-                                            JAXObjects.Token tk2 = await obj!.GetProperty("baseclass");
+                                            JAXObjects.Token tk2 = await obj!.GetProperty(cPropBaseClass);
 
                                             if (tk2.Element.Type.Equals("C"))
                                             {
                                                 if (tk.AsString().Equals(tk2.AsString(), StringComparison.OrdinalIgnoreCase))
                                                 {
-                                                    tk = await obj.GetProperty("name");
+                                                    tk = await obj.GetProperty(cPropName);
                                                     if (tk.Element.Type.Equals("C"))
                                                     {
                                                         if (nameTry.Equals(tk.AsString(), StringComparison.OrdinalIgnoreCase))
@@ -961,7 +1082,7 @@ namespace JAXBase.XBase
                                     }
 
                                     if (result == 0)
-                                        await eClass.SetProperty("name", string.Format(nameTemplate, nameCount));
+                                        await eClass.SetProperty(cPropName, string.Format(nameTemplate, nameCount));
                                 }
 
 
@@ -970,7 +1091,7 @@ namespace JAXBase.XBase
                                 {
                                     // Get the object name
                                     result = 0;// fix error detection
-                                    tk = await eClass.GetProperty("name");
+                                    tk = await eClass.GetProperty(cPropName);
 
                                     if (result == 0)
                                     {
@@ -981,7 +1102,7 @@ namespace JAXBase.XBase
                                             // Check this object name with all others
                                             result = 0;// fix error detection
                                             JAXObjectWrapper? obj = await thisObject.GetObject(i);
-                                            tk = await obj!.GetProperty("name");
+                                            tk = await obj!.GetProperty(cPropName);
 
                                             if (tk.Element.Type.Equals("C"))
                                             {
@@ -1011,7 +1132,7 @@ namespace JAXBase.XBase
                                     result = thisObject.SetObjectIDX(objIdx);
 
                                     if (result == 0)
-                                        result = await thisObject._CallMethod("AddObject");
+                                        result = await thisObject._CallMethod(cMethodAddObject);
                                 }
                             }
                         }
@@ -1060,16 +1181,16 @@ namespace JAXBase.XBase
                     int ccount = -1;
 
                     // Does this object support the objects array?
-                    tk = await thisObject.GetProperty("controlcount");
+                    tk = await thisObject.GetProperty(cPropControlCount);
                     if (tk.Element.IsNull() == false)
                         ccount = tk.AsInt();
 
                     string className = string.Empty;
-                    tk = await thisObject.GetProperty("class");
+                    tk = await thisObject.GetProperty(cPropClass);
                     if (tk.Element.IsNull() == false)
                         className = tk.AsString();
 
-                    if ((await eClass.IsMember("baseclass")).Equals("P") && (await eClass.IsMember("name")).Equals("P"))
+                    if ((await eClass.IsMember(cPropBaseClass)).Equals("P") && (await eClass.IsMember(cPropName)).Equals("P"))
                     {
                         if (ccount < 0)
                         {
@@ -1089,7 +1210,7 @@ namespace JAXBase.XBase
                                     {
                                         result = 0;// fix error detection
                                         JAXObjectWrapper? obj = await thisObject.GetObject(i);
-                                        tk = await obj!.GetProperty("name");
+                                        tk = await obj!.GetProperty(cPropName);
 
                                         if (tk.Element.Type.Equals("C"))
                                         {
@@ -1104,7 +1225,7 @@ namespace JAXBase.XBase
                                             break;
                                     }
 
-                                    result = await eClass.SetProperty("name", string.Format(name + "{0}", HighestVal + 1));
+                                    result = await eClass.SetProperty(cPropName, string.Format(name + "{0}", HighestVal + 1));
                                 }
                             }
 
@@ -1225,7 +1346,7 @@ namespace JAXBase.XBase
 
                     // TODO - set up parameter list
                     if (result == 0)
-                        result = await MethodCall("AddProperty");
+                        result = await MethodCall(cMethAddProperty);
                 }
             }
             catch (Exception ex)
@@ -1449,20 +1570,20 @@ namespace JAXBase.XBase
                     err = 1901;
                 else
                 {
-                    JAXObjects.Token tk = await thisObject.GetProperty("controlcount");
+                    JAXObjects.Token tk = await thisObject.GetProperty(cPropControlCount);
                     if (tk.Element.IsNull() == false)
                         objCount = tk.AsInt();
 
                     for (int i = 0; i < objCount; i++)
                     {
                         JAXObjectWrapper? obj = await thisObject.GetObject(i);
-                        string memb = await obj!.IsMember("name");    // Is there a name property?
+                        string memb = await obj!.IsMember(cPropName);    // Is there a name property?
 
                         if (memb.Equals("P"))
                         {
                             JAXObjects.Token tk1 = new();
                             err = 0; // fix error detection
-                            tk1 = await obj.GetProperty("name");
+                            tk1 = await obj.GetProperty(cPropName);
 
                             if (err == 0)
                             {
@@ -1611,7 +1732,7 @@ namespace JAXBase.XBase
 
                     if ((await thisObject.IsMember(name)).Equals("P"))
                     {
-                        if (name.Equals("name", StringComparison.OrdinalIgnoreCase))
+                        if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))
                             JOWName = value.ToString() ?? string.Empty;
 
                         await thisObject.SetProperty(name, value, idx);
@@ -1665,7 +1786,7 @@ namespace JAXBase.XBase
 
                     if ((await thisObject.IsMember(name)).Equals("P"))
                     {
-                        if (name.Equals("name", StringComparison.OrdinalIgnoreCase))
+                        if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))
                             JOWName = value.ToString() ?? string.Empty;
 
                         await thisObject.SetProperty(name, value, 0);
@@ -1750,14 +1871,14 @@ namespace JAXBase.XBase
                 result = 1901;
             else
             {
-                JAXObjects.Token tk = await thisObject.GetProperty("controlcount");
+                JAXObjects.Token tk = await thisObject.GetProperty(cPropControlCount);
                 if (tk.Element.IsNull() == false)
                     ccount = tk.AsInt();
 
                 for (int i = 0; i < ccount; i++)
                 {
                     JAXObjectWrapper? obj = await thisObject.GetObject(i);
-                    tk = await obj!.GetProperty("name");
+                    tk = await obj!.GetProperty(cPropName);
 
                     if (tk.Element.Type.Equals("C") && cName.Equals(tk.AsString(), StringComparison.OrdinalIgnoreCase))
                     {
@@ -1797,7 +1918,7 @@ namespace JAXBase.XBase
             if (!InTransaction) ClearErrors();
 
             int result = 0;
-            string msg = "SHOW";
+            string msg = cMethShow.ToUpper();
 
             try
             {
@@ -1805,13 +1926,13 @@ namespace JAXBase.XBase
                     result = 1901;
                 else
                 {
-                    if (thisObject.Methods.ContainsKey("show"))
+                    if (thisObject.Methods.ContainsKey(cMethShow))
                     {
-                        if (BaseClass.Equals("formset", StringComparison.OrdinalIgnoreCase))
+                        if (BaseClass.Equals(cObjFormSet, StringComparison.OrdinalIgnoreCase))
                         {
                             // Formset calls top Form
                             int i = -1;
-                            JAXObjects.Token tk = await thisObject.GetProperty("controlcount");
+                            JAXObjects.Token tk = await thisObject.GetProperty(cPropControlCount);
                             if (tk.Element.Type.Equals("N"))
                             {
                                 i = tk.AsInt();
@@ -1819,13 +1940,13 @@ namespace JAXBase.XBase
                                 if (i >= 0)
                                 {
                                     JAXObjectWrapper? obj = await thisObject.GetObject(i);
-                                    await obj!.MethodCall("show");
+                                    await obj!.MethodCall(cMethShow);
                                 }
                             }
                         }
                         else
                         {
-                            thisObject!._CallMethod("show").Wait();
+                            thisObject!._CallMethod(cMethShow).Wait();
                         }
                     }
                     else
@@ -1867,17 +1988,19 @@ namespace JAXBase.XBase
                 result = 1901;
             else
             {
-                JAXObjects.Token tk = await thisObject.GetProperty("baseclass");
+                string cPropzOrder = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("zorder", out string? pem) ? pem : "zorder";
+
+                JAXObjects.Token tk = await thisObject.GetProperty(cPropBaseClass);
 
                 if (tk.Element.Type.Equals("C"))
                 {
-                    if ((await thisObject.IsMember("zorder")).Equals("P"))
+                    if ((await thisObject.IsMember(cPropzOrder)).Equals("P"))
                     {
-                        JAXObjects.Token par = await thisObject.GetProperty("parent");
+                        JAXObjects.Token par = await thisObject.GetProperty(cPropParent);
                         if (par.TType.Equals("O"))
                         {
                             JAXObjectWrapper parent = (JAXObjectWrapper)par.Element.Value;
-                            tk = await parent.GetProperty("controlcount");
+                            tk = await parent.GetProperty(cPropControlCount);
 
                             if (result == 0)
                             {

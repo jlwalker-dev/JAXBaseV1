@@ -625,6 +625,7 @@ namespace JAXBase.Math
         {
             // First, are they the same class and base class?
             bool result = obj1.Class.Equals(obj2.Class) && obj1.BaseClass.Equals(obj2.BaseClass);
+            string propName;
 
             int ccount1 = 0;
             int ccount2 = 0;
@@ -633,13 +634,15 @@ namespace JAXBase.Math
             // than zero, recurse through each object.
             // Child objects are searched for by name, meaning they do not
             // need to be in the same order to be considered a match.
-            if (result && (await obj1.IsMember("controlcount")).Equals("P"))
-            {
-                if ((await obj1.IsMember("controlcount")).Equals("P"))
-                    ccount1 = (await obj1.GetProperty("controlcount")).AsInt();
+            propName=Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("controlcount", out string? pem) ? pem : "controlcount";
 
-                if ((await obj2.IsMember("controlcount")).Equals("P"))
-                    ccount2 = (await obj2.GetProperty("controlcount")).AsInt();
+            if (result && (await obj1.IsMember(propName)).Equals("P"))
+            {
+                if ((await obj1.IsMember(propName)).Equals("P"))
+                    ccount1 = (await obj1.GetProperty(propName)).AsInt();
+
+                if ((await obj2.IsMember(propName)).Equals("P"))
+                    ccount2 = (await obj2.GetProperty(propName)).AsInt();
 
                 // Same number of objects attached to this object?
                 result = result && ccount1 == ccount2;
@@ -682,7 +685,11 @@ namespace JAXBase.Math
 
                 for (int i = 0; i < list1.Count; i++)
                 {
-                    if (JAXLib.InListC(list1[i], "name", "controlcount", "objects", "classid", "aerror", "hwnd") == false && (obj1.Parent is null && JAXLib.InListC(list1[i], "top", "left") == false))
+                    propName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(list1[i], out pem) ? pem : list1[i];
+
+                    // Property, event, and method names are converted to their language pack equivalents, so we need to check against
+                    // the English dictionary to make sure we're checking the right property name
+                    if (JAXLib.InListC(propName, "name", "controlcount", "objects", "classid", "aerror") == false && (obj1.Parent is null && JAXLib.InListC(propName, "top", "left") == false))
                     {
                         // Check this object
                         if ((await obj2.IsMember(list1[i])).Equals("P"))

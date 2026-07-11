@@ -30,12 +30,16 @@
     public interface ILanguagePack
     {
         string LanguageCode { get; }                    // e.g., "en", "es"
+        public Dictionary<string, string> Abreviations { get; }
         Dictionary<string, string> MathFunctions { get; }
         Dictionary<string, string> JAXCommands { get; }
         Dictionary<string, string> SetCommands { get; }
         Dictionary<string, string> CommandParts { get; }
-        Dictionary<string, string> eCodeCommand { get; }
+        Dictionary<string, string> PEMs { get; }
+        Dictionary<string, string> RevPEMs { get; }
         Dictionary<string, string> JaxObjects { get; }
+        Dictionary<string,string> RevJaxObjects { get; }
+        public Dictionary<string, string> RevCommandParts { get; }
         Dictionary<string, string> SpecialKeys { get; }
 
         Dictionary<int, string> Phrase { get; }

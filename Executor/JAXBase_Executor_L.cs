@@ -18,7 +18,7 @@ namespace JAXBase.Executor
             {
                 // Is this the first executed command of the program?
                 if (Program.CurrentApp.AppLevels.Count == 0) throw new Exception("2|");
-                if (JAXLib.InList(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+                if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand != jbe.CmdNum["procedure"]) throw new Exception("8|");
 
                 // Break out the var expressions
                 for (int i = 0; i < eCodes.Expressions.Count; i++)

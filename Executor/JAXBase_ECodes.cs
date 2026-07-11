@@ -34,7 +34,7 @@ namespace JAXBase.Executor
                 // Some can be solved here, others have to wait for later
                 //AppIO.DebugLog($"Processing line {App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine} in level {Program.CurrentApp.CurrentAppLevel} source {App.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode} -> code: {codeName} with RPN: {rpn}", App.CurrentDS.JaxSettings.Talk == false);
 
-                codeName= JAXLanguageLists.ToCanonicalKeyword(codeName, "ecode");
+                //codeName= JAXLanguageLists.ToCanonicalKeyword(codeName, "ecode");
 
                 switch (codeName)
                 {

@@ -196,7 +196,7 @@ namespace JAXBase.Executor
         public static async Task<string> AParameters(JAXBase_Executor jbe, ExecutorCodes eCodes)
         {
             if (Program.CurrentApp.AppLevels.Count == 0) throw new Exception("2|");
-            if (JAXLib.InList(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+            if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand != jbe.CmdNum["procedure"]) throw new Exception("8|");
 
             // Get the parameter name
             JAXObjects.Token answer = await Program.CurrentApp.SolveFromRPNString(eCodes.Expressions[0].RNPExpr);

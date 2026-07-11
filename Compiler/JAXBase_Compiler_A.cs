@@ -18,6 +18,12 @@ namespace JAXBase.Compiler
             {
                 jbc.GetNextToken(cmdRest, " ", out string device);
 
+                if (jbc.lang!.Abreviations.TryGetValue(device.ToLower(), out string? abbr))
+                    device = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(device.ToLower(), out string? cmdPart))
+                    device = cmdPart;
+
                 switch (device.ToLower())
                 {
                     case "cons":
@@ -57,6 +63,12 @@ namespace JAXBase.Compiler
             try
             {
                 jbc.GetNextToken(cmdRest, string.Empty, out string addCmd);
+
+                if (jbc.lang!.Abreviations.TryGetValue(addCmd.ToLower(), out string? abbr))
+                    addCmd = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(addCmd.ToLower(), out string? cmdPart))
+                    addCmd = cmdPart;
 
                 if (addCmd.Equals("class", StringComparison.OrdinalIgnoreCase))
                     result = jbc.Key_Parser(cmdRest, ["object"], "XX0,AS1,WT0,FG1", ["protected", "noinit"]);
@@ -126,6 +138,12 @@ namespace JAXBase.Compiler
             try
             {
                 jbc.GetNextToken(cmdRest, string.Empty, out string addCmd);
+
+                if (jbc.lang!.Abreviations.TryGetValue(addCmd.ToLower(), out string? abbr))
+                    addCmd = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(addCmd.ToLower(), out string? cmdPart))
+                    addCmd = cmdPart;
 
                 if (addCmd.Length == 0)
                     result = jbc.StrictBreak(cmdRest, "FV1,SC0,FR0,WH0,NM0,TM0,TT0", ["noappend", "nodelete", "nomodify"], string.Empty);

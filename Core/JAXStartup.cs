@@ -103,11 +103,6 @@ namespace JAXBase.Core
                 ibyte = app.CmdList.IndexOf("nodefault");
                 app.utl.Conv64(ibyte, 2, out b64);
                 app.MiscInfo.Add("nodefaultcmd", AppClass.cmdByte.ToString()+b64+AppClass.cmdEnd.ToString());
-
-                ibyte = app.CmdList.IndexOf("*sc");
-                app.utl.Conv64(ibyte, 2, out b64);
-                app.MiscInfo.Add("sourcecode", b64);
-
             }
 
             // -------------------------------------------------------------------------

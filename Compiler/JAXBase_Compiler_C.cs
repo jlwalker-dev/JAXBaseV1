@@ -24,13 +24,22 @@ namespace JAXBase.Compiler
             {
                 if (string.IsNullOrWhiteSpace(cmdRest) == false)
                 {
-                    jbc.GetNextToken(cmdRest, string.Empty, out string token);
+                    //jbc.GetNextToken(cmdRest, string.Empty, out string token);
+
+                    cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out string token);
+                    token = token.ToLower();
+
+                    if (jbc.lang!.Abreviations.TryGetValue(token, out string? abbr))
+                        token = abbr.ToLower();
+
+                    if (jbc.lang!.CommandParts.TryGetValue(token, out string? cmdPart))
+                        token = cmdPart.ToLower();
 
                     if (JAXLib.InListC(token, "class", "classlib", "console", "dlls", "program", "read", "resources", "windows"))
                     {
-                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token).ToLower();
+                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token);
 
-                        string mType = token switch
+                        string mType = token.ToLower() switch
                         {
                             "class" => "C",
                             "classlib" => "V",
@@ -47,7 +56,6 @@ namespace JAXBase.Compiler
                     }
                     else
                     {
-                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token).ToLower();
                         string mType = token switch
                         {
                             "all" => "*",
@@ -64,6 +72,9 @@ namespace JAXBase.Compiler
                         result = Program.CurrentApp.CompilerXRef["CS"].ToString() + mType + AppClass.stmtDelimiter;
                     }
                 }
+
+                if (string.IsNullOrWhiteSpace(cmdRest) == false)
+                    throw new Exception($"10||Unexpected keywords: {cmdRest}");
             }
             catch (Exception ex)
             {
@@ -104,33 +115,40 @@ namespace JAXBase.Compiler
 
             try
             {
-                cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out string tok);
-                tok = tok.ToLower();
+                cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out string token);
 
-                switch (tok)
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+                token = token.ToLower();
+
+                switch (token)
                 {
                     case "file":
-                        result = jbc.Key_Parser(cmdRest, [tok], "XX0,TO3,FG1", []);
+                        result = jbc.Key_Parser(cmdRest, [token], "XX0,TO3,FG1", []);
                         break;
 
                     case "indexes":
-                        result = jbc.Key_Parser(cmdRest, [tok], "XX0,FG1", ["all"]);
+                        result = jbc.Key_Parser(cmdRest, [token], "XX0,FG1", ["all"]);
                         break;
 
                     case "procedures":
-                        result = jbc.Key_Parser(cmdRest, [tok], "XX0,TO3,AS0,FG1", []);
+                        result = jbc.Key_Parser(cmdRest, [token], "XX0,TO3,AS0,FG1", []);
                         break;
 
                     case "structure":
-                        result = jbc.Key_Parser(cmdRest, [tok], "TO3,AS0,FG1", []);
+                        result = jbc.Key_Parser(cmdRest, [token], "TO3,AS0,FG1", []);
                         break;
 
                     case "to":
-                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out tok); // Eat TO
+                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token); // Eat TO
 
-                        jbc.GetNextToken(cmdRest, string.Empty, out tok); // Get next token
+                        jbc.GetNextToken(cmdRest, string.Empty, out token); // Get next token
 
-                        if (tok.Equals("array", StringComparison.OrdinalIgnoreCase))
+                        if (token.Equals("array", StringComparison.OrdinalIgnoreCase))
                         {
                             // TO ARRAY
                             cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out _); // Eat ARRAY
@@ -144,7 +162,7 @@ namespace JAXBase.Compiler
                         break;
 
                     default:
-                        throw new Exception("10||Unkown copy command " + tok.ToUpper());
+                        throw new Exception("10||Unkown copy command " + token.ToUpper());
                 }
             }
             catch (Exception ex)
@@ -188,42 +206,48 @@ namespace JAXBase.Compiler
         {
             string result = string.Empty;
 
-            cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out string tok);
-            tok = tok.ToLower();
+            cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out string token);
+            if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                token = abbr;
 
-            switch (tok)
+            if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                token = cmdPart;
+
+            token = token.ToLower();
+
+            switch (token)
             {
                 case "class":
-                    result = jbc.Key_Parser(cmdRest, [tok], "XX0,OF0,AS1,FM0,FG1", ["nowait"]);
+                    result = jbc.Key_Parser(cmdRest, [token], "XX0,OF0,AS1,FM0,FG1", ["nowait"]);
                     break;
 
                 case "classlib":
                 case "colorset":
                 case "database":
-                    result = jbc.Key_Parser(cmdRest, [tok], "XX0", []);
+                    result = jbc.Key_Parser(cmdRest, [token], "XX0", []);
                     break;
 
                 case "form":
-                    result = jbc.Key_Parser(cmdRest, [tok], "XX0,AS1,FM0,FG1", ["nowait", "save", "default"]);
+                    result = jbc.Key_Parser(cmdRest, [token], "XX0,AS1,FM0,FG1", ["nowait", "save", "default"]);
                     break;
 
                 case "label":
                 case "menu":
                 case "project":
                 case "report":
-                    result = jbc.Key_Parser(cmdRest, [tok], "XX0,FG1", ["nowait", "save"]);
+                    result = jbc.Key_Parser(cmdRest, [token], "XX0,FG1", ["nowait", "save"]);
                     break;
 
                 case "query":
-                    result = jbc.Key_Parser(cmdRest, [tok], "XX0,FG1", ["nowait"]);
+                    result = jbc.Key_Parser(cmdRest, [token], "XX0,FG1", ["nowait"]);
                     break;
 
                 case "cursor":
                 case "table":
                     if (cmdRest.Contains(" FROM ARRAY ", StringComparison.OrdinalIgnoreCase))
-                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + tok[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,FM0", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + token[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,FM0", []);
                     else
-                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + tok[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,TB0", []);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + token[..1].ToUpper() + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "XX0,TB0", []);
                     break;
 
                 default:    // Open the table designer

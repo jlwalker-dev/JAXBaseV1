@@ -117,6 +117,10 @@
  *  2025-01-17 - JLW
  *      I've made a lot of progress!  I'm working on the bootstrap form editor and decided I really
  *      needed grid support.  That's actually turning out to be much less intensive than I feared.
+ *      
+ *  2026-07-10 - JLW
+ *      Have not kept this up.  Compiled the first spanish language test program successfully.  I'm
+ *      sure there are a lot of gotchas left, but making good progress on finishing off Version 0.6
  * ----------------------------------------------------------------------------------------------------------*/
 
 using Avalonia;
@@ -144,11 +148,15 @@ namespace JAXBase.Core
             App.SetEnvironment().Wait();
 
             // Init the english language pack and register it with the extension manager
-            var englishPack = new EnglishLanguagePack();
-            var context = new DefaultExtensionContext();
-            ExtensionManager.Initialize(context);
-            englishPack.Initialize(context);
-            CurrentApp.ActiveLanguagePack = englishPack;
+            if (CurrentApp.ActiveLanguagePack.CommandParts.Count() == 0)
+            {
+                // Something went wrong, let's try to load the english pack
+                var englishPack = new EnglishLanguagePack();
+                var context = new DefaultExtensionContext();
+                ExtensionManager.Initialize(context);
+                englishPack.Initialize(context);
+                CurrentApp.ActiveLanguagePack = englishPack;
+            }
 
             // Determine mode
             bool parm1IsRT = parm1.Equals("/rt", StringComparison.OrdinalIgnoreCase) ||

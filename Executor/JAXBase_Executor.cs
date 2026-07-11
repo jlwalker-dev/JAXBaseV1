@@ -195,7 +195,7 @@ namespace JAXBase.Executor
 
             if (ccBlock.Length > 0)
             {
-                ContainsSource = Program.CurrentApp.utl.FindByteSequence(ccBlock, AppClass.cmdByte.ToString() + Program.CurrentApp.MiscInfo["sourcecode"], 0) >= 0;
+                //ContainsSource = Program.CurrentApp.utl.FindByteSequence(ccBlock, AppClass.cmdByte.ToString() + Program.CurrentApp.MiscInfo["sourcecode"], 0) >= 0;
 
                 string PrgCode = ccBlock;
                 Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].PrgPos = 0;

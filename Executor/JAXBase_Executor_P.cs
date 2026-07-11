@@ -12,7 +12,7 @@ namespace JAXBase.Executor
          * PACK
          * 
          */
-        public static async Task<string> Pack( ExecutorCodes eCodes)
+        public static async Task<string> Pack(ExecutorCodes eCodes)
         {
             try
             {
@@ -57,7 +57,7 @@ namespace JAXBase.Executor
             {
                 // Is this the first executed command of the program?
                 if (Program.CurrentApp.AppLevels.Count == 0) throw new Exception("2|");
-                if (JAXLib.InList(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand, -1, jbe.CmdNum["procedure"], jbe.CmdNum["*sc"]) == false) throw new Exception("8|");
+                if (Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].LastCommand != jbe.CmdNum["procedure"]) throw new Exception("8|");
 
                 // Break out the var expressions
                 for (int i = 0; i < eCodes.Expressions.Count; i++)
@@ -117,7 +117,7 @@ namespace JAXBase.Executor
          * PRIVATE var1 [AS Type1][, var2 AS Type...]
          *
          */
-        public static async Task<string> Private( ExecutorCodes eCodes)
+        public static async Task<string> Private(ExecutorCodes eCodes)
         {
             JAXObjects.Token answer = new();
             string result = string.Empty;
@@ -136,7 +136,7 @@ namespace JAXBase.Executor
                         string type = eCodes.As[i];
 
                         // Set the var as this type
-                        if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false) 
+                        if (string.IsNullOrWhiteSpace(eCodes.As[i]) == false)
                             await AppVars.SetAsType(var.varName, type);
                     }
                 }

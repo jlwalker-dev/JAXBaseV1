@@ -17,13 +17,21 @@ namespace JAXBase.Compiler
 
             try
             {
-                jbc.GetNextToken(cmdLine, string.Empty, out string cmd);
-                if (cmd.Equals("class",StringComparison.OrdinalIgnoreCase))
+                jbc.GetNextToken(cmdLine, string.Empty, out string token);
+
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+
+                if (token.Equals("class",StringComparison.OrdinalIgnoreCase))
                 {
                     // RENAME CLASS ClassName1 OF ClassLibraryName TO ClassName2
                     result = jbc.Key_Parser(cmdLine, ["class"], "XX0,OF0,TO3", []);
                 }
-                else if (cmd.Equals("table",StringComparison.OrdinalIgnoreCase))
+                else if (token.Equals("table",StringComparison.OrdinalIgnoreCase))
                 {
                     // RENAME TABLE TableName1[OF database] TO TableName2
                     result = jbc.Key_Parser(cmdLine, ["table"], "XX0,OF0,TO3", []);
@@ -57,9 +65,15 @@ namespace JAXBase.Compiler
 
             try
             {
-                jbc.GetNextToken(cmdLine, string.Empty, out string cmd);
+                jbc.GetNextToken(cmdLine, string.Empty, out string token);
 
-                if (cmd.Equals("from", StringComparison.OrdinalIgnoreCase))
+                if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
+                    token = abbr;
+
+                if (jbc.lang!.CommandParts.TryGetValue(token.ToLower(), out string? cmdPart))
+                    token = cmdPart;
+
+                if (token.Equals("from", StringComparison.OrdinalIgnoreCase))
                 {
                     // REPLACE FROM ARRAY | JSON
                     result = jbc.Generic_Parser(cmdLine, "FM0,FL0,SC0,FR0,WH0,IN0", ["nooptimize"]);

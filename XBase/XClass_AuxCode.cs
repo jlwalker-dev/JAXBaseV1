@@ -86,29 +86,32 @@ namespace JAXBase.XBase
             JAXObjects.Token tk;
 
             // Doublecheck that this control has set default capabilities
-            if ((await me.IsMember("setdefault")).Equals("P"))
+            string defValue = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("setdefault", out string? pem) ? pem : "setdefault";
+            string value = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("value", out pem) ? pem : "value";
+
+            if ((await me.IsMember(defValue)).Equals("P"))
             {
                 switch (cmd.ToLower())
                 {
                     case "CLEAR":
                     case "C":
-                        tk = await me.GetProperty("value");
+                        tk = await me.GetProperty(value);
                         if (tk.Element.IsNull() == false)
-                            await me.SetProperty("defaultvalue", tk.Element.ValueAsEmpty()!);
+                            await me.SetProperty(defValue, tk.Element.ValueAsEmpty()!);
                         break;
 
                     case "RESET":
                     case "R":
-                        tk = await me.GetProperty("defaultvalue");
+                        tk = await me.GetProperty(defValue);
                         if (tk.Element.IsNull() == false)
-                            await me.SetProperty("value", tk.Element.Value);
+                            await me.SetProperty(value, tk.Element.Value);
                         break;
 
                     case "SET":
                     case "S":
-                        tk = await me.GetProperty("value");
+                        tk = await me.GetProperty(value);
                         if (tk.Element.IsNull() == false)
-                            await me.SetProperty("defaultvalue", tk.Element.Value);
+                            await me.SetProperty(defValue, tk.Element.Value);
                         break;
                 }
             }

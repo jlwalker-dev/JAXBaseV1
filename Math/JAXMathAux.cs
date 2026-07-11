@@ -3,6 +3,7 @@ using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Language;
 using JAXBase.Utilities;
+using System.Text;
 
 namespace JAXBase.Math
 {
@@ -528,6 +529,11 @@ namespace JAXBase.Math
 
             string probOriginal = prob;
 
+            if (prob.Contains("ejecutar"))
+            {
+                int iii = 0;
+            }
+
             try
             {
                 List<string> arrayPartStack = [];
@@ -559,21 +565,35 @@ namespace JAXBase.Math
                             int funcVal = -1;
                             string testfunc = prob[..i];
 
-                            // Functions have to be at least 3 chars in length
-                            for (int ii = 0; ii < functions.Length; ii++)
+                            if (testfunc.Contains('.'))
                             {
-                                // Is it an exact match?
-                                if (functions[ii].Equals(testfunc + "(", ignCase))
+                                // we're dealing with an object
+                                string[] testbreak = testfunc.Split('.');
+
+                                // Only the very last list item is looked at and translated back to English
+                                // As the previous parts are user defined values
+                                testbreak[^1] = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(testbreak[^1], out string? p) ? p : testbreak[^1];
+
+                                // Put it back together
+                                StringBuilder tb = new();
+                                for (int ii = 0; ii < testbreak.Length; ii++)
+                                    tb.Append(testbreak[ii] + ".");
+
+                                // We now have the object with a converted property/method
+                                testfunc = tb.ToString().TrimEnd('.');
+                            }
+                            else
+                            {
+                                string tst = Program.CurrentApp.ActiveLanguagePack.MathFunctions.TryGetValue(testfunc + "(", out string? f) ? f.Trim('(') : testfunc;
+
+                                // Functions must be fully spelled out.  Perhaps Version 2.0
+                                // can address this if the community decides it's needed
+                                for (int ii = 0; ii < functions.Length; ii++)
                                 {
-                                    // We have a short function match
-                                    funcVal = ii;
-                                    break;
-                                }
-                                else if (testfunc.Length > 2)
-                                {
-                                    // If at least 3 chars, then try a partial match
-                                    if (functions[ii].StartsWith(testfunc, ignCase))
+                                    // Must be an exact match
+                                    if (functions[ii].Equals(tst + "(", ignCase))
                                     {
+                                        // We have a short function match
                                         funcVal = ii;
                                         break;
                                     }
@@ -591,11 +611,12 @@ namespace JAXBase.Math
                             }
                             else
                             {
-                                // No function match so it must be a UDF call
+                                // No function match so it must be an
+                                // object or UDF call
                                 i++;
                                 lastType = 'F';
                                 arrayPartStack.Add("(");
-                                vftest = "``" + prob[..i].Trim('(');
+                                vftest = "``" + testfunc.Trim('(');
                                 nospacesList.Add(vftest);
                             }
                         }
