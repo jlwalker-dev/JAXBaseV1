@@ -2157,7 +2157,7 @@ namespace JAXBase.Core
                 string refType = "S";   // Assume it's a simple token (send by value)
                 int level = -1;
 
-                if (JAXLib.InListC(v, ".null.", "null"))
+                if (JAXLib.InListC(v, ".null.", "null", JAXLanguageLists.GetWord("null", "COMMANDPARTS")))
                     throw new Exception("10||.null.");
 
                 // Nulls jump this code

@@ -56,31 +56,37 @@ namespace JAXBase.XBase
         public JAXObjectWrapper? parent = null;
 
         // Commonly used property names translated from english
-        private readonly string cPropLanguage;
-        private readonly string cPropName;
-        private readonly string cPropClass;
-        private readonly string cPropBaseClass;
-        private readonly string cMethodAddObject;
-        private readonly string cPropRendered;
-        private readonly string cPropClassID;
-        private readonly string cPropAError;
-        private readonly string cPropControlCount;
-        private readonly string cPropParent;
+        public readonly string cPropLanguage;
+        public readonly string cPropName;
+        public readonly string cPropClass;
+        public readonly string cPropBaseClass;
+        public readonly string cMethodAddObject;
+        public readonly string cPropRendered;
+        public readonly string cPropClassID;
+        public readonly string cPropAError;
+        public readonly string cPropControlCount;
+        public readonly string cPropParent;
+        public readonly string cPropObjects;
+        public readonly string cPropLocked;
+        public readonly string cPropSQLResult;
 
-        private readonly string cObjForm;
-        private readonly string cObjOptionButton;
-        private readonly string cObjMenuItem;
-        private readonly string cObjToolButton;
-        private readonly string cObjFormSet;
-        private readonly string cObjOptionGroup;
-        private readonly string cObjMenu;
-        private readonly string cObjToolbar;
-        private readonly string cObjTree;
-        private readonly string cObjTreeItem;
+        public readonly string cObjForm;
+        public readonly string cObjOptionButton;
+        public readonly string cObjMenuItem;
+        public readonly string cObjToolButton;
+        public readonly string cObjFormSet;
+        public readonly string cObjOptionGroup;
+        public readonly string cObjMenu;
+        public readonly string cObjToolbar;
+        public readonly string cObjTree;
+        public readonly string cObjTreeItem;
 
-        private readonly string cMethError;
-        private readonly string cMethShow;
-        private readonly string cMethAddProperty;
+        public readonly string cMethLoad;
+        public readonly string cMethInit;
+        public readonly string cMethError;
+        public readonly string cMethShow;
+        public readonly string cMethAddProperty;
+        public readonly string cMethValid;
 
         public JAXObjectWrapper? Parent
         {
@@ -194,35 +200,38 @@ namespace JAXBase.XBase
             THIS = this;
             string lastProp;
 
-            cPropLanguage = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("language", out string? pem) ? pem : "language";
-            cPropName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("name", out pem) ? pem : "name";
-            cPropClass = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("class", out pem) ? pem : "class";
-            cPropBaseClass = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("baseclass", out pem) ? pem : "baseclass";
-            cMethodAddObject = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("addobject", out pem) ? pem : "addobject";
-            cPropRendered = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("rendered", out pem) ? pem : "rendered";
-            cPropClassID = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("classid", out pem) ? pem : "classid";
-            cPropAError = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("aerror", out pem) ? pem : "aerror";
-            cPropControlCount = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("controlcount", out pem) ? pem : "controlcount";
-            cPropParent = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("parent", out pem) ? pem : "parent";
+            cPropLanguage = JAXLanguageLists.GetWord("language", "REVPEMS"); 
+            cPropName = JAXLanguageLists.GetWord("name", "REVPEMS");
+            cPropClass = JAXLanguageLists.GetWord("class", "REVPEMS");
+            cPropBaseClass = JAXLanguageLists.GetWord("baseclass", "REVPEMS");
+            cMethodAddObject = JAXLanguageLists.GetWord("addobject", "REVPEMS");
+            cPropRendered = JAXLanguageLists.GetWord("rendered", "REVPEMS");
+            cPropClassID = JAXLanguageLists.GetWord("classid", "REVPEMS");
+            cPropAError = JAXLanguageLists.GetWord("aerror", "REVPEMS");
+            cPropControlCount = JAXLanguageLists.GetWord("controlcount", "REVPEMS");
+            cPropParent = JAXLanguageLists.GetWord("parent", "REVPEMS");
+            cPropObjects = JAXLanguageLists.GetWord("objects", "REVPEMS");
+            cPropSQLResult = JAXLanguageLists.GetWord("sqlresult", "REVPEMS");
 
-            cObjForm = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("form", out pem) ? pem : "form";
-            cObjOptionButton = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("optionbutton", out pem) ? pem : "optionbutton";
-            cObjMenuItem = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("menuitem", out pem) ? pem : "menuitem";
-            cObjToolButton = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("toolbutton", out pem) ? pem : "toolbutton";
-            cObjFormSet = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("formset", out pem) ? pem : "formset";
-            cObjOptionGroup = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("optiongroup", out pem) ? pem : "optiongroup";
-            cObjMenu = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("menu", out pem) ? pem : "menu";
-            cObjToolbar = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("toolbar", out pem) ? pem : "toolbar";
-            cObjTree = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("tree", out pem) ? pem : "tree";
-            cObjTreeItem = Program.CurrentApp.ActiveLanguagePack.RevJaxObjects.TryGetValue("treeitem", out pem) ? pem : "treeitem";
+            cObjFormSet = JAXLanguageLists.GetWord("formset", "REVOBJECTS");
+            cObjForm = JAXLanguageLists.GetWord("form", "REVOBJECTS");
+            cObjOptionGroup = JAXLanguageLists.GetWord("optiongroup", "REVOBJECTS");
+            cObjOptionButton = JAXLanguageLists.GetWord("optionbutton", "REVOBJECTS");
+            cObjMenu = JAXLanguageLists.GetWord("menu", "REVOBJECTS");
+            cObjMenuItem = JAXLanguageLists.GetWord("menuitem", "REVOBJECTS");
+            cObjToolbar = JAXLanguageLists.GetWord("toolbar", "REVOBJECTS");
+            cObjToolButton = JAXLanguageLists.GetWord("toolbutton", "REVOBJECTS");
+            cObjTree = JAXLanguageLists.GetWord("tree", "REVOBJECTS");
+            cObjTreeItem = JAXLanguageLists.GetWord("treeitem", "REVOBJECTS");
 
-            cMethError = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("error", out pem) ? pem : "error";
-            cMethShow = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("show", out pem) ? pem : "show";
-            cMethAddProperty = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("addproperty", out pem) ? pem : "addproperty";
+            cMethError = JAXLanguageLists.GetWord("error", "REVPEMS");
+            cMethShow = JAXLanguageLists.GetWord("show", "REVPEMS");
+            cMethAddProperty = JAXLanguageLists.GetWord("addproperty", "REVPEMS");
+            cMethValid = JAXLanguageLists.GetWord("valid", "REVPEMS");
 
-            string cPropLocked = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("locked", out pem) ? pem : "locked";
-            string cMethLoad = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("load", out pem) ? pem : "load";
-            string cMethInit = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("init", out pem) ? pem : "init";
+            cPropLocked = JAXLanguageLists.GetWord("locked", "REVPEMS");
+            cMethLoad = JAXLanguageLists.GetWord("load", "REVPEMS");
+            cMethInit = JAXLanguageLists.GetWord("init", "REVPEMS");
 
             int CurrentErrCount = Program.CurrentApp.Errors.Count;
             int Err = 0;
@@ -287,7 +296,7 @@ namespace JAXBase.XBase
                     if (prop.Length == 3)
                     {
                         prop[0] = prop[0].Trim();
-                        string cProp = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue(prop[0], out pem) ? pem : prop[0];
+                        string cProp = JAXLanguageLists.GetWord(prop[0], "REVPEMS");
                         string p0 = cProp.ToLower().Trim();
                         string p1 = prop[1].Replace("!", "").ToUpper().Trim();
                         JAXObjects.Token tk = new();
@@ -492,18 +501,18 @@ namespace JAXBase.XBase
                             string[] JAXMethods = thisObject!.JAXMethods();
                             for (int i = 0; i < JAXMethods.Length; i++)
                             {
-                                meName = JAXMethods[i];
+                                meName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue(JAXMethods[i], out string? m) ? m : JAXMethods[i];
                                 thisObject._SetMethod(meName, "", true, "M!");
-                                thisObject.Methods[JAXMethods[i]].Tag = "N";
+                                thisObject.Methods[meName].Tag = "N";
                             }
 
                             // Load the events
                             string[] JAXEvents = thisObject.JAXEvents();
                             for (int i = 0; i < JAXEvents.Length; i++)
                             {
-                                meName = JAXEvents[i];
+                                meName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue(JAXEvents[i], out string? m) ? m : JAXEvents[i];
                                 thisObject._SetMethod(meName, "", true, "E!");
-                                thisObject.Methods[JAXEvents[i]].Tag = "N";
+                                thisObject.Methods[meName].Tag = "N";
                             }
                         }
                         catch (Exception ex)
@@ -635,14 +644,14 @@ namespace JAXBase.XBase
 
                     thisObject!.PostClassInit().Wait();
                 }
-            } 
+            }
         }
 
 
         // All objects should call this when shutting down
         public void Release()
         {
-            if (baseclass.Equals(cObjForm,StringComparison.OrdinalIgnoreCase))
+            if (baseclass.Equals(cObjForm, StringComparison.OrdinalIgnoreCase))
                 App._screenClass!.RemoveForm(ClassID);
         }
 
@@ -1730,12 +1739,21 @@ namespace JAXBase.XBase
                 {
                     if (!InTransaction) ClearErrors();
 
-                    if ((await thisObject.IsMember(name)).Equals("P"))
+                    //if ((await thisObject.IsMember(name)).Equals("P"))
+                    //{
+                    //    if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))
+                    //        JOWName = value.ToString() ?? string.Empty;
+
+                    //    await thisObject.SetProperty(name, value, idx);
+
+                    //    AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
+                    //}
+
+                    result = await thisObject.SetProperty(name, value, idx);
+                    if (result == 0)
                     {
                         if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))
                             JOWName = value.ToString() ?? string.Empty;
-
-                        await thisObject.SetProperty(name, value, idx);
 
                         AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
                     }
@@ -1784,12 +1802,20 @@ namespace JAXBase.XBase
                 {
                     if (!InTransaction) ClearErrors();
 
-                    if ((await thisObject.IsMember(name)).Equals("P"))
+                    //if ((await thisObject.IsMember(name)).Equals("P"))
+                    //{
+                    //    if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))
+                    //        JOWName = value.ToString() ?? string.Empty;
+
+                    //    await thisObject.SetProperty(name, value, 0);
+
+                    //    AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
+                    //}
+                    result = await thisObject.SetProperty(name, value, 0);
+                    if (result == 0)
                     {
                         if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))
                             JOWName = value.ToString() ?? string.Empty;
-
-                        await thisObject.SetProperty(name, value, 0);
 
                         AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
                     }

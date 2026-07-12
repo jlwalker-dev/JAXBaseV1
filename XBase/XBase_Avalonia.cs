@@ -39,7 +39,6 @@ using Avalonia.Input;
 using JAXBase.Core;
 using JAXBase.Language;
 using JAXBase.Utilities;
-using System.Windows.Controls;
 using static JAXBase.XBase.JAXObjectsAux;
 
 namespace JAXBase.XBase
@@ -81,6 +80,7 @@ namespace JAXBase.XBase
         public virtual string MyBaseClass { get; } = string.Empty;
         public virtual bool Register { get; } = true;
 
+
         public XBase_Avalonia(JAXObjectWrapper jow, string name)
         {
             me = jow;
@@ -89,10 +89,10 @@ namespace JAXBase.XBase
             //MyBaseClass = string.Empty;
 
             // Make sure there's a name in the name property
-            if (UserProperties.ContainsKey("name"))
+            if (UserProperties.ContainsKey(jow.cPropName))
             {
-                if (string.IsNullOrWhiteSpace(UserProperties["name"].AsString()))
-                    UserProperties["name"].Element.Value = me.Class;
+                if (string.IsNullOrWhiteSpace(UserProperties[jow.cPropName].AsString()))
+                    UserProperties[jow.cPropName].Element.Value = me.Class;
             }
         }
 
@@ -141,34 +141,34 @@ namespace JAXBase.XBase
             if (Parent is not null)
             {
                 // Formset can't have a parent (what about _Screen?)
-                if (me.BaseClass.Equals("formset", StringComparison.OrdinalIgnoreCase)) // What about _Screen as parent????
+                if (me.BaseClass.Equals(me.cObjFormSet, StringComparison.OrdinalIgnoreCase)) // What about _Screen as parent????
                     throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
 
                 // Optionbutton can only have an Optiongroup parent
-                if (me.BaseClass.Equals("optionbutton", StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals("optiongroup", StringComparison.OrdinalIgnoreCase) == false)
+                if (me.BaseClass.Equals(me.cObjOptionButton, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(me.cObjOptionGroup, StringComparison.OrdinalIgnoreCase) == false)
                     throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
 
                 // Menuitem can only have a menu parent
-                if (me.BaseClass.Equals("menuitem", StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Contains("menu", StringComparison.OrdinalIgnoreCase) == false)
+                if (me.BaseClass.Equals(me.cObjMenuItem, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Contains(me.cObjMenu, StringComparison.OrdinalIgnoreCase) == false)
                     throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
 
                 // Toolbutton can only have a toolbar parent
-                if (me.BaseClass.Equals("toolbutton", StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals("toolbar", StringComparison.OrdinalIgnoreCase) == false)
+                if (me.BaseClass.Equals(me.cObjToolButton, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(me.cObjToolbar, StringComparison.OrdinalIgnoreCase) == false)
                     throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
 
                 // Form can only have a form or formset parent (what about _Screen?)
-                if (me.BaseClass.Equals("form", StringComparison.OrdinalIgnoreCase) && JAXLib.InListC(Parent.BaseClass, "form", "formset") == false)
+                if (me.BaseClass.Equals(me.cObjForm, StringComparison.OrdinalIgnoreCase) && JAXLib.InListC(Parent.BaseClass, me.cObjForm, me.cObjFormSet) == false)
                     throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
 
                 // Form on a formset is the exception to this rule
-                if (Parent.BaseClass.Equals("formset") == false && me.BaseClass.Equals("form", StringComparison.OrdinalIgnoreCase) == false)
+                if (me.BaseClass.Equals(me.cObjFormSet, StringComparison.OrdinalIgnoreCase) == false && Parent.BaseClass.Equals(me.cObjFormSet) == false)
                 {
                     if (VisualClass && Parent.VisualClass == false)
                         throw new Exception($"3301|{me.Class}/{Parent.BaseClass}");
                 }
 
-                JAXObjects.Token tk = await Parent.GetProperty("name");
-                UserProperties["parentclass"].Element.Value = tk.AsString();
+                JAXObjects.Token tk = await Parent.GetProperty(me.cPropName);
+                UserProperties[me.cPropParent].Element.Value = tk.AsString();
                 AppIO.DebugLog($"Setting parent of {me.JOWName} to {Parent.JOWName}", false);
             }
 
@@ -200,7 +200,7 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public virtual void _AddError(int errorNo, int lineNo, string message, string procedure)
         {
-            if (UserProperties.TryGetValue("aerror", out JAXObjects.Token? aerr))
+            if (UserProperties.TryGetValue(me.cPropAError, out JAXObjects.Token? aerr))
             {
                 AppIO.DebugLog($">>> ERROR: Class {me.JOWName} ({me.BaseClass}): {errorNo} @ {lineNo} in {procedure} - {message}");
 
@@ -262,8 +262,8 @@ namespace JAXBase.XBase
 
                 if (err == 0)
                 {
-                    UserProperties["objects"].Add(value);
-                    UserProperties["controlcount"].Element.Value = UserProperties["objects"].Col;
+                    UserProperties[me.cPropObjects].Add(value);
+                    UserProperties[me.cPropControlCount].Element.Value = UserProperties[me.cPropObjects].Col;
                     value.thisObject?.PostInit(me, []).Wait();
                 }
             }
@@ -278,7 +278,7 @@ namespace JAXBase.XBase
                     AppErrorHandling.SetError(err, $"{err}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
             }
-            return err > 0 ? -1 : UserProperties["objects"]._avalue.Count;
+            return err > 0 ? -1 : UserProperties[me.cPropObjects]._avalue.Count;
         }
 
         /*------------------------------------------------------------------------------------------*
@@ -321,24 +321,24 @@ namespace JAXBase.XBase
                 result = 3019;
             else if (CanWriteObjects)
             {
-                if (idx >= UserProperties["objects"].Col)
+                if (idx >= UserProperties[me.cPropObjects].Col)
                     result = 3003;
                 else
                 {
-                    JAXObjectWrapper jow = (JAXObjectWrapper)UserProperties["objects"].Element.Value;
+                    JAXObjectWrapper jow = (JAXObjectWrapper)UserProperties[me.cPropObjects].Element.Value;
 
                     if (jow is not null && jow.thisObject is not null)
                     {
                         if (jow.Protected == JAXObjectWrapper.Protection.URD)
-                            UserProperties["objects"].RemoveAt(idx);
+                            UserProperties[me.cPropObjects].RemoveAt(idx);
                         else
                             result = 3042;
                     }
                     else
-                        UserProperties["objects"].RemoveAt(idx);  // Remove nulled obejct
+                        UserProperties[me.cPropObjects].RemoveAt(idx);  // Remove nulled obejct
 
                     if (result == 0)
-                        UserProperties["controlcount"].Element.Value = UserProperties["objects"].Col;
+                        UserProperties[me.cPropControlCount].Element.Value = UserProperties[me.cPropObjects].Col;
                 }
             }
             else
@@ -365,10 +365,10 @@ namespace JAXBase.XBase
             if (CanUseObjects == false) throw new Exception("3019|");
             if (CanReadObjects)
             {
-                if (idx >= 0 && UserProperties["objects"].Count > idx)
+                if (idx >= 0 && UserProperties[me.cPropObjects].Count > idx)
                 {
-                    UserProperties["objects"].ElementNumber = idx;
-                    jaxClass = (JAXObjectWrapper)UserProperties["objects"].Element.Value;
+                    UserProperties[me.cPropObjects].ElementNumber = idx;
+                    jaxClass = (JAXObjectWrapper)UserProperties[me.cPropObjects].Element.Value;
                 }
             }
 
@@ -388,13 +388,13 @@ namespace JAXBase.XBase
 
             if (CanReadObjects)
             {
-                int count = UserProperties["objects"].Count;
+                int count = UserProperties[me.cPropObjects].Count;
 
                 for (int i = 0; i < count; i++)
                 {
-                    UserProperties["objects"].ElementNumber = i;
-                    JAXObjectWrapper o = (JAXObjectWrapper)UserProperties["objects"].Element.Value;
-                    JAXObjects.Token tk = await o.GetProperty("name");
+                    UserProperties[me.cPropObjects].ElementNumber = i;
+                    JAXObjectWrapper o = (JAXObjectWrapper)UserProperties[me.cPropObjects].Element.Value;
+                    JAXObjects.Token tk = await o.GetProperty(me.cPropName);
                     string name = tk.Element.Type.Equals("C") ? tk.AsString().ToUpper() : string.Empty;
                     if (name.Equals(objectname.ToUpper()))
                     {
@@ -462,7 +462,7 @@ namespace JAXBase.XBase
             int result = 0;
             propertyName = propertyName.ToLower();
 
-            if (CanReadObjects || propertyName.Equals("objects", StringComparison.OrdinalIgnoreCase) == false)
+            if (CanReadObjects || propertyName.Equals(me.cPropObjects, StringComparison.OrdinalIgnoreCase) == false)
             {
                 if (UserProperties.ContainsKey(propertyName))
                 {
@@ -504,7 +504,7 @@ namespace JAXBase.XBase
             JAXObjects.Token? objToken = new();
             propertyName = propertyName.ToLower();
 
-            if (CanReadObjects && UserProperties.TryGetValue("objects", out JAXObjects.Token? value))
+            if (CanReadObjects && UserProperties.TryGetValue(me.cPropObjects, out JAXObjects.Token? value))
             {
                 if (idx < 0 || idx >= value.Row)
                 {
@@ -560,12 +560,12 @@ namespace JAXBase.XBase
             if (CanWriteObjects)
             {
                 // TODO - set the object property
-                JAXObjectWrapper jow = (JAXObjectWrapper)UserProperties["objects"]._avalue[idx].Value;
+                JAXObjectWrapper jow = (JAXObjectWrapper)UserProperties[me.cPropObjects]._avalue[idx].Value;
                 jow.SetProperty(propertyName, value).Wait();
             }
             else
             {
-                if (IsMember("objects").Equals("P"))
+                if (IsMember(me.cPropObjects).Equals("P"))
                     result = 3025;
                 else
                     result = 3019;
@@ -956,14 +956,14 @@ namespace JAXBase.XBase
 
         public virtual async Task MakeNextDefaultName(JAXObjectWrapper value)
         {
-            JAXObjects.Token? tk = await value.GetProperty("name");
+            JAXObjects.Token? tk = await value.GetProperty(me.cPropName);
 
             if (tk is not null)
             {
                 string name = tk.AsString();
                 if (name.Equals(value.DefaultName(), StringComparison.OrdinalIgnoreCase))
                 {
-                    JAXObjects.Token objects = UserProperties["objects"];
+                    JAXObjects.Token objects = UserProperties[me.cPropObjects];
                     int icount = objects.Row * objects.Col;
                     int ncount = 1;
 
@@ -975,7 +975,7 @@ namespace JAXBase.XBase
                         for (int i = 0; i < icount; i++)
                         {
                             JAXObjectWrapper jow = (JAXObjectWrapper)objects._avalue[i].Value;
-                            if ((tk = await jow.GetProperty("name")) is not null)
+                            if ((tk = await jow.GetProperty(me.cPropName)) is not null)
                             {
                                 string tname = tk.AsString();
                                 if (tname.StartsWith(name, StringComparison.OrdinalIgnoreCase))
@@ -1035,7 +1035,7 @@ namespace JAXBase.XBase
          */
         public virtual void SetAllOfClass(string Class, string propertyName, JAXObjects.Token objtk)
         {
-            if (UserProperties.TryGetValue("objects", out JAXObjects.Token? otk))
+            if (UserProperties.TryGetValue(me.cPropObjects, out JAXObjects.Token? otk))
             {
                 for (int i = 0; i < otk._avalue.Count; i++)
                 {
@@ -1062,7 +1062,7 @@ namespace JAXBase.XBase
          */
         public virtual void SetAllOfBaseClass(string BaseClass, string propertyName, JAXObjects.Token objtk)
         {
-            if (UserProperties.TryGetValue("objects", out JAXObjects.Token? otk))
+            if (UserProperties.TryGetValue(me.cPropObjects, out JAXObjects.Token? otk))
             {
                 // Deep dive first
                 SetAllOfClass(BaseClass, propertyName, objtk);
@@ -1121,17 +1121,17 @@ namespace JAXBase.XBase
                 isMember = "M";
             else
             {
-                if (UserProperties.TryGetValue("objects", out JAXObjects.Token? Objs))
+                if (UserProperties.TryGetValue(me.cPropObjects, out JAXObjects.Token? Objs))
                 {
                     // Is it an object?
-                    int cCount = UserProperties["controlcount"].AsInt();
+                    int cCount = UserProperties[me.cPropControlCount].AsInt();
                     for (int i = 0; i < cCount; i++)
                     {
                         Objs.ElementNumber = i;
                         JAXObjectWrapper oname = (JAXObjectWrapper)Objs.Element.Value;
                         JAXObjects.Token tk;
 
-                        if ((tk = await oname.GetProperty("name", 0)) is not null)
+                        if ((tk = await oname.GetProperty(me.cPropName, 0)) is not null)
                         {
                             string nam = tk.Element.Type.Equals("C") ? tk.AsString() : string.Empty;
                             if (nam.Equals(name, StringComparison.OrdinalIgnoreCase))

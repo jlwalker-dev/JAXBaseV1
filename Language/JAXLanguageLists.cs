@@ -251,6 +251,13 @@ namespace JAXBase.Language
         //    { 50, "" }
         //};
 
+        /// <summary>
+        ///  English to ActiveLanguagePack
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="dictionary"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static string GetWord(string input, string dictionary)
         {
             var pack = dictionary.ToUpper() switch
@@ -258,9 +265,11 @@ namespace JAXBase.Language
                 "MATH" => Program.CurrentApp.ActiveLanguagePack.MathFunctions,
                 "COMMAND" => Program.CurrentApp.ActiveLanguagePack.JAXCommands,
                 "COMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.CommandParts,
-                //"ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
                 "SET" => Program.CurrentApp.ActiveLanguagePack.SetCommands,
                 "OBJECT" => Program.CurrentApp.ActiveLanguagePack.JaxObjects,
+                "REVCOMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.RevCommandParts,
+                "REVOBJECTS" => Program.CurrentApp.ActiveLanguagePack.RevJaxObjects,
+                "REVPEMS" => Program.CurrentApp.ActiveLanguagePack.RevPEMs,
                 "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
                 _ => throw new ArgumentException($"Invalid dictionary specified: {dictionary}")
             };
@@ -272,6 +281,13 @@ namespace JAXBase.Language
         }
 
 
+        /// <summary>
+        ///  English to ActiveLanguagePack
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="dictionary"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static string ToCanonicalKeyword(string input, string dictionary)
         {
             if (string.IsNullOrEmpty(input)) return input;
@@ -281,9 +297,11 @@ namespace JAXBase.Language
                 "MATH" => Program.CurrentApp.ActiveLanguagePack.MathFunctions,
                 "COMMAND" => Program.CurrentApp.ActiveLanguagePack.JAXCommands,
                 "COMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.CommandParts,
-                //"ECODE" => Program.CurrentApp.ActiveLanguagePack.eCodeCommand,
                 "SET" => Program.CurrentApp.ActiveLanguagePack.SetCommands,
                 "OBJECT" => Program.CurrentApp.ActiveLanguagePack.JaxObjects,
+                "REVCOMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.RevCommandParts,
+                "REVOBJECTS" => Program.CurrentApp.ActiveLanguagePack.RevJaxObjects,
+                "REVPEMS" => Program.CurrentApp.ActiveLanguagePack.RevPEMs,
                 "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
                 _ => throw new ArgumentException($"Invalid dictionary specified: {dictionary}")
             };

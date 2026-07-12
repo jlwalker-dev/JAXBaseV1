@@ -33,6 +33,7 @@
  */
 
 using JAXBase.Core;
+using JAXBase.Language;
 using JAXBase.Utilities;
 using Newtonsoft.Json;
 using System.Net;
@@ -546,12 +547,12 @@ namespace JAXBase.XBase
         private void ConfigureRequest(HttpRequestMessage request, object? content, HttpMethod method)
         {
             // Authentication
-            if (UserProperties["authtype"].AsString().Equals("Basic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(UserProperties["username"].AsString()))
+            if (UserProperties[JAXLanguageLists.GetWord("authtype", "REVPEMS")].AsString().Equals("Basic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(UserProperties["username"].AsString()))
             {
-                var byteArray = Encoding.ASCII.GetBytes($"{UserProperties["username"].AsString()}:{UserProperties["password"].AsString()}");
+                var byteArray = Encoding.ASCII.GetBytes($"{UserProperties[JAXLanguageLists.GetWord("username", "REVPEMS")].AsString()}:{UserProperties["password"].AsString()}");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
             }
-            else if (UserProperties["authtype"].AsString().Equals("Bearer", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(UserProperties["bearertoken"].AsString()))
+            else if (UserProperties[JAXLanguageLists.GetWord("authtype", "REVPEMS")].AsString().Equals("Bearer", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(UserProperties["bearertoken"].AsString()))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserProperties["bearertoken"].AsString());
             }
@@ -571,7 +572,7 @@ namespace JAXBase.XBase
                 request.Content = new StringContent(json, Encoding.UTF8, mediaType);
 
                 // PATCH size check
-                long maxPatchSize = (long)UserProperties["maxpatchsizebytes"].AsDouble() * 1024;
+                long maxPatchSize = (long)UserProperties[JAXLanguageLists.GetWord("maxpatchsizebytes", "REVPEMS")].AsDouble() * 1024;
                 if (method == HttpMethod.Patch && maxPatchSize > 0)
                 {
                     long size = Encoding.UTF8.GetByteCount(json);
@@ -595,14 +596,14 @@ namespace JAXBase.XBase
         {
             WebHistory webHistory = new()
             {
-                URL = UserProperties["lasturl"].AsString(),
+                URL = UserProperties[JAXLanguageLists.GetWord("lasturl", "REVPEMS")].AsString(),
                 Status = statuscode,
                 Content = message
             };
 
             AppIO.DebugLog($"HTTP Status: {statuscode} - {message}");
             history.Insert(0, webHistory);
-            if (UserProperties["historymax"].AsInt() > 0 && history.Count > UserProperties["historymax"].AsInt())
+            if (UserProperties[JAXLanguageLists.GetWord("historymax", "REVPEMS")].AsInt() > 0 && history.Count > UserProperties["historymax"].AsInt())
                 history.RemoveAt(history.Count - 1);
         }
 

@@ -400,18 +400,8 @@ namespace JAXBase.Core
         {
             // Set up the default log file
             try { if (Directory.Exists(JaxVariables._LogPath) == false) Directory.CreateDirectory(JaxVariables._LogPath); } catch { JaxVariables._LogPath = ""; }
-            string logfile = $"System_{DateTime.Now.ToString("yyyyMMddHHmmssff")}.log";
+            string logfile = $"JAXBase_{DateTime.Now.ToString("yyyyMMddHHmmssff")}.log";
             AppLogFile = string.Format(JaxVariables._LogPath + logfile);
-
-            // Set up system JAXObjectWrappers
-            _screen = new(this, "screen", "_screen", []);
-            _screenClass = (XBase_Class_Screen)_screen.thisObject!;
-
-            _jax = new(this, "jax", "_jax", []);
-            _jaxClass = (XBase_Class_JAX)_jax.thisObject!;
-
-            // Create system variables
-            AppVars.CreateSystemVars();
 
             // Read the ini
             if (File.Exists(ExeFolder + "jaxbase.ini"))
@@ -430,15 +420,20 @@ namespace JAXBase.Core
                             if (iniLine.Contains('='))
                             {
                                 string[] iLine = iniLine.Split('=');
+
                                 switch (iLine[0])
                                 {
                                     case "language":
                                         ISOLanguage = iLine[1].Trim();
-                                        if (ISOLanguage.Equals("en", StringComparison.OrdinalIgnoreCase) == false)
-                                        {
                                             // Load the language pack
                                             ActiveLanguagePack = JAXLanguageLists.GetLanguagePack(ISOLanguage);
-                                        }
+
+                                            // Call Initialize using the existing default context
+                                            if (ActiveLanguagePack is IJAXBaseExtension extensionPack)
+                                            {
+                                                var context = new DefaultExtensionContext();  // or however it's instantiated elsewhere
+                                                extensionPack.Initialize(context);
+                                            }
                                         break;
 
                                     case "logfolder":
@@ -575,6 +570,17 @@ namespace JAXBase.Core
                 string newINI = "tempfolder=";
                 JAXLib.StrToFile(newINI, ExeFolder + "jaxbase.ini", 0);
             }
+
+
+            // Set up system JAXObjectWrappers
+            _screen = new(this, "screen", "_screen", []);
+            _screenClass = (XBase_Class_Screen)_screen.thisObject!;
+
+            _jax = new(this, "jax", "_jax", []);
+            _jaxClass = (XBase_Class_JAX)_jax.thisObject!;
+
+            // Create system variables
+            AppVars.CreateSystemVars();
 
             try { if (Directory.Exists(JaxVariables._WorkPath) == false) Directory.CreateDirectory(JaxVariables._WorkPath); } catch { JaxVariables._WorkPath = ""; }
             try { if (Directory.Exists(JaxVariables._TempPath) == false) Directory.CreateDirectory(JaxVariables._TempPath); } catch { JaxVariables._TempPath = ""; }

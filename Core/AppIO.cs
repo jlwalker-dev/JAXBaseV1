@@ -101,23 +101,23 @@ namespace JAXBase.Core
 
             // Restore size & position
             if (_currentSettings.WindowWidth > 100)
-                Program.CurrentApp._screen!.SetProperty("width", _currentSettings.WindowWidth, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("width", "REVPEMS"), _currentSettings.WindowWidth, 0).Wait();
 
             if (_currentSettings.WindowHeight > 100)
-                Program.CurrentApp._screen!.SetProperty("height", _currentSettings.WindowHeight, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("height", "REVPEMS"), _currentSettings.WindowHeight, 0).Wait();
 
             if (_currentSettings.WindowLeft >= 0 && _currentSettings.WindowTop >= 0)
             {
                 JAXApp.MainWindowInstance.WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.Manual;
-                Program.CurrentApp._screen!.SetProperty("left", (int)_currentSettings.WindowLeft, 0).Wait();
-                Program.CurrentApp._screen.SetProperty("top", (int)_currentSettings.WindowTop, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("left", "REVPEMS"), (int)_currentSettings.WindowLeft, 0).Wait();
+                Program.CurrentApp._screen.SetProperty(JAXLanguageLists.GetWord("top", "REVPEMS"), (int)_currentSettings.WindowTop, 0).Wait();
             }
 
             // Restore icon (if you saved the name/path)
             if (!string.IsNullOrEmpty(_currentSettings.IconName))
-                Program.CurrentApp._screen!.SetProperty("icon", _currentSettings.IconName, 0).Wait();
+                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("icon", "REVPEMS"), _currentSettings.IconName, 0).Wait();
             else
-                Program.CurrentApp._screen!.SetProperty("icon", "*jax*", 0).Wait();
+                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("icon", "REVPEMS"), "*jax*", 0).Wait();
 
             // Restore Command Window settings
             if (_currentSettings.CommandWindowWidth > 100)

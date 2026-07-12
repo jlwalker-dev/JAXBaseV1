@@ -1,4 +1,5 @@
-﻿using JAXBase.Utilities;
+﻿using JAXBase.Language;
+using JAXBase.Utilities;
 using JAXBase.XBase;
 using ZXing;
 
@@ -611,7 +612,7 @@ namespace JAXBase.Core
             if (expr.Contains('&'))
                 expr = await JAXMacroHandler.Expand(Program.CurrentApp, expr);
 
-            if (JAXLib.InListC(expr, ".null.", "null"))
+            if (JAXLib.InListC(expr, ".null.", "null", JAXLanguageLists.GetWord("null", "COMMANDPARTS")))
                 throw new Exception("10|.NULL.");
 
             // Get the var parts
@@ -867,7 +868,7 @@ namespace JAXBase.Core
                 if (expr.Contains('&'))
                     expr = await JAXMacroHandler.Expand(Program.CurrentApp, expr);
 
-                if (JAXLib.InListC(expr, ".null.", "null"))
+                if (JAXLib.InListC(expr, ".null.", "null", JAXLanguageLists.GetWord("null", "COMMANDPARTS")))
                     throw new Exception("41|.null.");
 
                 // Expecting object.property or alias.field
@@ -1324,7 +1325,7 @@ namespace JAXBase.Core
                 if (expr.Contains('&'))
                     expr = await JAXMacroHandler.Expand(Program.CurrentApp, expr);
 
-                if (JAXLib.InListC(expr, ".null.", "null"))
+                if (JAXLib.InListC(expr, ".null.", "null",JAXLanguageLists.GetWord("null", "COMMANDPARTS")))
                     throw new Exception("10|.NULL.");
 
                 answer = await ObjectCall(expr, expectingValue);
@@ -1432,7 +1433,8 @@ namespace JAXBase.Core
                                 List<string> varInfo = AppHelper.BreakArrayOrUDF(objList[i]);
                                 string memberType = (await thisObject.IsMember(varInfo[0])).ToUpper();
 
-                                if ("ME".Contains(memberType) == false) throw new Exception("1738|" + varInfo[0]);
+                                if ("ME".Contains(memberType) == false) 
+                                    throw new Exception("1738|" + varInfo[0]);
 
                                 // TODO - what about objects?
 
