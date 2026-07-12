@@ -90,16 +90,16 @@ namespace JAXBase.XBase
             // Make the connection object
             try
             {
-                builder.ConnectTimeout = SQLBase.UserProperties["connecttimeout"].AsInt();
+                builder.ConnectTimeout = SQLBase.UserProperties[JAXLanguageLists.GetWord("connecttimeout", "REVPEMS")].AsInt();
                 builder.ApplicationName = ApplicationName;
                 builder.Authentication = AuthenticationMethod;                  // Default for Linux
-                builder.DataSource = SQLBase.UserProperties["server"].AsString();                                // IP or host name
-                builder.Encrypt = SQLBase.UserProperties["encryption"].AsBool();
-                builder.InitialCatalog = SQLBase.UserProperties["database"].AsString();
-                builder.TrustServerCertificate = SQLBase.UserProperties["trust"].AsBool();
+                builder.DataSource = SQLBase.UserProperties[JAXLanguageLists.GetWord("server", "REVPEMS")].AsString();                                // IP or host name
+                builder.Encrypt = SQLBase.UserProperties[JAXLanguageLists.GetWord("encryption", "REVPEMS")].AsBool();
+                builder.InitialCatalog = SQLBase.UserProperties[JAXLanguageLists.GetWord("database", "REVPEMS")].AsString();
+                builder.TrustServerCertificate = SQLBase.UserProperties[JAXLanguageLists.GetWord("trust", "REVPEMS")].AsBool();
 
                 // Not using OS authentication
-                switch (SQLBase.UserProperties["authtype"].AsInt())
+                switch (SQLBase.UserProperties[JAXLanguageLists.GetWord("authtype", "REVPEMS")].AsInt())
                 {
                     case 1:
                         // Windows
@@ -113,8 +113,8 @@ namespace JAXBase.XBase
                         break;
 
                     case 2:
-                        builder.UserID = SQLBase.UserProperties["userid"].AsString();
-                        builder.Password = SQLBase.UserProperties["password"].AsString();
+                        builder.UserID = SQLBase.UserProperties[JAXLanguageLists.GetWord("userid", "REVPEMS")].AsString();
+                        builder.Password = SQLBase.UserProperties[JAXLanguageLists.GetWord("password", "REVPEMS")].AsString();
                         break;
 
                     case 3:
@@ -123,8 +123,8 @@ namespace JAXBase.XBase
                         builder.IntegratedSecurity = false;         // Usually disable
 
                         // Thumbprint support
-                        if (string.IsNullOrWhiteSpace(SQLBase.UserProperties["thumbprint"].AsString()) == false)
-                            builder["Certificate"] = SQLBase.UserProperties["thumbprint"];
+                        if (string.IsNullOrWhiteSpace(SQLBase.UserProperties[JAXLanguageLists.GetWord("thumbprint", "REVPEMS")].AsString()) == false)
+                            builder["Certificate"] = SQLBase.UserProperties[JAXLanguageLists.GetWord("thumbprint", "REVPEMS")];
 
                         // Remove username/password when using client certificate
                         builder.UserID = null;
@@ -132,7 +132,7 @@ namespace JAXBase.XBase
 
                         // Optional: Force TLS 1.2 or higher
                         builder.Encrypt = true;
-                        builder["Encrypt"] = "true";   // sometimes needed for clarity
+                        builder[JAXLanguageLists.GetWord("engrypt", "REVPEMS")] = "true";   // sometimes needed for clarity
                         break;
                 }
 
@@ -290,7 +290,7 @@ namespace JAXBase.XBase
                 else
                 {
                     // TODO - Write the Stored Procedure
-                    string schema = SQLBase.UserProperties["schema"].AsString();
+                    string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
                     string[] test = Name.Split('.');
 
                     if (test.Length == 1)
@@ -319,7 +319,7 @@ namespace JAXBase.XBase
         {
             int result = ErrorCode = 0;
 
-            string schema = SQLBase.UserProperties["schema"].AsString();
+            string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
             string[] test = Name.Split('.');
 
             if (test.Length == 1)
@@ -370,7 +370,7 @@ namespace JAXBase.XBase
                     ErrorCode = 6001;
                 else
                 {
-                    string schema = SQLBase.UserProperties["schema"].AsString();
+                    string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
                     string[] test = Name.Split('.');
 
                     if (test.Length == 1)
@@ -523,7 +523,7 @@ namespace JAXBase.XBase
 
         public async Task<int> DeleteIndex(string indexName, string Name)
         {
-            string schema = SQLBase.UserProperties["schema"].AsString();
+            string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
             string[] test = Name.Split('.');
 
             if (test.Length == 1)
@@ -566,7 +566,7 @@ namespace JAXBase.XBase
             int result = ErrorCode = 0;
             string msg = string.Empty;
 
-            string schema = SQLBase.UserProperties["schema"].AsString();
+            string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
             string[] test = Name.Split('.');
 
             if (test.Length == 1)
@@ -600,7 +600,7 @@ namespace JAXBase.XBase
 
         public async Task<int> DeleteSP(string Name)
         {
-            string schema = SQLBase.UserProperties["schema"].AsString();
+            string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
             string[] test = Name.Split('.');
 
             if (test.Length == 1)
@@ -611,7 +611,7 @@ namespace JAXBase.XBase
 
         public async Task<int> DeleteView(string Name)
         {
-            string schema = SQLBase.UserProperties["schema"].AsString();
+            string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
             string[] test = Name.Split('.');
 
             if (test.Length == 1)
@@ -1153,9 +1153,12 @@ namespace JAXBase.XBase
             string type = value.Element.Type;
             string msg = "";
 
+            parameter= parameter.ToLower();
+            string EnglishParameter = JAXLanguageLists.GetWord(parameter, "REVPEMS");
+
             try
             {
-                switch (parameter.ToLower())
+                switch (EnglishParameter.ToLower())
                 {
                     case "applicationname":
                         ApplicationName = type.Equals("C") ? value.AsString() : throw new Exception($"11|");
@@ -1192,7 +1195,7 @@ namespace JAXBase.XBase
                         {
                             int Port = value.AsInt() < 1 ? 1433 : value.AsInt();
                             if (JAXLib.Between(Port, 1, 65535) == false) result = ErrorCode = 3003;
-                            SQLBase.UserProperties["port"].Element.Value = Port;
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("port", "REVPEMS")].Element.Value = Port;
                         }
                         else
                             ErrorCode = 11;
@@ -1201,7 +1204,7 @@ namespace JAXBase.XBase
 
                     case "database":
                         if (type.Equals("C"))
-                            SQLBase.UserProperties["database"].Element.Value = value.AsString();
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("database", "REVPEMS")].Element.Value = value.AsString();
                         else
                             ErrorCode = 11;
 
@@ -1210,7 +1213,7 @@ namespace JAXBase.XBase
                     case "server":
                     case "datasource":
                         if (type.Equals("C"))
-                            SQLBase.UserProperties["server"].Element.Value = value.AsString();
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("server", "REVPEMS")].Element.Value = value.AsString();
                         else
                             ErrorCode = 11;
                         break;
@@ -1221,24 +1224,24 @@ namespace JAXBase.XBase
                         if (yes.Length < 1)
                             ErrorCode = 41;
                         else
-                            SQLBase.UserProperties["integratedsecurity"].Element.Value = yes[..1].Equals("Y", StringComparison.OrdinalIgnoreCase);
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("integratedsecurity", "REVPEMS")].Element.Value = yes[..1].Equals("Y", StringComparison.OrdinalIgnoreCase);
                         break;
 
                     case "pwd":
                     case "password":
                         if (type.Equals("C"))
-                            SQLBase.UserProperties["password"].Element.Value = value.AsString();
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("password", "REVPEMS")].Element.Value = value.AsString();
                         else
                             ErrorCode = 11;
                         break;
 
                     case "timeout":
                         if (type.Equals("N"))
-                            SQLBase.UserProperties["connecttimeout"].Element.Value = value.AsInt();
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("connecttimeout", "REVPEMS")].Element.Value = value.AsInt();
                         else
                             ErrorCode = 11;
 
-                        if (SQLBase.UserProperties["connecttimeout"].AsInt() < 0) result = 3003;
+                        if (SQLBase.UserProperties[JAXLanguageLists.GetWord("connecttimeout", "REVPEMS")].AsInt() < 0) result = 3003;
                         break;
 
                     case "uid":
@@ -1246,21 +1249,21 @@ namespace JAXBase.XBase
                     case "user id":
                     case "userid":
                         if (type.Equals("C"))
-                            SQLBase.UserProperties["userid"].Element.Value = value.AsString();
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("userid", "REVPEMS")].Element.Value = value.AsString();
                         else
                             ErrorCode = 11;
                         break;
 
                     case "trust":
                         if (type.Equals("L"))
-                            SQLBase.UserProperties["trust"].Element.Value = value.AsBool();
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("trust", "REVPEMS")].Element.Value = value.AsBool();
                         else
                             ErrorCode = 11;
                         break;
 
                     case "encryption":
                         if (type.Equals("L"))
-                            SQLBase.UserProperties["encryption"].Element.Value = value.AsBool();
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("encryption", "REVPEMS")].Element.Value = value.AsBool();
                         else
                             ErrorCode = 11;
                         break;
@@ -1930,7 +1933,7 @@ namespace JAXBase.XBase
             int result = 0;
 
             string lcSQL = "";
-            string schema = SQLBase.UserProperties["schema"].AsString();
+            string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
             schema = string.IsNullOrWhiteSpace(schema) ? "dbo" : schema;
 
             if (await IsConnected() == false)

@@ -529,7 +529,7 @@ namespace JAXBase.Math
 
             string probOriginal = prob;
 
-            if (prob.Contains("ejecutar"))
+            if (prob.Contains("motor"))
             {
                 int iii = 0;
             }
@@ -567,20 +567,20 @@ namespace JAXBase.Math
 
                             if (testfunc.Contains('.'))
                             {
-                                // we're dealing with an object
-                                string[] testbreak = testfunc.Split('.');
+                                //// we're dealing with an object
+                                //string[] testbreak = testfunc.Split('.');
 
-                                // Only the very last list item is looked at and translated back to English
-                                // As the previous parts are user defined values
-                                testbreak[^1] = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(testbreak[^1], out string? p) ? p : testbreak[^1];
+                                //// Only the very last list item is looked at and translated back to English
+                                //// As the previous parts are user defined values
+                                //testbreak[^1] = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(testbreak[^1], out string? p) ? p : testbreak[^1];
 
-                                // Put it back together
-                                StringBuilder tb = new();
-                                for (int ii = 0; ii < testbreak.Length; ii++)
-                                    tb.Append(testbreak[ii] + ".");
+                                //// Put it back together
+                                //StringBuilder tb = new();
+                                //for (int ii = 0; ii < testbreak.Length; ii++)
+                                //    tb.Append(testbreak[ii] + ".");
 
-                                // We now have the object with a converted property/method
-                                testfunc = tb.ToString().TrimEnd('.');
+                                //// We now have the object with a converted property/method
+                                //testfunc = tb.ToString().TrimEnd('.');
                             }
                             else
                             {
@@ -631,8 +631,10 @@ namespace JAXBase.Math
 
                         if (lastType == 'X')
                         {
+                            string langFTest = JAXLanguageLists.GetWord(vftest, "COMMANDPARTS");
+
                             // Take care of some last minute alterations
-                            switch (vftest.ToLower())
+                            switch (langFTest.ToLower())
                             {
                                 case ".t.":
                                 case ".f.":
@@ -668,11 +670,6 @@ namespace JAXBase.Math
 
                         if (lastType == 'X')
                         {
-                            if (probOriginal.Contains(".exec", StringComparison.OrdinalIgnoreCase))
-                            {
-                                int iii = 0;
-                            }
-
                             // Not a function so it's a variable which
                             // may or may not be followed by a [ or a
                             // method/UDF followed by (

@@ -969,6 +969,8 @@ namespace JAXBase.Language
             {"TOPINDEX","topindex" },
             {"TOPITEMID","topitemid" },
             {"TRANSACTIONS","transactions" },
+            {"TRUST","trust" },
+            {"USERID","userid" },
             {"USRID","usrid" },
             {"VALUE","value" },
             {"VERSION","version" },

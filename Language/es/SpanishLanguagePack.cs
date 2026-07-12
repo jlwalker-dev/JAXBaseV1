@@ -38,7 +38,7 @@ namespace JAXBase.Language.es
         {
             context.RegisterLanguagePack(LanguageCode, this);
 
-            foreach(var kvp in PEMs)
+            foreach (var kvp in PEMs)
                 RevPEMs.Add(kvp.Value.ToUpper(), kvp.Key.ToLower());
 
             foreach (var kvp in JaxObjects)
@@ -567,6 +567,7 @@ namespace JAXBase.Language.es
             {"SUBRAYADO","fontunderline"},
             {"COLORTEXTO","forecolor"},
             {"FORMATO","format"},
+            {"FORMULARIOS", "forms"},
             {"COLORLINEASREJILLA","gridlinecolor"},
             {"LINEASREJILLA","gridlines"},
             {"ANCHOLINEASREJILLA","gridlinewidth"},
@@ -660,6 +661,7 @@ namespace JAXBase.Language.es
             {"COMPARTIDO","shared"},
             {"ESTADO","state"},
             {"MOSTRARENTANA","showwindow"},
+            {"RESULTADOSQL","sqlresult" },
             {"SIMBOLOGIA","symbology"},
             {"INDICEPESTANA","tabindex"},
             {"PESTANAS","tabs"},
@@ -673,11 +675,13 @@ namespace JAXBase.Language.es
             {"TIEMPOLIMITE","timeout"},
             {"BARRATITULO","titlebar"},
             {"TEXTOCONSEJO","tooltiptext"},
+            {"CONFIANZA","trust"},
             {"SUPERIOR","top"},
             {"INDICESUPERIOR","topindex"},
             {"IDITEMSUPERIOR","topitemid"},
             {"TRANSACCIONES","transactions"},
-            {"IDUSUARIO","usrid"},
+            {"IDUSUARIO","userid"},
+            {"USRID","usrid"},
             {"VALOR","value"},
             {"VERSION","version"},
             {"VISTA","view"},

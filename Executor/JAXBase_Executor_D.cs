@@ -548,7 +548,7 @@ namespace JAXBase.Executor
                                 if (f.SystemColumn == false)
                                 {
                                     sb.AppendLine();
-                                    sb.AppendLine(string.Format(lang.Phrase[42], f.FieldName, f.FieldType, f.FieldLen, "NBIFY".Contains(f.FieldType) ? f.FieldDec : ""));
+                                    sb.AppendLine(string.Format(lang.Phrase[41], f.FieldName, f.FieldType, f.FieldLen, "NBIFY".Contains(f.FieldType) ? f.FieldDec : ""));
                                 }
                             }
                         }

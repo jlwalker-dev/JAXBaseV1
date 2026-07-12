@@ -20,7 +20,9 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using JAXBase.Core;
+using JAXBase.Language;
 using JAXBase.Utilities;
+using System.Reflection;
 
 namespace JAXBase.XBase
 {
@@ -182,6 +184,7 @@ namespace JAXBase.XBase
             //if (InInit == false)
             //    AppIO.DebugLog($"XBase_Class_Avalonia: {me.JOWName.ToUpper()}.{propertyName}={objtk.AsString()}");
 
+            string EnglishPropertyName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(propertyName, out string? p) ? p : propertyName;
             propertyName = propertyName.ToLower();
 
             if (UserProperties.TryGetValue(propertyName, out JAXObjects.Token? value) && value.Protected)
@@ -214,7 +217,7 @@ namespace JAXBase.XBase
 
                         // Visual object common property handler.  Only the common properties
                         // that are registered to the current class will be executed.
-                        switch (propertyName)
+                        switch (EnglishPropertyName)
                         {
                             case "anchor":
                                 if (objtk.Element.Type.Equals("N"))
@@ -528,6 +531,8 @@ namespace JAXBase.XBase
             JAXObjects.Token resultToken = new();
             int result = 0;
             Avalonia.Controls.Control? MyObj = me.avaloniaObject;
+
+            string EnglishPropertyName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(propertyName, out string? p) ? p : propertyName;
             propertyName = propertyName.ToLower();
 
             // First, we check to make sure that the property exists
@@ -569,7 +574,7 @@ namespace JAXBase.XBase
                     // Get the property and fill in the value
                     //resultToken.CopyFrom(UserProperties[propertyName]);
 
-                    switch (propertyName.ToLower())
+                    switch (EnglishPropertyName.ToLower())
                     {
                         case "enabled":
                             resultToken.Element.Value = MyObj.IsEnabled;
@@ -695,31 +700,31 @@ namespace JAXBase.XBase
             AppIO.DebugLog($"      Reapplying {jow.JOWName} values");
 
             // Use the same pattern as SetProperty for consistency
-            if (jow.thisObject.UserProperties.TryGetValue("left", out JAXObjects.Token? valueLeft))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("left","REVPEMS"), out JAXObjects.Token? valueLeft))
                 Avalonia.Controls.Canvas.SetLeft(jow.avaloniaObject, valueLeft.AsDouble());
 
-            if (jow.thisObject.UserProperties.TryGetValue("top", out JAXObjects.Token? valueTop))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("top", "REVPEMS"), out JAXObjects.Token? valueTop))
                 Avalonia.Controls.Canvas.SetTop(jow.avaloniaObject, valueTop.AsDouble());
 
-            if (jow.thisObject.UserProperties.TryGetValue("minwidth", out JAXObjects.Token? valueMinWidth))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("minwidth", "REVPEMS"), out JAXObjects.Token? valueMinWidth))
                 jow.avaloniaObject.MinWidth = System.Math.Max(0, valueMinWidth.AsDouble());
 
-            if (jow.thisObject.UserProperties.TryGetValue("minheight", out JAXObjects.Token? valueMinHeight))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("minheight", "REVPEMS"), out JAXObjects.Token? valueMinHeight))
                 jow.avaloniaObject.MinHeight = System.Math.Max(0, valueMinHeight.AsDouble());
 
-            if (jow.thisObject.UserProperties.TryGetValue("maxwidth", out JAXObjects.Token? valueMaxWidth))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("maxwidth", "REVPEMS"), out JAXObjects.Token? valueMaxWidth))
                 jow.avaloniaObject.MaxWidth = valueMaxWidth.AsDouble() >= 0 ? valueMaxWidth.AsDouble() : double.PositiveInfinity;
 
-            if (jow.thisObject.UserProperties.TryGetValue("maxheight", out JAXObjects.Token? valueMaxHeight))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("maxheight", "REVPEMS"), out JAXObjects.Token? valueMaxHeight))
                 jow.avaloniaObject.MaxHeight = valueMaxHeight.AsDouble() >= 0 ? valueMaxHeight.AsDouble() : double.PositiveInfinity;
 
-            if (jow.thisObject.UserProperties.TryGetValue("width", out JAXObjects.Token? valueWidth))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("width", "REVPEMS"), out JAXObjects.Token? valueWidth))
                 jow.avaloniaObject.Width = valueWidth.AsDouble();
 
-            if (jow.thisObject.UserProperties.TryGetValue("height", out JAXObjects.Token? valueHeight))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("height", "REVPEMS"), out JAXObjects.Token? valueHeight))
                 jow.avaloniaObject.Height = valueHeight.AsDouble();
 
-            if (jow.thisObject.UserProperties.TryGetValue("visible", out JAXObjects.Token? valueVisible))
+            if (jow.thisObject.UserProperties.TryGetValue(JAXLanguageLists.GetWord("visible", "REVPEMS"), out JAXObjects.Token? valueVisible))
                 jow.avaloniaObject.IsVisible = valueVisible.AsBool();
 
             AppIO.DebugLog($"         Left    {valueLeft!.AsDouble()}");

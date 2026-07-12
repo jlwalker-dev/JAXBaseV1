@@ -61,14 +61,27 @@ namespace JAXBase.XBase
         public new string MyDefaultName = "sql";
         public SQLClass MyConnection => (SQLClass)me.nvObject!;
 
+        private string propCursorName;
+        private string propCursorResult;
+        private string propEngine;
+        private string propConnectString;
+        private string methConnect;
+
         public XBase_Class_SQL(JAXObjectWrapper jow, string name) : base(jow, name)
         {
             name = string.IsNullOrEmpty(name) ? "sql" : name;
             SetVisualObject(null, "SQL", name, false, UserObject.urw);
             me.nvObject = new XBase_ClassSQL_NONE(this);
+
+            propCursorName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("cursorname", out string? p) ? p : "cursorname";
+            propCursorResult = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("cursorresult", out p) ? p : "cursorresult";
+            propEngine = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("engine", out p) ? p : "engine";
+            propConnectString = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("connectionstring", out p) ? p : "connectionstring";
+            methConnect= Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue("connect", out p) ? p : "connect";
         }
 
         public string CurrentCursorName = "";
+
 
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
@@ -97,13 +110,15 @@ namespace JAXBase.XBase
         {
             JAXObjects.Token returnToken = new();
             int result = 0;
+
             propertyName = propertyName.ToLower();
+            string EnglishPropertyName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(propertyName, out string? p) ? p : propertyName;
 
             if (UserProperties.ContainsKey(propertyName))
             {
-                switch (propertyName.ToLower())
+                switch (EnglishPropertyName.ToLower())
                 {
-                    case "connectstring":
+                    case "connectionstring":
                         if (MyConnection is not null)
                             returnToken.Element.Value = MyConnection.GetConnectionString();
                         else
@@ -174,7 +189,10 @@ namespace JAXBase.XBase
         public override async Task<int> SetProperty(string propertyName, object objValue, int objIdx)
         {
             int result = 0;
+
             propertyName = propertyName.ToLower();
+            string EnglishPropertyName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(propertyName, out string? p) ? p : propertyName;
+
             JAXObjects.Token tk = new();
             tk.Element.Value = objValue;
 
@@ -184,7 +202,7 @@ namespace JAXBase.XBase
             {
                 if (UserProperties.ContainsKey(propertyName))
                 {
-                    switch (propertyName)
+                    switch (EnglishPropertyName)
                     {
                         // Intercept special handling of properties
                         case "appname":
@@ -206,7 +224,7 @@ namespace JAXBase.XBase
                             string cname = tk.AsString().Trim();
 
                             if (cname.Length == 0)
-                                cname = "SQLResult";
+                                cname = me.cPropSQLResult;
 
                             objValue = cname;
                             break;
@@ -232,7 +250,7 @@ namespace JAXBase.XBase
                                 result = 11;
                             break;
 
-                        case "connectstring":
+                        case "connectionstring":
                             if (tk.Element.Type.Equals("C") == false)
                                 result = 11;
                             else
@@ -366,10 +384,12 @@ namespace JAXBase.XBase
             int result = 0;
             string errMsg = string.Empty;
 
-            // Set up the cursorresult property
-            string cname = UserProperties["cursorname"].AsString();
+            methodName = methodName.ToLower();
+            string EnglishMethodName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(methodName, out string? p) ? p : methodName;
 
-            UserProperties["cursorresult"].Element.Value = "";
+            // Set up the cursorresult property
+            string cname = UserProperties[propCursorName].AsString();
+            UserProperties[propCursorResult].Element.Value = "";
 
             // Solve for cname?
             if (cname[0].Equals('('))
@@ -421,7 +441,7 @@ namespace JAXBase.XBase
 
 
             // Can't connect when you already have a connection
-            if (methodName.Equals("connect", StringComparison.OrdinalIgnoreCase))
+            if (methodName.Equals(methConnect, StringComparison.OrdinalIgnoreCase))
             {
                 if (await MyConnection.IsConnected())
                     result = 1541;
@@ -431,7 +451,7 @@ namespace JAXBase.XBase
             {
                 CurrentCursorName = cname;
 
-                switch (methodName.ToLower())
+                switch (EnglishMethodName)
                 {
                     case "altertable":
                         if (parms > 0 && parm1.Element.Type.Equals("C") == false)
@@ -710,7 +730,7 @@ namespace JAXBase.XBase
                 }
 
                 if (Program.CurrentApp.CurrentDS.IsWorkArea(CurrentCursorName))
-                    UserProperties["cursorresult"].Element.Value = CurrentCursorName;
+                    UserProperties[propCursorResult].Element.Value = CurrentCursorName;
             }
 
             return result > 0 ? -1 : result;
@@ -759,7 +779,7 @@ namespace JAXBase.XBase
                 try
                 {
                     // Select the SQL Engine class and set it up
-                    switch (UserProperties["engine"].AsInt())
+                    switch (UserProperties[propEngine].AsInt())
                     {
                         case 0: // Not chosen
                             result = 6005;
@@ -780,7 +800,7 @@ namespace JAXBase.XBase
 
                         default:    // Not chosen
                             result = 1999;
-                            errMsg = $"Not implemented: Engine={UserProperties["engine"].AsInt()}";
+                            errMsg = $"Not implemented: Engine={UserProperties[propEngine].AsInt()}";
                             _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                             break;
 
@@ -796,10 +816,10 @@ namespace JAXBase.XBase
                 if (result == 0)
                 {
                     if (string.IsNullOrWhiteSpace(connString) == false)
-                        UserProperties["connectstring"].Element.Value = connString;
+                        UserProperties[propConnectString].Element.Value = connString;
 
-                    if (string.IsNullOrWhiteSpace(connString) && UserProperties["connectstring"].Element.Type.Equals("C"))
-                        connString = UserProperties["connectstring"].AsString();
+                    if (string.IsNullOrWhiteSpace(connString) && UserProperties[propConnectString].Element.Type.Equals("C"))
+                        connString = UserProperties[propConnectString].AsString();
                     else
                         connString = "";
 
@@ -874,7 +894,7 @@ namespace JAXBase.XBase
                         _AddError(result, 0, errMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
                     }
                     else
-                        sqlCursor = "sqlresult";
+                        sqlCursor = me.cPropSQLResult;
                 }
 
 
@@ -1084,7 +1104,7 @@ namespace JAXBase.XBase
                 [
                 $"appname,C,{Program.CurrentApp.AppLevels[1].PrgName}", "asynchronous,L,F", "authtype,n,1",
                 "baseclass,C!,SQL","batchmode,L,true",
-                "class,C!,SQL", "classlibrary,C$,", "comment,C,", "connectstring,c,", "connecttimeout,n,30", "cursorname,c,SQLResult", "cursorresult,c!,",
+                "class,C!,SQL", "classlibrary,C$,", "comment,C,", "connectionstring,c,", "connecttimeout,n,30", "cursorname,c,SQLResult", "cursorresult,c!,",
                 "database,c,", "disconnectrollback,l,F", "displogin,n,1", "dispwarnings,L,F", "driver,c,",
                 "encryption,L,F", "engine,N,0",
                 "idletimeout,n,0", "isconnected,L!,F",

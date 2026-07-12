@@ -8,6 +8,7 @@
  */
 using Avalonia;
 using JAXBase.Core;
+using JAXBase.Language;
 using JAXBase.Utilities;
 
 namespace JAXBase.XBase
@@ -33,8 +34,10 @@ namespace JAXBase.XBase
             // Final setup of properties
             // ----------------------------------------
             bool result = await base.PostInit(callBack, parameterList);
-            UserProperties.Add("forms", new(""));
-            UserProperties["forms"] = new(Screens, "M") // Mapped List of Dictionary
+
+            string forms = JAXLanguageLists.GetWord("forms", "REVPEMS");
+            UserProperties.Add(forms, new(""));
+            UserProperties[forms] = new(Screens, "M") // Mapped List of Dictionary
             {
                 Protected = true
             };
@@ -51,19 +54,21 @@ namespace JAXBase.XBase
         {
             int result = 0;
             JAXObjects.Token returnToken = new();
+
             propertyName = propertyName.ToLower();
+            string EnglishPropertyName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(propertyName, out string? p) ? p : propertyName;
 
             if (UserProperties.ContainsKey(propertyName))
             {
 
-                switch (propertyName)
+                switch (EnglishPropertyName)
                 {
                     case "activecontrol":
                         returnToken = UserProperties["activecontrol"];
                         break;
 
                     case "activeform":
-                        returnToken.Element = UserProperties["forms"]._avalue[UserProperties["activeform"].AsInt()];
+                        returnToken.Element = UserProperties["forms"]._avalue[UserProperties[JAXLanguageLists.GetWord("activeform", "REVPEMS")].AsInt()];
                         break;
 
                     case "commandwindowheight":
@@ -116,11 +121,11 @@ namespace JAXBase.XBase
                         break;
 
                     case "monitortop":
-                        returnToken.Element.Value = MonitorLib.GetScreenInfo(JAXApp.MainWindowInstance!, "top");
+                        returnToken.Element.Value = MonitorLib.GetScreenInfo(JAXApp.MainWindowInstance!, JAXLanguageLists.GetWord("top","REVPEMS"));
                         break;
 
                     case "monitorleft":
-                        returnToken.Element.Value = MonitorLib.GetScreenInfo(JAXApp.MainWindowInstance!, "left");
+                        returnToken.Element.Value = MonitorLib.GetScreenInfo(JAXApp.MainWindowInstance!, JAXLanguageLists.GetWord("left", "REVPEMS"));
                         break;
 
                     case "top":
@@ -187,7 +192,10 @@ namespace JAXBase.XBase
         public override async Task<int> SetProperty(string propertyName, object objValue, int objIdx)
         {
             int result = 0;
+
             propertyName = propertyName.ToLower();
+            string EnglishPropertyName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(propertyName, out string? p) ? p : propertyName;
+            
             JAXObjects.Token tk = new(objValue);
 
             if (UserProperties.ContainsKey(propertyName))
@@ -198,7 +206,7 @@ namespace JAXBase.XBase
                 }
                 else
                 {
-                    switch (propertyName)
+                    switch (EnglishPropertyName)
                     {
                         case "alwaysontop":
                             if (tk.Element.Type.Equals("L"))
@@ -230,8 +238,8 @@ namespace JAXBase.XBase
 
                                         JAXApp.MainWindowInstance.Position = new PixelPoint(centerX, centerY);
 
-                                        UserProperties["left"].Element.Value = JAXApp.MainWindowInstance.Bounds.Left;
-                                        UserProperties["top"].Element.Value = JAXApp.MainWindowInstance.Bounds.Top;
+                                        UserProperties[JAXLanguageLists.GetWord("left", "REVPEMS")].Element.Value = JAXApp.MainWindowInstance.Bounds.Left;
+                                        UserProperties[JAXLanguageLists.GetWord("top", "REVPEMS")].Element.Value = JAXApp.MainWindowInstance.Bounds.Top;
                                     }
                                 }
                                 else
@@ -439,8 +447,8 @@ namespace JAXBase.XBase
                             {
                                 if (JAXApp.MainWindowInstance is not null)
                                 {
-                                    Avalonia.PixelPoint p = new(tk.AsInt(), UserProperties["top"].AsInt());
-                                    JAXApp.MainWindowInstance!.Position = p;
+                                    Avalonia.PixelPoint pp = new(tk.AsInt(), UserProperties[JAXLanguageLists.GetWord("top","REVPEMS")].AsInt());
+                                    JAXApp.MainWindowInstance!.Position = pp;
                                 }
                             }
                             else
@@ -559,15 +567,15 @@ namespace JAXBase.XBase
                                             JAXApp.MainWindowInstance.Position = new PixelPoint(targetX, targetY);
 
                                             // Move to the center or topleft of the specified monitor
-                                            if (UserProperties["autocenter"].AsBool())
+                                            if (UserProperties[JAXLanguageLists.GetWord("autocenter", "REVPEMS")].AsBool())
                                             {
                                                 // Center
-                                                await SetProperty("autocenter", true, 0);
+                                                await SetProperty(JAXLanguageLists.GetWord("autocenter", "REVPEMS"), true, 0);
                                             }
                                             else
                                             {
-                                                UserProperties["left"].Element.Value = JAXApp.MainWindowInstance.Bounds.Left;
-                                                UserProperties["top"].Element.Value = JAXApp.MainWindowInstance.Bounds.Top;
+                                                UserProperties[JAXLanguageLists.GetWord("left","REVPEMS")].Element.Value = JAXApp.MainWindowInstance.Bounds.Left;
+                                                UserProperties[JAXLanguageLists.GetWord("top", "REVPEMS")].Element.Value = JAXApp.MainWindowInstance.Bounds.Top;
                                             }
                                         }
                                         else
@@ -664,7 +672,7 @@ namespace JAXBase.XBase
                             if (tk.Element.Type.Equals("C"))
                             {
                                 if (JAXUtilities.IsValidName(tk.AsString()))
-                                    UserProperties["name"].Element.Value = tk.AsString();
+                                    UserProperties[me.cPropName].Element.Value = tk.AsString();
                                 else
                                     result = 1575;
                             }
@@ -724,8 +732,8 @@ namespace JAXBase.XBase
                             {
                                 if (JAXApp.MainWindowInstance is not null)
                                 {
-                                    Avalonia.PixelPoint p = new(Convert.ToInt32(UserProperties["left"].AsInt()), tk.AsInt());
-                                    JAXApp.MainWindowInstance!.Position = p;
+                                    Avalonia.PixelPoint pp = new(Convert.ToInt32(UserProperties[JAXLanguageLists.GetWord("left", "REVPEMS")].AsInt()), tk.AsInt());
+                                    JAXApp.MainWindowInstance!.Position = pp;
                                 }
                             }
                             else
@@ -878,6 +886,7 @@ namespace JAXBase.XBase
             int result = 0;
 
             methodName = methodName.ToLower();
+            string EnglishMethodName = Program.CurrentApp.ActiveLanguagePack.PEMs.TryGetValue(methodName, out string? p) ? p : methodName;
 
             switch (methodName)
             {

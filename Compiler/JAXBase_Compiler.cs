@@ -155,7 +155,7 @@ namespace JAXBase.Compiler
         {
             if (string.IsNullOrWhiteSpace(toCmd))
             {
-                toCmd = Program.CurrentApp.ActiveLanguagePack.RevCommandParts.TryGetValue("to", out string? t) ? t : " to ";
+                toCmd = Program.CurrentApp.ActiveLanguagePack.RevCommandParts.TryGetValue("to", out string? t) ? " " + t + " " : " to ";
                 endtextCMD = Program.CurrentApp.ActiveLanguagePack.RevCommandParts.TryGetValue("endtext", out t) ? t : "endtext";
                 textCmd = Program.CurrentApp.ActiveLanguagePack.RevCommandParts.TryGetValue("text", out t) ? t : "text";
             }
@@ -382,7 +382,7 @@ namespace JAXBase.Compiler
                         {
                             i++;
                             ln = block[i].Trim();
-                            if (ln.Length == endtextCMD.Length && ln.Equals(endtextCMD, StringComparison.OrdinalIgnoreCase) || ln.Length > endtextCMD.Length+1 && ln.Equals(endtextCMD+" ", StringComparison.OrdinalIgnoreCase))
+                            if (ln.Length == endtextCMD.Length && ln.Equals(endtextCMD, StringComparison.OrdinalIgnoreCase) || ln.Length > endtextCMD.Length + 1 && ln.Equals(endtextCMD + " ", StringComparison.OrdinalIgnoreCase))
                             {
                                 ln = "";
                                 i++;    // toss the endtext
@@ -956,7 +956,7 @@ namespace JAXBase.Compiler
                 {
                     cmdRest = GetNextToken(cmdRest, string.Empty, out string key);
 
-                    key = Program.CurrentApp.ActiveLanguagePack.CommandParts.TryGetValue(key, out string? k) ? k : (Program.CurrentApp.ActiveLanguagePack.SetCommands.TryGetValue(key, out k) ? k!: key);
+                    key = Program.CurrentApp.ActiveLanguagePack.CommandParts.TryGetValue(key, out string? k) ? k : (Program.CurrentApp.ActiveLanguagePack.SetCommands.TryGetValue(key, out k) ? k! : key);
 
                     // Some commands assume an empty key means something
                     for (int i = 0; i < keys.Length; i++)
@@ -1250,7 +1250,7 @@ namespace JAXBase.Compiler
                     // Get the TO translation and look for it in the code
                     // It's up to the user to write the code without ambiguity because
                     // I still don't grok the logic to a context sensitive lexar.
-                    string toCmd = RevCommandParts.TryGetValue("TO", out string? cmd) ? " " + cmd + " " : throw new Exception("1999|TO command not found in language command parts");
+                    //string toCmd = RevCommandParts.TryGetValue("TO", out string? cmd) ? " " + cmd + " " : throw new Exception("1999|TO command not found in language command parts");
 
                     int f = command.ToLower().LastIndexOf(toCmd);
                     if (f > 0)
@@ -1289,7 +1289,10 @@ namespace JAXBase.Compiler
                 result = Program.CurrentApp.CompilerXRef["XX"].ToString() + exprResult;
 
                 if (string.IsNullOrWhiteSpace(target) == false)
+                {
+                    // Can't deal with assignment translations here
                     result += AppClass.stmtDelimiter + Program.CurrentApp.CompilerXRef["TO"].ToString() + AppClass.literalStart + target + AppClass.literalEnd;
+                }
             }
             catch (Exception ex)
             {
@@ -1831,7 +1834,7 @@ namespace JAXBase.Compiler
                     }
 
                     // TODO - this needs to be thought over a bit
-                    s = JAXLanguageLists.ToCanonicalKeyword(s, "commandparts");
+                    s = JAXLanguageLists.GetWord(s, "commandparts");
 
                     // ------------------------------------------------------------------------------
                     // Process the next token by stepping through this massive
