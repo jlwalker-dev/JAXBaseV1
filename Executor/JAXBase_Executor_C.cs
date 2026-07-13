@@ -1,5 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
+using JAXBase.Language;
 using JAXBase.UI.Dialogs;
 using JAXBase.Utilities;
 using JAXBase.XBase;
@@ -456,7 +457,7 @@ namespace JAXBase.Executor
                         if (Directory.Exists(path))
                         {
                             Program.CurrentApp.CurrentDS.JaxSettings.Default = path;
-                            result = Program.CurrentApp.ActiveLanguagePack.Phrase[7]+" " + path;
+                            result = JAXLanguageLists.GetPhrase(7)+" " + path;
                         }
                     }
                     else
@@ -484,12 +485,12 @@ namespace JAXBase.Executor
                         if (string.IsNullOrWhiteSpace(path))
                         {
                             // Nothing to do, so just return the default
-                            AppIO.Talk(Program.CurrentApp.ActiveLanguagePack.Phrase[8]+" " + Program.CurrentApp.CurrentDS.JaxSettings.Default);
+                            AppIO.Talk(JAXLanguageLists.GetPhrase(8)+" " + Program.CurrentApp.CurrentDS.JaxSettings.Default);
                         }
                         else if (Directory.Exists(path))
                         {
                             Program.CurrentApp.CurrentDS.JaxSettings.Default = path;
-                            AppIO.Talk(Program.CurrentApp.ActiveLanguagePack.Phrase[7]+" " + path);
+                            AppIO.Talk(JAXLanguageLists.GetPhrase(7) +" " + path);
                         }
                         else
                             throw new Exception("202|" + path);

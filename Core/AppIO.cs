@@ -95,41 +95,42 @@ namespace JAXBase.Core
             if (JAXApp.MainWindowInstance == null) return;
 
             _currentSettings = SettingsService.Load();
+            JAXObjectWrapper _screen = Program.CurrentApp._screen!;
 
             if (_currentSettings.Monitor > 0 && _currentSettings.Monitor <= MonitorLib.GetAvailableMonitorCount())
-                Program.CurrentApp._screen!.SetProperty("monitor", _currentSettings.Monitor, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("monitor", "REVPEMS"), _currentSettings.Monitor, 0).Wait();
 
             // Restore size & position
             if (_currentSettings.WindowWidth > 100)
-                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("width", "REVPEMS"), _currentSettings.WindowWidth, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("width", "REVPEMS"), _currentSettings.WindowWidth, 0).Wait();
 
             if (_currentSettings.WindowHeight > 100)
-                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("height", "REVPEMS"), _currentSettings.WindowHeight, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("height", "REVPEMS"), _currentSettings.WindowHeight, 0).Wait();
 
             if (_currentSettings.WindowLeft >= 0 && _currentSettings.WindowTop >= 0)
             {
                 JAXApp.MainWindowInstance.WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.Manual;
-                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("left", "REVPEMS"), (int)_currentSettings.WindowLeft, 0).Wait();
-                Program.CurrentApp._screen.SetProperty(JAXLanguageLists.GetWord("top", "REVPEMS"), (int)_currentSettings.WindowTop, 0).Wait();
+                _screen!.SetProperty(_screen.cPropLeft, (int)_currentSettings.WindowLeft, 0).Wait();
+                _screen.SetProperty(_screen.cPropTop, (int)_currentSettings.WindowTop, 0).Wait();
             }
 
             // Restore icon (if you saved the name/path)
             if (!string.IsNullOrEmpty(_currentSettings.IconName))
-                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("icon", "REVPEMS"), _currentSettings.IconName, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("icon", "REVPEMS"), _currentSettings.IconName, 0).Wait();
             else
-                Program.CurrentApp._screen!.SetProperty(JAXLanguageLists.GetWord("icon", "REVPEMS"), "*jax*", 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("icon", "REVPEMS"), "*jax*", 0).Wait();
 
             // Restore Command Window settings
             if (_currentSettings.CommandWindowWidth > 100)
-                Program.CurrentApp._screen!.SetProperty("commandWindowWidth", _currentSettings.CommandWindowWidth, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("commandWindowWidth", "REVPEMS"), _currentSettings.CommandWindowWidth, 0).Wait();
 
             if (_currentSettings.CommandWindowHeight > 100)
-                Program.CurrentApp._screen!.SetProperty("commandWindowHeight", _currentSettings.CommandWindowHeight, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("commandWindowHeight", "REVPEMS"), _currentSettings.CommandWindowHeight, 0).Wait();
 
             if (_currentSettings.CommandWindowLeft >= 0 && _currentSettings.CommandWindowTop >= 0)
             {
-                Program.CurrentApp._screen!.SetProperty("commandWindowLeft", _currentSettings.CommandWindowLeft, 0).Wait();
-                Program.CurrentApp._screen!.SetProperty("commandWindowTop", _currentSettings.CommandWindowTop, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("commandWindowLeft", "REVPEMS"), _currentSettings.CommandWindowLeft, 0).Wait();
+                _screen!.SetProperty(JAXLanguageLists.GetWord("commandWindowTop", "REVPEMS"), _currentSettings.CommandWindowTop, 0).Wait();
             }
         }
 
@@ -145,19 +146,19 @@ namespace JAXBase.Core
             _currentSettings.WindowTop = JAXApp.MainWindowInstance.Position.Y;
 
             // Save current icon name if you want
-            _currentSettings.IconName = Program.CurrentApp._screen!.thisObject!.UserProperties["icon"].AsString();
+            _currentSettings.IconName = Program.CurrentApp._screen!.thisObject!.UserProperties[JAXLanguageLists.GetWord("icon", "REVPEMS")].AsString();
 
             // Save current command window settings
-            JAXObjects.Token setting = await Program.CurrentApp._screen!.GetProperty("commandWindowLeft");
+            JAXObjects.Token setting = await Program.CurrentApp._screen!.GetProperty(JAXLanguageLists.GetWord("commandWindowLeft", "REVPEMS"));
             _currentSettings.CommandWindowLeft = setting.AsInt();
 
-            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowTop", 0);
+            setting = await Program.CurrentApp._screen!.GetProperty(JAXLanguageLists.GetWord("commandWindowTop", "REVPEMS"), 0);
             _currentSettings.CommandWindowTop = setting.AsInt();
 
-            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowWidth");
+            setting = await Program.CurrentApp._screen!.GetProperty(JAXLanguageLists.GetWord("commandWindowWidth", "REVPEMS"));
             _currentSettings.CommandWindowWidth = setting.AsInt();
 
-            setting = await Program.CurrentApp._screen!.GetProperty("commandWindowHeight");
+            setting = await Program.CurrentApp._screen!.GetProperty(JAXLanguageLists.GetWord("commandWindowHeight", "REVPEMS"));
             _currentSettings.CommandWindowHeight = setting.AsInt();
 
             SettingsService.Save(_currentSettings);
@@ -196,6 +197,7 @@ namespace JAXBase.Core
             int loop = 0;
             while (true)
             {
+                // TODO - Language triage - need to know what needs to change
                 key = key.Trim();
 
                 if (key.Length > 3 && key[..3].Equals("ALT") && ALT == false)
@@ -242,7 +244,8 @@ namespace JAXBase.Core
             {
                 if (Program.CurrentApp.ActiveLanguagePack.SpecialKeys.ContainsKey(key))
                 {
-                    switch (key.ToUpper())
+                    string EnglishKey = JAXLanguageLists.GetWord(key, "KEY");
+                    switch (EnglishKey.ToUpper())
                     {
                         case "TAB":
                             result.iKey = 9;

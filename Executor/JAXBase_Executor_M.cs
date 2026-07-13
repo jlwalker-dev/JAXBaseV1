@@ -1,4 +1,5 @@
 ﻿using JAXBase.Core;
+using JAXBase.Language;
 using JAXBase.Utilities;
 using JAXBase.XBase;
 
@@ -31,7 +32,7 @@ namespace JAXBase.Executor
                     else
                     {
                         Directory.CreateDirectory(path);
-                        result = Program.CurrentApp.ActiveLanguagePack.Phrase[19] + " " + path;
+                        result = JAXLanguageLists.GetPhrase(19) + " " + path;
                     }
                 }
             }
