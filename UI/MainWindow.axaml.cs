@@ -63,6 +63,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using JAXBase.Core;
+using JAXBase.Language;
 using JAXBase.UI;
 using JAXBase.Utilities;
 using System.ComponentModel;
@@ -115,7 +116,7 @@ namespace JAXBase
                 // Initial text can be added via Inlines instead
             };
 
-            _mainOutputText.Inlines!.Add(new Avalonia.Controls.Documents.Run($"{App.ActiveLanguagePack.Phrase[42]} {Program.Version}\n"));
+            _mainOutputText.Inlines!.Add(new Avalonia.Controls.Documents.Run(JAXLanguageLists.GetPhrase(42, Program.Version.ToString()) + "\n"));
 
             _mainOutputScroll = new ScrollViewer
             {
@@ -139,7 +140,7 @@ namespace JAXBase
             this.Closing += OnMainWindowClosing;
 
             // Bring up the command window (unchanged)
-            commandWindow = CommandWindow.Create(app, app.ActiveLanguagePack.Phrase[1]);
+            commandWindow = CommandWindow.Create(app, JAXLanguageLists.GetPhrase(1));
         }
 
 

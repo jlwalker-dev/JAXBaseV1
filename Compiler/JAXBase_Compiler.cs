@@ -956,7 +956,7 @@ namespace JAXBase.Compiler
                 {
                     cmdRest = GetNextToken(cmdRest, string.Empty, out string key);
 
-                    key = Program.CurrentApp.ActiveLanguagePack.CommandParts.TryGetValue(key, out string? k) ? k : (Program.CurrentApp.ActiveLanguagePack.SetCommands.TryGetValue(key, out k) ? k! : key);
+                    key = JAXLanguageLists.GetWord(key, "SET");
 
                     // Some commands assume an empty key means something
                     for (int i = 0; i < keys.Length; i++)

@@ -70,6 +70,9 @@ namespace JAXBase.XBase
         public readonly string cPropLocked;
         public readonly string cPropSQLResult;
 
+        public readonly string cPropLeft;
+        public readonly string cPropTop;
+
         public readonly string cObjForm;
         public readonly string cObjOptionButton;
         public readonly string cObjMenuItem;
@@ -212,6 +215,9 @@ namespace JAXBase.XBase
             cPropParent = JAXLanguageLists.GetWord("parent", "REVPEMS");
             cPropObjects = JAXLanguageLists.GetWord("objects", "REVPEMS");
             cPropSQLResult = JAXLanguageLists.GetWord("sqlresult", "REVPEMS");
+
+            cPropLeft = JAXLanguageLists.GetWord("left", "REVPEMS");
+            cPropTop = JAXLanguageLists.GetWord("top", "REVPEMS");
 
             cObjFormSet = JAXLanguageLists.GetWord("formset", "REVOBJECTS");
             cObjForm = JAXLanguageLists.GetWord("form", "REVOBJECTS");

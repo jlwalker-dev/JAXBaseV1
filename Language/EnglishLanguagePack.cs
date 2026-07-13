@@ -1243,7 +1243,10 @@ namespace JAXBase.Language
             { "BACKSPACE","BACKSPACE" },
             { "RIGHTMOUSE","RIGHTMOUSE" },
             { "LEFTMOUSE","LEFTMOUSE" },
-            { "MOUSE","MOUSE" }
+            { "MOUSE","MOUSE" },
+            { "ALT","ALT" },
+            { "CTRL","CTRL" },
+            { "SHIFT","SHIFT" }
         };
 
         public Dictionary<int, string> Phrase { get; } = new Dictionary<int, string>()
@@ -1274,8 +1277,8 @@ namespace JAXBase.Language
             { 24, "" },
             { 25, "Length" },
             { 26, "Records" },
-            { 27, "" },
-            { 28, "" },
+            { 27, "Invalid phrase selected: {0}" },
+            { 28, "Invalid dictionary selected: {0}" },
             { 29, "Total" },
             { 30, "{0} files" },
             { 31, "{0} folders" },

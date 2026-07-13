@@ -1190,18 +1190,18 @@ namespace JAXBase.Language.es
 
         public Dictionary<string, string> SpecialKeys { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            {"TABULADOR", "TAB"},
-            {"TABULADORATRAS", "BACKTAB"},
+            {"TAB", "TAB"},
+            {"TABATRAS", "BACKTAB"},
             {"LLAVEIZQ", "LBRACE"},
             {"LLAVEDER", "RBRACE"},
             {"ENTER", "ENTER"},
-            {"BARRAESPACIADORA", "SPACEBAR"},
-            {"ESCAPE", "ESC"},
+            {"ESPACIO", "SPACEBAR"},
+            {"ESC", "ESC"},
             {"SUPR", "DEL"},
-            {"FLECHAIZQUIERDA", "LEFTARROW"},
-            {"FLECHADERECHA", "RIGHTARROW"},
-            {"FLECHAARRIBA", "UPARROW"},
-            {"FLECHAABAJO", "DNARROW"},
+            {"IZQUIERDA", "LEFTARROW"},
+            {"DERECHA", "RIGHTARROW"},
+            {"ARRIBA", "UPARROW"},
+            {"ABAJO", "DNARROW"},
             {"INICIO", "HOME"},
             {"FIN", "END"},
             {"REPPAG", "PGUP"},
@@ -1220,9 +1220,12 @@ namespace JAXBase.Language.es
             {"F11", "F11"},
             {"F12", "F12"},
             {"RETROCESO", "BACKSPACE"},
-            {"RATONDERECHO", "RIGHTMOUSE"},
-            {"RATONIZQUIERDO", "LEFTMOUSE"},
-            {"RATON", "MOUSE"}
+            {"CLICDERECHO", "RIGHTMOUSE"},
+            {"CLICIZQUIERDO", "LEFTMOUSE"},
+            {"RATON", "MOUSE"},
+            {"ALT","ALT" },
+            {"CTRL","CTRL" },
+            {"MAYUS","SHIFT" }
         };
 
 

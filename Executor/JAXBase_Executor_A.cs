@@ -4,6 +4,7 @@ using JAXBase.Math;
 using JAXBase.XBase;
 using JAXBase.Utilities;
 using JAXBase.UI.Dialogs;
+using JAXBase.Language;
 
 namespace JAXBase.Executor
 {
@@ -343,12 +344,12 @@ namespace JAXBase.Executor
 
                 // Once the user choses, write the assert and choice 
                 // to the debug console, a variable, or append to a text file
-                msg = msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[34]+" " + res switch
+                msg = msg + Environment.NewLine + JAXLanguageLists.GetPhrase(34)+" " + res switch
                 {
-                    2 => Program.CurrentApp.ActiveLanguagePack.Phrase[35],
-                    3 => Program.CurrentApp.ActiveLanguagePack.Phrase[36],
-                    4 => Program.CurrentApp.ActiveLanguagePack.Phrase[37],
-                    _ => Program.CurrentApp.ActiveLanguagePack.Phrase[38]
+                    2 => JAXLanguageLists.GetPhrase(35),
+                    3 => JAXLanguageLists.GetPhrase(36),
+                    4 => JAXLanguageLists.GetPhrase(37),
+                    _ => (38)
                 };
 
                 string toType = string.Empty;
@@ -370,12 +371,12 @@ namespace JAXBase.Executor
                         throw new Exception("11|");
                 }
 
-                AppIO.DebugLog(Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper() + ": " + result);
+                AppIO.DebugLog(JAXLanguageLists.GetPhrase(4).ToUpper() + ": " + result);
 
                 // Always write to debug file if DEBUG is ON
                 if (Program.CurrentApp.CurrentDS.JaxSettings.Debug && string.IsNullOrWhiteSpace(Program.CurrentApp.CurrentDS.JaxSettings.DebugOut) == false)
                 {
-                    string filestr = Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper()+": " + msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[5].ToUpper() + ": " + res.ToString() + Environment.NewLine;
+                    string filestr = JAXLanguageLists.GetPhrase(4).ToUpper()+": " + msg + Environment.NewLine + JAXLanguageLists.GetPhrase(5).ToUpper() + ": " + res.ToString() + Environment.NewLine;
                     JAXLib.StrToFile(filestr, Program.CurrentApp.CurrentDS.JaxSettings.DebugOut, 1);
                 }
 
@@ -390,7 +391,7 @@ namespace JAXBase.Executor
 
                         if (string.IsNullOrWhiteSpace(toName) == false)
                         {
-                            string filestr = Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper() + ": " + msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[5].ToUpper() + ": " + res.ToString();
+                            string filestr = JAXLanguageLists.GetPhrase(4).ToUpper() + ": " + msg + Environment.NewLine + JAXLanguageLists.GetPhrase(5).ToUpper() + ": " + res.ToString();
                             JAXLib.StrToFile(filestr, toName, 3);
                             //jbe.App.JAXConsoles[toName].WriteLine(filestr);
                         }
@@ -401,7 +402,7 @@ namespace JAXBase.Executor
                         if (string.IsNullOrWhiteSpace(toName))
                             throw new Exception("10|");
 
-                        string filestr = Program.CurrentApp.ActiveLanguagePack.Phrase[4].ToUpper() + ": " + msg + Environment.NewLine + Program.CurrentApp.ActiveLanguagePack.Phrase[5].ToUpper() + ": " + res.ToString() + Environment.NewLine;
+                        string filestr = JAXLanguageLists.GetPhrase(4).ToUpper() + ": " + msg + Environment.NewLine + JAXLanguageLists.GetPhrase(5).ToUpper() + ": " + res.ToString() + Environment.NewLine;
                         JAXLib.StrToFile(filestr, toName, 1);
                     }
                     else if (toType.Equals("var", StringComparison.OrdinalIgnoreCase))

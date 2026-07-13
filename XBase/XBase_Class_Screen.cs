@@ -125,7 +125,7 @@ namespace JAXBase.XBase
                         break;
 
                     case "monitorleft":
-                        returnToken.Element.Value = MonitorLib.GetScreenInfo(JAXApp.MainWindowInstance!, JAXLanguageLists.GetWord("left", "REVPEMS"));
+                        returnToken.Element.Value = MonitorLib.GetScreenInfo(JAXApp.MainWindowInstance!, me.cPropLeft);
                         break;
 
                     case "top":
@@ -238,8 +238,8 @@ namespace JAXBase.XBase
 
                                         JAXApp.MainWindowInstance.Position = new PixelPoint(centerX, centerY);
 
-                                        UserProperties[JAXLanguageLists.GetWord("left", "REVPEMS")].Element.Value = JAXApp.MainWindowInstance.Bounds.Left;
-                                        UserProperties[JAXLanguageLists.GetWord("top", "REVPEMS")].Element.Value = JAXApp.MainWindowInstance.Bounds.Top;
+                                        UserProperties[me.cPropLeft].Element.Value = JAXApp.MainWindowInstance.Bounds.Left;
+                                        UserProperties[me.cPropTop].Element.Value = JAXApp.MainWindowInstance.Bounds.Top;
                                     }
                                 }
                                 else
@@ -732,7 +732,7 @@ namespace JAXBase.XBase
                             {
                                 if (JAXApp.MainWindowInstance is not null)
                                 {
-                                    Avalonia.PixelPoint pp = new(Convert.ToInt32(UserProperties[JAXLanguageLists.GetWord("left", "REVPEMS")].AsInt()), tk.AsInt());
+                                    Avalonia.PixelPoint pp = new(Convert.ToInt32(UserProperties[me.cPropLeft].AsInt()), tk.AsInt());
                                     JAXApp.MainWindowInstance!.Position = pp;
                                 }
                             }

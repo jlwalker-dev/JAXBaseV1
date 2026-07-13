@@ -1,13 +1,7 @@
 ﻿/*
- * This is a central location to hold the language elements and other lists that 
- * may be needed throught the code.  They are especially important when you want to
- * expand an abbriviation to the full length.
+ * This is a central location to hold language elements and other lists that 
+ * may be needed throughout the code.
  * 
- * USE:
- *      var f=Array.Find(app.lists.<ArrayName>,s=>s.StartsWith(setting.AsString().ToUpper()));
- *      if (f is null)
- *          throw new Exception("36|");
- *
  */
 using JAXBase.Core;
 using JAXBase.Core.Extensions;
@@ -20,107 +14,121 @@ namespace JAXBase.Language
         /// <summary>
         /// Array containing all valid JAXBase functions
         /// </summary>
-        public static string[] MathFunctions = ["ABS(", "ACLASS(", "ACOPY(", "ACOS(", "ADATABASES(", "ADBOBJECTS(", "ADDBS(",
-                "ADDPROPERTY(", "ADEL(", "ADIR(", "ADLLS(", "ADOCKSTATE(", "AELEMENT(", "AERROR(", "AEVENTS(",
-                "AFIELDS(", "AFONT(", "AGETCLASS(", "AGETFILEVERSION(", "AINS(", "AINSTANCE(", "ALEN(",
-                "ALIAS(", "ALINE(", "ALLTRIM(", "AMEMBERS(",  "ANETRECOURCES(",
-                "APROCINFO(", "ASC(", "ASCAN(", "ASELOBJ(", "ASESSIONS(", "ASIN(", "ASORT(",
-                "ASTACKINFO(", "ASUBSCRIPT(", "AT(", "AT_C(", "ATAGINFO(", "ATAN(", "ATC(", "ATCC(", "ATCLINE(",
-                "ATLINE(", "ATN2(", "AUSED(", "AVCXCLASSES(",
-                "BARCODE(", // Return BMP image string of barcode(type,content[,size?]) - size = 1=100x100, 2=150x150, 3=200x200, 4=300,300, 5=450x450, 6=600,600, 7=1200x1200, 8=1800x1800, 9=2400x2400
-                "BETWEEN(", "BINDEVENT(", "BINTOC(", "BITAND(", "BITCLEAR(",
-                "BITLSHIFT(", "BITNOT(", "BITOR(", "BITRSHIFT(", "BITSET(", "BITTEST(", "BITXOR(", "BOF(",
-                "CANDIDATE(", "CAPSLOCK(", "CAST(", "CD(", "CDOW(", "CEILING(", "CHR(", "CHRSAW(", "CHRTRAN(",
-                "CHRTRANC(", "CLEARRESULTSET(", "CMONTH(", "CNTBAR(", "CNTPAD(", "COL(", "COM(", "COMARRAY(",
-                "COMCLASSINFO(", "COMPOBJ(", "COMPROP(", "COMRETURNERROR(", "COS(", "CPCONVERT(", "CPCURRENT(",
-                "CPDBF(", "CREATEBINARY(", "CREATEOBJECT(", "CREATEOBJECTEX(", "CREATOFFLINE(", "CTOBIN(", "CTOD(",
-                "CTOT(", "CURSORGETPROP(", "CURSORSETPROP(", "CURSORTOJSON(", "CURSORTOXML(", "CURVAL(",
-                "DATE(", "DATETIME(", "DAY(", "DBC(", "DBF(", "DBGETPROP(", "DBUSED(", "DEFAULTEXT(", "DELETED(",
-                "DESCENDING(", "DIFFERENCE(", "DIRECTORY(", "DISKSPACE(", "DISPLAYPATH(", "DMY(", "DODEFAULT(",
-                "DOW(", "DRIVETYPE(", "DROPOFFLINE(", "DTOC(", "DTOR(", "DTOS(", "DTOT(",
-                "EDITSOURCE(", "EMPTY(", "EOF(", "ERROR(", "EVALUATE(", "EVENTHANDLER(", "EV(", "EVL(", "EXECSCRIPT(", "EXP(",
-                "FCHSIZE(", "FCLOSE(", "FCOUNT(", "FCREATE(", "FDATE(", "FEOF(", "FERROR(", "FFLUSH(", "FGETS(", "FIELD(",
-                "FILE(", "FILETOSTR(", "FILTER(", "FKLABEL(", "FKMAX(", "FLDLIST(", "FLOCK(", "FLOOR(", "FONTMETRIC(", "FOPEN(",
-                "FOR(", "FORCEEXT(", "FORCEPATH(", "FOUND(", "FPUTS(", "FREAD(", "FSEEK(", "FSIZE(", "FTIME(", "FULLPATH(", "FWRITE(",
-                "GETAUTOINCVALUE(", "GETCP(", "GETDATE(", "GETDIR(", "GETENV(", "GETFILE(", "GETFLDSTATE(", "GETFONT(",
-                "GETNEXTMODIFIED(", "GETJSON(", "GETOBJECT(", "GETPICT(", "GETPRINTER(", "GETWORDCOUNT(", "GETWORDNUM(", "GETCURSORADAPTER(",
-                "GOMONTH(", "GUID(",
-                "HEADER(", "HOME(", "HOUR(","HEX(",
-                "ICASE(", "IDXCOLLATE(", "IIF(", "INDBC(", "INDEXSEEK(", "INKEY(", "INLIST(", "INLISTC(", "INPUTBOX(", "INSMODE(",
-                "INT(", "ISALPHA(", "ISBLANK(", "ISCOLOR(", "ISDIGIT(", "ISEXCUSIVE(", "ISFLOCKED(", "ISLEADBYTE(", "ISLOWER(",
-                "ISNULL(", "ISODD(", "ISPEN(", "ISREADONLY(", "ISRLOCKED(", "ISUPPER(",
-                "JAX(", "JUSTDRIVE(", "JUSTEXT(", "JUSTFNAME(", "JUSTPATH(", "JUSTSTEM(", "JSONTOCURSOR(","JSONTOOBJ(",
-                "KEY(", "KEYMATCH(",
-                "LASTKEY(", "LEFT(", "LEFTC(", "LEN(", "LIKE(", "LIKEC(", "LINENO(", "LOADPICTURE(",
-                "LOCFILE(", "LOCK(", "LOG(", "LOG10(", "LOOKUP(", "LOWER(", "LTRIM(", "LUPDATE(",
-                "MAX(", "MCOL(", "MDOWN(", "MDX(", "MDY(", "MEMLINES(", "MEMORY(", "MESSAGE(", "MESSAGEBOX(",
-                "MIN(", "MINUTE(", "MLINE(", "MOD(", "MONTH(", "MRKBAR(", "MRKPAD(", "MROW(", "MTON(", "MWINDOW(",
-                "NAMING(", "NDX(", "NEWOBJECT(", "NODA(", "NORMALIZE(", "NTOM(", "NUMLOCK(", "NVL(",
-                "OBJNUM(", "OBJTOCLIENT(", "OBJTOJSON(", "OBJVAR(", "OCCURS(", "OEMTOANSI(", "OLDVAL(", "ONKEY(", "ORDER(", "OS(",
-                "PADL(", "PADR(", "PADC(", "PARAMETERS(", "PAYMENT(", "PCOL(", "PCOUNT(",
-                "PEMSTATUS(", "PI(","PIXELPOS(", "PRIMARY(", "PROGRAM(", "PROMPT(", "PROPER(", "PUTFILE(", "PUTJSON(", "PV(",
-                "QUARTER(",
-                "RAISEEVENT(", "RAND(", "RAT(", "RATC(", "RATLINE(", "RDLEVEL(", "READKEY(", "RECCOUNT(",
-                "RECNO(", "RECSIZE(", "REFRESH(", "RELATION(", "REMOVEPROPERTY(", "REPLICATE(", "REQURY(", "RGB(",
-                "RIGHT(", "RIGHTC(", "RLOCK(", "ROUND(", "ROW(", "RTOD(", "RTRIM(",
-                "SAVEPICTURE(", "SCHEME(", "SCOLS(", "SEC(", "SECONDS(", "SEEK(", "SELECT(", "SET(", "SETFLDSTATE(",
-                "SETRESULTSET(", "SIGN(", "SIN(", "SKPBAR(", "SKPPAD(", "SOUNDEX(", "SPACE(", "SQLCANCEL(",
-                "SQLCOLUMNS(", "SQLCOMMIT(", "SQLCONNECT(", "SQLDISCONNECT(", "SQLEXEC(", "SQLGETPROP(",
-                "SQLIDLEDISCONNECT(", "SQLMERGERESULTS(", "SQLPREPARE(", "SQLROLLBACK(", "SQLSETPROP(",
-                "SQLSTRINGCONNECT(", "SQLTABLES(", "SORT(", "STR(", "STRCONV(", "STREXTRACT(", "STRFORMAT(", "STRTOFILE(",
-                "STRTRAN(", "STUFF(", "STUFFC(", "SUBSTR(", "SUBTRC(", "SYSMETRIC(","SYSID(",
-                "TAN(", "TARGET(","TEXTPOS(", "TEXTMERGE(", "TIME(", "TIMEZONE(", "TOSEC(",
-                "TRANSFORM(", "TRIM(", "TTOC(", "TTOD(", "TXNLEVEL(", "TXTWIDTH(", "TYPE(",
-                "UNBINDEVENTS(", "UNIQUE(", "UPDATED(", "UPPER(", "USED(",
-                "VAL(", "VARREAD(", "VARTYPE(", "VERSION(",
-                "WEEK(",
-                "XMLTOCURSOR(",
-                "YEAR("];
+        public static string[] MathFunctions = 
+            [
+            "ABS(", "ACLASS(", "ACOPY(", "ACOS(", "ADATABASES(", "ADBOBJECTS(", "ADDBS(",
+            "ADDPROPERTY(", "ADEL(", "ADIR(", "ADLLS(", "ADOCKSTATE(", "AELEMENT(", "AERROR(", "AEVENTS(",
+            "AFIELDS(", "AFONT(", "AGETCLASS(", "AGETFILEVERSION(", "AINS(", "AINSTANCE(", "ALEN(",
+            "ALIAS(", "ALINE(", "ALLTRIM(", "AMEMBERS(",  "ANETRECOURCES(", "APROCINFO(", "ASC(", "ASCAN(", "ASELOBJ(", 
+            "ASESSIONS(", "ASIN(", "ASORT(", "ASTACKINFO(", "ASUBSCRIPT(", "AT(", "AT_C(", "ATAGINFO(", "ATAN(", "ATC(", 
+            "ATCC(", "ATCLINE(", "ATLINE(", "ATN2(", "AUSED(", "AVCXCLASSES(",
+
+            "BARCODE(", "BETWEEN(", "BINDEVENT(", "BINTOC(", "BITAND(", "BITCLEAR(", "BITLSHIFT(", "BITNOT(", "BITOR(", 
+            "BITRSHIFT(", "BITSET(", "BITTEST(", "BITXOR(", "BOF(",
+
+            "CANDIDATE(", "CAPSLOCK(", "CAST(", "CD(", "CDOW(", "CEILING(", "CHR(", "CHRSAW(", "CHRTRAN(", "CHRTRANC(", 
+            "CLEARRESULTSET(", "CMONTH(", "CNTBAR(", "CNTPAD(", "COL(", "COM(", "COMARRAY(", "COMCLASSINFO(", "COMPOBJ(", 
+            "COMPROP(", "COMRETURNERROR(", "COS(", "CPCONVERT(", "CPCURRENT(", "CPDBF(", "CREATEBINARY(", "CREATEOBJECT(", 
+            "CREATEOBJECTEX(", "CREATOFFLINE(", "CTOBIN(", "CTOD(", "CTOT(", "CURSORGETPROP(", "CURSORSETPROP(", 
+            "CURSORTOJSON(", "CURSORTOXML(", "CURVAL(",
+            
+            "DATE(", "DATETIME(", "DAY(", "DBC(", "DBF(", "DBGETPROP(", "DBUSED(", "DEFAULTEXT(", "DELETED(", "DESCENDING(", 
+            "DIFFERENCE(", "DIRECTORY(", "DISKSPACE(", "DISPLAYPATH(", "DMY(", "DODEFAULT(", "DOW(", "DRIVETYPE(", 
+            "DROPOFFLINE(", "DTOC(", "DTOR(", "DTOS(", "DTOT(",
+
+            "EDITSOURCE(", "EMPTY(", "EOF(", "ERROR(", "EVALUATE(", "EVENTHANDLER(", "EV(", "EVL(", "EXECSCRIPT(", "EXP(",
+            "FCHSIZE(", "FCLOSE(", "FCOUNT(", "FCREATE(", "FDATE(", "FEOF(", "FERROR(", "FFLUSH(", "FGETS(", "FIELD(",
+
+            "FILE(", "FILETOSTR(", "FILTER(", "FKLABEL(", "FKMAX(", "FLDLIST(", "FLOCK(", "FLOOR(", "FONTMETRIC(", "FOPEN(",
+            "FOR(", "FORCEEXT(", "FORCEPATH(", "FOUND(", "FPUTS(", "FREAD(", "FSEEK(", "FSIZE(", "FTIME(", "FULLPATH(", "FWRITE(",
+
+            "GETAUTOINCVALUE(", "GETCP(", "GETDATE(", "GETDIR(", "GETENV(", "GETFILE(", "GETFLDSTATE(", "GETFONT(",
+            "GETNEXTMODIFIED(", "GETJSON(", "GETOBJECT(", "GETPICT(", "GETPRINTER(", "GETWORDCOUNT(", "GETWORDNUM(", "GETCURSORADAPTER(",
+            "GOMONTH(", "GUID(",
+
+            "HEADER(", "HOME(", "HOUR(","HEX(",
+
+            "ICASE(", "IDXCOLLATE(", "IIF(", "INDBC(", "INDEXSEEK(", "INKEY(", "INLIST(", "INLISTC(", "INPUTBOX(", "INSMODE(",
+            "INT(", "ISALPHA(", "ISBLANK(", "ISCOLOR(", "ISDIGIT(", "ISEXCUSIVE(", "ISFLOCKED(", "ISLEADBYTE(", "ISLOWER(",
+            "ISNULL(", "ISODD(", "ISPEN(", "ISREADONLY(", "ISRLOCKED(", "ISUPPER(",
+
+            "JAX(", "JUSTDRIVE(", "JUSTEXT(", "JUSTFNAME(", "JUSTPATH(", "JUSTSTEM(", "JSONTOCURSOR(","JSONTOOBJ(",
+
+            "KEY(", "KEYMATCH(",
+
+            "LASTKEY(", "LEFT(", "LEFTC(", "LEN(", "LIKE(", "LIKEC(", "LINENO(", "LOADPICTURE(", "LOCFILE(", "LOCK(", "LOG(", 
+            "LOG10(", "LOOKUP(", "LOWER(", "LTRIM(", "LUPDATE(",
+
+            "MAX(", "MCOL(", "MDOWN(", "MDX(", "MDY(", "MEMLINES(", "MEMORY(", "MESSAGE(", "MESSAGEBOX(", "MIN(", "MINUTE(", 
+            "MLINE(", "MOD(", "MONTH(", "MRKBAR(", "MRKPAD(", "MROW(", "MTON(", "MWINDOW(", "NAMING(", "NDX(", "NEWOBJECT(", 
+
+            "NODA(", "NORMALIZE(", "NTOM(", "NUMLOCK(", "NVL(",
+
+            "OBJNUM(", "OBJTOCLIENT(", "OBJTOJSON(", "OBJVAR(", "OCCURS(", "OEMTOANSI(", "OLDVAL(", "ONKEY(", "ORDER(", "OS(",
+
+            "PADL(", "PADR(", "PADC(", "PARAMETERS(", "PAYMENT(", "PCOL(", "PCOUNT(",
+            "PEMSTATUS(", "PI(","PIXELPOS(", "PRIMARY(", "PROGRAM(", "PROMPT(", "PROPER(", "PUTFILE(", "PUTJSON(", "PV(",
+
+            "QUARTER(",
+
+            "RAISEEVENT(", "RAND(", "RAT(", "RATC(", "RATLINE(", "RDLEVEL(", "READKEY(", "RECCOUNT(", "RECNO(", "RECSIZE(", 
+            "REFRESH(", "RELATION(", "REMOVEPROPERTY(", "REPLICATE(", "REQURY(", "RGB(", "RIGHT(", "RIGHTC(", "RLOCK(", 
+            "ROUND(", "ROW(", "RTOD(", "RTRIM(",
+
+            "SAVEPICTURE(", "SCHEME(", "SCOLS(", "SEC(", "SECONDS(", "SEEK(", "SELECT(", "SET(", "SETFLDSTATE(",
+            "SETRESULTSET(", "SIGN(", "SIN(", "SKPBAR(", "SKPPAD(", "SOUNDEX(", "SPACE(", "SQLCANCEL(", "SQLCOLUMNS(", 
+            "SQLCOMMIT(", "SQLCONNECT(", "SQLDISCONNECT(", "SQLEXEC(", "SQLGETPROP(", "SQLIDLEDISCONNECT(", "SQLMERGERESULTS(", 
+            "SQLPREPARE(", "SQLROLLBACK(", "SQLSETPROP(", "SQLSTRINGCONNECT(", "SQLTABLES(", "SORT(", "STR(", "STRCONV(", 
+            "STREXTRACT(", "STRFORMAT(", "STRTOFILE(", "STRTRAN(", "STUFF(", "STUFFC(", "SUBSTR(", "SUBTRC(", "SYSMETRIC(","SYSID(",
+
+            "TAN(", "TARGET(","TEXTPOS(", "TEXTMERGE(", "TIME(", "TIMEZONE(", "TOSEC(", "TRANSFORM(", "TRIM(", "TTOC(", "TTOD(", 
+            "TXNLEVEL(", "TXTWIDTH(", "TYPE(",
+
+            "UNBINDEVENTS(", "UNIQUE(", "UPDATED(", "UPPER(", "USED(",
+
+            "VAL(", "VARREAD(", "VARTYPE(", "VERSION(",
+
+            "WEEK(",
+
+            "XMLTOCURSOR(",
+
+            "YEAR("
+            ];
+
 
         /// <summary>
         /// Array containing all valid JAXBase commands including hidden commands
         /// </summary>
-        public static string[] JAXCommands = [
-            "ACTIVATE","ADD","ALTER","APARAMETERS","APPEND",
-            "ASSERT","AVERAGE","BEGIN","BLANK","BROWSE","CALCULATE",
-            "CANCEL","CASE","CATCH","CD","CLEAR","CLOSE","COMPILE","CONTINUE",
-            "COPY", "COUNT", "CREATE", "DEBUG","DEBUGOUT","DEFINE","DELETE",
-            "DIMENSION","DIRECTORY","DISPLAY","DO","DOEVENTS","DODEFAULT",
-            "DROP","EDIT","ELSE","ELSEIF","END","ENDCASE","ENDDEFINE", "ENDDO", "ENDFOR","ENDFUNCTION",
-            "ENDIF","ENDPROCEDURE","ENDSCAN","ENDTEXT","ENDTRANSACTION","ENDTRY", "ENDWITH",
-            "ERASE","ERROR","EXIT","EXPORT","EXTERNAL","FINALLY", "FOR","FOREACH","FUNCTION",
-            "GATHER","GETEXPR","GOTO","HELP","IF", "IMPORT","INDEX","INSERT","KEYBOARD",
-            "LIST","LOCATE","LOCAL","LOOP","LPARAMETERS","LPROCEDURE",
-            "MD","MENU","MODIFY","MOUSE","NODEFAULT","ON","OPEN",
-            "OTHERWISE","PACK", "PARAMETERS","PLAY","PRIVATE","PROCEDURE","PUBLIC",
-            "QUIT","RD", "READ","RECALL","REGISTER","REINDEX","RELEASE","RENAME", "REPLACE",
-            "RESTORE","RESUME","RETRY","RETURN","ROLLBACK","RUN","SAVE","SCAN","SCATTER",
-            "SEEK","SELECT","SET", "SKIP","SORT","STORE","SUM","SUSPEND","TEXT",
-            "THROW","TOTAL", "TRY","UNLOCK","UNTIL","UPDATE","USE","WAIT","WITH","ZAP",
-            "?","??","!", "=","~~~"];
-
-        public static string[] JAXCommandParts =
+        public static string[] JAXCommands = 
             [
-            "alias","at","as","all","codepage","collate","datasession","index",
-            "for","field","fields","from","in", "into","json","like",
-            "memvar","message","next","name","of","on","order",
-            "pretext", "rest", "record", "size","step","session","tag","timeout",
-            "top","to", "type","values","when","with","while",
-            "ascending", "descending","exclusive", "shared", "noupdate", "unique",
-            "candidate", "nooptimioze", "validate", "additive", "again","array",
-            "file", "debug", "var","avg(", "cnt(", "max(","min(","npv(","std(","sum(","var(",
-            "null","not","autoinc","nocase","noconsole","noshow"
+            "ACTIVATE","ADD","ALTER","APARAMETERS","APPEND", "ASSERT","AVERAGE",
+            "BEGIN","BLANK","BROWSE",
+            "CALCULATE", "CANCEL","CASE","CATCH","CD","CLEAR","CLOSE","COMPILE","CONTINUE", "COPY", "COUNT", "CREATE", 
+            "DEBUG","DEBUGOUT","DEFINE","DELETE", "DIMENSION","DIRECTORY","DISPLAY","DO","DOEVENTS","DODEFAULT", "DROP",
+            "EDIT","ELSE","ELSEIF","END","ENDCASE","ENDDEFINE", "ENDDO", "ENDFOR","ENDFUNCTION", "ENDIF","ENDPROCEDURE",
+            "ENDSCAN","ENDTEXT","ENDTRANSACTION","ENDTRY", "ENDWITH", "ERASE","ERROR","EXIT","EXPORT","EXTERNAL",
+            "FINALLY", "FOR","FOREACH","FUNCTION",
+            "GATHER","GETEXPR","GOTO",
+            "HELP",
+            "IF", "IMPORT","INDEX","INSERT",
+            "KEYBOARD",
+            "LIST","LOCATE","LOCAL","LOOP","LPARAMETERS","LPROCEDURE",
+            "MD","MENU","MODIFY","MOUSE",
+            "NODEFAULT",
+            "ON","OPEN", "OTHERWISE",
+            "PACK", "PARAMETERS","PLAY","PRIVATE","PROCEDURE","PUBLIC",
+            "QUIT",
+            "RD", "READ","RECALL","REGISTER","REINDEX","RELEASE","RENAME", "REPLACE", "RESTORE","RESUME","RETRY","RETURN",
+            "ROLLBACK","RUN",
+            "SAVE","SCAN","SCATTER","SEEK","SELECT","SET", "SKIP","SORT","STORE","SUM","SUSPEND",
+            "TEXT","THROW","TOTAL", "TRY",
+            "UNLOCK","UNTIL","UPDATE","USE",
+            "WAIT","WITH",
+            "ZAP",
+            "?","??","!", "=","~~~"
             ];
 
-        //public static string[] eCodeCommands =
-        //    [
-        //    "as","command","collate","codepage","database","expressions","flags","from","fname",
-        //    "for","fields","fileexpr","in","index","into","like","of","on","order","pretext",
-        //    "record","session","scope","sheet","subcmd","size","session","step","table","tag","timeout",
-        //    "to","type","text","values","when","while","with"
-        //    ];
-
-
+       
         /// <summary>
         /// List of all supported SET commands - TODO: Validate against JAXBase_Executor_settings
         /// </summary>
@@ -144,7 +152,8 @@ namespace JAXBase.Language
             "REFresh","RELation","REProcess","RESource",
             "SAFety","SEConds","SeCuRity","SEParator","SKiP","SPaCe","SQlBuffering","SqlCoNnection","SqlLoaD","STeP","StrictDaTe","SySFormats","SYSmenu",
             "TaBlePrompt","TaBleValidate","TaLK","TextMerGe","TextDeLimiters","ToPiC","TopicID","TRBetween","TyPeaHead","TyPeConvert",
-            "VarCharMapping","UDFparms"
+            "UDFparms",
+            "VarCharMapping",
             ];
 
         /// <summary>
@@ -168,10 +177,27 @@ namespace JAXBase.Language
         /// <summary>
         /// Array containing all valid JAXBase object types
         /// </summary>
-        public static string[] JAXObjects = ["barcode","browser","checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container",
-            "custom","editbox","empty","file","form","formset","ftp","grid","httpclient","hyperlink","image","jax","jaxedit","ipc","ircclient","label","line","listbox",
-            "menu","menuitem","mqttclient","nostrclient","optionbutton","optiongroup","page","pageframe","pgp","pipe","pop3","printer","robrowser","screen","separator",
-            "shape","sms","smtp","sound","spinner","sql","textbox","toolbar","toolbutton","tcpclient","tcpserver","timer","tree","treeitem","udp","video"];
+        public static string[] JAXObjects = 
+            [
+            "barcode","browser",
+            "checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container","custom",
+            "editbox","empty",
+            "file","form","formset","ftp",
+            "grid","httpclient",
+            "hyperlink",
+            "image","ipc","ircclient",
+            "jax","jaxedit",
+            "label","line","listbox",
+            "menu","menuitem","mqttclient",
+            "nostrclient",
+            "optionbutton","optiongroup",
+            "page","pageframe","pgp","pipe","pop3","printer",
+            "robrowser",
+            "screen","separator","shape","sms","smtp","sound","spinner","sql",
+            "textbox","toolbar","toolbutton","tcpclient","tcpserver","timer","tree","treeitem",
+            "udp",
+            "video"
+            ];
 
 
         /// <summary>
@@ -190,66 +216,6 @@ namespace JAXBase.Language
         /// </summary>
         public static string[] RunTimeExtensions = ["jxs", "jxv", "jxd", "jxm", "jxp", "jxq"];
 
-
-        //public static List<string> SpecialKeys = ["TAB","BACKTAB","LBRACE","RBRACE","ENTER","SPACEBAR","ESC","DEL",
-        //    "LEFTARROW","RIGHTARROW","UPARROW","DNARROW","HOME","END","PGUP","PGDN",
-        //    "INS","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","BACKSPACE",
-        //    "RIGHTMOUSE","LEFTMOUSE","MOUSE"];
-
-
-        //public static readonly Dictionary<int, string> JAXPrases = new Dictionary<int, string>
-        //{
-        //    { 1, "Command Window" },
-        //    { 2, "Main window has not been created" },
-        //    { 3, "default" },
-        //    { 4, "assert" },
-        //    { 5, "response"  },
-        //    { 6, "Current directory is" },
-        //    { 7, "Default directory is" },
-        //    { 8, "Session"},
-        //    { 9, "Workarea" },
-        //    { 10, "Local" },
-        //    { 11, "Private" },
-        //    { 12, "Public" },
-        //    { 13, "None" },
-        //    { 14, "Name" },
-        //    { 15, "Field Name" },
-        //    { 16, "Type" },
-        //    { 17, "Length" },
-        //    { 18, "Dec" },
-        //    { 19, "Created folder" },
-        //    { 20, "File" },
-        //    { 21, "Last Modified" },
-        //    { 22, "Attributes" },
-        //    { 23, "{0,40} {1,36}  {2,-16}  {3:20}" },
-        //    { 24, "" },
-        //    { 25, "Length" },
-        //    { 26, "Records" },
-        //    { 27, "" },
-        //    { 28, "" },
-        //    { 29, "Total" },
-        //    { 30, "{0} files" },
-        //    { 31, "{0} folders" },
-        //    { 32, "{0} records" },
-        //    { 33, "{0} bytes free" },
-        //    { 34, "User selected" },
-        //    { 35, "Cancel"  },
-        //    { 36, "Ignore" },
-        //    { 37, "Ignore All" },
-        //    { 38, "Debug" },
-        //    { 39, "{0} {1}  {2} (Name: {3})" },
-        //    { 40, "{0} {1}  {2}" },
-        //    { 41, "{0,-30} {1,-4}  {2,2}  {3,2}" },
-        //    { 42, "JAXBase Version" },
-        //    { 43, "" },
-        //    { 44, "" },
-        //    { 45, "" },
-        //    { 46, "" },
-        //    { 47, "" },
-        //    { 48, "" },
-        //    { 49, "" },
-        //    { 50, "" }
-        //};
 
         /// <summary>
         ///  English to ActiveLanguagePack
@@ -271,7 +237,7 @@ namespace JAXBase.Language
                 "REVOBJECTS" => Program.CurrentApp.ActiveLanguagePack.RevJaxObjects,
                 "REVPEMS" => Program.CurrentApp.ActiveLanguagePack.RevPEMs,
                 "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
-                _ => throw new ArgumentException($"Invalid dictionary specified: {dictionary}")
+                _ => throw new ArgumentException(GetPhrase(28, dictionary))
             };
 
             if (pack.TryGetValue(input, out string? canonical))
@@ -282,51 +248,69 @@ namespace JAXBase.Language
 
 
         /// <summary>
-        ///  English to ActiveLanguagePack
+        /// Grab and populate a phrase
         /// </summary>
-        /// <param name="input"></param>
-        /// <param name="dictionary"></param>
+        /// <param name="iphrase"></param>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
         /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        public static string ToCanonicalKeyword(string input, string dictionary)
+        public static string GetPhrase(int iphrase, string arg1 = "", string arg2 = "", string arg3 = "")
         {
-            if (string.IsNullOrEmpty(input)) return input;
+            string result = "";
 
-            var pack = dictionary.ToUpper() switch
+            if (iphrase < Program.CurrentApp.ActiveLanguagePack.Phrase.Count && iphrase >= 0)
             {
-                "MATH" => Program.CurrentApp.ActiveLanguagePack.MathFunctions,
-                "COMMAND" => Program.CurrentApp.ActiveLanguagePack.JAXCommands,
-                "COMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.CommandParts,
-                "SET" => Program.CurrentApp.ActiveLanguagePack.SetCommands,
-                "OBJECT" => Program.CurrentApp.ActiveLanguagePack.JaxObjects,
-                "REVCOMMANDPARTS" => Program.CurrentApp.ActiveLanguagePack.RevCommandParts,
-                "REVOBJECTS" => Program.CurrentApp.ActiveLanguagePack.RevJaxObjects,
-                "REVPEMS" => Program.CurrentApp.ActiveLanguagePack.RevPEMs,
-                "KEY" => Program.CurrentApp.ActiveLanguagePack.SpecialKeys,
-                _ => throw new ArgumentException($"Invalid dictionary specified: {dictionary}")
-            };
+                result = Program.CurrentApp.ActiveLanguagePack.Phrase[iphrase];
 
-            if (pack.TryGetValue(input, out string? canonical))
-                return canonical ?? input;
 
-            return input;
+                switch (result.Length - result.Replace("{", "").Length)
+                {
+                    case 1:
+                        result = string.Format(result, arg1);
+                        break;
+
+                    case 2:
+                        result = string.Format(result, arg1, arg2);
+                        break;
+
+                    case 3:
+                        result = string.Format(result, arg1, arg2, arg3);
+                        break;
+                }
+            }
+            else
+                result = string.Format(Program.CurrentApp.ActiveLanguagePack.Phrase[27], iphrase);
+
+            return result;
         }
 
+
+        /// <summary>
+        /// Load the desired language pack based on language code:
+        ///     en - English
+        ///     es - Spanish
+        ///     fr - French
+        ///     de - German
+        ///     
+        /// </summary>
+        /// <param name="languageCode"></param>
+        /// <returns></returns>
         public static ILanguagePack GetLanguagePack(string languageCode)
         {
             //bool found = File.Exists("LanguagePacks/JAXBase-Lang-" + languageCode + ".dll");
             int iii = 0;
+
 
             ILanguagePack pack;
 
             try
             {
                 pack = languageCode == "es" ? new SpanishLanguagePack() : new EnglishLanguagePack();
-               
+
             }
             catch (Exception ex)
             {
-                string exstr= $"Language pack for '{languageCode}' could not be loaded. {ex.Message}";
+                string exstr = $"Language pack for '{languageCode}' could not be loaded. {ex.Message}";
                 pack = new EnglishLanguagePack();
             }
 
