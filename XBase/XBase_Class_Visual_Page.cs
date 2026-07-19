@@ -14,7 +14,7 @@ namespace JAXBase.XBase
 
         public Avalonia.Controls.TabItem pfPage => (Avalonia.Controls.TabItem)me.avaloniaObject!;
         public Avalonia.Controls.TabControl? pgFrame => me.parent is null ? null : (Avalonia.Controls.TabControl?)me.parent.avaloniaObject;
-        private Avalonia.Controls.Canvas InnerCanvas;
+        public Avalonia.Controls.Canvas InnerCanvas;
 
         public XBase_Class_Visual_Page(JAXObjectWrapper jow, string name) : base(jow, name)
         {

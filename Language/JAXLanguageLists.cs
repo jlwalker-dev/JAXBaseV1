@@ -174,6 +174,7 @@ namespace JAXBase.Language
             "XF|fileexpr|0xF0", "XX|expressions|0xF2"
             ];
 
+
         /// <summary>
         /// Array containing all valid JAXBase object types
         /// </summary>
@@ -206,10 +207,12 @@ namespace JAXBase.Language
         public static string[] PRGByteCodes = ["x00", "x01", " <ls>", "<le> ", "x04", "x05", " <HS>", "<HE> ", " <Hms>", "<Hme> ", "x0A", "x0B", "x0C","x0D",
             " <Xb>","<Xp>","<Xe> ","<Xd>","<pe>"," x13"," <Stmt> ","x15","x16","x17","x18"," <Ab>","<Ae> ","x1B"," <Cb>","<Ce> ","x1E","x1F"];
 
+
         /// <summary>
         /// Source filename extensions
         /// </summary>
         public static string[] SourceExtensions = ["scx", "vcx", "def", "mnu", "prg", "qry"];
+
 
         /// <summary>
         /// Run time filename extensions
@@ -298,19 +301,16 @@ namespace JAXBase.Language
         public static ILanguagePack GetLanguagePack(string languageCode)
         {
             //bool found = File.Exists("LanguagePacks/JAXBase-Lang-" + languageCode + ".dll");
-            int iii = 0;
-
 
             ILanguagePack pack;
 
             try
             {
                 pack = languageCode == "es" ? new SpanishLanguagePack() : new EnglishLanguagePack();
-
             }
             catch (Exception ex)
             {
-                string exstr = $"Language pack for '{languageCode}' could not be loaded. {ex.Message}";
+                AppIO.DebugLog($"Language pack for '{languageCode}' could not be loaded. {ex.Message}");
                 pack = new EnglishLanguagePack();
             }
 
