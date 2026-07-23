@@ -594,6 +594,7 @@ namespace JAXBase.XBase
             AppIO.DebugLog($"Form {me.thisObject?.UserProperties["name"].AsString()} nested inside parent '{parent.me.thisObject?.UserProperties["name"].AsString()}'");
         }
 
+
         // FAKE WINDOW Events
         public override void SetEvents()
         {

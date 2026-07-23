@@ -686,6 +686,8 @@ namespace JAXBase.XBase
             return resultToken;
         }
 
+
+
         /// <summary>
         /// Re-applies Left and Top attached properties to the Avalonia control after it has been
         /// added to a Canvas (or after child-moving in FakeWindow). 
@@ -732,6 +734,10 @@ namespace JAXBase.XBase
             AppIO.DebugLog($"         Height  {jow.avaloniaObject.Height}");
             AppIO.DebugLog($"         Width   {jow.avaloniaObject.Width}");
             AppIO.DebugLog($"         Visible {(jow.avaloniaObject.IsVisible ? "YES" : "NO")}");
+
+
+            // Reset specific post-render items and events for this object
+            jow.thisObject.PostRender();
         }
 
 
