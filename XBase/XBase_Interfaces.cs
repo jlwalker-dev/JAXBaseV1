@@ -1,5 +1,6 @@
 ﻿using JAXBase.Core;
 using JAXBase.Data;
+using System.Security.Permissions;
 using static JAXBase.XBase.JAXObjectsAux;
 
 namespace JAXBase.XBase
@@ -36,6 +37,8 @@ namespace JAXBase.XBase
         public int RemoveObject(int idx);
         public Task<int> SetDefault(string cmd);
         public int SetObjectIDX(int idx);
+        public void SetEvents();
+        public void PostRender();
         public int SetObjectProperty(int idx, string propertyName, JAXObjects.Token value);
         //public int SetProperty(string propertyName, object value);
         public Task<int> SetProperty(string propertyName, object value, int objIdx);

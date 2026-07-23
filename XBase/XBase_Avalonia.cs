@@ -1524,6 +1524,8 @@ namespace JAXBase.XBase
             SuspendEvents();
         }
 
+        public virtual void PostRender() { }
+
         public virtual void SuspendEvents()
         {
             if (me.avaloniaObject is not null)

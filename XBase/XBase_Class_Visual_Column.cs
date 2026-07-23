@@ -86,6 +86,7 @@ namespace JAXBase.XBase
             return result;
         }
 
+
         // Helper to apply common properties (font, colors, etc.) to per-cell controls
         private void ApplyCommonProperties(Avalonia.Controls.Control control, bool isLink = false)
         {
@@ -643,6 +644,8 @@ namespace JAXBase.XBase
 
             return returnToken;
         }
+
+
         /*------------------------------------------------------------------------------------------*
          * Methods list
          *------------------------------------------------------------------------------------------*/

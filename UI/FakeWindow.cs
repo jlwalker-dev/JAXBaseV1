@@ -157,9 +157,9 @@ namespace JAXBase.UI
         public FakeWindow? Parent { get; set; }
 
         // Internal controls
-        private FloatingPanel? _floatingPanel;
+        public FloatingPanel? _floatingPanel;
         public Window? _realWindow { get; private set; } = null;
-        private Canvas? _contentCanvas;
+        public Canvas? _contentCanvas;
         private bool _isShown;
 
         public Canvas ContentCanvas

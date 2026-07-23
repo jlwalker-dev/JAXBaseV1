@@ -39,15 +39,14 @@
  * 
  * 
  */
-using JAXBase.Core;
-using JAXBase.Data;
-using JAXBase.Utilities;
-using System.Data;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Styling;
+using JAXBase.Core;
+using JAXBase.Data;
+using JAXBase.UI;
+using JAXBase.Utilities;
 using System.Collections.ObjectModel;
-using System.Windows.Controls;
+using System.Data;
 using static JAXBase.Core.AppClass;
 namespace JAXBase.XBase
 {
@@ -58,14 +57,17 @@ namespace JAXBase.XBase
 
         // Table for grid
         private DataTable? _jaxTable;
+        private List<int> _rowRef = [];
+
+        // Original datasession and work area
         int currentDS = 0;
         int currentWA = 0;
+
+        // Current work area
         int thisWA = 0;
 
         // Define grid reference
         public Avalonia.Controls.DataGrid grid => (Avalonia.Controls.DataGrid)me.avaloniaObject!;
-
-        //private ObservableCollection<Dictionary<string, object>> _gridRows = new ObservableCollection<Dictionary<string, object>>();
 
         bool doPostInitSetup = true;
 
@@ -101,11 +103,10 @@ namespace JAXBase.XBase
             if (doPostInitSetup)
                 SetGridEvents();
 
-            //SetUpGrid();
-
             bool result = await base.PostInit(callBack, parameterList);
             return result;
         }
+
 
         // Added: Handler for bubbled clicks (e.g., from button or link columns)
         private async void Grid_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
@@ -115,6 +116,7 @@ namespace JAXBase.XBase
                 await _CallMethod("click");
             }
         }
+
 
         /*
          * ADDCOLUMN(x)
@@ -167,6 +169,7 @@ namespace JAXBase.XBase
             return grid.Columns.Count;
         }
 
+
         /*
          * Manually add a new column to the formj - grid does not change
          * until the RowSource changes or it's already rendered
@@ -194,8 +197,8 @@ namespace JAXBase.XBase
                 value.SetParent(me);
 
                 // If the grid is already rendered, then set it up again
-               // if (PrivateProperties["rendered"].AsBool())
-               //     SetUpGrid();
+                // if (PrivateProperties["rendered"].AsBool())
+                //     SetUpGrid();
 
                 err = 0;
             }
@@ -211,27 +214,6 @@ namespace JAXBase.XBase
 
             return err > 0 ? -1 : grid.Columns.Count;
         }
-
-
-        private void ApplyAutoSizeMode(int mode)
-        {
-            if (grid.Columns.Count == 0) return;
-            switch (mode)
-            {
-                case 2:
-                    // Fixed widths (None)
-                    for (int i = 0; i < grid.Columns.Count; i++)
-                        grid.Columns[i].Width = new Avalonia.Controls.DataGridLength(150 + i * 50, Avalonia.Controls.DataGridLengthUnitType.Pixel);
-                    break;
-                case 0:
-                case 1:
-                    // Size to content (AllCells / DisplayedCells)
-                    foreach (var column in grid.Columns)
-                        column.Width = Avalonia.Controls.DataGridLength.Auto;
-                    break;
-            }
-            grid.InvalidateVisual(); // Ensure visual update
-        }
 
 
         public override async Task<int> _CallMethod(string methodName)
@@ -345,9 +327,11 @@ namespace JAXBase.XBase
                                 // grid.Columns[grid.Columns.Count - 1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
                                 //}
                                 break;
+
                             case "refresh":
                                 grid.InvalidateVisual();
                                 break;
+
                             default:
                                 results = await base.DoDefault(methodName);
                                 break;
@@ -394,6 +378,7 @@ namespace JAXBase.XBase
                         returnToken.Element.Value = grid.Columns.Count;
                         result = 9;
                         break;
+
                     default:
                         returnToken = await base.GetProperty(propertyName, idx);
                         result = returnToken.Element.IsNull() ? 1 : 0;
@@ -424,109 +409,17 @@ namespace JAXBase.XBase
             return returnToken;
         }
 
-        // --------------------------------------------------------------------------------
-        // Load the array into the grid
-        //private void LoadArrayIntoGrid()
-        //{
-        //    AppIO.DebugLog("LoadArrayIntoGrid");
 
-        //    //_gridRows.Clear();
-        //    //grid.Columns.Clear();
-        //    // Get the number of columns for the grid
-        //    int acc = aGridData.Col; // columns in the source array
-        //    int arc = aGridData.Row; // rows in the source array
-
-        //    // Fix for 1D array (treat as single-column, many rows)
-        //    if (arc < 1)
-        //    {
-        //        arc = acc;
-        //        acc = 1;
-        //    }
-
-        //    int col = UserProperties["columncount"].AsInt();
-        //    if (col < 1)
-        //    {
-        //        UserProperties["columncount"].Element.Value = acc;
-        //        col = acc;
-        //    }
-
-        //    // Row fix in FOR statement for 1D arrays
-        //    for (int r = 1; r <= arc; r++)
-        //    {
-        //        var rowDict = new Dictionary<string, object>();
-
-        //        // Optional: store original row index (replaces row.Tag = r)
-        //        rowDict["_RowIndex"] = r;
-
-        //        // Fill columns of this row
-        //        for (int c = 1; c <= col; c++)
-        //        {
-        //            string key = (c - 1).ToString();
-        //            if (c <= acc)
-        //            {
-        //                aGridData.SetElement(r, c);
-        //                rowDict[key] = aGridData.Element.Value ?? string.Empty;
-        //                AppIO.DebugLog($"Row: {r} Col:{key} - {rowDict[key]}");
-        //            }
-        //            else
-        //            {
-        //                rowDict[key] = string.Empty; // outside source array → blank
-        //                AppIO.DebugLog($"Row: {r} Col:{key} - Empty");
-        //            }
-        //        }
-
-        //        _gridRows.Add(rowDict);
-        //    }
-
-        //    // Avalonia equivalent of grid.AutoResizeColumns()
-        //    if (UserProperties["allowautocolumnfit"].AsInt() == 0)
-        //    {
-        //        foreach (var column in grid.Columns)
-        //            column.Width = Avalonia.Controls.DataGridLength.Auto;
-        //    }
-        //}
-
-        /***************************************************************
-         * Start of Lazy grid data binding 
-         * TODO - Needs extensive rewrite for Avalonia
-         ***************************************************************/
-        //private async Task LoadDBFIntoGrid()
-        //{
-        //    AppIO.DebugLog("PrepDataGrid", false);
-
-        //    await SetProperty("columncount", 0, 0);
-
-        //    if (GridDBF is not null)
-        //    {
-        //        // We have an active work area
-        //        if (GridDBF.DbfInfo.DBFStream is not null)
-        //        {
-        //            // We have an active table!
-        //            grid.IsReadOnly = true; // For viewing only
-        //            AllowUserToAddRows = false; // No new row at the end
-
-        //            // Add columns based on DBF schema (from empty DBFRow)
-        //            // Fetch an empty row to get the structure
-        //            DataTable JBrow = await GridDBF.DBFGotoRecord("TOP");
-
-        //            foreach (DataColumn col in JBrow.Columns)
-        //            {
-        //                if (col.ColumnName[..1] != "$") // Skip the deleted flag column if you don't want to show it
-        //                {
-        //                    // Set the column and return the object location
-        //                    int c = await AddColumn(0, col.ColumnName, col.ColumnName);
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
+        // Add this in when something needs to be done after being rendered onto the form
+        public override void PostRender()
+        {
+            SetGridEvents();
+        }
 
 
-
-        private void SetGridEvents()
+        public void SetGridEvents()
         {
             AppIO.DebugLog("Setting grid events");
-
             SetEvents();
 
             // Added: Subscribe to grid events for bubbling from columns
@@ -537,45 +430,117 @@ namespace JAXBase.XBase
             // Added: General click handler for bubbled events (e.g., from button/link columns)
             grid.PointerPressed += Grid_PointerPressed;
             doPostInitSetup = false;
+
+            Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsInt());
+            Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsInt());
+
+            grid.Width = UserProperties["width"].AsDouble();
+            grid.Height = UserProperties["height"].AsDouble();
+
             grid.InvalidateVisual();
+
+
 
             // Tie in the parent resize event
             if (me.Parent is not null)
             {
-                AppIO.DebugLog("Setting grid resize");
-
-                if (me.Parent.BaseClass.Equals("form"))
+                if (me.Parent.BaseClass.Equals("form", StringComparison.OrdinalIgnoreCase))
                 {
+                    AppIO.DebugLog("Setting grid resize for FORM parent");
                     JAXObjectWrapper form = me.Parent;
-                    XBase_Class_Visual_Form vForm = (XBase_Class_Visual_Form)form.nvObject!;
-                    vForm.InnerCanvas.SizeChanged += Grid_SizeChanged;
+                    FakeWindow vForm = (FakeWindow)form.nvObject!;
+                    vForm._floatingPanel!.InnerCanvas.SizeChanged += Grid_SizeChanged;
                 }
-                else if (me.Parent.BaseClass.Equals("container"))
+                else if (me.Parent.BaseClass.Equals("container", StringComparison.OrdinalIgnoreCase))
                 {
+                    AppIO.DebugLog("Setting grid resize for CONTAINER parent");
                     JAXObjectWrapper form = me.Parent;
                     XBase_Class_Visual_Container vCtnr = (XBase_Class_Visual_Container)form.nvObject!;
                     vCtnr.InnerCanvas.SizeChanged += Grid_SizeChanged;
                 }
-                else if (me.Parent.BaseClass.Equals("page"))
+                else if (me.Parent.BaseClass.Equals("page", StringComparison.OrdinalIgnoreCase))
                 {
+                    AppIO.DebugLog("Setting grid resize for PAGE parent");
                     JAXObjectWrapper form = me.Parent;
                     XBase_Class_Visual_Page vPg = (XBase_Class_Visual_Page)form.nvObject!;
                     vPg.InnerCanvas.SizeChanged += Grid_SizeChanged;
                 }
                 else
                 {
-                    AppIO.DebugLog($"Unsupported Resize event for parent type {me.Parent.BaseClass}");
+                    AppIO.DebugLog($"Unsupported parent type {me.Parent.BaseClass} for resize event");
                 }
             }
         }
 
 
-        // Manual update if needed
         private void Grid_SizeChanged(object? sender, SizeChangedEventArgs e)
         {
-            AppIO.DebugLog($"Parent resized to {e.NewSize.Width} x {e.NewSize.Height}");
-            grid.Width = e.NewSize.Width;
-            grid.Height = e.NewSize.Height;
+            if (grid == null || e.NewSize.Width <= 0 || e.NewSize.Height <= 0)
+                return;
+
+            AppIO.DebugLog($"Parent resized to {e.NewSize.Width} x {e.NewSize.Height}", false);
+
+            // Respect any margins/padding from properties or base class
+            double margin = UserProperties.ContainsKey("margin") ? UserProperties["margin"].AsInt() : 0;
+            double effectiveWidth = System.Math.Max(0, e.NewSize.Width - margin * 2);
+            double effectiveHeight = System.Math.Max(0, e.NewSize.Height - margin * 2);
+
+            grid.Width = effectiveWidth;
+            grid.Height = effectiveHeight;
+
+            AppIO.DebugLog($"Grid resized to {grid.Width} x {grid.Height}", false);
+
+            grid.InvalidateVisual();
+            grid.InvalidateMeasure();
+            grid.InvalidateArrange();
+        }
+
+
+        private void ApplyAutoSizeMode(int mode)
+        {
+            if (grid == null || grid.Columns.Count == 0)
+                return;
+
+            AppIO.DebugLog($"ApplyAutoSizeMode: {mode} while on parent '{me.Parent?.JOWName}'");
+
+            switch (mode)
+            {
+                case 2: // Fixed widths (fallback)
+                    for (int i = 0; i < grid.Columns.Count; i++)
+                    {
+                        grid.Columns[i].Width = new Avalonia.Controls.DataGridLength(150, Avalonia.Controls.DataGridLengthUnitType.Pixel);
+                    }
+                    break;
+
+                default:    // Auto / Size to content
+                    foreach (var column in grid.Columns)
+                    {
+                        if (column is Avalonia.Controls.DataGridBoundColumn boundColumn)
+                        {
+                            boundColumn.Width = Avalonia.Controls.DataGridLength.Auto;  // Avalonia auto-sizing
+                        }
+                        else
+                        {
+                            column.Width = Avalonia.Controls.DataGridLength.Auto;
+                        }
+                    }
+                    break;
+            }
+
+            grid.InvalidateVisual();
+            grid.InvalidateMeasure();
+            grid.InvalidateArrange();
+        }
+
+        // Call this after data binding or column changes
+        public async Task AutoFitColumns()
+        {
+            if (grid == null)
+                return;
+
+            ApplyAutoSizeMode(UserProperties["allowautocolumnfit"].AsInt());
+            await Task.Delay(50); // Small delay for layout pass
+            grid.UpdateLayout();
         }
 
 
@@ -904,6 +869,8 @@ namespace JAXBase.XBase
                                     {
                                         if (string.IsNullOrWhiteSpace(UserProperties["recordsource"].AsString()) == false)
                                         {
+                                            AppIO.DebugLog($"Setting recordsourcetype to {tk.AsInt()}");
+
                                             switch (tk.AsInt())
                                             {
                                                 case 0:
@@ -928,9 +895,8 @@ namespace JAXBase.XBase
                                                         if (Program.CurrentApp.CurrentDS.IsWorkArea(tableName))
                                                         {
                                                             Program.CurrentApp.CurrentDS.SelectWorkArea(tableName);
-                                                            //await LoadDBFIntoGrid();
-                                                            //await PrepDataGrid();
-                                                            //LoadDataIntoGrid();
+                                                            result = await SetTableBinding();
+                                                            await AutoFitColumns();
                                                         }
                                                         else
                                                         {
@@ -965,9 +931,7 @@ namespace JAXBase.XBase
                                                             {
                                                                 Program.CurrentApp.CurrentDS.SelectWorkArea(alias);
                                                                 result = await SetTableBinding();
-                                                                //await LoadDBFIntoGrid();
-                                                                //await PrepDataGrid();
-                                                                //LoadDataIntoGrid();
+                                                                await AutoFitColumns();
                                                             }
                                                             else
                                                             {
@@ -1013,29 +977,29 @@ namespace JAXBase.XBase
 
                                                 case 5:
                                                     // Try to bind the record source to an array name
-                                                    //aGridData = await AppVars.GetVarToken(UserProperties["recordsource"].AsString());
+                                                    JAXObjects.Token aGridData = await AppVars.GetVarToken(UserProperties["recordsource"].AsString());
 
                                                     // Is it an array variable name?
-                                                    //if (aGridData.TType.Equals("A") == false)
-                                                    //{
-                                                    //    // No, so reset and give error
-                                                    //    result = 234;
-                                                    //    aGridData = new();
-                                                    //}
-                                                    //else
-                                                    //{
-                                                    //    // Load the grid from the array
-                                                    //    LoadArrayIntoGrid();
+                                                    if (aGridData.TType.Equals("A") == false)
+                                                    {
+                                                        // No, so reset and give error
+                                                        result = 234;
+                                                        aGridData = new();
+                                                    }
+                                                    else
+                                                    {
+                                                        // Load the grid from the array
+                                                        await SetArrayBinding(aGridData);
 
-                                                    //    // Gives the black screen of death
-                                                    //    //for (int i = 0; i < grid.Columns.Count; i++)
-                                                    //    //{
-                                                    //    //    if (grid.Columns[i] is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.Binding.Path is null)
-                                                    //    //    {
-                                                    //    //        boundCol.Binding = new Avalonia.Data.Binding(i.ToString());
-                                                    //    //    }
-                                                    //    //}
-                                                    //}
+                                                        // Gives the black screen of death
+                                                        //for (int i = 0; i < grid.Columns.Count; i++)
+                                                        //{
+                                                        //    if (grid.Columns[i] is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.Binding.Path is null)
+                                                        //    {
+                                                        //        boundCol.Binding = new Avalonia.Data.Binding(i.ToString());
+                                                        //    }
+                                                        //}
+                                                    }
                                                     break;
                                             }
 
@@ -1171,6 +1135,144 @@ namespace JAXBase.XBase
         }
 
 
+        private async Task<int> SetArrayBinding(JAXObjects.Token aGrid)
+        {
+            int result = 0;
+
+
+            currentDS = Program.CurrentApp.CurrentDataSession;
+            currentWA = Program.CurrentApp.CurrentDS.CurrentWorkArea();
+            thisWA = currentWA;
+
+            // Prep the table
+            _jaxTable = new();
+            _rowRef = [];
+
+            // Set up the columns
+            for (int i = 1; i <= aGrid.Col; i++)
+            {
+                _jaxTable.Columns.Add(JAXLib.Proper($"Column{i}"), typeof(string));
+            }
+
+            for (int row = 1; row <= aGrid.Row; row++)
+            {
+                // Add a new row
+                _jaxTable.Rows.Add();
+                _rowRef.Add(row);
+
+                // Populate it from the source table
+                for (int col = 1; col <= aGrid.Col; col++)
+                {
+                    // Copy each column in _jaxTable over
+                    string name = _jaxTable.Columns[col - 1].ColumnName;
+                    aGrid.SetElement(row, col);
+                    _jaxTable.Rows[^1][name] = aGrid.AsString().Trim();
+                }
+            }
+
+            // Create simple POCO rows for reliable binding
+            var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
+
+            foreach (System.Data.DataRow row in _jaxTable.Rows)
+            {
+                var simpleRow = new SimpleDataRow();
+                foreach (System.Data.DataColumn col in _jaxTable.Columns)
+                {
+                    simpleRow.Values[col.ColumnName] = row[col] ?? DBNull.Value;
+                }
+                rowList.Add(simpleRow);
+            }
+
+            // Create the DataGrid
+            me.avaloniaObject = new Avalonia.Controls.DataGrid
+            {
+                Name = "JAXDataGrid",
+                GridLinesVisibility = Avalonia.Controls.DataGridGridLinesVisibility.All,
+                BorderThickness = new Avalonia.Thickness(1),
+                BorderBrush = Avalonia.Media.Brushes.Gray,
+                AutoGenerateColumns = false,
+                CanUserResizeColumns = true,
+                CanUserReorderColumns = true,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+            };
+
+            // Explicit columns using dictionary lookup
+            grid.Columns.Clear();
+            var testColumn = new Avalonia.Controls.DataGridTextColumn
+            {
+                Header = "All Data",
+                Binding = new Avalonia.Data.Binding(".")   // binds to ToString()
+            };
+
+            grid.Columns.Add(testColumn);
+            grid.ItemsSource = rowList;
+            grid.LoadingRow += (sender, e) =>
+            {
+                // This can help force rendering
+            };
+
+            AppIO.DebugLog($"RowList Count: {rowList.Count}");
+
+            // Force column regeneration and refresh
+            grid.AutoGenerateColumns = false;
+
+            // Bind the list
+            grid.ItemsSource = rowList;
+
+            AppIO.DebugLog($"RowList Count: {rowList.Count}");
+
+            // Explicit columns using DictionaryValueConverter (add the converter class first)
+            grid.Columns.Clear();
+            var converter = new DictionaryValueConverter();
+
+            foreach (System.Data.DataColumn dataCol in _jaxTable.Columns)
+            {
+                var textColumn = new Avalonia.Controls.DataGridTextColumn
+                {
+                    Header = dataCol.ColumnName,
+                    Binding = new Avalonia.Data.Binding("Values")
+                    {
+                        Converter = converter,
+                        ConverterParameter = dataCol.ColumnName
+                    }
+                };
+                grid.Columns.Add(textColumn);
+            }
+
+            grid.InvalidateVisual();
+            grid.InvalidateMeasure();
+            grid.InvalidateArrange();
+
+            // === Debug block ===
+            AppIO.DebugLog($"========= DataGrid Debug =========");
+            AppIO.DebugLog($"ItemsSource Type: {grid.ItemsSource?.GetType().FullName}");
+            AppIO.DebugLog($"Row Count in Table: {_jaxTable.Rows.Count}");
+            AppIO.DebugLog($"Column Count: {_jaxTable.Columns.Count}");
+
+            foreach (System.Data.DataColumn col in _jaxTable.Columns)
+            {
+                AppIO.DebugLog($"Column: {col.ColumnName} ({col.DataType.Name})");
+            }
+
+            // Make sure the grid is set to the correct dimensions
+            if (grid != null)
+            {
+                Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsInt());
+                Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsInt());
+
+                grid.Width = UserProperties["width"].AsInt() - 20;
+                grid.Height = UserProperties["height"].AsInt() - 20;
+            }
+            else
+                throw new Exception("9999|");
+
+            SuspendEvents();
+
+            return result;
+        }
+
+
         private async Task<int> SetTableBinding()
         {
             int result = 0;
@@ -1205,6 +1307,7 @@ namespace JAXBase.XBase
 
             // Prep the table
             _jaxTable = new();
+            _rowRef = [];
 
             // Set up the columns
             for (int i = 0; i < dbfInfo.FieldCount; i++)
@@ -1238,6 +1341,7 @@ namespace JAXBase.XBase
                 {
                     // Add a new row
                     _jaxTable.Rows.Add();
+                    _rowRef.Add(dbfInfo.CurrentRecNo);
 
                     // Populate it from the source table
                     for (int col = 0; col < _jaxTable.Columns.Count; col++)
@@ -1276,10 +1380,7 @@ namespace JAXBase.XBase
                 CanUserResizeColumns = true,
                 CanUserReorderColumns = true,
                 VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
-                MinWidth = 1200
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
             };
 
             // Explicit columns using dictionary lookup
@@ -1436,10 +1537,10 @@ namespace JAXBase.XBase
          */
         private async void DgvMain_KeyPress(object? sender, Avalonia.Input.KeyEventArgs e)
         {
-            AppIO.DebugLog("Grid Keypress", false);
-            
+            AppIO.DebugLog("Grid Keypress", false);
+
             // VFP nKeyCode translation
-            ParameterClass nKeyCode = new();
+            ParameterClass nKeyCode = new();
             if (Program.CurrentApp.OS == OSType.Windows)
             {
                 nKeyCode.token.Element.Value = JAXLib.FormsVFPKeyPress(e.Key.ToString(), (int)e.Key);
@@ -1464,8 +1565,8 @@ namespace JAXBase.XBase
         // Deleted: DgvMain_CellValidating - Replaced with more generic validation in column
         private async void DgvMain_BeforeCellChange(object? sender, EventArgs e)
         {
-            AppIO.DebugLog("BeforeCellChanged", false);
-            
+            AppIO.DebugLog("BeforeCellChanged", false);
+
             ParameterClass colIndex = new();
             colIndex.token.Element.Value = 0;
             ParameterClass rowIndex = new();
@@ -1474,12 +1575,12 @@ namespace JAXBase.XBase
             var (rowidx, colIdx, value) = GetSelectedCellInfo(grid);
             colIndex.token.Element.Value = colIdx + 1;
             rowIndex.token.Element.Value = rowidx + 1;
-            
+
             if (value is not null)
                 cellValue.token.Element.Value = value;
             else
                 cellValue.token.Element.MakeNull();
-            
+
             Program.CurrentApp.ParameterClassList.Add(rowIndex);
             Program.CurrentApp.ParameterClassList.Add(colIndex);
             Program.CurrentApp.ParameterClassList.Add(cellValue);
@@ -1518,13 +1619,6 @@ namespace JAXBase.XBase
             }
         }
 
-        //public void RefreshGrid()
-        //{
-        //    //AppIO.DebugLog("Refresh grid", false);
-        //    //LoadArrayIntoGrid();
-        //}
-
-
 
         /// <summary>
         /// Returns the currently focused/selected cell info (Avalonia equivalent of DataGridView.CurrentCell)
@@ -1556,21 +1650,21 @@ namespace JAXBase.XBase
         /// (Avalonia equivalent of grid.Rows[rowIndex].Cells[colIndex].Value)
         /// Works with your Dictionary-based ItemsSource from LoadArrayIntoGrid()
         /// </summary>
-        //public static object? GetCellValue(Avalonia.Controls.DataGrid grid, int rowIndex, int columnIndex)
-        //{
-        //    if (grid == null ||
-        //    rowIndex < 0 ||
-        //    columnIndex < 0 ||
-        //    grid.ItemsSource is not ObservableCollection<Dictionary<string, object>> rows)
-        //    {
-        //        return null;
-        //    }
-        //    if (rowIndex >= rows.Count)
-        //        return null;
-        //    var rowDict = rows[rowIndex];
-        //    string key = columnIndex.ToString();
-        //    return rowDict.TryGetValue(key, out var value) ? value : null;
-        //}
+        public static object? GetCellValue(Avalonia.Controls.DataGrid grid, int rowIndex, int columnIndex)
+        {
+            if (grid == null ||
+            rowIndex < 0 ||
+            columnIndex < 0 ||
+            grid.ItemsSource is not ObservableCollection<Dictionary<string, object>> rows)
+            {
+                return null;
+            }
+            if (rowIndex >= rows.Count)
+                return null;
+            var rowDict = rows[rowIndex];
+            string key = columnIndex.ToString();
+            return rowDict.TryGetValue(key, out var value) ? value : null;
+        }
 
         /// <summary>
         /// Sets a value into the currently selected cell
