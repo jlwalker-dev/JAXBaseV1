@@ -56,6 +56,8 @@ namespace JAXBase.XBase
         public JAXObjectWrapper? parent = null;
 
         // Commonly used property names translated from english
+        public readonly string cPropBackColor;
+        public readonly string cPropForeColor;
         public readonly string cPropLanguage;
         public readonly string cPropName;
         public readonly string cPropClass;
@@ -203,6 +205,9 @@ namespace JAXBase.XBase
             THIS = this;
             string lastProp;
 
+
+            cPropBackColor = JAXLanguageLists.GetWord("backcolor", "REVPEMS"); ;
+            cPropForeColor = JAXLanguageLists.GetWord("forecolor", "REVPEMS"); ;
             cPropLanguage = JAXLanguageLists.GetWord("language", "REVPEMS"); 
             cPropName = JAXLanguageLists.GetWord("name", "REVPEMS");
             cPropClass = JAXLanguageLists.GetWord("class", "REVPEMS");
@@ -482,6 +487,8 @@ namespace JAXBase.XBase
                             // via SetProperty except for those that are arrays or protected
                             foreach (KeyValuePair<string, JAXObjects.Token> tok in thisObject!.UserProperties)
                             {
+                                key = $"Setting property {tok.Key} with {tok.Value.AsString()}";
+
                                 if (tok.Value.Protected == false && tok.Value.TType.Equals("A") == false && JAXLib.InListC(tok.Key, "datasession") == false)
                                 {
                                     key = $"Setting property {tok.Key} to {tok.Value.Element.ValueAsString}";
@@ -1486,6 +1493,11 @@ namespace JAXBase.XBase
             int result = 0;
             string msg = string.Empty;
 
+            if (baseclass.Equals("header", StringComparison.OrdinalIgnoreCase))
+            {
+                int iii = 0;
+            }
+
             try
             {
                 if (!InTransaction) ClearErrors();
@@ -1763,11 +1775,6 @@ namespace JAXBase.XBase
 
                         AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
                     }
-                    else
-                    {
-                        // Property is not a member
-                        result = 1559;
-                    }
                 }
             }
             catch (Exception ex)
@@ -1824,11 +1831,6 @@ namespace JAXBase.XBase
                             JOWName = value.ToString() ?? string.Empty;
 
                         AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
-                    }
-                    else
-                    {
-                        // Property is not a member
-                        result = 1559;
                     }
                 }
             }

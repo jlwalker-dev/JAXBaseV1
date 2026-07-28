@@ -50,7 +50,6 @@ namespace JAXBase.XBase
         public enum UserObject { urw, Urw, uRw, URw, UrW, URW }
 
         public JAXObjectWrapper me;
-        public JAXObjectWrapper? Parent = null;
         public Dictionary<string, JAXObjects.Token> UserProperties { get; private set; } = new Dictionary<string, JAXObjects.Token>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, JAXObjects.Token> PrivateProperties { get; private set; } = new Dictionary<string, JAXObjects.Token>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, MethodClass> Methods { get; private set; } = new Dictionary<string, MethodClass>(StringComparer.OrdinalIgnoreCase);
@@ -102,7 +101,7 @@ namespace JAXBase.XBase
         /*------------------------------------------------------------------------------------------*
          * Set up if a visual object and the user object access settings
          *------------------------------------------------------------------------------------------*/
-        protected virtual void SetVisualObject(Avalonia.Controls.Control? MyObj = null, string myBaseClass = "", string MyDefaultName = "", bool VisualClass = false, UserObject uobj = UserObject.urw)
+        protected virtual void SetVisualObject(Avalonia.Controls.Control? MyObj = null, string myBaseClass = "", string myDefaultName = "", bool VisualClass = false, UserObject uobj = UserObject.urw)
         {
             me.VisualClass = VisualClass;
             me.BaseClass = myBaseClass;
@@ -110,7 +109,7 @@ namespace JAXBase.XBase
             if (VisualClass && MyObj is not null)
                 me.avaloniaObject = MyObj;
 
-            me.SetName(MyDefaultName);
+            me.SetName(myDefaultName);
 
             int userObject = (int)uobj;
 
@@ -123,7 +122,6 @@ namespace JAXBase.XBase
              */
             if (me.VisualClass && me.avaloniaObject is not null)
             {
-                me.SetName(MyDefaultName);
                 SuspendEvents();
                 SetEvents();
             }
@@ -137,39 +135,41 @@ namespace JAXBase.XBase
         public virtual async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
             // We don't need this code
-            Parent = callBack;
-            if (Parent is not null)
+            me.parent = callBack;
+            
+
+            if (me.parent is not null)
             {
                 // Formset can't have a parent (what about _Screen?)
                 if (me.BaseClass.Equals(me.cObjFormSet, StringComparison.OrdinalIgnoreCase)) // What about _Screen as parent????
-                    throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
+                    throw new Exception($"3300|{me.Class}/{me.parent.BaseClass}");
 
                 // Optionbutton can only have an Optiongroup parent
-                if (me.BaseClass.Equals(me.cObjOptionButton, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(me.cObjOptionGroup, StringComparison.OrdinalIgnoreCase) == false)
-                    throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
+                if (me.BaseClass.Equals(me.cObjOptionButton, StringComparison.OrdinalIgnoreCase) && me.parent.BaseClass.Equals(me.cObjOptionGroup, StringComparison.OrdinalIgnoreCase) == false)
+                    throw new Exception($"3300|{me.Class}/{me.parent.BaseClass}");
 
                 // Menuitem can only have a menu parent
-                if (me.BaseClass.Equals(me.cObjMenuItem, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Contains(me.cObjMenu, StringComparison.OrdinalIgnoreCase) == false)
-                    throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
+                if (me.BaseClass.Equals(me.cObjMenuItem, StringComparison.OrdinalIgnoreCase) && me.parent.BaseClass.Contains(me.cObjMenu, StringComparison.OrdinalIgnoreCase) == false)
+                    throw new Exception($"3300|{me.Class}/{me.parent.BaseClass}");
 
                 // Toolbutton can only have a toolbar parent
-                if (me.BaseClass.Equals(me.cObjToolButton, StringComparison.OrdinalIgnoreCase) && Parent.BaseClass.Equals(me.cObjToolbar, StringComparison.OrdinalIgnoreCase) == false)
-                    throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
+                if (me.BaseClass.Equals(me.cObjToolButton, StringComparison.OrdinalIgnoreCase) && me.parent.BaseClass.Equals(me.cObjToolbar, StringComparison.OrdinalIgnoreCase) == false)
+                    throw new Exception($"3300|{me.Class}/{me.parent.BaseClass}");
 
                 // Form can only have a form or formset parent (what about _Screen?)
-                if (me.BaseClass.Equals(me.cObjForm, StringComparison.OrdinalIgnoreCase) && JAXLib.InListC(Parent.BaseClass, me.cObjForm, me.cObjFormSet) == false)
-                    throw new Exception($"3300|{me.Class}/{Parent.BaseClass}");
+                if (me.BaseClass.Equals(me.cObjForm, StringComparison.OrdinalIgnoreCase) && JAXLib.InListC(me.parent.BaseClass, me.cObjForm, me.cObjFormSet) == false)
+                    throw new Exception($"3300|{me.Class}/{me.parent.BaseClass}");
 
                 // Form on a formset is the exception to this rule
-                if (me.BaseClass.Equals(me.cObjFormSet, StringComparison.OrdinalIgnoreCase) == false && Parent.BaseClass.Equals(me.cObjFormSet) == false)
+                if (me.BaseClass.Equals(me.cObjFormSet, StringComparison.OrdinalIgnoreCase) == false && me.parent.BaseClass.Equals(me.cObjFormSet) == false)
                 {
-                    if (VisualClass && Parent.VisualClass == false)
-                        throw new Exception($"3301|{me.Class}/{Parent.BaseClass}");
+                    if (VisualClass && me.parent.VisualClass == false)
+                        throw new Exception($"3301|{me.Class}/{me.parent.BaseClass}");
                 }
 
-                JAXObjects.Token tk = await Parent.GetProperty(me.cPropName);
+                JAXObjects.Token tk = await me.parent.GetProperty(me.cPropName);
                 UserProperties[me.cPropParent].Element.Value = tk.AsString();
-                AppIO.DebugLog($"Setting parent of {me.JOWName} to {Parent.JOWName}", false);
+                AppIO.DebugLog($"Setting parent of {me.JOWName} to {me.parent.JOWName}", false);
             }
 
             // Update the properties of this object
@@ -183,7 +183,11 @@ namespace JAXBase.XBase
                 if (UserProperties.ContainsKey(Name) == false)
                     AddProperty(Name);
 
-                SetProperty(Name, p.token.Element.Value, 0).Wait();
+                if (UserProperties[Name].Protected)
+                    UserProperties[Name].Element.Value = p.token.Element.Value;
+                else
+                    await SetProperty(Name, p.token.Element.Value, 0);
+
             }
 
             InInit = false;

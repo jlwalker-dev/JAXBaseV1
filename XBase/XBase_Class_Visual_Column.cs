@@ -1,13 +1,32 @@
-﻿// Updated XBase_Class_Visual_Column.cs
-// Changes:
-// - Changed case 0 to use DataGridTextColumn instead of template, to allow dynamic binding in SetProperty (fixes expression parse error when recordsource is set after PostInit)
-// - In SetProperty for "recordsource", if column is DataGridTextColumn, set Binding.Path = tk.AsString()
-// - For other types, added check for non-empty recordsource before binding in templates
-// - Added grd.UpdateLayout() after setting binding to force re-render
-// Additions:
-// - None beyond the fix
-// Deletions:
-// - Removed template for type 0
+﻿/****************************************************************************************************
+ * 2026-07-22 - JLW
+ *      New attempt at column support
+ *      
+ * Column Types
+ *   0 - Text column (default)
+ *   1 - Checkbox
+ *   2 - Image
+ *   3 - Combo
+ *   4 - Link
+ *   5 - Button
+ *   6 - Spinner
+ *   
+ *   
+ * TODO - Add header template
+ * 
+ * var column = myDataGrid.Columns[0] as DataGridTextColumn;
+ * 
+ * column.HeaderTemplate = new FuncDataTemplate<object>((_, _) =>
+ * {
+ *     return new TextBlock
+ *     {
+ *         Text = "Custom Header",
+ *         FontWeight = FontWeight.Bold,
+ *         // add more controls if needed
+ *     };
+ * });
+ * 
+ ****************************************************************************************************/
 
 using Avalonia.Controls.Templates;
 using Avalonia.Styling;
@@ -27,32 +46,16 @@ namespace JAXBase.XBase
 
         public XBase_Class_Visual_Column(JAXObjectWrapper jow, string name) : base(jow, name)
         {
-            SetVisualObject(null, "column", string.IsNullOrWhiteSpace(name) ? MyDefaultName : name, false, UserObject.urw);
+            SetVisualObject(null, "column", string.IsNullOrWhiteSpace(name) ? MyDefaultName : name, false, UserObject.URW);
             temp = name;
+            me.nvObject = new EmptyFactory();
         }
+
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
             UserProperties["name"].Element.Value = temp;
 
-            // Process named parameters
-            foreach (var param in parameterList)
-            {
-                if (UserProperties.ContainsKey(param.PName.ToLower()))
-                {
-                    object? propValue = AppHelper.GetParameterValue(param);
-                    JAXObjects.Token pval = new();
-                    if (propValue is null)
-                        pval.Element.MakeNull();
-                    else
-                    {
-                        pval.Element.Value = propValue!;
-                        if (UserProperties[param.PName.ToLower()].Protected)
-                            UserProperties[param.PName.ToLower()].Element.Value = pval.Element.Value;
-                        else
-                            await SetProperty(param.PName, propValue, 0);
-                    }
-                }
-            }
+            bool result = await base.PostInit(callBack, parameterList);
 
             // Get the columntype value
             int colTypeInt = UserProperties["columntype"].AsInt();
@@ -60,6 +63,7 @@ namespace JAXBase.XBase
 
             // Create column based on type
             Avalonia.Controls.DataGridColumn col = new Avalonia.Controls.DataGridTemplateColumn(); // Use template for all to unify
+
             if (colTypeInt == 0)
             {
                 col = new Avalonia.Controls.DataGridTextColumn();
@@ -75,16 +79,37 @@ namespace JAXBase.XBase
                 templateCol.CellTemplate = await CreateCellTemplate(colTypeInt, initialBinding);
                 templateCol.CellEditingTemplate = await CreateCellEditingTemplate(colTypeInt, initialBinding);
             }
+
             me.nvObject = col;
 
-            // ----------------------------------------
-            // Final setup of properties and events
-            // ----------------------------------------
-
-            bool result = await base.PostInit(callBack, parameterList);
+            // Set up the header
+            JAXObjectWrapper header = new(Program.CurrentApp, "header", "header1", []);
+            await AddObject(header);
+            await header.SetProperty("caption", "Header2", 0);
 
             return result;
         }
+
+        /*
+         * Add a header to the column
+         */
+        public override async Task<int> AddObject(JAXObjectWrapper value)
+        {
+            int err = 0;
+            if (CanUseObjects == false) throw new Exception("3019|");
+
+            if (value.BaseClass.Equals("header"))
+            {
+                UserProperties[me.cPropObjects].Add(value);
+                UserProperties[me.cPropControlCount].Element.Value = UserProperties[me.cPropObjects].Col;
+                value.SetParent(me);
+            }
+            else
+                err = 3016;
+
+            return err > 0 ? -1 : UserProperties[me.cPropObjects]._avalue.Count;
+        }
+
 
 
         // Helper to apply common properties (font, colors, etc.) to per-cell controls
@@ -337,6 +362,7 @@ namespace JAXBase.XBase
         {
             int result = 0;
             propertyName = propertyName.ToLower();
+
             JAXObjects.Token tk = new();
             tk.Element.Value = objValue;
             Avalonia.Controls.DataGrid? grd = me.Parent is null || me.Parent.avaloniaObject is null ? null : (Avalonia.Controls.DataGrid)me.Parent.avaloniaObject;
@@ -349,21 +375,15 @@ namespace JAXBase.XBase
                     // Visual object common property handler
                     switch (propertyName)
                     {
-                        case "caption":
-                            if (tk.Element.Type.Equals("C"))
-                            {
-                                if (Column is not null)
-                                    Column.Header = tk.AsString();
-                            }
-                            else
-                                result = 11;
-                            break;
-
                         case "backcolor":
+                        case "forecolor":
                             if (tk.Element.Type.Equals("N"))
                             {
                                 var brush = new Avalonia.Media.SolidColorBrush(XClass_AuxCode.IntToAvColor(tk.AsInt()));
-                                objValue = XClass_AuxCode.IntToAvColor(tk.AsInt());
+
+                                UserProperties[propertyName].Element.Value = tk.AsInt();
+
+                                result = 9;
                             }
                             else
                                 result = 11;
@@ -393,46 +413,14 @@ namespace JAXBase.XBase
                             break;
 
                         case "fontbold":
-                            if (tk.Element.Type.Equals("L"))
-                            {
-                                // TODO - Not directly supported; use custom effects if needed
-                            }
-                            else
-                                result = 11;
-                            break;
-
                         case "fontitalic":
-                            if (tk.Element.Type.Equals("L"))
-                            {
-                                // TODO - Not directly supported; use custom effects if needed
-                            }
-                            else
-                                result = 11;
-                            break;
-
-                        case "fontoutline":
-                        case "fontshadow":
-                            if (tk.Element.Type.Equals("L"))
-                            {
-                                // TODO - Not directly supported; use custom effects if needed
-                            }
-                            else
-                                result = 11;
-                            break;
-
                         case "fontstrikethrough":
-                            if (tk.Element.Type.Equals("L"))
-                            {
-                                // TODO - Not directly supported; use custom effects if needed
-                            }
-                            else
-                                result = 11;
-                            break;
-
                         case "fontunderline":
                             if (tk.Element.Type.Equals("L"))
                             {
-                                // TODO - Not directly supported; use custom effects if needed
+                                UserProperties[propertyName].Element.Value = tk.AsBool();
+
+                                result = 9;
                             }
                             else
                                 result = 11;
@@ -441,7 +429,9 @@ namespace JAXBase.XBase
                         case "fontname":
                             if (tk.Element.Type.Equals("C"))
                             {
-                                // TODO - Not directly supported; use custom effects if needed
+                                UserProperties[propertyName].Element.Value = tk.AsString();
+
+                                result = 9;
                             }
                             else
                                 result = 11;
@@ -450,26 +440,21 @@ namespace JAXBase.XBase
                         case "fontsize":
                             if (tk.Element.Type.Equals("N"))
                             {
-                                // TODO - Not directly supported; use custom effects if needed
+                                UserProperties[propertyName].Element.Value = tk.AsInt();
+
+                                result = 9;
                             }
                             else
                                 result = 11;
                             break;
 
-                        case "forecolor":
-                            if (tk.Element.Type.Equals("N"))
-                            {
-                                // TODO - Not directly supported; use custom effects if needed
-                            }
-                            else
-                                result = 11;
-                            break;
 
                         case "name":
                             if (tk.Element.Type.Equals("C"))
                             {
                                 // Handled internally
                                 UserProperties["name"].Element.Value = tk.AsString();
+                                result = 9;
                             }
                             else
                                 result = 11;
@@ -570,12 +555,14 @@ namespace JAXBase.XBase
                     {
                         if (result < 9)
                             UserProperties[propertyName].Element.Value = objValue;
+
                         result = 0;
                     }
                 }
             }
             else
                 result = 1559;
+
             if (result > 0)
             {
                 _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
@@ -585,6 +572,8 @@ namespace JAXBase.XBase
             }
             return result;
         }
+
+
         /*------------------------------------------------------------------------------------------*
          * GetProperty method returns
          * 0 = Successfully returning value
@@ -655,6 +644,7 @@ namespace JAXBase.XBase
                 [
                 ];
         }
+
         /*------------------------------------------------------------------------------------------*
          * Events list
          *------------------------------------------------------------------------------------------*/
@@ -662,10 +652,10 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","doubleclick","error","errormessage",
-                "mouseenter","mousehover","mouseleave","visiblechanged","when"
+                "click","doubleclick","error","errormessage","mouseenter","mousehover","mouseleave","visiblechanged","when"
                 ];
         }
+
         /*------------------------------------------------------------------------------------------*
          * property data types
          * C = Character
@@ -683,12 +673,13 @@ namespace JAXBase.XBase
             return
                 [
                 "baseclass,C,column","backcolor,r,255|255|255",
-                "caption,c,","class,C,column","classlibrary,C,","columnnumber,n,0","comment,c,","columntype,n!,0",
+                "class,C,column","classlibrary,C,","columnnumber,n,0","columntype,n!,0","comment,c,","controlcount,n,0",
                 "enabled,l,.t.",
                 "FontBold,L,","FontCondense,L,","FontItalic,L,false","FontName,C,Arial",
                 "FontSize,N,9","FontStrikeThrough,L,","FontUnderline,L,","forecolor,r,0",
                 "height,n,32",
                 "name,c,",
+                "objects,*,",
                 "parent,o,","parentclass,c,",
                 "readonly,L,","righttoleft,L,", "recordsource,c,",
                 "tag,c,","tooltiptext,c,",
