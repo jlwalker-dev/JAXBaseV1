@@ -209,8 +209,37 @@ namespace JAXBase.XBase
         }
 
 
-        // Changes made to the header simply recreate the header
         private void SetHeader()
+        {
+            if (me.parent is null || me.parent.nvObject is null) return;
+            Avalonia.Controls.DataGridColumn col = (Avalonia.Controls.DataGridColumn)me.parent.nvObject!;
+            string captionText = UserProperties["caption"].AsString();
+
+            // inside SetHeader, after the parent check
+            AppIO.DebugLog($"SetHeader: parent={me.parent?.JOWName}, caption={UserProperties["caption"].AsString()}, col.Header was={col.Header}");
+            col.Header = captionText;
+            AppIO.DebugLog($"SetHeader: col.Header now={col.Header}");
+
+            // Must set the Header property itself
+            col.Header = captionText;
+
+            // Then the template (hard-coded text is fine, or switch to {Binding})
+            col.HeaderTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((_, _) =>
+            {
+                return new Avalonia.Controls.Border
+                {
+                    Background = Avalonia.Media.Brushes.White,
+                    Padding = new Avalonia.Thickness(6, 4),
+                    Child = new Avalonia.Controls.TextBlock
+                    {
+                        Text = captionText
+                    }
+                };
+            });
+        }
+
+        // Changes made to the header simply recreate the header
+        private void SetHeader2()
         {
             if (me.parent is null || me.parent.nvObject is null) return;
 

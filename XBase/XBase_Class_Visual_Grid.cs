@@ -142,10 +142,7 @@ namespace JAXBase.XBase
 
             // Add the created column from the wrapper
             Avalonia.Controls.DataGridColumn col = (Avalonia.Controls.DataGridColumn)colObj.nvObject!;
-            //col.Header = string.IsNullOrEmpty(header) ? colName : header;
-            JAXObjectWrapper? h = await colObj!.thisObject!.GetObject(0);
-            await h!.SetProperty("caption", header);
-            
+
             if (col is Avalonia.Controls.DataGridBoundColumn boundCol && !string.IsNullOrEmpty(binding))
             {
                 boundCol.Binding = new Avalonia.Data.Binding(binding);
@@ -154,6 +151,16 @@ namespace JAXBase.XBase
 
             col.IsReadOnly = UserProperties["readonly"].AsBool();
             grid.Columns.Add(col);
+
+            // Force the header AFTER Binding and after the column is in the grid
+            JAXObjectWrapper? h = await colObj!.thisObject!.GetObject(0);
+            if (h is not null)
+            {
+                JAXObjects.Token tk = await h.GetProperty("caption", 0);
+                string captionToUse = tk.AsString();
+                captionToUse = string.IsNullOrEmpty(header) ? captionToUse : JAXLib.Proper(header);
+                await h.SetProperty("caption", captionToUse, 0);   // this calls SetHeader again
+            }
 
             // If columncount<grid.columns.count then update it
             if (UserProperties["columncount"].AsInt() < grid.Columns.Count)
@@ -1091,7 +1098,7 @@ namespace JAXBase.XBase
             for (int i = 1; i <= ColCount; i++)
             {
                 JAXObjects.Token col = await GetProperty("userobjects", i - 1);
-                
+
 
             }
 
@@ -1140,6 +1147,13 @@ namespace JAXBase.XBase
         }
 
 
+        /*
+         * Set the dbf/cursor up with the grid.
+         * 
+         * If there are already columns defined, we use the existing definitions
+         * If columncount=0, we use the entire table's non-system fields
+         * 
+         */
         private async Task<int> SetTableBinding()
         {
             int result = 0;
@@ -1227,6 +1241,113 @@ namespace JAXBase.XBase
         }
 
         private void SetGridFinal()
+        {
+            // Build the row list
+            var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
+            foreach (System.Data.DataRow row in _jaxTable!.Rows)
+            {
+                var simpleRow = new SimpleDataRow();
+                foreach (System.Data.DataColumn col in _jaxTable.Columns)
+                    simpleRow.Values[col.ColumnName] = row[col] ?? DBNull.Value;
+                rowList.Add(simpleRow);
+            }
+
+            // ------------------------------------------------------------------
+            // VFP-style record-mark column – ensure it exists exactly once
+            // ------------------------------------------------------------------
+            Avalonia.Controls.DataGridTextColumn? markerCol = null;
+
+            // Look for an existing marker column (we tagged it with a special Header)
+            foreach (var c in grid.Columns)
+            {
+                if (c is Avalonia.Controls.DataGridTextColumn tc &&
+                    tc.Tag is string tag && tag == "__MARKER__")
+                {
+                    markerCol = tc;
+                    break;
+                }
+            }
+
+            if (markerCol is null)
+            {
+                markerCol = new Avalonia.Controls.DataGridTextColumn
+                {
+                    Header = "",                                 // blank header
+                    Tag = "__MARKER__",                          // keep the tag for identification
+                    Width = new Avalonia.Controls.DataGridLength(28),
+                    IsReadOnly = true,
+                    CanUserResize = false,
+                    CanUserReorder = false,
+                    CanUserSort = false,
+                    Binding = new Avalonia.Data.Binding("Values")
+                    {
+                        Converter = new DictionaryValueConverter(),
+                        ConverterParameter = "__marker__"
+                    }
+                };
+                grid.Columns.Insert(0, markerCol);
+            }
+
+            // ------------------------------------------------------------------
+            // Re-bind the real data columns
+            // ------------------------------------------------------------------
+            var converter = new DictionaryValueConverter();
+            int colIdx = 0;
+
+            foreach (var col in grid.Columns)
+            {
+                // Skip the marker column
+                if (col == markerCol)
+                    continue;
+
+                if (col is Avalonia.Controls.DataGridBoundColumn boundCol)
+                {
+                    string fieldName = _jaxTable.Columns[colIdx].ColumnName;
+
+                    boundCol.Binding = new Avalonia.Data.Binding("Values")
+                    {
+                        Converter = converter,
+                        ConverterParameter = fieldName
+                    };
+                }
+                colIdx++;
+            }
+
+            // ------------------------------------------------------------------
+            // Visual appearance
+            // ------------------------------------------------------------------
+            grid.GridLinesVisibility = Avalonia.Controls.DataGridGridLinesVisibility.All;
+            grid.BorderThickness = new Avalonia.Thickness(1);
+            grid.BorderBrush = Avalonia.Media.Brushes.Gray;
+            grid.HorizontalGridLinesBrush = Avalonia.Media.Brushes.LightGray;
+            grid.VerticalGridLinesBrush = Avalonia.Media.Brushes.LightGray;
+
+            // Kill the native Avalonia row-header strip
+            grid.HeadersVisibility = Avalonia.Controls.DataGridHeadersVisibility.Column; // column headers only
+            grid.RowHeaderWidth = 4;   // 1 is the smallest value that does not throw
+
+            // ------------------------------------------------------------------
+            // Data
+            // ------------------------------------------------------------------
+            grid.ItemsSource = null;
+            grid.ItemsSource = rowList;
+
+            grid.InvalidateVisual();
+            grid.InvalidateMeasure();
+            grid.InvalidateArrange();
+
+            // Debug
+
+            // debug block …
+            AppIO.DebugLog("========= DataGrid Debug =========");
+            AppIO.DebugLog($"ItemsSource Type: {grid.ItemsSource?.GetType().FullName}");
+            AppIO.DebugLog($"Row Count in Table: {_jaxTable.Rows.Count}");
+            AppIO.DebugLog($"Column Count: {_jaxTable.Columns.Count}");
+            foreach (System.Data.DataColumn c in _jaxTable.Columns)
+                AppIO.DebugLog($"Column: {c.ColumnName} ({c.DataType.Name})");
+        }
+
+        private void SetGridFinal2()
         {
             // Create simple POCO rows for reliable binding
             var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
@@ -1501,13 +1622,6 @@ namespace JAXBase.XBase
             }
             else
             {
-                //// Update back to aGridData if recordsourcetype=5
-                //if (UserProperties["recordsourcetype"].AsInt() == 5)
-                //{
-                //    aGridData.SetElement(rowidx + 1, colIdx + 1);
-                //    aGridData.Element.Value = value;
-                //}
-
                 Program.CurrentApp.ParameterClassList.Clear();
                 AppHelper.LoadTokenValToParameters(new(colIdx + 1));
                 AppHelper.LoadTokenValToParameters(new(rowidx + 1));
