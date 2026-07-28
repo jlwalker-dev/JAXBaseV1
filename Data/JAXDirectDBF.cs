@@ -373,6 +373,7 @@ using JAXBase.XBase;
 using System.Collections;
 using System.Data;
 using System.Text;
+using ZXing;
 
 namespace JAXBase.Data
 {
@@ -682,6 +683,7 @@ namespace JAXBase.Data
             public bool Exclusive = false;
             public int FieldCount = 0;
             public int FileLen = 0;
+            public string FilterExpr = "";
             public int FirstPos = 0;
             public bool HasCDX = false;
             public bool HasMemo = false;
@@ -2377,19 +2379,26 @@ namespace JAXBase.Data
 
 
         /*-----------------------------------------------------------------------------------*
-         * Perform a standard record skip, but if an index is in controll, skip via
+         * Perform a standard record skip, but if an index is in control, skip via
          * the index and not the table.  When done moving to the new record, load it
          * into the DbfInfo and optionally return it.
+         * 
+         * TODO - *JLW* Add filter and deleted support
          *-----------------------------------------------------------------------------------*/
-        public async Task<DataTable> DBFSkipRecord(int skipRecCount) { return await DBFSkipRecord(skipRecCount, false); }
-        public async Task<DataTable> DBFSkipRecord(int skipRecCount, bool loadMemoField)
+        public async Task<DataTable> DBFSkipRecord(int skipRecCount, bool loadMemoField = false, bool ignoreFilters = true)
         {
             int currentrec = DbfInfo.RecNo;
+            int result = 8015;
 
             DataTable dt = DbfInfo.EmptyRow.Copy();
 
             try
             {
+                // Force ignore filters if there are no filters set for this dbf
+                if (ignoreFilters == false && string.IsNullOrWhiteSpace(DbfInfo.FilterExpr) && Program.CurrentApp.CurrentDS.JaxSettings.Deleted == false)
+                    ignoreFilters = true;
+
+                // Is there an index in control of this table?
                 if (DbfInfo.ControllingIDX < 0)
                 {
                     DbfInfo.RecNo += skipRecCount;
@@ -2428,10 +2437,57 @@ namespace JAXBase.Data
                     DbfInfo.RecNo = idxCmd.Record;
                     dt = await DBFReadRecord(currentrec != DbfInfo.RecNo, loadMemoField);
                 }
+
+
+                // Do we need to find a different record?
+                // Only if skip count is not zero!
+                while (skipRecCount != 0)
+                {
+                    // Have we hit end of file or beginning of file after the move?
+                    if ((DbfInfo.DBFEOF && skipRecCount >= 0) || (DbfInfo.DBFBOF && skipRecCount < 0))
+                        break;
+
+                    if (ignoreFilters)
+                    {
+                        // This one works because there are no filters
+                        break;
+                    }
+                    else
+                    {
+                        // Get the filter expression
+                        JAXObjects.Token answer = string.IsNullOrWhiteSpace(DbfInfo.FilterExpr) ? new(true) : await Program.CurrentApp.SolveFromRPNString(DbfInfo.FilterExpr);
+
+                        if (answer.Element.Type.Equals("L"))
+                        {
+                            if (answer.AsBool())
+                            {
+                                if (DbfInfo.currentRowIsDeleted == false || Program.CurrentApp.CurrentDS.JaxSettings.Deleted == false)
+                                {
+                                    // This record will do
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Error 11
+                            result = 11;
+                            throw new Exception($"11||Bad filter {DbfInfo.FilterExpr} returns as type {answer.Element.Type}");
+                        }
+                    }
+
+                    // While the initial Skip count may be greater than on record
+                    // in eaither direction, positioning to find the first matching
+                    // record will be moving one record at a time until found.
+                    if (skipRecCount < 0)
+                        await DBFSkipRecord(-1);
+                    else
+                        await DBFSkipRecord(1);
+                }
             }
             catch (Exception ex)
             {
-                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
             return dt;
@@ -2447,15 +2503,17 @@ namespace JAXBase.Data
          * If there is a controlling index and "top" or "bottom" was sent as the 
          * expression, grab the appropriate record based on the index, otherwise just 
          * go to the indicated dbf record.
+         * 
+         * TODO - Add Deleted and Filter support for TOP and BOTTOM
          *-----------------------------------------------------------------------------------*/
-        public async Task<DataTable> DBFGotoRecord(string goRecExpr) { return await DBFGotoRecord(goRecExpr, false); }
-        public async Task<DataTable> DBFGotoRecord(string goRecExpr, bool loadMemoFields)
+        public async Task<DataTable> DBFGotoRecord(string goRecExpr, bool loadMemoFields = false)
         {
             DataTable dt = new();
             int goRec = 0;
-            bool goRecOK = true;
             JAXMath jaxMath = new();
             IDXCommand idxCmd = new();
+
+            bool skipDeleted = Program.CurrentApp.CurrentDS.JaxSettings.Deleted;
 
             // Look for a record position
             try
@@ -2473,7 +2531,13 @@ namespace JAXBase.Data
                         }
 
                         // Goto Top does not do anything if there are no records
-                        if (DbfInfo.RecCount == 0) goRecOK = false;
+                        if (DbfInfo.RecCount > 0)
+                        {
+                            if (goRec > 0 && goRec <= DbfInfo.RecCount + 1)
+                                dt = await DBFGotoRecord(goRec, loadMemoFields, false);
+                            else
+                                throw new Exception(string.Format("Invalid record number {0}", goRec));
+                        }
                         break;
 
                     case "bottom":
@@ -2487,21 +2551,24 @@ namespace JAXBase.Data
                         }
 
                         // Goto Bottom does not do anything if there are no records
-                        if (DbfInfo.RecCount == 0) goRecOK = false;
+                        if (DbfInfo.RecCount > 0)
+                        {
+                            if (goRec > 0 && goRec <= DbfInfo.RecCount + 1)
+                                dt = await DBFGotoRecord(goRec, loadMemoFields, false, true);
+                            else
+                                throw new Exception(string.Format("Invalid record number {0}", goRec));
+                        }
                         break;
 
                     default:
                         GenericClass gc = await jaxMath.SolveMath(goRecExpr);
                         goRec = gc.Value.Element.ValueAsInt;
-                        break;
-                }
 
-                if (goRecOK)
-                {
-                    if (goRec > 0 && goRec <= DbfInfo.RecCount + 1)
-                        dt = await DBFGotoRecord(goRec, loadMemoFields);
-                    else
-                        throw new Exception(string.Format("Invalid record number {0}", goRec));
+                        if (goRec > 0 && goRec <= DbfInfo.RecCount + 1)
+                            dt = await DBFGotoRecord(goRec, loadMemoFields);
+                        else
+                            throw new Exception(string.Format("Invalid record number {0}", goRec));
+                        break;
                 }
             }
             catch (Exception ex)
@@ -2516,25 +2583,77 @@ namespace JAXBase.Data
 
 
         /*-----------------------------------------------------------------------------------*
-         * Go to the record in the table indicated by the first parameter
-         * and return a datatable with 1 row
+         * Go to the record in the table indicated by the first parameter and return a 
+         * datatable with 1 row.
+         * 
+         * Load memo fields if requested by second parameter.
+         * 
+         * Ignore filters unless instructed by third parameter.
+         * 
+         * Forth parameter gives direction of travel if filter or deleted refuses record.
          *-----------------------------------------------------------------------------------*/
-        public async Task<DataTable> DBFGotoRecord(int goRec) { return await DBFGotoRecord(goRec, false); }
-        public async Task<DataTable> DBFGotoRecord(int goRec, bool loadMemoFields)
+        public async Task<DataTable> DBFGotoRecord(int goRec, bool loadMemoFields = false, bool ignoreFilters = true, bool movingUp = false)
         {
             DataTable dt = DbfInfo.EmptyRow;
+            int result = 8015;
 
             try
             {
+                // Force ignore filters if there are no filters set for this dbf
+                if (ignoreFilters == false && string.IsNullOrWhiteSpace(DbfInfo.FilterExpr) && Program.CurrentApp.CurrentDS.JaxSettings.Deleted == false)
+                    ignoreFilters = true;
+
                 if (goRec < 1 || goRec > DbfInfo.RecCount)
-                    throw new Exception("Record is out of range");
+                {
+                    result = 5;
+                    throw new Exception($"5||Bad record position {goRec}");
+                }
                 else
+                {
                     dt = await DBFGotoThisRecord(goRec, loadMemoFields);
+
+                    while (true)
+                    {
+                        if ((DbfInfo.DBFEOF && movingUp == false) || (DbfInfo.DBFBOF && movingUp))
+                            break;
+
+                        if (ignoreFilters)
+                            break;
+                        else
+                        {
+                            // Get the filter expression
+                            JAXObjects.Token answer = string.IsNullOrWhiteSpace(DbfInfo.FilterExpr) ? new(true) : await Program.CurrentApp.SolveFromRPNString(DbfInfo.FilterExpr);
+
+                            if (answer.Element.Type.Equals("L"))
+                            {
+                                if (answer.AsBool())
+                                {
+                                    if (DbfInfo.currentRowIsDeleted == false || Program.CurrentApp.CurrentDS.JaxSettings.Deleted == false)
+                                    {
+                                        // This record will do
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Error 11
+                                result = 11;
+                                throw new Exception($"11||Bad filter {DbfInfo.FilterExpr} returns as type {answer.Element.Type}");
+                            }
+                        }
+
+                        if (movingUp)
+                            await DBFSkipRecord(-1);
+                        else
+                            await DBFSkipRecord(1);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 DbfInfo.IDX[DbfInfo.ControllingIDX].RecordStatus = new();
-                AppErrorHandling.SetError(8015, "Goto error - " + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, ex.Message, "JAXDirectDBF.DBFGotoRecord");
             }
 
 
@@ -2574,24 +2693,26 @@ namespace JAXBase.Data
         }
 
         /*-----------------------------------------------------------------------------------*
-         * Go to this physical record in the data table.
-         * Return the row.  DbfInfo will be updated also.
+         * Go to this physical record in the data table and return the row.
          *-----------------------------------------------------------------------------------*/
-        private async Task<DataTable> DBFGotoThisRecord(int goRec) { return await DBFGotoThisRecord(goRec, false); }
-        private async Task<DataTable> DBFGotoThisRecord(int goRec, bool loadMemoFields)
+        private async Task<DataTable> DBFGotoThisRecord(int goRec, bool loadMemoFields = false)
         {
             DataTable dt = new();
 
             DbfInfo.DBFBOF = false;
             DbfInfo.DBFEOF = false;
             int currentrec = DbfInfo.RecNo;
+            int result = 8015;
 
             try
             {
                 if (DbfInfo.RecCount > 0)
                 {
                     if (goRec < 1 || goRec > DbfInfo.RecCount + 1)
-                        throw new Exception("5|Record is out of range");  // out of reange - throw an error
+                    {
+                        result = 5;
+                        throw new Exception("5||");  // out of reange - throw an error
+                    }
                     else
                     {
                         if (goRec > DbfInfo.RecCount)
@@ -2631,7 +2752,7 @@ namespace JAXBase.Data
             }
             catch (Exception ex)
             {
-                AppErrorHandling.SetError(8015, ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(result, ex.Message, "JAXDirectDBF.DBFGotoThisRecord");
             }
 
             return dt;

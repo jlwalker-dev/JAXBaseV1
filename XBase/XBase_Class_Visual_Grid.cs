@@ -39,11 +39,9 @@
  * 
  * 
  */
-using Avalonia.Controls;
 using Avalonia.Input;
 using JAXBase.Core;
 using JAXBase.Data;
-using JAXBase.UI;
 using JAXBase.Utilities;
 using System.Collections.ObjectModel;
 using System.Data;
@@ -120,10 +118,9 @@ namespace JAXBase.XBase
 
         /*
          * ADDCOLUMN(x)
-         * Add a column where x is a numeric value indicating
-         * the type of column to add. If columncount is 0
-         * then it becomes Column1. Setting column count
-         * to a higher number will simply add columns after.
+         * Add a column where x is a numeric value indicating the type of column 
+         * to add. If columncount is 0 then it becomes Column1. Setting column 
+         * count to a higher number will simply add columns after.
          *
          */
         public async Task<int> AddColumn(int type, string header, string binding)
@@ -145,7 +142,10 @@ namespace JAXBase.XBase
 
             // Add the created column from the wrapper
             Avalonia.Controls.DataGridColumn col = (Avalonia.Controls.DataGridColumn)colObj.nvObject!;
-            col.Header = string.IsNullOrEmpty(header) ? colName : header;
+            //col.Header = string.IsNullOrEmpty(header) ? colName : header;
+            JAXObjectWrapper? h = await colObj!.thisObject!.GetObject(0);
+            await h!.SetProperty("caption", header + "12");
+            
             if (col is Avalonia.Controls.DataGridBoundColumn boundCol && !string.IsNullOrEmpty(binding))
             {
                 boundCol.Binding = new Avalonia.Data.Binding(binding);
@@ -426,6 +426,8 @@ namespace JAXBase.XBase
             grid.RowEditEnding += DgvMain_BeforeCellChange;
             grid.CurrentCellChanged += DgvMain_AfterCellChanged;
             grid.KeyDown += DgvMain_KeyPress;
+            grid.PointerPressed += Grid_PointerPressed;
+
 
             // Added: General click handler for bubbled events (e.g., from button/link columns)
             grid.PointerPressed += Grid_PointerPressed;
@@ -433,66 +435,6 @@ namespace JAXBase.XBase
 
             Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsInt());
             Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsInt());
-
-            grid.Width = UserProperties["width"].AsDouble();
-            grid.Height = UserProperties["height"].AsDouble();
-
-            grid.InvalidateVisual();
-
-
-
-            // Tie in the parent resize event
-            if (me.Parent is not null)
-            {
-                if (me.Parent.BaseClass.Equals("form", StringComparison.OrdinalIgnoreCase))
-                {
-                    AppIO.DebugLog("Setting grid resize for FORM parent");
-                    JAXObjectWrapper form = me.Parent;
-                    FakeWindow vForm = (FakeWindow)form.nvObject!;
-                    vForm._floatingPanel!.InnerCanvas.SizeChanged += Grid_SizeChanged;
-                }
-                else if (me.Parent.BaseClass.Equals("container", StringComparison.OrdinalIgnoreCase))
-                {
-                    AppIO.DebugLog("Setting grid resize for CONTAINER parent");
-                    JAXObjectWrapper form = me.Parent;
-                    XBase_Class_Visual_Container vCtnr = (XBase_Class_Visual_Container)form.nvObject!;
-                    vCtnr.InnerCanvas.SizeChanged += Grid_SizeChanged;
-                }
-                else if (me.Parent.BaseClass.Equals("page", StringComparison.OrdinalIgnoreCase))
-                {
-                    AppIO.DebugLog("Setting grid resize for PAGE parent");
-                    JAXObjectWrapper form = me.Parent;
-                    XBase_Class_Visual_Page vPg = (XBase_Class_Visual_Page)form.nvObject!;
-                    vPg.InnerCanvas.SizeChanged += Grid_SizeChanged;
-                }
-                else
-                {
-                    AppIO.DebugLog($"Unsupported parent type {me.Parent.BaseClass} for resize event");
-                }
-            }
-        }
-
-
-        private void Grid_SizeChanged(object? sender, SizeChangedEventArgs e)
-        {
-            if (grid == null || e.NewSize.Width <= 0 || e.NewSize.Height <= 0)
-                return;
-
-            AppIO.DebugLog($"Parent resized to {e.NewSize.Width} x {e.NewSize.Height}", false);
-
-            // Respect any margins/padding from properties or base class
-            double margin = UserProperties.ContainsKey("margin") ? UserProperties["margin"].AsInt() : 0;
-            double effectiveWidth = System.Math.Max(0, e.NewSize.Width - margin * 2);
-            double effectiveHeight = System.Math.Max(0, e.NewSize.Height - margin * 2);
-
-            grid.Width = effectiveWidth;
-            grid.Height = effectiveHeight;
-
-            AppIO.DebugLog($"Grid resized to {grid.Width} x {grid.Height}", false);
-
-            grid.InvalidateVisual();
-            grid.InvalidateMeasure();
-            grid.InvalidateArrange();
         }
 
 
@@ -1135,14 +1077,35 @@ namespace JAXBase.XBase
         }
 
 
+        // Build a grid based on the current Objects[]
+        private async Task<int> SetGridBinding()
+        {
+            int result = 0;
+
+            // Prep the table
+            _jaxTable = new();
+            _rowRef = [];
+
+            int ColCount = UserProperties["columncount"].AsInt();
+
+            for (int i = 1; i <= ColCount; i++)
+            {
+                JAXObjects.Token col = await GetProperty("userobjects", i - 1);
+                
+
+            }
+
+            return result;
+        }
+
+
+        // Bind an array to the grid by putting it to a table of string based text columns.
+        // Handling of values occurs in the browse/edit code.
         private async Task<int> SetArrayBinding(JAXObjects.Token aGrid)
         {
             int result = 0;
 
-
-            currentDS = Program.CurrentApp.CurrentDataSession;
-            currentWA = Program.CurrentApp.CurrentDS.CurrentWorkArea();
-            thisWA = currentWA;
+            if (false) SetGridBinding().Wait();
 
             // Prep the table
             _jaxTable = new();
@@ -1170,104 +1133,8 @@ namespace JAXBase.XBase
                 }
             }
 
-            // Create simple POCO rows for reliable binding
-            var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
-
-            foreach (System.Data.DataRow row in _jaxTable.Rows)
-            {
-                var simpleRow = new SimpleDataRow();
-                foreach (System.Data.DataColumn col in _jaxTable.Columns)
-                {
-                    simpleRow.Values[col.ColumnName] = row[col] ?? DBNull.Value;
-                }
-                rowList.Add(simpleRow);
-            }
-
-            // Create the DataGrid
-            me.avaloniaObject = new Avalonia.Controls.DataGrid
-            {
-                Name = "JAXDataGrid",
-                GridLinesVisibility = Avalonia.Controls.DataGridGridLinesVisibility.All,
-                BorderThickness = new Avalonia.Thickness(1),
-                BorderBrush = Avalonia.Media.Brushes.Gray,
-                AutoGenerateColumns = false,
-                CanUserResizeColumns = true,
-                CanUserReorderColumns = true,
-                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
-            };
-
-            // Explicit columns using dictionary lookup
-            grid.Columns.Clear();
-            var testColumn = new Avalonia.Controls.DataGridTextColumn
-            {
-                Header = "All Data",
-                Binding = new Avalonia.Data.Binding(".")   // binds to ToString()
-            };
-
-            grid.Columns.Add(testColumn);
-            grid.ItemsSource = rowList;
-            grid.LoadingRow += (sender, e) =>
-            {
-                // This can help force rendering
-            };
-
-            AppIO.DebugLog($"RowList Count: {rowList.Count}");
-
-            // Force column regeneration and refresh
-            grid.AutoGenerateColumns = false;
-
-            // Bind the list
-            grid.ItemsSource = rowList;
-
-            AppIO.DebugLog($"RowList Count: {rowList.Count}");
-
-            // Explicit columns using DictionaryValueConverter (add the converter class first)
-            grid.Columns.Clear();
-            var converter = new DictionaryValueConverter();
-
-            foreach (System.Data.DataColumn dataCol in _jaxTable.Columns)
-            {
-                var textColumn = new Avalonia.Controls.DataGridTextColumn
-                {
-                    Header = dataCol.ColumnName,
-                    Binding = new Avalonia.Data.Binding("Values")
-                    {
-                        Converter = converter,
-                        ConverterParameter = dataCol.ColumnName
-                    }
-                };
-                grid.Columns.Add(textColumn);
-            }
-
-            grid.InvalidateVisual();
-            grid.InvalidateMeasure();
-            grid.InvalidateArrange();
-
-            // === Debug block ===
-            AppIO.DebugLog($"========= DataGrid Debug =========");
-            AppIO.DebugLog($"ItemsSource Type: {grid.ItemsSource?.GetType().FullName}");
-            AppIO.DebugLog($"Row Count in Table: {_jaxTable.Rows.Count}");
-            AppIO.DebugLog($"Column Count: {_jaxTable.Columns.Count}");
-
-            foreach (System.Data.DataColumn col in _jaxTable.Columns)
-            {
-                AppIO.DebugLog($"Column: {col.ColumnName} ({col.DataType.Name})");
-            }
-
-            // Make sure the grid is set to the correct dimensions
-            if (grid != null)
-            {
-                Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsInt());
-                Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsInt());
-
-                grid.Width = UserProperties["width"].AsInt() - 20;
-                grid.Height = UserProperties["height"].AsInt() - 20;
-            }
-            else
-                throw new Exception("9999|");
-
-            SuspendEvents();
+            // Now call the grid setup
+            SetGridFinal();
 
             return result;
         }
@@ -1280,20 +1147,13 @@ namespace JAXBase.XBase
             // Populate JAXTABLE with sample columns and rows
             string alias = UserProperties["recordsource"].AsString();
 
+            // We may need the original DS/WA later
             int currentDS = Program.CurrentApp.CurrentDataSession;
             int currentWA = Program.CurrentApp.CurrentDS.CurrentWorkArea();
             int thisWA = 0;
 
-            if (string.IsNullOrWhiteSpace(alias))
-            {
-                // Is there a table open in the current workarea?
-                thisWA = currentWA;
-            }
-            else
-            {
-                // Try to access this alias
-                thisWA = Program.CurrentApp.CurrentDS.GetWorkArea(alias);
-            }
+            // Get the requested WA.  If alias is empty then they want current WA
+            thisWA = string.IsNullOrWhiteSpace(alias) ? currentWA : Program.CurrentApp.CurrentDS.GetWorkArea(alias);
 
             // Go to the alias of choice
             JAXDataSession thisDS = Program.CurrentApp.CurrentDS;
@@ -1304,6 +1164,9 @@ namespace JAXBase.XBase
 
             if (dbfInfo.DBFStream is null)
                 throw new Exception(string.IsNullOrWhiteSpace(alias) ? "52|" : $"13|{alias}");
+
+            // Reset the objects and columncount properties
+            await SetProperty("columncount", 0, 0);
 
             // Prep the table
             _jaxTable = new();
@@ -1328,38 +1191,47 @@ namespace JAXBase.XBase
                     };
 
                     _jaxTable.Columns.Add(JAXLib.Proper(fld.FieldName), type);
+
+                    // Add the JAXBase column object type 0 with
+                    // header (2nd param) and field name for
+                    // binding to the column's text box
+                    await AddColumn(0, fld.FieldName, fld.FieldName);
                 }
             }
 
-            // Add sample rows (records)
+            // Add all rows to grid table
+            // All filtering is handled behind the scenes for DELETED and FILTER settings.
             await thisWorkArea.DBFGotoRecord("top");
 
             for (int row = 1; row <= dbfInfo.RecCount; row++)
             {
-                // TODO - Set deleted support
-                if (dbfInfo.currentRowIsDeleted == false || thisDS.JaxSettings.Deleted == false)
-                {
-                    // Add a new row
-                    _jaxTable.Rows.Add();
-                    _rowRef.Add(dbfInfo.CurrentRecNo);
+                // Add a new row
+                _jaxTable.Rows.Add();
+                _rowRef.Add(dbfInfo.CurrentRecNo);
 
-                    // Populate it from the source table
-                    for (int col = 0; col < _jaxTable.Columns.Count; col++)
-                    {
-                        // Copy each column in _jaxTable over
-                        string name = _jaxTable.Columns[col].ColumnName;
-                        _jaxTable.Rows[^1][name] = dbfInfo.CurrentRow.Rows[0][name];
-                    }
+                // Populate it from the source table
+                for (int col = 0; col < _jaxTable.Columns.Count; col++)
+                {
+                    // Copy each column in _jaxTable over
+                    string name = _jaxTable.Columns[col].ColumnName;
+                    _jaxTable.Rows[^1][name] = dbfInfo.CurrentRow.Rows[0][name];
                 }
 
                 // Skip to the next record
                 await thisWorkArea.DBFSkipRecord(1);
             }
 
+            SetGridFinal();
+
+            return result;
+        }
+
+        private void SetGridFinal()
+        {
             // Create simple POCO rows for reliable binding
             var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
 
-            foreach (System.Data.DataRow row in _jaxTable.Rows)
+            foreach (System.Data.DataRow row in _jaxTable!.Rows)
             {
                 var simpleRow = new SimpleDataRow();
                 foreach (System.Data.DataColumn col in _jaxTable.Columns)
@@ -1369,8 +1241,20 @@ namespace JAXBase.XBase
                 rowList.Add(simpleRow);
             }
 
-            // Create the DataGrid
-            me.avaloniaObject = new Avalonia.Controls.DataGrid
+
+
+            // 1. Capture the current parent (if any) and the old visual
+            Avalonia.Controls.Control? oldVisual = me.avaloniaObject;
+            Avalonia.Controls.Canvas? parentCanvas = null;
+
+            if (oldVisual?.Parent is Avalonia.Controls.Canvas canvas)
+            {
+                parentCanvas = canvas;
+                parentCanvas.Children.Remove(oldVisual);
+            }
+
+            // 2. Create the new DataGrid
+            Avalonia.Controls.DataGrid newGrid = new Avalonia.Controls.DataGrid
             {
                 Name = "JAXDataGrid",
                 GridLinesVisibility = Avalonia.Controls.DataGridGridLinesVisibility.All,
@@ -1380,8 +1264,13 @@ namespace JAXBase.XBase
                 CanUserResizeColumns = true,
                 CanUserReorderColumns = true,
                 VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top
             };
+
+            // 3. Point the JAX object at the new visual
+            me.avaloniaObject = newGrid;
 
             // Explicit columns using dictionary lookup
             grid.Columns.Clear();
@@ -1426,9 +1315,37 @@ namespace JAXBase.XBase
                 grid.Columns.Add(textColumn);
             }
 
+            // 4. Restore the absolute position and size that the rest of the system expects
+            Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsDouble());
+            Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsDouble());
+            grid.Width = UserProperties["width"].AsDouble();
+            grid.Height = UserProperties["height"].AsDouble();
+
+            // 5. Put the new control back into the same parent canvas
+            if (parentCanvas is not null)
+            {
+                parentCanvas.Children.Add(newGrid);
+            }
+            else
+            {
+                // Fallback – should rarely happen after the form has been shown
+                // (you can also walk me.Parent to locate the correct canvas)
+                AppIO.DebugLog("No parent canvas found when recreating grid");
+            }
+
+            // 6. Re-wire any events that were attached to the old instance
+            SetGridEvents();
+
             grid.InvalidateVisual();
             grid.InvalidateMeasure();
             grid.InvalidateArrange();
+
+            if (parentCanvas is not null)
+            {
+                parentCanvas.InvalidateVisual();
+                parentCanvas.InvalidateMeasure();
+                parentCanvas.InvalidateArrange();
+            }
 
             // === Debug block ===
             AppIO.DebugLog($"========= DataGrid Debug =========");
@@ -1441,24 +1358,8 @@ namespace JAXBase.XBase
                 AppIO.DebugLog($"Column: {col.ColumnName} ({col.DataType.Name})");
             }
 
-            // Make sure the grid is set to the correct dimensions
-            if (grid != null)
-            {
-                Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsInt());
-                Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsInt());
-
-                grid.Width = UserProperties["width"].AsInt() - 20;
-                grid.Height = UserProperties["height"].AsInt() - 20;
-            }
-            else
-                throw new Exception("9999|");
-
             SuspendEvents();
-
-            return result;
         }
-
-
 
 
         /*------------------------------------------------------------------------------------------*

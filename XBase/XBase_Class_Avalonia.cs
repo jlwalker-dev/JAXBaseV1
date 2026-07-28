@@ -49,30 +49,49 @@ namespace JAXBase.XBase
         private double currentWidth = 0;
         private double currentHeight = 0;
 
-        /* -----------------------------------------------------------------------------------
-         * VFP Anchor property support
+        /* ------------------------------------------------------------------------------------------
+         * VFP Anchor property support - actively alters the size of the object
+         * when a resize event occurs
          *
          * VFP ANCHOR values
          * Position         Bit Value   Description
-         * Top Absolute     1           Anchors control to top border of container and does not change the distance between the top border.
-         * Left Absolute    2           Anchors control to left border of container and does not change the distance between the left border.
-         * Bottom Absolute  4           Anchors control to bottom border of container and does not change the distance between the bottom border.
-         * Right Absolute   8           Anchors control to right border of container and does not change the distance between the right border.
+         * Top Absolute     1           Anchors control to top border of container and does not 
+         *                              change the distance between the top border.
+         *                              
+         * Left Absolute    2           Anchors control to left border of container and does not 
+         *                              change the distance between the left border.
+         *                              
+         * Bottom Absolute  4           Anchors control to bottom border of container and does not 
+         *                              change the distance between the bottom border.
+         *                              
+         * Right Absolute   8           Anchors control to right border of container and does not 
+         *                              change the distance between the right border.
          *
          * DeltaX and DeltaY are the changes in the container's size since the last 
          * time this method was called.  This allows us to adjust the position and 
          * size of the control based on the anchor settings.
          *
-         * -----------------------------------------------------------------------------------
+         * ------------------------------------------------------------------------------------------
          * FUTURE SUPPORT
-         * -----------------------------------------------------------------------------------
-         * Top Relative     16          Anchors control to top border of container and maintains relative distance between the top border.
-         * Left Relative    32          Anchors control to left border of container and maintains relative distance between the left border.
-         * Bottom Relative  64          Anchors control to bottom border of container and maintains relative distance between the bottom border.
-         * Right Relative   128         Anchors control to right border of container and maintains relative distance between the right border.
-         * Horizontal Fixed 256         Anchors center of control relative to left and right borders but remains fixed in size.
-         * Vertical Fixed   512         Anchors center of control relative to top and bottom borders but remains fixed in size.
-         *-----------------------------------------------------------------------------------*/
+         * ------------------------------------------------------------------------------------------
+         * Top Relative     16          Anchors control to top border of container and maintains 
+         *                              relative distance between the top border.
+         *                              
+         * Left Relative    32          Anchors control to left border of container and maintains 
+         *                              relative distance between the left border.
+         *                              
+         * Bottom Relative  64          Anchors control to bottom border of container and maintains 
+         *                              relative distance between the bottom border.
+         *                              
+         * Right Relative   128         Anchors control to right border of container and maintains 
+         *                              relative distance between the right border.
+         *                              
+         * Horizontal Fixed 256         Anchors center of control relative to left and right borders 
+         *                              but remains fixed in size.
+         *                              
+         * Vertical Fixed   512         Anchors center of control relative to top and bottom borders 
+         *                              but remains fixed in size.
+         *-------------------------------------------------------------------------------------------*/
         public override void ApplyVFPAnchor(double DeltaX, double DeltaY)
         {
             if (me.AnchorValue == 0) return;
@@ -621,20 +640,20 @@ namespace JAXBase.XBase
                             break;
 
                         case "parent":
-                            if (Parent is null)
+                            if (me.parent is null)
                                 resultToken.Element.MakeNull();
                             else
                             {
-                                resultToken.Element.Value = Parent;
+                                resultToken.Element.Value = me.parent;
                             }
                             break;
 
                         case "parentclass":
-                            if (Parent is null)
+                            if (me.parent is null)
                                 resultToken.Element.Value = string.Empty;
                             else
                             {
-                                JAXObjects.Token tk = await Parent.GetProperty("class");
+                                JAXObjects.Token tk = await me.parent.GetProperty("class");
                                 if (tk.Element.Type.Equals("C"))
                                     resultToken.Element.Value = tk.AsString();
                                 else

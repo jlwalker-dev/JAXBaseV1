@@ -181,11 +181,11 @@ namespace JAXBase.Language
         public static string[] JAXObjects = 
             [
             "barcode","browser",
-            "checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container","custom",
+            "checkbox","codebox","collection","column","combobox","commandbutton","commandgroup","container","cursor","custom",
             "editbox","empty",
             "file","form","formset","ftp",
-            "grid","httpclient",
-            "hyperlink",
+            "grid",
+            "header","httpclient","hyperlink",
             "image","ipc","ircclient",
             "jax","jaxedit",
             "label","line","listbox",
