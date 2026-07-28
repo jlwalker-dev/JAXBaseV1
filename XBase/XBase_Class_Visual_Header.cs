@@ -136,7 +136,7 @@ namespace JAXBase.XBase
                                 result = 11;
                             else
                             {
-                                UserProperties[propertyName].Element.Value = tk.AsString()+"!!";
+                                UserProperties[propertyName].Element.Value = tk.AsString();
                                 result = 9;
                                 SetHeader();
                             }
@@ -298,11 +298,16 @@ namespace JAXBase.XBase
             }
 
 
-            // Refernce the parent column
+            // Reference the parent column
             Avalonia.Controls.DataGridColumn col = (Avalonia.Controls.DataGridColumn)me.parent!.nvObject!;
 
-            // Set up a new header template
-            col.HeaderTemplate = new FuncDataTemplate<object>((_, _) =>
+            string captionText = UserProperties["caption"].AsString();
+
+            // Required so Avalonia does not fall back to the binding path
+            col.Header = captionText;
+
+            // Existing HeaderTemplate (can keep the hard-coded Text, or change it to bind)
+            col.HeaderTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((_, _) =>
             {
                 return new Avalonia.Controls.Border
                 {
@@ -310,7 +315,7 @@ namespace JAXBase.XBase
                     Padding = new Avalonia.Thickness(6, 4),
                     Child = new Avalonia.Controls.TextBlock
                     {
-                        Text = UserProperties["caption"].AsString(),
+                        Text = captionText,
                         FontSize = UserProperties["fontsize"].AsInt() * 96.0 / 72.0,
                         FontWeight = UserProperties["fontbold"].AsBool() ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal,
                         FontStyle = UserProperties["fontitalic"].AsBool() ? Avalonia.Media.FontStyle.Italic : Avalonia.Media.FontStyle.Normal,
