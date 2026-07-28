@@ -144,7 +144,7 @@ namespace JAXBase.XBase
             Avalonia.Controls.DataGridColumn col = (Avalonia.Controls.DataGridColumn)colObj.nvObject!;
             //col.Header = string.IsNullOrEmpty(header) ? colName : header;
             JAXObjectWrapper? h = await colObj!.thisObject!.GetObject(0);
-            await h!.SetProperty("caption", header + "12");
+            await h!.SetProperty("caption", header);
             
             if (col is Avalonia.Controls.DataGridBoundColumn boundCol && !string.IsNullOrEmpty(binding))
             {
