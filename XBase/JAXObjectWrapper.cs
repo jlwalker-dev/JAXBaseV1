@@ -1815,16 +1815,8 @@ namespace JAXBase.XBase
                 {
                     if (!InTransaction) ClearErrors();
 
-                    //if ((await thisObject.IsMember(name)).Equals("P"))
-                    //{
-                    //    if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))
-                    //        JOWName = value.ToString() ?? string.Empty;
-
-                    //    await thisObject.SetProperty(name, value, 0);
-
-                    //    AppIO.DebugLog($"Updated {this.JOWName}.{name} -> {value}");
-                    //}
                     result = await thisObject.SetProperty(name, value, 0);
+
                     if (result == 0)
                     {
                         if (name.Equals(cPropName, StringComparison.OrdinalIgnoreCase))

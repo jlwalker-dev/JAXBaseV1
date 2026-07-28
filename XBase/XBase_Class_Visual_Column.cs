@@ -85,7 +85,7 @@ namespace JAXBase.XBase
             // Set up the header
             JAXObjectWrapper header = new(Program.CurrentApp, "header", "header1", []);
             await AddObject(header);
-            await header.SetProperty("caption", "Header2", 0);
+            await header.SetProperty("caption", "Header", 0);
 
             return result;
         }
