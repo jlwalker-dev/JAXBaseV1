@@ -501,7 +501,7 @@ namespace JAXBase.XBase
                         case "value":
                             isProgrammaticChange = true;
                             if (grd is not null)
-                                XBase_Class_Visual_Grid.SetSelectedCellValue(grd, objValue);
+                                XBase_Class_Visual_Grid.Grid_SetSelectedCellValue(grd, objValue);
                             isProgrammaticChange = false;
                             break;
 
@@ -597,7 +597,7 @@ namespace JAXBase.XBase
                     case "value":
                         Avalonia.Controls.DataGrid grd = (Avalonia.Controls.DataGrid)me.Parent!.avaloniaObject!;
 
-                        var (rowidx, colIdx, value) = XBase_Class_Visual_Grid.GetSelectedCellInfo(grd);
+                        var (rowidx, colIdx, value) = XBase_Class_Visual_Grid.Grid_GetSelectedCellInfo(grd);
                         if (value is null)
                             returnToken.Element.MakeNull();
                         else
