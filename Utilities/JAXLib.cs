@@ -2127,5 +2127,44 @@ namespace JAXBase.Utilities
                 ActiveWaitWindow = null;
             }
         }
+
+
+        /*
+         * Decides if a string contains the data type requested by dataType
+         */
+        public static bool CheckStringValueType(string strValue, string dataType)
+        {
+            bool result = false;
+
+            switch (dataType)
+            {
+                case "B":
+                case "F":
+                case "I":
+                case "N":
+                case "Y":
+                    strValue = strValue.Trim();
+
+                    if ("-+".Contains(strValue[..1]))
+                        strValue = strValue[1..];
+
+                    string t = ChrTran(strValue, "0123456789", "");
+                    if (t.Length == 0 || t.Equals("."))
+                        result = double.TryParse(strValue, out double d);
+                    break;
+
+                case "D":
+                case "T":
+                    result = (CtoT(strValue) > DateTime.MinValue);
+                    break;
+
+                default:
+                    // String accepts anything
+                    result = true;
+                    break;
+            }
+
+            return result;
+        }
     }
 }

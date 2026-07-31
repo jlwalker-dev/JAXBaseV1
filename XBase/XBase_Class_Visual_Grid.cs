@@ -39,13 +39,15 @@
  * 
  * 
  */
-using Avalonia.Input;
+using AvaloniaEdit.Document;
 using JAXBase.Core;
 using JAXBase.Data;
+using JAXBase.UI.Dialogs;
 using JAXBase.Utilities;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
-using static JAXBase.Core.AppClass;
+using ZXing;
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Grid : XBase_Class_Avalonia
@@ -167,6 +169,151 @@ namespace JAXBase.XBase
 
 
         /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
+        /// <summary>
+        /// Fires just before a cell exits edit mode (Enter, Tab, click-away, or Cancel).
+        /// Cancelable – set e.Cancel = true to keep the cell in edit mode.
+        /// </summary>
+        private async void Grid_CellEditEnding(object? sender, Avalonia.Controls.DataGridCellEditEndingEventArgs e)
+        {
+            AppIO.DebugLog("Grid_CellEditEnding", false);
+
+            if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
+                return;
+
+            int colIdx = grid.Columns.IndexOf(e.Column);
+            int rowIdx = e.Row != null ? e.Row.Index : -1;
+
+            if (colIdx < 0 || rowIdx < 0) return;
+
+
+            // Find the matching column by looking at order
+            JAXObjects.Token colCount = await me.GetProperty("columncount");
+
+            JAXObjectWrapper? col = null;
+            JAXObjects.Token? colNum = new(-1);
+
+            for (int i = 0; i < colCount.AsInt(); i++)
+            {
+                col = await me.GetObject(i);
+
+                if (col is not null)
+                {
+                    colNum = await col.GetProperty("columnnumber");
+                    if (colNum.AsInt() == colIdx)
+                        break;  // We've got the column!
+                }
+            }
+
+            if (col is not null)
+            {
+                object? value = Grid_GetCellValue(grid, colIdx, rowIdx);
+
+                if (value is not null)
+                {
+                    // Convert the value, if possible
+                    string strValue = (string)value;
+
+                    // Check the field type
+                    string type = thisDBF!.Fields[colNum.AsInt()].FieldType;
+
+                    // Now check the input value against the expected type
+                    if (JAXLib.CheckStringValueType(strValue, type))
+                    {
+                        // We can convert the value
+                        switch (type)
+                        {
+                            case "B":
+                            case "F":
+                            case "I":
+                            case "N":
+                            case "Y":
+                                if (double.TryParse(strValue, out double d)) d = 0;
+                                value = d;
+                                break;
+
+                            case "D":
+                                value = DateOnly.FromDateTime(JAXLib.CtoT(strValue));
+                                break;
+
+                            case "T":
+                                value = JAXLib.CtoT(strValue);
+                                break;
+
+                            default:
+                                // String accepts anything
+                                value = strValue;
+                                break;
+                        }
+
+                        // Check to make sure it's a valid data type for the cell
+                        if (_jaxTable is not null)
+                        {
+                            // Save to column in table
+                        }
+                        else
+                        {
+                            // TODO- Save to array position
+                        }
+
+                        if (e.Cancel == false)
+                            // Save the value to the indicated field
+                            Grid_SetSelectedCellValue(grid, value);
+                    }
+                    else
+                    {
+                        // Invalid data type
+                        Toast.Show("Invalid Entry");
+                        e.Cancel = true;
+                    }
+                }
+                else
+                {
+                    // Cancel if invalid type
+                    Toast.Show("Invalid Entry");
+                    e.Cancel = true;
+                }
+            }
+            else
+            {
+                AppIO.DebugLog($"Could not find column {colIdx}");
+                Toast.Show($"Could not find column {colIdx}");
+            }
+        }
+
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
+        /// <summary>
+        /// Fires after a cell has exited edit mode. This is the event that tells you which cell just changed.
+        /// </summary>
+        private async void Grid_CellEditEnded(object? sender, Avalonia.Controls.DataGridCellEditEndedEventArgs e)
+        {
+            AppIO.DebugLog("Grid_CellEditEnded", false);
+
+            if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
+                return;
+
+            int colIdx = grid.Columns.IndexOf(e.Column);
+            int rowIdx = e.Row != null ? e.Row.Index : -1;
+
+            // The first column (0) is the row marker and always exists (but may not be visible)
+            if (colIdx < 1 || rowIdx < 0)
+                return;
+
+            object? newValue = Grid_GetCellValue(grid, rowIdx, colIdx);
+
+            AppIO.DebugLog($"Cell changed – Row: {rowIdx + 1}, Col: {colIdx + 1}, Value: {newValue}");
+
+            Program.CurrentApp.ParameterClassList.Clear();
+            AppHelper.LoadTokenValToParameters(new(rowIdx + 1));   // nRow
+            AppHelper.LoadTokenValToParameters(new(colIdx + 1));   // nCol
+            AppHelper.LoadTokenValToParameters(new(newValue));     // uValue
+
+            await _CallMethod("afterrowcolchange");
+        }
+
+        /* ------------------------------------------------------------------------------------------*
          * Cell movement causes an update to the grid and underlying table
          * ------------------------------------------------------------------------------------------*/
         private async void Grid_CurrentCellChanged(object? sender, EventArgs e)
@@ -228,10 +375,13 @@ namespace JAXBase.XBase
             }
         }
 
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         /// <summary>
-                /// Returns the currently focused/selected cell info (Avalonia equivalent of DataGridView.CurrentCell)
-                /// Works with the Dictionary-based ItemsSource used in your LoadArrayIntoGrid()
-                /// </summary>
+        /// Returns the currently focused/selected cell info (Avalonia equivalent of DataGridView.CurrentCell)
+        /// Works with the Dictionary-based ItemsSource used in your LoadArrayIntoGrid()
+        /// </summary>
         public static (int RowIndex, int ColumnIndex, object? CellValue) Grid_GetSelectedCellInfo(Avalonia.Controls.DataGrid grid)
         {
             if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
@@ -253,6 +403,8 @@ namespace JAXBase.XBase
             return (rowIndex, columnIndex, "Strongly-typed value");
         }
 
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         /// <summary>
         /// Gets the value from any specific cell by row and column index
         /// (Avalonia equivalent of grid.Rows[rowIndex].Cells[colIndex].Value)
@@ -274,6 +426,9 @@ namespace JAXBase.XBase
             return rowDict.TryGetValue(key, out var value) ? value : null;
         }
 
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         /// <summary>
         /// Sets a value into the currently selected cell
         /// (Avalonia equivalent of grid.CurrentCell.Value = newValue)
@@ -647,6 +802,10 @@ namespace JAXBase.XBase
             SetEvents();
 
             // Added: Subscribe to grid events for bubbling from columns
+            // Cell edit completion (fires when user leaves the cell or presses Enter)
+            grid.CellEditEnding += Grid_CellEditEnding;
+            grid.CellEditEnded += Grid_CellEditEnded;
+
             grid.CurrentCellChanged += Grid_CurrentCellChanged;
             grid.KeyDown += Grid_KeyDown;
 
