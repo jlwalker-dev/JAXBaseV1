@@ -39,15 +39,12 @@
  * 
  * 
  */
-using AvaloniaEdit.Document;
 using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.UI.Dialogs;
 using JAXBase.Utilities;
 using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
 using System.Data;
-using ZXing;
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Grid : XBase_Class_Avalonia
@@ -67,6 +64,10 @@ namespace JAXBase.XBase
         int thisWA = 0;
         JAXDirectDBF.DBFInfo? thisDBF = null;
         JAXDirectDBF? thisWorkArea = null;
+
+
+        // Array Record Source
+        JAXObjects.Token? arrayRS = null;
 
 
         // Grid's current information
@@ -200,7 +201,7 @@ namespace JAXBase.XBase
                 if (col is not null)
                 {
                     colNum = await col.GetProperty("columnnumber");
-                    if (colNum.AsInt() == colIdx)
+                    if (colNum.AsInt() == colIdx-1)
                         break;  // We've got the column!
                 }
             }
@@ -215,7 +216,31 @@ namespace JAXBase.XBase
                     string strValue = (string)value;
 
                     // Check the field type
-                    string type = thisDBF!.Fields[colNum.AsInt()].FieldType;
+                    string type="";
+
+                    if (thisWorkArea is not null)
+                        type = thisDBF!.Fields[colNum.AsInt()].FieldType;   // Get column data type
+                    else
+                    {
+                        // Get the data type from the array elemeent
+                        if (arrayRS is not null)
+                        {
+                            if (rowIdx + 1 > arrayRS.Row || colIdx + 1 > arrayRS.Col)
+                            {
+                                Toast.Show($"Invalid array dimension {rowIdx + 1},{colIdx + 1}");
+                                type = "XX";
+                            }
+                            else
+                            {
+                                arrayRS.SetElement(rowIdx + 1, colIdx + 1);
+                                type = arrayRS.Element.Type;
+                            }
+                        }
+                        else
+                        {
+                            // TODO - Error
+                        }
+                    }
 
                     // Now check the input value against the expected type
                     if (JAXLib.CheckStringValueType(strValue, type))
@@ -249,11 +274,41 @@ namespace JAXBase.XBase
                         // Check to make sure it's a valid data type for the cell
                         if (_jaxTable is not null)
                         {
-                            // Save to column in table
+                            if (thisWorkArea is not null && thisDBF is not null && thisDBF.DBFStream is not null)
+                            {
+                                // Save to column in table
+                                thisDBF.CurrentRow.Rows[0][colIdx + 1] = value;
+                                await thisWorkArea.DBFWriteRecord(thisDBF.CurrentRow.Rows[0], false);
+                            }
+                            else
+                            {
+                                Toast.Show("Record source table is not open");
+                                e.Cancel = true;
+
+                            }
                         }
                         else
                         {
-                            // TODO- Save to array position
+                            // Save to array position
+                            if (arrayRS is not null)
+                            {
+                                if (rowIdx + 1 > arrayRS.Row || colIdx + 1 > arrayRS.Col)
+                                {
+                                    Toast.Show($"Invalid array dimension {rowIdx + 1},{colIdx + 1}");
+                                    e.Cancel = true;
+                                }
+                                else
+                                {
+                                    arrayRS.SetElement(rowIdx + 1, colIdx + 1);
+                                    arrayRS.Element.Value= value;
+                                }
+                            }
+                            else
+                            {
+                                Toast.Show("Record source array is not available");
+                                e.Cancel = true;
+                            }
+
                         }
 
                         if (e.Cancel == false)
@@ -376,83 +431,87 @@ namespace JAXBase.XBase
         }
 
 
-        /* ------------------------------------------------------------------------------------------*
-         * ------------------------------------------------------------------------------------------*/
-        /// <summary>
-        /// Returns the currently focused/selected cell info (Avalonia equivalent of DataGridView.CurrentCell)
-        /// Works with the Dictionary-based ItemsSource used in your LoadArrayIntoGrid()
-        /// </summary>
-        public static (int RowIndex, int ColumnIndex, object? CellValue) Grid_GetSelectedCellInfo(Avalonia.Controls.DataGrid grid)
-        {
-            if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
-            {
-                return (-1, -1, null);
-            }
-            int rowIndex = grid.SelectedIndex;
-            int columnIndex = grid.Columns.IndexOf(grid.CurrentColumn);
-            if (columnIndex < 0)
-                return (rowIndex, -1, null);
-            // Get value from the Dictionary row (exact match to your dynamic grid)
-            if (grid.SelectedItem is Dictionary<string, object> rowDict)
-            {
-                string key = columnIndex.ToString();
-                object? value = rowDict.ContainsKey(key) ? rowDict[key] : null;
-                return (rowIndex, columnIndex, value);
-            }
-            // Fallback for strongly-typed objects (e.g. Person class)
-            return (rowIndex, columnIndex, "Strongly-typed value");
-        }
+        ///* ------------------------------------------------------------------------------------------*
+        // * ------------------------------------------------------------------------------------------*/
+        ///// <summary>
+        ///// Returns the currently focused/selected cell info (Avalonia equivalent of DataGridView.CurrentCell)
+        ///// Works with the Dictionary-based ItemsSource used in your LoadArrayIntoGrid()
+        ///// </summary>
+        //public static (int RowIndex, int ColumnIndex, object? CellValue) Grid_GetSelectedCellInfo(Avalonia.Controls.DataGrid grid)
+        //{
+        //    if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
+        //    {
+        //        return (-1, -1, null);
+        //    }
+        //    int rowIndex = grid.SelectedIndex;
+        //    int columnIndex = grid.Columns.IndexOf(grid.CurrentColumn);
+        //    if (columnIndex < 0)
+        //        return (rowIndex, -1, null);
+        //    // Get value from the Dictionary row (exact match to your dynamic grid)
+        //    if (grid.SelectedItem is Dictionary<string, object> rowDict)
+        //    {
+        //        string key = columnIndex.ToString();
+        //        object? value = rowDict.ContainsKey(key) ? rowDict[key] : null;
+        //        return (rowIndex, columnIndex, value);
+        //    }
+        //    // Fallback for strongly-typed objects (e.g. Person class)
+        //    return (rowIndex, columnIndex, "Strongly-typed value");
+        //}
 
-        /* ------------------------------------------------------------------------------------------*
-         * ------------------------------------------------------------------------------------------*/
-        /// <summary>
-        /// Gets the value from any specific cell by row and column index
-        /// (Avalonia equivalent of grid.Rows[rowIndex].Cells[colIndex].Value)
-        /// Works with your Dictionary-based ItemsSource from LoadArrayIntoGrid()
-        /// </summary>
-        public static object? Grid_GetCellValue(Avalonia.Controls.DataGrid grid, int rowIndex, int columnIndex)
-        {
-            if (grid == null ||
-            rowIndex < 0 ||
-            columnIndex < 0 ||
-            grid.ItemsSource is not ObservableCollection<Dictionary<string, object>> rows)
-            {
-                return null;
-            }
-            if (rowIndex >= rows.Count)
-                return null;
-            var rowDict = rows[rowIndex];
-            string key = columnIndex.ToString();
-            return rowDict.TryGetValue(key, out var value) ? value : null;
-        }
+        ///* ------------------------------------------------------------------------------------------*
+        // * ------------------------------------------------------------------------------------------*/
+        ///// <summary>
+        ///// Gets the value from any specific cell by row and column index
+        ///// (Avalonia equivalent of grid.Rows[rowIndex].Cells[colIndex].Value)
+        ///// Works with your Dictionary-based ItemsSource from LoadArrayIntoGrid()
+        ///// </summary>
+        //public static object? Grid_GetCellValue(Avalonia.Controls.DataGrid grid, int rowIndex, int columnIndex)
+        //{
+        //    if (grid == null ||
+        //    rowIndex < 0 ||
+        //    columnIndex < 0 ||
+        //    grid.ItemsSource is not System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rows)
+        //    {
+        //        return null;
+        //    }
+
+        //    if (rowIndex >= rows.Count)
+        //        return null;
+
+        //    var col = 
+            
+        //    var rowDict = rows[rowIndex];
+        //    string key = columnIndex.ToString();
+        //    return rowDict.TryGetValue(key, out var value) ? value : null;
+        //}
 
 
-        /* ------------------------------------------------------------------------------------------*
-         * ------------------------------------------------------------------------------------------*/
-        /// <summary>
-        /// Sets a value into the currently selected cell
-        /// (Avalonia equivalent of grid.CurrentCell.Value = newValue)
-        /// Works with the Dictionary-based ItemsSource from your LoadArrayIntoGrid()
-        /// </summary>
-        public static void Grid_SetSelectedCellValue(Avalonia.Controls.DataGrid grid, object? newValue)
-        {
-            if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
-                return;
-            int rowIndex = grid.SelectedIndex;
-            int colIndex = grid.Columns.IndexOf(grid.CurrentColumn);
-            if (colIndex < 0)
-                return;
-            if (grid.ItemsSource is ObservableCollection<Dictionary<string, object>> rows &&
-            rowIndex >= 0 && rowIndex < rows.Count)
-            {
-                var rowDict = rows[rowIndex];
-                string key = colIndex.ToString();
-                rowDict[key] = newValue ?? string.Empty;
-                // IMPORTANT: re-assign the row to trigger ObservableCollection update
-                // (Dictionary itself does not raise property changed events)
-                rows[rowIndex] = rowDict;
-            }
-        }
+        ///* ------------------------------------------------------------------------------------------*
+        // * ------------------------------------------------------------------------------------------*/
+        ///// <summary>
+        ///// Sets a value into the currently selected cell
+        ///// (Avalonia equivalent of grid.CurrentCell.Value = newValue)
+        ///// Works with the Dictionary-based ItemsSource from your LoadArrayIntoGrid()
+        ///// </summary>
+        //public static void Grid_SetSelectedCellValue(Avalonia.Controls.DataGrid grid, object? newValue)
+        //{
+        //    if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
+        //        return;
+        //    int rowIndex = grid.SelectedIndex;
+        //    int colIndex = grid.Columns.IndexOf(grid.CurrentColumn);
+        //    if (colIndex < 0)
+        //        return;
+        //    if (grid.ItemsSource is System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rows &&
+        //    rowIndex >= 0 && rowIndex < rows.Count)
+        //    {
+        //        var rowDict = rows[rowIndex];
+        //        string key = colIndex.ToString();
+        //        rowDict[key] = newValue ?? string.Empty;
+        //        // IMPORTANT: re-assign the row to trigger ObservableCollection update
+        //        // (Dictionary itself does not raise property changed events)
+        //        rows[rowIndex] = rowDict;
+        //    }
+        //}
 
         /* ------------------------------------------------------------------------------------------*
          * ------------------------------------------------------------------------------------------*/
@@ -1324,28 +1383,19 @@ namespace JAXBase.XBase
 
                                                 case 5:
                                                     // Try to bind the record source to an array name
-                                                    JAXObjects.Token aGridData = await AppVars.GetVarToken(UserProperties["recordsource"].AsString());
+                                                    arrayRS = await AppVars.GetVarToken(UserProperties["recordsource"].AsString());
 
                                                     // Is it an array variable name?
-                                                    if (aGridData.TType.Equals("A") == false)
+                                                    if (arrayRS.TType.Equals("A") == false)
                                                     {
                                                         // No, so reset and give error
                                                         result = 234;
-                                                        aGridData = new();
+                                                        arrayRS = null;
                                                     }
                                                     else
                                                     {
                                                         // Load the grid from the array
-                                                        await SetArrayBinding(aGridData);
-
-                                                        // Gives the black screen of death
-                                                        //for (int i = 0; i < grid.Columns.Count; i++)
-                                                        //{
-                                                        //    if (grid.Columns[i] is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.Binding.Path is null)
-                                                        //    {
-                                                        //        boundCol.Binding = new Avalonia.Data.Binding(i.ToString());
-                                                        //    }
-                                                        //}
+                                                        await SetArrayBinding(arrayRS);
                                                     }
                                                     break;
                                             }
