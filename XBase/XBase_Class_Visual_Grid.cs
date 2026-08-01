@@ -574,6 +574,8 @@ namespace JAXBase.XBase
                 AppIO.DebugLog($"Column bound to {binding}");
             }
 
+            await colObj.SetProperty("recordsource", binding, 0);
+
             col.IsReadOnly = UserProperties["readonly"].AsBool();
             grid.Columns.Add(col);
 
