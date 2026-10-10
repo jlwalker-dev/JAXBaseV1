@@ -1,7 +1,7 @@
 ﻿/* 
  * MSSQL Engine support
  * 
- * 2026-10-10 - Initial version 
+ * 2026-10-10 - Initial version - Github is having problems..
  * 
  */
 using JAXBase.Core;
