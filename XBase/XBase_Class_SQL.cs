@@ -1110,9 +1110,9 @@ namespace JAXBase.XBase
                 "idletimeout,n,0", "isconnected,L!,F",
                 "manual,n,1",
                 "name,C,SQL",
-                "packetsize,n,4096","parent,o$,","parentclass,C$,", "password,c,", "port,n,0",
+                "packetsize,n,4096","parent,o$,","parentclass,C$,", "password,c,", "port,n,3306",
                 "querytimeout,n,30",
-                "server,c,", "schema,c,dbo", "shared,l,f", "state,n!,0", "status,n!,0",
+                "server,c,", "schema,c,dbo", "shared,l,f", "sslmode,n!,0","state,n!,0", "status,n!,0",
                 "tag,C,", "thumbprint,c,", "transactions,n,1", "trust,L,T",
                 "userid,c,",
                 "waittime,n,100"

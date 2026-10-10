@@ -3,6 +3,7 @@
  */
 using JAXBase.Core;
 using JAXBase.Data;
+using JAXBase.Language;
 using JAXBase.Utilities;
 using MySqlConnector;
 using System.Data;
@@ -50,17 +51,52 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public async Task<int> Connect(string ConnString)
+        public async Task<int> Connect(string connString)
         {
             int result = 0;
             string msg = string.Empty;
+
+            // If there's a connection string, set it up
+            if (string.IsNullOrWhiteSpace(connString) == false)
+                await SetConnectionString(connString);
 
             // Try to make the connection
             if (result == 0)
             {
                 try
                 {
-//                    ConnectionString = $"Server={DataSource};Database={Database};Uid={ConnectionUserID};Pwd={ConnectionPassword}";
+                    ConnectionString = $"Server={SQLBase.UserProperties[JAXLanguageLists.GetWord("server", "REVPEMS")].AsString()};";
+
+                    // Do we have a database connection request?
+                    if (string.IsNullOrWhiteSpace(SQLBase.UserProperties[JAXLanguageLists.GetWord("database", "REVPEMS")].AsString())==false)
+                        ConnectionString += $"Database={SQLBase.UserProperties[JAXLanguageLists.GetWord("database", "REVPEMS")].AsString()};";
+
+                    ConnectionString += $"Uid={SQLBase.UserProperties[JAXLanguageLists.GetWord("userid", "REVPEMS")].AsString()};";
+                    ConnectionString += $"Pwd={SQLBase.UserProperties[JAXLanguageLists.GetWord("password", "REVPEMS")].AsString()};";
+                    ConnectionString += $"Port={SQLBase.UserProperties[JAXLanguageLists.GetWord("port", "REVPEMS")].AsString()};";
+
+                    switch (SQLBase.UserProperties[JAXLanguageLists.GetWord("sslmode", "REVPEMS")].AsInt())
+                    {
+                        case 0:
+                            ConnectionString += $"SslMode = Disabled;";
+                            break;
+                        case 1:
+                            ConnectionString += $"SslMode = Preferred;";
+                            break;
+                        case 2:
+                            ConnectionString += $"SslMode = Required;";
+                            break;
+                        case 3:
+                            ConnectionString += $"SslMode = VerifyCA;";
+                            break;
+                        case 4:
+                            ConnectionString += $"SslMode = VerifyFull;";
+                            break;
+                        default:
+                            ConnectionString += $"SslMode = Disabled;";
+                            break;
+                    }
+                    ConnectionString += $"AllowPublicKeyRetrieval=True";
 
                     var builder = new MySqlConnectionStringBuilder(ConnectionString)
                     {
@@ -200,7 +236,7 @@ namespace JAXBase.XBase
         {
             int result = 0;
 
-  
+
             return result;
         }
 
@@ -238,7 +274,7 @@ namespace JAXBase.XBase
                 if (SQLCon is null || SQLCon.State != ConnectionState.Open)
                 {
                     result = -1;
-//                    SetError(6001, "SQL not connected", "ExecuteSelect");
+                    //                    SetError(6001, "SQL not connected", "ExecuteSelect");
                 }
                 else
                 {
@@ -297,8 +333,69 @@ namespace JAXBase.XBase
 
         public async Task<int> SetParameterString(string Parameters)
         {
-            int result = 0;
+            int result = ErrorCode = 0;
+            string msg = string.Empty;
 
+            try
+            {
+                string[] ParamStrings = Parameters.Split(';');
+                for (int i = 0; i < ParamStrings.Length; i++)
+                {
+                    JAXObjects.Token tk = new();
+
+                    if (ParamStrings[i].Contains('='))
+                    {
+                        string[] param = ParamStrings[i].Split("=");
+                        param[0] = param[0].Trim();
+                        param[1] = param[1].Trim();
+
+                        if (param[1].Length > 0)
+                        {
+                            if ("0123456789".Contains(param[1][0]))
+                            {
+                                // It's a numeric value
+                                if (int.TryParse(param[1], out int iVal) == false) iVal = 0;
+                                tk.Element.Value = iVal;
+                            }
+                            else if (JAXLib.InListC(param[1], ".t.", ".f."))
+                            {
+                                // It's a boolean
+                                tk.Element.Value = param[1].ToLower().Equals(".t.");
+                            }
+                            else
+                            {
+                                // Assuming it's a character value
+                                tk.Element.Value = param[1];
+                            }
+                        }
+                        else
+                        {
+                            // Received an empty string
+                            tk.Element.Value = string.Empty;
+                        }
+
+                        // Now parse it
+                        result = await SetParameter(param[0], tk);
+                    }
+                    else
+                        ErrorCode = 1232;
+
+                    // Break out on any error found
+                    if (result != 0) break;
+                }
+            }
+            catch (Exception ex)
+            {
+                msg = ex.Message;
+                ErrorCode = 9999;
+            }
+
+            if (ErrorCode > 0)
+            {
+                SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetParameterString()");
+                result = -1;
+            }
 
             return result;
         }
@@ -306,9 +403,309 @@ namespace JAXBase.XBase
         public async Task<int> SetParameter(string parameter, JAXObjects.Token value)
         {
 
-            int result = 0;
+            int result = ErrorCode = 0;
             string type = value.Element.Type;
+            string msg = "";
 
+            parameter = parameter.ToLower();
+            string EnglishParameter = JAXLanguageLists.GetWord(parameter, "REVPEMS");
+
+            try
+            {
+                switch (EnglishParameter.ToLower())
+                {
+                    case "applicationname":
+                        ApplicationName = type.Equals("C") ? value.AsString() : throw new Exception($"11|");
+                        break;
+
+                    case "port":
+                        if (type.Equals("N"))
+                        {
+                            int Port = value.AsInt() < 1 ? 3306 : value.AsInt();
+                            if (JAXLib.Between(Port, 1, 65535) == false) result = ErrorCode = 3003;
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("port", "REVPEMS")].Element.Value = Port;
+                        }
+                        else
+                            ErrorCode = 11;
+
+                        break;
+
+                    case "database":
+                    case "initialcatalog":
+                        if (type.Equals("C"))
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("database", "REVPEMS")].Element.Value = value.AsString();
+                        else
+                            ErrorCode = 11;
+
+                        break;
+
+                    case "server":
+                    case "datasource":
+                    case "address":
+                    case "addr":
+                    case "host":
+                    case "networkaddress":
+                        if (type.Equals("C"))
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("server", "REVPEMS")].Element.Value = value.AsString();
+                        else
+                            ErrorCode = 11;
+                        break;
+
+                    case "pwd":
+                    case "pwd1":
+                    case "password":
+                        if (type.Equals("C"))
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("password", "REVPEMS")].Element.Value = value.AsString();
+                        else
+                            ErrorCode = 11;
+                        break;
+
+                    case "pwd2":
+                        break;
+
+                    case "pwd3":
+                        break;
+
+                    case "timeout":
+                        if (type.Equals("N"))
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("connecttimeout", "REVPEMS")].Element.Value = value.AsInt();
+                        else
+                            ErrorCode = 11;
+
+                        if (SQLBase.UserProperties[JAXLanguageLists.GetWord("connecttimeout", "REVPEMS")].AsInt() < 0) result = 3003;
+                        break;
+
+                    case "uid":
+                    case "usrid":
+                    case "userid":
+                    case "username":
+                    case "user":
+                        if (type.Equals("C"))
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("userid", "REVPEMS")].Element.Value = value.AsString();
+                        else
+                            ErrorCode = 11;
+                        break;
+
+                    case "trust":
+                        if (type.Equals("L"))
+                            SQLBase.UserProperties[JAXLanguageLists.GetWord("trust", "REVPEMS")].Element.Value = value.AsBool();
+                        else
+                            ErrorCode = 11;
+                        break;
+
+                    // TODO - SSL Mode is a MySQL specific parameter and numeric
+                    case "sslmode":
+                        if (type.Equals("C"))
+                            switch (value.AsString().ToLower())
+                            {
+                                case "none":
+                                    SQLBase.UserProperties[JAXLanguageLists.GetWord("sslmode", "REVPEMS")].Element.Value = 0;
+                                    break;
+                                case "preferred":
+                                    SQLBase.UserProperties[JAXLanguageLists.GetWord("sslmode", "REVPEMS")].Element.Value = 1;
+                                    break;
+                                case "required":
+                                    SQLBase.UserProperties[JAXLanguageLists.GetWord("sslmode", "REVPEMS")].Element.Value = 2;
+                                    break;
+                                case "verifyca":
+                                    SQLBase.UserProperties[JAXLanguageLists.GetWord("sslmode", "REVPEMS")].Element.Value = 3;
+                                    break;
+                                case "verifyfull":
+                                    SQLBase.UserProperties[JAXLanguageLists.GetWord("sslmode", "REVPEMS")].Element.Value = 4;
+                                    break;
+                                default:
+                                    ErrorCode = 6003;
+                                    break;
+                            }
+
+                        else
+                            ErrorCode = 11;
+                        break;
+
+
+                    case "loadbalance":
+                        break;
+
+                    case "connectionprotocol":
+                        break;
+
+                    case "integratedsecurity":
+                        break;
+
+                    case "replication":
+                        break;
+
+                    case "pipname":
+                        break;
+
+                    case "workstation":
+                        if (type.Equals("C"))
+                            WorkStation = value.AsString();
+                        else
+                            ErrorCode = 11;
+                        break;
+
+
+                    // SSL/TLS related parameters
+                    case "certificatefile":
+                        break;
+
+                    case "certificatepassword":
+                        break;
+
+                    case "certificatestorelocation":
+                        break;
+
+                    case "certificatethumbprint":
+                        break;
+
+                    case "sslcert":
+                        break;
+
+                    case "sslkey":
+                        break;
+
+                    case "sslca":
+                    case "cacertificatefile":
+                        break;
+
+                    case "tlsversion":
+                        break;
+
+                    case "skipcertificaterevocationcheck":
+                        break;
+
+                    case "tlsciphersuites":
+                        break;
+
+                    // Pooling related parameters
+                    case "ConnectionLifeTime":
+                        break;
+
+
+                    case "ConnectionReset":
+                        break;
+
+                    case "ConnectionIdleTimeout":
+                        break;
+
+                    case "MinimumPoolSize":
+                        break;
+
+                    case "MaximumPoolSize":
+                        break;
+
+                    case "DnsCheckInterval":
+                        break;
+
+
+                    // Other parameters
+                    case "AllowLoadLocalInfile":
+                        break;
+
+                    case "AllowPublicKeyRetrieval":
+                        break;
+
+                    case "AllowUserVariables":
+                        break;
+
+                    case "AllowZeroDateTime":
+                        break;
+
+                    case "ApplicationName":
+                        break;
+
+                    case "AutoEnlist":
+                        break;
+
+                    case "CancellationTimeout":
+                        break;
+
+                    case "CharSet":
+                    case "CharacterSet":
+                        break;
+
+                    case "ConnectionTimeout":
+                        break;
+
+                    case "ConvertZeroDateTime":
+                        break;
+
+                    case "DateTimeKind":
+                        break;
+
+                    case "DefaultCommandTimeout":
+                    case "CommandTimeout":
+                        break;
+
+                    case "GuidFormat":
+                        break;
+
+                    case "IgnoreCommandTransaction":
+                        break;
+
+                    case "IgnorePrepare":
+                        break;
+
+                    case "Interactive":
+                    case "InteractiveSession":
+                        break;
+
+                    case "Keepalive":
+                        break;
+
+                    case "NoBackslashEscapes":
+                        break;
+
+                    case "OldGuids":
+                        break;
+
+                    case "PersistSecurityInfo":
+                        break;
+
+                    case "ServerRedirectionMode":
+                        break;
+
+                    case "ServerRsaPublicKeyFile":
+                        break;
+
+                    case "ServerSPN":
+                        break;
+
+                    case "TreatTinyAsBoolean":
+                        break;
+
+                    case "UseAffectedRows":
+                        break;
+
+                    case "Compress":
+                    case "UseCompression":
+                        break;
+
+                    case "UseXaTransactions":
+                        break;
+
+
+
+
+
+                    default:
+                        ErrorCode = 6003;
+                        msg = parameter.ToUpper();
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorCode = 9999;
+                msg = ex.Message;
+            }
+
+            if (ErrorCode > 0)
+            {
+                SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetParameter()");
+            }
 
             return result;
         }
@@ -317,16 +714,58 @@ namespace JAXBase.XBase
 
         public async Task<int> GetIndex(string tableName, string indexName = "", string cursorName = "")
         {
-            return 0; 
+            return 0;
         }
 
         public int ListDatabases(out List<string> dbList)
         {
+            string msg = "";
             int result = 0;
             dbList = [];
-            string cursorName = "LT" + Program.CurrentApp.SystemCounter();
-            //int result = Execute("SELECT SCHEMA_NAME AS 'Database' FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME IS NOT NULL AND SCHEMA_NAME NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY SCHEMA_NAME;", cursorName);
+            object? returnObject = ExecuteSelect("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA;", out result);
 
+
+            if (result >= 0)
+            {
+                if (returnObject is not null)
+                {
+                    if (GetKind() == 1)
+                    {
+                        DataTable dt = (DataTable)returnObject;
+                        foreach (DataRow row in dt.Rows)
+                        {
+                            string n = row["SCHEMA_NAME"].ToString() ?? string.Empty;
+                            if (string.IsNullOrWhiteSpace(n) == false)
+                                dbList.Add(n);
+                        }
+
+                        // Get the final tally
+                        result = dbList.Count;
+                    }
+                    else
+                    {
+                        // Error
+                        ErrorCode = 6007;
+                    }
+                }
+                else
+                {
+                    // Error
+                    ErrorCode = 6006;
+                }
+            }
+            else
+            {
+                msg = "Error executing SQL to list databases";
+                ErrorCode = 9999;
+            }
+
+            if (ErrorCode > 0)
+            {
+                SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.ListDatabases()");
+                result = -1;
+            }
 
             return result;
         }
@@ -373,8 +812,23 @@ namespace JAXBase.XBase
 
         public async Task<int> SetConnectionString(string connString)
         {
-            int result = 0;
+            int result = ErrorCode = 0;
+            string msg = "";
+
+            if (SQLCon is null || SQLCon.State == ConnectionState.Closed)
+                result = await SetParameterString(connString);
+            else
+                ErrorCode = 6004;
+
+            if (ErrorCode > 0)
+            {
+                SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SetConnection()");
+                result = -1;
+            }
+
             return result;
+
         }
 
         public async Task<int> GetDatabaseInfo(string dbName, string cursorName)
