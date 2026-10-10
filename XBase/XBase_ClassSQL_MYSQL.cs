@@ -1,5 +1,8 @@
 ﻿/* 
  * MSSQL Engine support
+ * 
+ * 2026-10-10 - Initial version 
+ * 
  */
 using JAXBase.Core;
 using JAXBase.Data;
