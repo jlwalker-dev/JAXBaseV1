@@ -238,6 +238,7 @@ namespace JAXBase.XBase
             });
         }
 
+
         // Changes made to the header simply recreate the header
         private void SetHeader2()
         {

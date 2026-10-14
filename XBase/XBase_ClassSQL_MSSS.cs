@@ -16,6 +16,7 @@ using JAXBase.Utilities;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Text;
+using System.Windows.Documents;
 using System.Windows.Interop;
 
 namespace JAXBase.XBase
@@ -1928,6 +1929,10 @@ namespace JAXBase.XBase
             return 0;
         }
 
+        /*
+         * Alter a property of a field in a table.  This is a generic function that can be used to change 
+         * the name, nullability, comment, width, or decimal width of a field.
+         */
         public async Task<int> AlterProperty(string table, string field, string property, JAXObjects.Token value)
         {
             int result = 0;
@@ -2067,6 +2072,8 @@ namespace JAXBase.XBase
 
                             //lcSQL = $"EXEC sp_rename '{schema}.{table}.{field}_New', '{field}', 'COLUMN';";
 
+                            ErrorCode = 1999;
+                            ErrorMsg = "FieldType is not yet implemented for SQL Server";
                             break;
 
                         case "nextval":         // Alter next inc value
@@ -2113,10 +2120,64 @@ namespace JAXBase.XBase
             return 0;
         }
 
-        public async Task<int> DropField(string parm1, string parm2)
+        public async Task<int> DropField(string tableName, string fieldName)
         {
-            return 0;
+            int result = ErrorCode = 0;
+            string msg = "";
+            string lcSQL = "";
+
+            string schema = SQLBase.UserProperties[JAXLanguageLists.GetWord("schema", "REVPEMS")].AsString();
+            schema = string.IsNullOrWhiteSpace(schema) ? "dbo" : schema;
+
+            if (await IsConnected() == false)
+            {
+                ErrorCode = 6001;
+                SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, ErrorMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+            }
+            else
+            {
+                try
+                {
+                    // If the schema is part of original field name
+                    // overwrite the dbf default
+                    if (tableName.Contains('.'))
+                    {
+                        string[] s = tableName.Split('.');
+                        schema = s[0].Trim();
+
+                        if (string.IsNullOrWhiteSpace(s[1]))
+                            tableName = "";
+                        else
+                            tableName = s[1].Trim();
+                    }
+
+                    lcSQL = $"ALTER TABLE {schema}.{tableName} DROP COLUMN {fieldName};";
+
+                    ExecuteSelect(lcSQL, out result);
+
+                    if (result < 0)
+                    {
+                        SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, ErrorMsg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                        ErrorCode = 9999;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ErrorCode = 9999;
+                    msg = ex.Message;
+                }
+            }
+
+            if (ErrorCode > 0)
+            {
+                SQLBase._AddError(ErrorCode, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLine, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                AppIO.DebugLog($"Error {ErrorCode} - {JAXError.JAXErrMsg(ErrorCode, msg)} in XBase_ClassSQL_MSSS.SQLDatabaseInfo()");
+                result = -1;
+            }
+
+            return result;
         }
+
 
         public async Task<int> DropIndex(string parm1, string parm2)
         {

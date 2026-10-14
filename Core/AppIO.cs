@@ -35,11 +35,9 @@ namespace JAXBase.Core
 
         // Set debug ON/OFF will control when the debug works
         // Send to the default console
-        public static void DebugLog(string text) { AppIO.DebugLog(text, true); }
-
         private static readonly Lock _logLock = new();
 
-        public static void DebugLog(string text, bool writeToFileOnly)
+        public static void DebugLog(string text, bool writeToFileOnly = true)
         {
             if (Program.CurrentApp.CurrentDS.JaxSettings.Debug)
             {

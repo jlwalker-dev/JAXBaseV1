@@ -43,7 +43,6 @@ using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.UI.Dialogs;
 using JAXBase.Utilities;
-using System.Collections.ObjectModel;
 using System.Data;
 namespace JAXBase.XBase
 {
@@ -126,6 +125,8 @@ namespace JAXBase.XBase
             if (grid.CurrentColumn is null || grid.SelectedIndex < 0)
                 return;
 
+            AppIO.DebugLog($"Grid_KeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}");
+
             int colIndex = grid.Columns.IndexOf(grid.CurrentColumn);
             int rowIndex = grid.SelectedIndex;
 
@@ -177,7 +178,7 @@ namespace JAXBase.XBase
         /// </summary>
         private async void Grid_CellEditEnding(object? sender, Avalonia.Controls.DataGridCellEditEndingEventArgs e)
         {
-            AppIO.DebugLog("Grid_CellEditEnding", false);
+            AppIO.DebugLog("Grid_CellEditEnding");
 
             if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
                 return;
@@ -201,22 +202,23 @@ namespace JAXBase.XBase
                 if (col is not null)
                 {
                     colNum = await col.GetProperty("columnnumber");
-                    if (colNum.AsInt() == colIdx-1)
+                    if (colNum.AsInt() == colIdx - 1)
                         break;  // We've got the column!
                 }
             }
 
             if (col is not null)
             {
-                object? value = Grid_GetCellValue(grid, colIdx, rowIdx);
+                object? value = Grid_GetCurrentCellValue(colIdx);
 
                 if (value is not null)
                 {
                     // Convert the value, if possible
-                    string strValue = (string)value;
+                    JAXObjects.Token tk = new(value);
+                    string strValue = tk.AsString();
 
                     // Check the field type
-                    string type="";
+                    string type = "";
 
                     if (thisWorkArea is not null)
                         type = thisDBF!.Fields[colNum.AsInt()].FieldType;   // Get column data type
@@ -300,7 +302,7 @@ namespace JAXBase.XBase
                                 else
                                 {
                                     arrayRS.SetElement(rowIdx + 1, colIdx + 1);
-                                    arrayRS.Element.Value= value;
+                                    arrayRS.Element.Value = value;
                                 }
                             }
                             else
@@ -311,9 +313,9 @@ namespace JAXBase.XBase
 
                         }
 
-                        if (e.Cancel == false)
-                            // Save the value to the indicated field
-                            Grid_SetSelectedCellValue(grid, value);
+                        //if (e.Cancel == false)
+                        // Save the value to the indicated field
+                        //Grid_SetSelectedCellValue(grid, value);
                     }
                     else
                     {
@@ -356,7 +358,7 @@ namespace JAXBase.XBase
             if (colIdx < 1 || rowIdx < 0)
                 return;
 
-            object? newValue = Grid_GetCellValue(grid, rowIdx, colIdx);
+            object? newValue = Grid_GetCurrentCellValue(colIdx - 1); // We have one extra column in the grid
 
             AppIO.DebugLog($"Cell changed – Row: {rowIdx + 1}, Col: {colIdx + 1}, Value: {newValue}");
 
@@ -365,18 +367,24 @@ namespace JAXBase.XBase
             AppHelper.LoadTokenValToParameters(new(colIdx + 1));   // nCol
             AppHelper.LoadTokenValToParameters(new(newValue));     // uValue
 
-            await _CallMethod("afterrowcolchange");
+            AppIO.DebugLog($"Calling afterrowcolchange with parameters: Row={rowIdx + 1}, Col={colIdx + 1}, Value={newValue}");
+
+            await _CallMethod("Grid afterrowcolchange");
         }
+
 
         /* ------------------------------------------------------------------------------------------*
          * Cell movement causes an update to the grid and underlying table
          * ------------------------------------------------------------------------------------------*/
         private async void Grid_CurrentCellChanged(object? sender, EventArgs e)
         {
+            AppIO.DebugLog($"Grid_CurrentCellChanged current column: {grid.CurrentColumn?.Tag}");
+
             // Ignore the marker column
             if (grid.CurrentColumn?.Tag is string tag && tag == "__MARKER__")
                 return;
 
+            AppIO.DebugLog($"Grid_CurrentCellChanged current column: {grid.SelectedIndex}");
             if (grid.CurrentColumn is null || grid.SelectedIndex < 0)
                 return;
 
@@ -390,7 +398,7 @@ namespace JAXBase.XBase
             {
                 // Table? Move to the correct row
                 if (thisWorkArea is not null)
-                    await thisWorkArea.DBFGotoRecord(grid.SelectedIndex);
+                    await thisWorkArea.DBFGotoRecord(grid.SelectedIndex + 1);
 
                 track++;
 
@@ -413,8 +421,7 @@ namespace JAXBase.XBase
             {
                 // Force the cell into the editing visual state
                 // (same appearance you already get with Tab / Shift+Tab)
-                if (grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol &&
-                    !boundCol.IsReadOnly)
+                if (grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.IsReadOnly == false)
                 {
                     grid.BeginEdit();
                 }
@@ -431,41 +438,140 @@ namespace JAXBase.XBase
         }
 
 
-        ///* ------------------------------------------------------------------------------------------*
-        // * ------------------------------------------------------------------------------------------*/
-        ///// <summary>
-        ///// Returns the currently focused/selected cell info (Avalonia equivalent of DataGridView.CurrentCell)
-        ///// Works with the Dictionary-based ItemsSource used in your LoadArrayIntoGrid()
-        ///// </summary>
-        //public static (int RowIndex, int ColumnIndex, object? CellValue) Grid_GetSelectedCellInfo(Avalonia.Controls.DataGrid grid)
-        //{
-        //    if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
-        //    {
-        //        return (-1, -1, null);
-        //    }
-        //    int rowIndex = grid.SelectedIndex;
-        //    int columnIndex = grid.Columns.IndexOf(grid.CurrentColumn);
-        //    if (columnIndex < 0)
-        //        return (rowIndex, -1, null);
-        //    // Get value from the Dictionary row (exact match to your dynamic grid)
-        //    if (grid.SelectedItem is Dictionary<string, object> rowDict)
-        //    {
-        //        string key = columnIndex.ToString();
-        //        object? value = rowDict.ContainsKey(key) ? rowDict[key] : null;
-        //        return (rowIndex, columnIndex, value);
-        //    }
-        //    // Fallback for strongly-typed objects (e.g. Person class)
-        //    return (rowIndex, columnIndex, "Strongly-typed value");
-        //}
+
+        /* ------------------------------------------------------------------------------------------*
+         * Returns the value of the currently selected/focused or specified cell.
+         * 
+         * Columns may have been reordered by the user, so we never trust the visual index in 
+         * grid.Columns.  We match against the logical columnnumber stored on the XBase column 
+         * object and then use that column’s recordsource as the key into the SimpleDataRow.Values 
+         * dictionary.
+         * ------------------------------------------------------------------------------------------*/
+        /// <summary>
+        /// Returns the value of the currently selected/focused or specified cell.
+        /// </summary>
+        public async Task<object?> Grid_GetCurrentCellValue(int colIdx = -1)
+        {
+            AppIO.DebugLog($"Grid_GetCurrentCellValue: colIdx={colIdx}, selectedIndex={grid.SelectedIndex}");
+
+            colIdx = colIdx < 0 ? grid.SelectedIndex : colIdx;
+
+            if (grid == null || colIdx < 0 || colIdx >= grid.Columns.Count)
+                return null;
+
+            // Get the column
+            Avalonia.Controls.DataGridColumn currectColumn = grid.Columns[colIdx];
+
+            // ------------------------------------------------------------------
+            // 1. Decide which logical columnnumber we are looking for
+            // ------------------------------------------------------------------
+            int targetColNum = 0;
+
+            if (currectColumn.Tag is int tagVal)
+            {
+                // Tag was set in SetGridFinal to the original (setup-time) index
+                targetColNum = tagVal;
+            }
+            else if (currectColumn.Tag is string s && s == "__MARKER__")
+            {
+                // Marker column – no data value
+                return null;
+            }
+            else
+            {
+                // Fallback: visual index, adjusting for the marker column that lives at index 0
+                //int visualIdx = currectColumn.IndexOf(currectColumn);
+                //targetColNum = visualIdx > 0 ? visualIdx - 1 : 0;
+                AppIO.DebugLog($"OOPS");
+            }
+
+            // ------------------------------------------------------------------
+            // 2. Walk the Objects list and find the column with matching columnnumber
+            // ------------------------------------------------------------------
+            JAXObjects.Token colCountTk = await me.GetProperty("columncount");
+            int colCount = colCountTk.AsInt();
+
+            string? dataColumnName = null;
+
+            for (int i = 0; i < colCount; i++)
+            {
+                JAXObjectWrapper? col = await me.GetObject(i);
+                if (col is null)
+                    continue;
+
+                JAXObjects.Token colNumTk = await col.GetProperty("columnnumber");
+                if (colNumTk.AsInt() == targetColNum)
+                {
+                    JAXObjects.Token rsTk = await col.GetProperty("recordsource");
+                    dataColumnName = rsTk.AsString();
+                    break;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(dataColumnName))
+            {
+                AppIO.DebugLog($"GetCurrentCellValue: could not find column with columnnumber = {targetColNum}");
+                return null;
+            }
+
+            // ------------------------------------------------------------------
+            // 3. Pull the value from the current SimpleDataRow
+            // ------------------------------------------------------------------
+            if (grid.SelectedItem is SimpleDataRow row)
+            {
+                // Exact match first
+                if (row.Values.TryGetValue(dataColumnName, out object? val))
+                    return val;
+
+                // Case-insensitive fallback (field names are often Proper-cased)
+                foreach (var kvp in row.Values)
+                {
+                    if (string.Equals(kvp.Key, dataColumnName, StringComparison.OrdinalIgnoreCase))
+                        return kvp.Value;
+                }
+            }
+
+            return null;
+        }
+
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
+        /// <summary>
+        /// Returns the currently focused/selected cell info (Avalonia equivalent of DataGridView.CurrentCell)
+        /// Works with the Dictionary-based ItemsSource used in your LoadArrayIntoGrid()
+        /// </summary>
+        public static (int RowIndex, int ColumnIndex, object? CellValue) Grid_GetSelectedCellInfo(Avalonia.Controls.DataGrid grid)
+        {
+            AppIO.DebugLog($"Grid_GetSelectedCellInfo: selectedIndex={grid.SelectedIndex}, currentColumn={(grid.CurrentColumn != null ? grid.CurrentColumn.Header?.ToString() : "null")}");
+
+            if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
+            {
+                return (-1, -1, null);
+            }
+            int rowIndex = grid.SelectedIndex;
+            int columnIndex = grid.Columns.IndexOf(grid.CurrentColumn);
+            if (columnIndex < 0)
+                return (rowIndex, -1, null);
+            // Get value from the Dictionary row (exact match to your dynamic grid)
+            if (grid.SelectedItem is Dictionary<string, object> rowDict)
+            {
+                string key = columnIndex.ToString();
+                object? value = rowDict.ContainsKey(key) ? rowDict[key] : null;
+                return (rowIndex, columnIndex, value);
+            }
+            // Fallback for strongly-typed objects (e.g. Person class)
+            return (rowIndex, columnIndex, "Strongly-typed value");
+        }
 
         ///* ------------------------------------------------------------------------------------------*
         // * ------------------------------------------------------------------------------------------*/
-        ///// <summary>
-        ///// Gets the value from any specific cell by row and column index
-        ///// (Avalonia equivalent of grid.Rows[rowIndex].Cells[colIndex].Value)
-        ///// Works with your Dictionary-based ItemsSource from LoadArrayIntoGrid()
-        ///// </summary>
-        //public static object? Grid_GetCellValue(Avalonia.Controls.DataGrid grid, int rowIndex, int columnIndex)
+        ///// <summary>
+        ///// Gets the value from any specific cell by row and column index
+        ///// (Avalonia equivalent of grid.Rows[rowIndex].Cells[colIndex].Value)
+        ///// Works with your Dictionary-based ItemsSource from LoadArrayIntoGrid()
+        ///// </summary>
+        //public static object? Grid_GetCellValue(Avalonia.Controls.DataGrid grid, int rowIndex, int columnIndex)
         //{
         //    if (grid == null ||
         //    rowIndex < 0 ||
@@ -479,7 +585,7 @@ namespace JAXBase.XBase
         //        return null;
 
         //    var col = 
-            
+
         //    var rowDict = rows[rowIndex];
         //    string key = columnIndex.ToString();
         //    return rowDict.TryGetValue(key, out var value) ? value : null;
@@ -488,12 +594,12 @@ namespace JAXBase.XBase
 
         ///* ------------------------------------------------------------------------------------------*
         // * ------------------------------------------------------------------------------------------*/
-        ///// <summary>
-        ///// Sets a value into the currently selected cell
-        ///// (Avalonia equivalent of grid.CurrentCell.Value = newValue)
-        ///// Works with the Dictionary-based ItemsSource from your LoadArrayIntoGrid()
-        ///// </summary>
-        //public static void Grid_SetSelectedCellValue(Avalonia.Controls.DataGrid grid, object? newValue)
+        ///// <summary>
+        ///// Sets a value into the currently selected cell
+        ///// (Avalonia equivalent of grid.CurrentCell.Value = newValue)
+        ///// Works with the Dictionary-based ItemsSource from your LoadArrayIntoGrid()
+        ///// </summary>
+        //public static void Grid_SetSelectedCellValue(Avalonia.Controls.DataGrid grid, object? newValue)
         //{
         //    if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
         //        return;
@@ -507,9 +613,9 @@ namespace JAXBase.XBase
         //        var rowDict = rows[rowIndex];
         //        string key = colIndex.ToString();
         //        rowDict[key] = newValue ?? string.Empty;
-        //        // IMPORTANT: re-assign the row to trigger ObservableCollection update
-        //        // (Dictionary itself does not raise property changed events)
-        //        rows[rowIndex] = rowDict;
+        //        // IMPORTANT: re-assign the row to trigger ObservableCollection update
+        //        // (Dictionary itself does not raise property changed events)
+        //        rows[rowIndex] = rowDict;
         //    }
         //}
 
@@ -518,8 +624,11 @@ namespace JAXBase.XBase
         // Added: Handler for bubbled clicks (e.g., from button or link columns)
         private async void Grid_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
         {
+
             if (e.GetCurrentPoint(grid).Properties.IsLeftButtonPressed)
             {
+                AppIO.DebugLog("Grid_PointerPressed - Left button pressed");
+
                 // If the click was on the marker column, force the current column away from it
                 if (grid.CurrentColumn?.Tag is string tag && tag == "__MARKER__")
                 {
@@ -550,6 +659,8 @@ namespace JAXBase.XBase
          ** ------------------------------------------------------------------------------------------*/
         public async Task<int> AddColumn(int type, string header, string binding)
         {
+            AppIO.DebugLog($"Grid AddColumn: type={type}, header={header}, binding={binding}");
+
             // Set the columntype parameter
             List<ParameterClass> p = new List<ParameterClass>();
             ParameterClass colType = new ParameterClass();
@@ -612,6 +723,8 @@ namespace JAXBase.XBase
         {
             int err = 1903;
 
+            AppIO.DebugLog($"Grid AddObject: {value.JOWName}, type={value.BaseClass}");
+
             // You can only add columns to a grid's objects list
             if (value.nvObject is not null && value.nvObject is Avalonia.Controls.DataGridColumn)
             {
@@ -658,6 +771,9 @@ namespace JAXBase.XBase
             string msg = string.Empty;
             methodName = methodName.ToLower();
             Program.CurrentApp.ReturnValue.Element.Value = true;
+
+            AppIO.DebugLog($"Grid _CallMethod: {methodName}");
+
             try
             {
                 if (Methods.ContainsKey(methodName))
@@ -739,6 +855,9 @@ namespace JAXBase.XBase
             int results = 0;
             string msg = string.Empty;
             methodName = methodName.ToLower();
+
+            AppIO.DebugLog($"Grid DoDefault: {methodName} for {GridCurrentColumn}");
+
             try
             {
                 if (Methods.ContainsKey(methodName))
@@ -766,6 +885,11 @@ namespace JAXBase.XBase
 
                             case "refresh":
                                 grid.InvalidateVisual();
+                                break;
+
+                            case "afterrowcolchange":
+                            case "beforerowcolchange":
+                            case "scrolled":
                                 break;
 
                             default:
@@ -804,6 +928,9 @@ namespace JAXBase.XBase
             int result = 0;
             JAXObjects.Token returnToken = new();
             propertyName = propertyName.ToLower();
+
+            AppIO.DebugLog($"Grid GetProperty: {propertyName}, idx={idx}");
+
             if (UserProperties.ContainsKey(propertyName))
             {
                 // Visual object common property handler
@@ -859,7 +986,7 @@ namespace JAXBase.XBase
          * ------------------------------------------------------------------------------------------*/
         public void SetGridEvents()
         {
-            AppIO.DebugLog("Setting grid events");
+            AppIO.DebugLog("Grid Setting events");
             SetEvents();
 
             // Added: Subscribe to grid events for bubbling from columns
@@ -907,7 +1034,7 @@ namespace JAXBase.XBase
             if (grid == null || grid.Columns.Count == 0)
                 return;
 
-            AppIO.DebugLog($"ApplyAutoSizeMode: {mode} while on parent '{me.Parent?.JOWName}'");
+            AppIO.DebugLog($"Grid ApplyAutoSizeMode: {mode} while on parent '{me.Parent?.JOWName}'");
 
             switch (mode)
             {
@@ -976,6 +1103,9 @@ namespace JAXBase.XBase
             propertyName = propertyName.ToLower();
             JAXObjects.Token tk = new();
             tk.Element.Value = objValue;
+
+            AppIO.DebugLog($"Grid SetProperty: {propertyName}, value={objValue}, idx={objIdx}");
+
             if (UserProperties.ContainsKey(propertyName))
             {
                 if (UserProperties[propertyName].Protected)
@@ -1541,6 +1671,8 @@ namespace JAXBase.XBase
         {
             int result = 0;
 
+            AppIO.DebugLog($"Grid SetGridBinding");
+
             // Prep the table
             _jaxTable = new();
             _rowRef = [];
@@ -1565,6 +1697,8 @@ namespace JAXBase.XBase
         private async Task<int> SetArrayBinding(JAXObjects.Token aGrid)
         {
             int result = 0;
+
+            AppIO.DebugLog($"Grid SetArrayBinding: {aGrid.AsString()}");
 
             if (false) SetGridBinding().Wait();
 
@@ -1614,6 +1748,8 @@ namespace JAXBase.XBase
 
             // Populate JAXTABLE with sample columns and rows
             string alias = UserProperties["recordsource"].AsString();
+
+            AppIO.DebugLog($"Grid SetTableBinding: {alias}");
 
             // We may need the original DS/WA later
             int currentDS = Program.CurrentApp.CurrentDataSession;
@@ -1705,6 +1841,8 @@ namespace JAXBase.XBase
          * ------------------------------------------------------------------------------------------*/
         private void SetGridFinal()
         {
+            AppIO.DebugLog($"Grid SetGridFinal: {_jaxTable?.Rows.Count} rows, {_jaxTable?.Columns.Count} columns");
+
             // Build the row list
             var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
             int rowNo = 0;
@@ -1983,7 +2121,7 @@ namespace JAXBase.XBase
             [
             "afterrowcolchange","beforerowcolchange","click","dblclick","deleted","destroy","error","errormessage","gotfocus",
             "init","keypress","load","lostfocus","middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove",
-            "mouseup","mousewheel","moved","resize","rightclick","scrolled","uienable","valid","visiblechanged"
+            "mouseup","mousewheel","moved","resize","rightclick","scrolled","valid","visiblechanged"
             ];
         }
 

@@ -1,5 +1,4 @@
-﻿using DynamicData;
-using JAXBase.Core;
+﻿using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.XBase;
 using Newtonsoft.Json;

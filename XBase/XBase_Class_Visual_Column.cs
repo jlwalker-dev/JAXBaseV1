@@ -500,8 +500,8 @@ namespace JAXBase.XBase
 
                         case "value":
                             isProgrammaticChange = true;
-                            if (grd is not null)
-                                XBase_Class_Visual_Grid.Grid_SetSelectedCellValue(grd, objValue);
+                            //if (grd is not null)
+                            //    XBase_Class_Visual_Grid.Grid_SetSelectedCellValue(grd, objValue);
                             isProgrammaticChange = false;
                             break;
 
@@ -595,14 +595,23 @@ namespace JAXBase.XBase
                 switch (propertyName)
                 {
                     case "value":
-                        Avalonia.Controls.DataGrid grd = (Avalonia.Controls.DataGrid)me.Parent!.avaloniaObject!;
+                        {
+                            // Parent is the grid’s JAXObjectWrapper
+                            if (me.Parent?.thisObject is XBase_Class_Visual_Grid gridObj)
+                            {
+                                object? cellValue = await gridObj.Grid_GetCurrentCellValue();
 
-                        var (rowidx, colIdx, value) = XBase_Class_Visual_Grid.Grid_GetSelectedCellInfo(grd);
-                        if (value is null)
-                            returnToken.Element.MakeNull();
-                        else
-                            returnToken.Element.Value = value;
-                        break;
+                                if (cellValue is null)
+                                    returnToken.Element.MakeNull();
+                                else
+                                    returnToken.Element.Value = cellValue;
+                            }
+                            else
+                            {
+                                returnToken.Element.MakeNull();
+                            }
+                            break;
+                        }
 
                     default:
                         // Process standard properties

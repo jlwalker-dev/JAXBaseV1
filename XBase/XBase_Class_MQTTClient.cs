@@ -9,7 +9,6 @@
  */
 using JAXBase.Core;
 using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Protocol;
 using System.Text;
@@ -224,12 +223,12 @@ namespace JAXBase.XBase
                     result = 8223;
                 else
                 {
-                    var factory = new MqttFactory();
-                    _mqttClient = factory.CreateManagedMqttClient();
+                    //var factory = new MqttFactory();
+                    //_mqttClient = factory.CreateManagedMqttClient();
 
-                    _mqttClient.ConnectedAsync += OnConnectedAsync;
-                    _mqttClient.DisconnectedAsync += OnDisconnectedAsync;
-                    _mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
+                    //_mqttClient.ConnectedAsync += OnConnectedAsync;
+                    //_mqttClient.DisconnectedAsync += OnDisconnectedAsync;
+                    //_mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
 
                     var clientOptions = new MqttClientOptionsBuilder()
                         .WithClientId(UserProperties["clientid"].AsString())
@@ -243,12 +242,12 @@ namespace JAXBase.XBase
                     if (UserProperties["secure"].AsBool())
                         clientOptions.WithTlsOptions(o => { });
 
-                    var managedOptions = new ManagedMqttClientOptionsBuilder()
-                        .WithClientOptions(clientOptions.Build())
-                        .WithAutoReconnectDelay(TimeSpan.FromSeconds(UserProperties["autoreconnectdelayseconds"].AsInt()))
-                        .Build();
+                    //var managedOptions = new ManagedMqttClientOptionsBuilder()
+                    //    .WithClientOptions(clientOptions.Build())
+                    //    .WithAutoReconnectDelay(TimeSpan.FromSeconds(UserProperties["autoreconnectdelayseconds"].AsInt()))
+                    //    .Build();
 
-                    await _mqttClient.StartAsync(managedOptions);
+                    //await _mqttClient.StartAsync(managedOptions);
                     SetStatus(0, "Connecting...");
                 }
             }

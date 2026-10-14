@@ -2154,8 +2154,13 @@ namespace JAXBase.Data
                         }
                         else
                         {
+
                             int pos = DbfInfo.Fields[i].Displacement;
                             int len = DbfInfo.Fields[i].FieldLen;
+
+                            AppIO.DebugLog(string.Format("Writing field {0} of type {1}", FieldName, DbfInfo.Fields[i].FieldType));
+                            AppIO.DebugLog(string.Format("Displacement {0} and Length {1}", pos, len));
+
                             byte[] rc;
                             byte[] block;
                             JAXTables.JAXMemo mInfo;
@@ -2599,6 +2604,8 @@ namespace JAXBase.Data
 
             try
             {
+                AppIO.DebugLog($"DBFGotoRecord: goRec={goRec}, loadMemoFields={loadMemoFields}, ignoreFilters={ignoreFilters}, movingUp={movingUp}");
+
                 // Force ignore filters if there are no filters set for this dbf
                 if (ignoreFilters == false && string.IsNullOrWhiteSpace(DbfInfo.FilterExpr) && Program.CurrentApp.CurrentDS.JaxSettings.Deleted == false)
                     ignoreFilters = true;
@@ -2606,6 +2613,7 @@ namespace JAXBase.Data
                 if (goRec < 1 || goRec > DbfInfo.RecCount)
                 {
                     result = 5;
+                    AppIO.DebugLog($"DBFGotoRecord: Invalid record position {goRec}");
                     throw new Exception($"5||Bad record position {goRec}");
                 }
                 else
@@ -2626,11 +2634,14 @@ namespace JAXBase.Data
 
                             if (answer.Element.Type.Equals("L"))
                             {
+                                AppIO.DebugLog($"DBFGotoRecord: Filter result for {DbfInfo.FilterExpr}: {answer.AsBool()}");
+
                                 if (answer.AsBool())
                                 {
                                     if (DbfInfo.currentRowIsDeleted == false || Program.CurrentApp.CurrentDS.JaxSettings.Deleted == false)
                                     {
                                         // This record will do
+                                        AppIO.DebugLog($"DBFGotoRecord: record {DbfInfo.RecNo}");
                                         break;
                                     }
                                 }
@@ -2639,6 +2650,7 @@ namespace JAXBase.Data
                             {
                                 // Error 11
                                 result = 11;
+                                AppIO.DebugLog($"DBFGotoRecord: Bad filter {DbfInfo.FilterExpr} returns as type {answer.Element.Type}");
                                 throw new Exception($"11||Bad filter {DbfInfo.FilterExpr} returns as type {answer.Element.Type}");
                             }
                         }
@@ -2660,6 +2672,7 @@ namespace JAXBase.Data
             // Update the indexes
             if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.IDX.Count > 0)
             {
+                AppIO.DebugLog($"DBFGotoRecord: Updating indexes");
                 JAXMath jaxMath = new();
 
                 // Look at every index and update it's position
@@ -2689,6 +2702,7 @@ namespace JAXBase.Data
                 }
             }
 
+            AppIO.DebugLog($"DBFGotoRecord: Exiting");
             return dt;
         }
 
