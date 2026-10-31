@@ -285,7 +285,7 @@ namespace JAXBase.Executor
                                         answer = await Program.CurrentApp.SolveFromRPNString(eCodes.With[i].RNPExpr);
 
                                         // Put the expression into the field name respecting the buffering flag
-                                        await WorkArea.DBFReplaceField(fieldName, answer, WorkArea.DbfInfo.Buffered == false);
+                                        await WorkArea.DBFReplaceField(fieldName, answer, WorkArea.DbfInfo.IsRowBuffered == false && WorkArea.DbfInfo.IsTableBuffered == false);
                                     }
                                     else
                                         throw new Exception("11|");

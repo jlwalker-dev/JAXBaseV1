@@ -389,6 +389,8 @@ namespace JAXBase.Data
          *---------------------------------------------------------------------------------*/
         public bool IsWorkArea(string alias)
         {
+            AppIO.DebugLog($"ISWORKAREA: Checking if alias '{alias}' is a valid work area");
+
             int wa = -1;
 
             if (alias.Length == 1 && "abcdefghij".Contains(alias, StringComparison.OrdinalIgnoreCase))

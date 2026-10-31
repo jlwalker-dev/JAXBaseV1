@@ -34,7 +34,6 @@ namespace JAXBase.XBase
                 await SetProperty("tabletype", DbfInfo.TableType, 0);
                 await SetProperty("connection", DbfInfo.Connection, 0);
                 await SetProperty("tableref", DbfInfo.TableRef, 0);
-                await SetProperty("Buffered", DbfInfo.Buffered, 0);
                 await SetProperty("CodePage", DbfInfo.CodePage, 0);
                 await SetProperty("DBCLink", DbfInfo.DBCLink, 0);
                 await SetProperty("Exclusive", DbfInfo.Exclusive, 0);

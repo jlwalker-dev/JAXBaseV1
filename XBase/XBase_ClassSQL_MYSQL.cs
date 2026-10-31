@@ -1,18 +1,20 @@
-﻿/* 
+﻿/*  ================================================================================================= * 
  * MSSQL Engine support
  * 
- * 2026-10-10 - Initial version - Github is having problems..
+ * 2026-10-10 - Initial version
  * 
- */
+ * 2026-10-14 - Added code to match SQL Server readiness so that both
+ *              are relatively the same in terms of functionality.  Lots
+ *              of work to do here, but the basics are there.
+ *              
+ * 
+ * ================================================================================================= */
 using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.Language;
 using JAXBase.Utilities;
 using MySqlConnector;
-using Newtonsoft.Json.Linq;
 using System.Data;
-using System.Windows.Documents;
-using System.Windows.Interop;
 
 namespace JAXBase.XBase
 {
@@ -156,7 +158,7 @@ namespace JAXBase.XBase
          * and is under 250,000 records in size is unlikely to become a problem.
          * 
          */
-        public async Task<int> CreateIndex(string indexName, string tableName, string indexExpression, string filter = "", string attribs = "")
+public async Task<int> CreateIndex(string indexName, string tableName, string indexExpression, string filter = "", string attribs = "")
         {
             int result = ErrorCode = 0;
             string msg = string.Empty;
@@ -1667,18 +1669,18 @@ namespace JAXBase.XBase
                     switch (property.ToLower())
                     {
                         case "fieldname":       // Rename column
-                            lcSQL = $"ALTER TABLE `{schema}`.`{table}` RENAME COLUMN `{field}` TO `{value.AsString()}`;";
+                            lcSQL = $"ALTER TABLE '{schema}'.'{table}' RENAME COLUMN '{field}' TO '{value.AsString()}';";
                             break;
 
                         case "null":            // Change nullability
                                                 // Requires full column definition in MySQL
                                                 // Simplified: rebuild type + nullability
                             string nullClause = value.AsBool() ? "NULL" : "NOT NULL";
-                            lcSQL = $"ALTER TABLE `{schema}`.`{table}` MODIFY COLUMN `{field}` {columnType} {nullClause};";
+                            lcSQL = $"ALTER TABLE '{schema}'.'{table}' MODIFY COLUMN '{field}' {columnType} {nullClause};";
                             break;
 
                         case "comment":         // Column comment
-                            lcSQL = $"ALTER TABLE `{schema}`.`{table}` MODIFY COLUMN `{field}` {columnType} COMMENT '{value.AsString().Replace("'", "''")}';";
+                            lcSQL = $"ALTER TABLE '{schema}'.'{table}' MODIFY COLUMN '{field}' {columnType} COMMENT '{value.AsString().Replace("'", "''")}';";
                             break;
 
                         case "fieldwidth":      // Change length of character/binary types
@@ -1728,7 +1730,7 @@ namespace JAXBase.XBase
                             if (dec < precision && dec >= 0)
                             {
                                 string nullStr = isNullable ? "NULL" : "NOT NULL";
-                                lcSQL = $"ALTER TABLE `{schema}`.`{table}` MODIFY COLUMN `{field}` {dataType}({precision}, {dec}) {nullStr};";
+                                lcSQL = $"ALTER TABLE '{schema}'.'{table}' MODIFY COLUMN '{field}' {dataType}({precision}, {dec}) {nullStr};";
                             }
                             else
                                 ErrorCode = 41;
@@ -1753,7 +1755,7 @@ namespace JAXBase.XBase
                             break;
 
                         case "nextval":         // Set next AUTO_INCREMENT value
-                            lcSQL = $"ALTER TABLE `{schema}`.`{table}` AUTO_INCREMENT = {value.AsInt()};";
+                            lcSQL = $"ALTER TABLE '{schema}'.'{table}' AUTO_INCREMENT = {value.AsInt()};";
                             break;
 
                         case "nextstep":        // MySQL does not support per-table increment step

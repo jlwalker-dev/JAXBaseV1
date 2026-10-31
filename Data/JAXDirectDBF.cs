@@ -6,7 +6,7 @@
  * ------------------------------------------------------------------------------------------------------
  * HISTORY
  * =======================
- *  2025 -01-21 - JLW
+ *  2025-01-21 - JLW
  *      This is the start of my converting the old QuickBASIC system that I wrote in the 
  *      last century.  The plan is to bring forward the FoxBase2 data capabilities and then 
  *      upgrade to as recent of a version that I can find documentation on.  My intent/wish 
@@ -205,17 +205,45 @@
  *      Came up with a way to make sure an index belongs to a table.  JAXBase tables will
  *      have a 36 character GUID license and indexes will need to match that license.
  *      
+ *      
+ * 2026-10-29 - JLW
+ *      First big change to the system in a long time is buffering.  It will be memory based for now
+ *      and will buffer only records that are changed.  The buffer will be flushed when the table
+ *      is closed, or the changes are committed/released.
+ *      
+ *      I'm not going to implement it yet as I now need to think this all through as I'm borrowing
+ *      a page from the GRID class playbook with the ChangeRecord dictionary.  I need to consider
+ *      if I want to just deal with optimistic buffering right now or include record locking so that
+ *      I can include pessimistic buffering.
+ *      
+ *      I believe I will need to alter the following methods to support buffering:
+ *          DBFAppendForeignRecord, DBFAppendRecord, DBFClose, DBFDeleteRecord, 
+ *          DBFInsertRecord, DBFUpdateRecord, DBFUse, DBFPack, DBFReadRecord, 
+ *          DBFReplaceField, DBFUse, DBFWriteRecord, DBFZap
+ *          
+ *      I will also likely need to create these new methods:
+ *          DBFCommitChanges, DBFDiscardChanges, DBFRowStatus, DBFGetOriginalValue
+ *          
+ *      Also need to intercept the alter table command if there are changes in the buffer and 
+ *      return an error.  
+ *
+ *          1149 - Not enough memory for buffer.  
+ *          1545 - Table buffer for "name" contains uncommitted changes. 
+ *          1586 - Function requires row or table buffering mode. 
+ *          1589 - Table or row buffering requires that SET MULTILOCKS is set to ON. 
+ *          1596 - Table buffering is not enabled. 
+ *      
  * ------------------------------------------------------------------------------------------------------
  *  Big things yet to be done
- *      Shared/Exclusive table logic
- *      Table locking
- *      Record locking
+ *      Exclusive table locking - thinking about it
+ *      Transient Table locking - thinking about it
+ *      Record locking - thinking about it
  *      Alter table
- *      Null field handlier
- *      Buffering
+ *      Null fields
+ *      Buffering - thinking about it
  *      CDX files
  *      Index file protection enhancements
- *      Rushmore (not bloody likely!)
+ *      Rushmore
  *      
  *  --------------------------------------------------------------------------------------
  *  Table header docs taken from VFP Help and some online resources
@@ -227,9 +255,11 @@
  *              0x10   JAXBase
  *              0x11   JAXBase with Memo Field
  *              0x12   JAXBase with JSON Field
+ *              0x13   JAXBase with Memo and JSON Fields
  *              0x20   JAXBase x64
- *              0x11   JAXBase x64 with Memo Field
- *              0x12   JAXBase x64 with JSON Field
+ *              0x21   JAXBase x64 with Memo Field
+ *              0x22   JAXBase x64 with JSON Field
+ *              0x23   JAXBase x64 with Memo and JSON Fields
  *              0x30   Visual FoxPro
  *              0x31   Visual FoxPro, autoincrement enabled
  *              0x32   Visual FoxPro with field type Varchar or Varbinary
@@ -370,15 +400,30 @@ using JAXBase.Core;
 using JAXBase.Math;
 using JAXBase.Utilities;
 using JAXBase.XBase;
+using Microsoft.Win32.SafeHandles;
 using System.Collections;
 using System.Data;
+using System.Runtime.InteropServices;
 using System.Text;
-using ZXing;
 
 namespace JAXBase.Data
 {
+    public class ChangeRecord
+    {
+        public int RecNo { get; set; }
+        public bool IsNew { get; set; }
+        public bool IsMarkedDeleted { get; set; }
+
+        public System.Collections.Generic.Dictionary<string, object> OriginalValues { get; } = new(System.StringComparer.OrdinalIgnoreCase);
+
+        public System.Collections.Generic.HashSet<string> ChangedFields { get; } = new(System.StringComparer.OrdinalIgnoreCase);
+    }
+
     public class JAXDirectDBF : IDisposable
     {
+        // Buffering
+        public System.Collections.Generic.Dictionary<int, ChangeRecord> ChangeSet { get; } = [];
+
         const uint ZERO_DATE = 1721426; // 1899-12-31
         const bool PRINTDEBUG = true;
 
@@ -674,8 +719,6 @@ namespace JAXBase.Data
             public string TableType = "T";
             public string Connection = string.Empty;
             public string TableRef = string.Empty;      // Holds FQFN or SQL result reference (database!table)
-
-            public bool Buffered = false;
             public int CodePage = 3;
             public string DBCLink = string.Empty;
             public bool DBFEOF = false;
@@ -697,25 +740,50 @@ namespace JAXBase.Data
             public bool NoUpdate = false;
             public int RecordLen = 0;
 
+
+            // Buffering flags
+            public bool IsRowBuffered = false;
+            public bool IsTableBuffered = false;
+            public bool IsPessimistic = false;
+
+
+            // Supported Cursor Properties
+            public int buffering = 1;
+            public int fetchSize = -1;
+            public string keyFieldList = "";
+            public bool mapBinary = false;
+            public bool mapVarChar = false;
+            public int maxRecords = -1;
+
+
+            // Locked records map (0 = table, 1+ = record number)
+            public HashSet<int> lockMap = [];
+
+
+            // Field information
             public List<JAXTables.FieldInfo> Fields = [];
             public int VisibleFields = 0;
             public List<string> FieldData = [];
 
+            // Memo, CDX, and IDX information
             public MemoInfo Memo = new();
-
             public CDXInfo CDX = new();
             public List<IDXInfo> IDX = [];
             public int ControllingIDX = -1;
             public bool CreatingIDXExpression = false;
 
+            // Stream variables for the DBF, Memo, and CDX files
             public Stream? DBFStream = null;
             public Stream? MemoStream = null;
             public Stream? CDXStream = null;
 
+            // Row variables for the current row, empty row, and cursor
             public DataTable EmptyRow = new();
             public DataTable CurrentRow = new();
             public DataTable Cursor = new();
 
+
+            // This is a flag to indicate if the current row is marked as deleted
             public bool currentRowIsDeleted { get; private set; } = false;
 
             public void SetDeleted(bool deleted)
@@ -723,9 +791,12 @@ namespace JAXBase.Data
                 currentRowIsDeleted = deleted;
             }
 
+            // Record variables for the current logical record number, physical record number, and total record count
             public int LogicalRecNo = 0;
             public int RecNo = 0;
             public int RecCount = 0;
+
+            // This is a flag to indicate if the current record was found during a search or locate operation
             public bool Found = false;
             public ExecutorCodes? LastLocate = null;
 
@@ -747,7 +818,7 @@ namespace JAXBase.Data
                 get { return currentRecNo; }
                 set
                 {
-                    if (TableType.Equals("T") && Buffered == false)
+                    if (TableType.Equals("T") && IsRowBuffered == false && IsTableBuffered == false)
                     {
                         // Unbuffered tables are treated differently in
                         // that only the current record is in memory
@@ -818,6 +889,137 @@ namespace JAXBase.Data
         {
             // Just open up a blank DBF workarea
             App = app;
+
+            // Make sure we capture the current settings that will alter how things work
+            SetBlockSize(app.jaxDataSession[app.CurrentDataSession].JaxSettings.BlockSize);
+        }
+
+
+        public void SetBlockSize(int bsize)
+        {
+            if (bsize >= 0)
+            {
+                DbfInfo.Memo.BlockSize = bsize switch
+                {
+                    0 => 1,
+                    1 - 32 => (ushort)(bsize * 512),
+                    _ => (ushort)bsize
+                };
+            }
+            else
+                DbfInfo.Memo.BlockSize = 1;
+        }
+
+
+        // Get/Set Cursor Properties
+        public JAXObjects.Token CursorGetProp(string prop)
+        {
+            JAXObjects.Token result = new();
+
+            result.Element.Value = prop.ToLower().Trim() switch
+            {
+                "buffering" => DbfInfo.buffering,
+                "fetchsize" => DbfInfo.fetchSize,
+                "keyfieldlist" => DbfInfo.keyFieldList,
+                "mapbinary" => DbfInfo.mapBinary,
+                "mapvarchar" => DbfInfo.mapVarChar,
+                "maxrecords" => DbfInfo.maxRecords,
+                _ => throw new Exception($"1999|{prop.ToUpper().Trim()}|CursorSetProp({prop.ToUpper().Trim()})")
+            };
+
+            return result;
+        }
+
+
+
+        public void CursorSetProp(string prop, JAXObjects.Token info)
+        {
+            switch (prop.ToLower().Trim())
+            {
+                case "buffering":
+                    // Is multilocks on?
+
+                    // Set the buffereing type
+                    if (info.Element.Type.Equals("N"))
+                    {
+                        DbfInfo.buffering = info.AsInt();
+
+                        switch (info.AsInt())
+                        {
+                            case 2:
+                                DbfInfo.IsRowBuffered = true;
+                                DbfInfo.IsTableBuffered = false;
+                                DbfInfo.IsPessimistic = true;
+                                break;
+
+                            case 3:
+                                DbfInfo.IsRowBuffered = true;
+                                DbfInfo.IsTableBuffered = false;
+                                DbfInfo.IsPessimistic = false;
+                                break;
+
+                            case 4:
+                                DbfInfo.IsRowBuffered = false;
+                                DbfInfo.IsTableBuffered = true;
+                                DbfInfo.IsPessimistic = false;
+                                break;
+
+                            case 5:
+                                DbfInfo.IsRowBuffered = false;
+                                DbfInfo.IsTableBuffered = true;
+                                DbfInfo.IsPessimistic = false;
+                                break;
+
+                            default:
+                                DbfInfo.buffering = 1;
+                                DbfInfo.IsRowBuffered = false;
+                                DbfInfo.IsTableBuffered = false;
+                                DbfInfo.IsPessimistic = false;
+                                break;
+                        }
+                    }
+                    else
+                        throw new Exception($"41||CursorSetProp({prop.ToLower().Trim()})");
+                    break;
+
+                case "fetchsize":
+                    if (info.Element.Type.Equals("N"))
+                        DbfInfo.fetchSize = info.AsInt();
+                    else
+                        throw new Exception($"41||CursorSetProp({prop.ToLower().Trim()})");
+                    break;
+
+                case "keyfieldlist":
+                    if (info.Element.Type.Equals("C"))
+                        DbfInfo.keyFieldList = info.AsString();
+                    else
+                        throw new Exception($"41||CursorSetProp({prop.ToLower().Trim()})");
+                    break;
+
+                case "mapbinary":
+                    if (info.Element.Type.Equals("L"))
+                        DbfInfo.mapBinary = info.AsBool();
+                    else
+                        throw new Exception($"41||CursorSetProp({prop.ToLower().Trim()})");
+                    break;
+
+                case "mapvarchar":
+                    if (info.Element.Type.Equals("L"))
+                        DbfInfo.mapVarChar = info.AsBool();
+                    else
+                        throw new Exception($"41||CursorSetProp({prop.ToLower().Trim()})");
+                    break;
+
+                case "maxrecords":
+                    if (info.Element.Type.Equals("N"))
+                        DbfInfo.maxRecords = info.AsInt();
+                    else
+                        throw new Exception($"41||CursorSetProp({prop.ToLower().Trim()})");
+                    break;
+
+                default:
+                    throw new Exception($"1099|{prop.ToUpper().Trim()}|CursorSetProp({prop.ToUpper().Trim()})");
+            }
         }
 
 
@@ -847,6 +1049,7 @@ namespace JAXBase.Data
 
             return 0;
         }
+
 
         /*-----------------------------------------------------------------------------------*
          * A DBC is a DBF and can be closed the same way
@@ -1126,6 +1329,7 @@ namespace JAXBase.Data
                         // Write out some debug
                         AppIO.DebugLog(string.Format(""));
                         AppIO.DebugLog(string.Format("DBF File Name: {0}", DbfInfo.FQFN));
+                        AppIO.DebugLog(string.Format("Alias Name   : {0}", DbfInfo.Alias));
                         AppIO.DebugLog(string.Format("Header Byte  : {0}", DbfInfo.HeaderByte));
                         AppIO.DebugLog(string.Format("Last Update  : {0}", DbfInfo.LastUpdate));
                         AppIO.DebugLog(string.Format("Rec Count    : {0}", DbfInfo.RecCount));
@@ -1558,7 +1762,7 @@ namespace JAXBase.Data
 
                 // If it's not a buffered table or the
                 // write record now flag is set
-                if (DbfInfo.Buffered == false || writeNow)
+                if ((DbfInfo.IsRowBuffered == false && DbfInfo.IsTableBuffered == false) || writeNow)
                 {
                     await DBFWriteRecord(DbfInfo.CurrentRow.Rows[0], false);
                     DbfInfo.CurrentRow.Rows[0]["$Changes"] = new string('0', DbfInfo.VisibleFields + 1);
@@ -1866,7 +2070,7 @@ namespace JAXBase.Data
                 }
 
                 // Now open it up and populate the DbfInfo
-                llSuccess = await DBFUse(FileName, string.Empty, false, false, string.Empty, DbfInfo.TableType) == 0;
+                llSuccess = await DBFUse(FileName, DbfInfo.Alias, false, false, string.Empty, DbfInfo.TableType) == 0;
             }
             catch (Exception ex)
             {
@@ -2066,25 +2270,28 @@ namespace JAXBase.Data
 
 
         /*-----------------------------------------------------------------------------------*
-         * Mark a record as deleted or not - don't care about current state, just marking
-         * as requested and then updating indexes
+         * Mark current record as deleted or not - don't care about current state, just 
+         * marking as requested and then updating indexes
          *-----------------------------------------------------------------------------------*/
         public async Task<bool> DBFDeleteRecord(bool Delete)
         {
             byte[] Data = new byte[1];
             long recPos = DbfInfo.HeaderLen + (DbfInfo.RecNo - 1) * DbfInfo.RecordLen;
 
+            // IF BUFFERING, WE NEED TO ALTER THIS
             try
             {
-                DbfInfo.CurrentRow.Rows[DbfInfo.RecNo][0] = Delete;
+                // We only carry one original row in memory at a time
+                DbfInfo.CurrentRow.Rows[0][0] = Delete;
 
                 // Update the record with the deletion mark
                 Data[0] = (byte)(Delete ? 42 : 32);
-                char[] changes = (DbfInfo.CurrentRow.Rows[DbfInfo.RecNo]["$Changes"].ToString() ?? string.Empty).ToCharArray();
+                char[] changes = (DbfInfo.CurrentRow.Rows[0]["$Changes"].ToString() ?? string.Empty).ToCharArray();
+
                 if (changes.Length > 0)
                 {
                     changes[0] = '2';
-                    DbfInfo.CurrentRow.Rows[DbfInfo.RecNo]["$changes"] = new string(changes);
+                    DbfInfo.CurrentRow.Rows[0]["$changes"] = new string(changes);
                 }
 
                 if (DbfInfo.DBFStream is not null)
@@ -2135,6 +2342,8 @@ namespace JAXBase.Data
 
             try
             {
+                AppIO.DebugLog(string.Format("Writing to {4} at record {0} at position {1} length {2}: {3}", DbfInfo.RecNo, recPos, Data.Length, Encoding.UTF8.GetString(Data), DbfInfo.Alias));
+
                 if (!appendRec)
                 {
                     if (recPos + DbfInfo.RecordLen > DbfInfo.FileLen)
@@ -2158,7 +2367,7 @@ namespace JAXBase.Data
                             int pos = DbfInfo.Fields[i].Displacement;
                             int len = DbfInfo.Fields[i].FieldLen;
 
-                            AppIO.DebugLog(string.Format("Writing field {0} of type {1}", FieldName, DbfInfo.Fields[i].FieldType));
+                            AppIO.DebugLog(string.Format("Writing field {0} of type {1} value {2}", FieldName, DbfInfo.Fields[i].FieldType, row[i].ToString()));
                             AppIO.DebugLog(string.Format("Displacement {0} and Length {1}", pos, len));
 
                             byte[] rc;
@@ -2319,7 +2528,7 @@ namespace JAXBase.Data
                         {
                             recPos = (DbfInfo.RecNo - 1) * DbfInfo.RecordLen + DbfInfo.HeaderLen;
 
-                            AppIO.DebugLog(string.Format("Writing to dbf record {0} at position {1} length {2}: {3}", DbfInfo.RecNo, recPos, Data.Length, Encoding.UTF8.GetString(Data)));
+                            AppIO.DebugLog(string.Format("Writing to dbf {4} record {0} at position {1} length {2}: {3}", DbfInfo.RecNo, recPos, Data.Length, Encoding.UTF8.GetString(Data), DbfInfo.Alias));
 
                             // Write the record
                             DbfInfo.DBFStream.Seek(recPos, SeekOrigin.Begin);
@@ -3414,7 +3623,7 @@ namespace JAXBase.Data
                     int recCount = DbfInfo.RecCount;
                     int controllingIDX = DbfInfo.ControllingIDX;
 
-                    bool buffered = DbfInfo.Buffered;
+                    bool buffered = DbfInfo.IsRowBuffered || DbfInfo.IsTableBuffered;
                     bool exclusive = DbfInfo.Exclusive;
                     bool hasMemo = DbfInfo.HasMemo;
                     bool hasCDX = DbfInfo.HasCDX;
@@ -3628,6 +3837,10 @@ namespace JAXBase.Data
                             await DBFGotoRecord("top");
                     }
 
+                    // Is it buffered?  If so, we need to set up the buffer for the new table.
+                    if (DbfInfo.IsRowBuffered || DbfInfo.IsTableBuffered)
+                        await DBFSetBufferTable();
+
                     // All done!  Grab a cookie and a cup of coffee!
                 }
                 else
@@ -3640,6 +3853,14 @@ namespace JAXBase.Data
             }
         }
 
+
+        /*-----------------------------------------------------------------------------------*
+         * This sets up the buffer for a buffered table.  
+         *----------------------------------------------------------------------------------*/
+        private async Task DBFSetBufferTable()
+        {
+
+        }
 
         /*-----------------------------------------------------------------------------------*
          * This moves DBF records up or down a number of rows.  If down, only 1 row is
@@ -7237,6 +7458,177 @@ namespace JAXBase.Data
 
             return results;
         }
+
+
+
+        /// <summary>
+        /// Cross-platform shared byte-range file locking.
+        /// Windows: mandatory locks via LockFileEx.
+        /// Linux:   advisory locks via fcntl (F_RDLCK).
+        /// </summary>
+        public static class CrossPlatformFileLock
+        {
+            #region Windows (LockFileEx)
+
+            private const uint LOCKFILE_FAIL_IMMEDIATELY = 0x00000001;
+            // Do not set LOCKFILE_EXCLUSIVE_LOCK (0x00000002) → shared lock
+
+            [StructLayout(LayoutKind.Sequential)]
+            private struct NativeOverlapped
+            {
+                public IntPtr Internal;
+                public IntPtr InternalHigh;
+                public int OffsetLow;
+                public int OffsetHigh;
+                public IntPtr EventHandle;
+            }
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern bool LockFileEx(
+                SafeFileHandle hFile,
+                uint dwFlags,
+                uint dwReserved,
+                uint nNumberOfBytesToLockLow,
+                uint nNumberOfBytesToLockHigh,
+                ref NativeOverlapped lpOverlapped);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern bool UnlockFileEx(
+                SafeFileHandle hFile,
+                uint dwReserved,
+                uint nNumberOfBytesToUnlockLow,
+                uint nNumberOfBytesToUnlockHigh,
+                ref NativeOverlapped lpOverlapped);
+
+            private static bool LockSharedWindows(FileStream stream, long position, long length, bool failImmediately)
+            {
+                var overlapped = new NativeOverlapped
+                {
+                    OffsetLow = (int)(position & 0xFFFFFFFF),
+                    OffsetHigh = (int)(position >> 32)
+                };
+
+                uint flags = failImmediately ? LOCKFILE_FAIL_IMMEDIATELY : 0;
+
+                return LockFileEx(
+                    stream.SafeFileHandle,
+                    flags,
+                    0,
+                    (uint)(length & 0xFFFFFFFF),
+                    (uint)(length >> 32),
+                    ref overlapped);
+            }
+
+            private static bool UnlockWindows(FileStream stream, long position, long length)
+            {
+                var overlapped = new NativeOverlapped
+                {
+                    OffsetLow = (int)(position & 0xFFFFFFFF),
+                    OffsetHigh = (int)(position >> 32)
+                };
+
+                return UnlockFileEx(
+                    stream.SafeFileHandle,
+                    0,
+                    (uint)(length & 0xFFFFFFFF),
+                    (uint)(length >> 32),
+                    ref overlapped);
+            }
+
+            #endregion
+
+            #region Linux (fcntl F_RDLCK)
+
+            private const int F_SETLK = 6;
+            private const int F_SETLKW = 7;
+            private const int F_UNLCK = 2;
+            private const int F_RDLCK = 0;
+            private const int SEEK_SET = 0;
+
+            [StructLayout(LayoutKind.Sequential)]
+            private struct Flock
+            {
+                public short l_type;    // F_RDLCK, F_WRLCK, F_UNLCK
+                public short l_whence;  // SEEK_SET, SEEK_CUR, SEEK_END
+                public long l_start;    // starting offset
+                public long l_len;      // number of bytes
+                public int l_pid;       // PID (filled by kernel)
+            }
+
+            [DllImport("libc", SetLastError = true)]
+            private static extern int fcntl(int fd, int cmd, ref Flock flock);
+
+            private static bool LockSharedLinux(FileStream stream, long position, long length, bool failImmediately)
+            {
+                var flock = new Flock
+                {
+                    l_type = F_RDLCK,
+                    l_whence = SEEK_SET,
+                    l_start = position,
+                    l_len = length,
+                    l_pid = 0
+                };
+
+                int cmd = failImmediately ? F_SETLK : F_SETLKW;
+                int result = fcntl(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), cmd, ref flock);
+                return result != -1;
+            }
+
+            private static bool UnlockLinux(FileStream stream, long position, long length)
+            {
+                var flock = new Flock
+                {
+                    l_type = F_UNLCK,
+                    l_whence = SEEK_SET,
+                    l_start = position,
+                    l_len = length,
+                    l_pid = 0
+                };
+
+                int result = fcntl(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), F_SETLK, ref flock);
+                return result != -1;
+            }
+
+            #endregion
+
+            /// <summary>
+            /// Attempts to acquire a shared lock on the given byte range.
+            /// Other processes can still read the range; they cannot write to it
+            /// (mandatory on Windows, advisory on Linux).
+            /// </summary>
+            public static bool TryLockShared(FileStream stream, long position, long length, bool failImmediately = true)
+            {
+                if (stream is null) throw new ArgumentNullException(nameof(stream));
+                if (position < 0) throw new ArgumentOutOfRangeException(nameof(position));
+                if (length <= 0) throw new ArgumentOutOfRangeException(nameof(length));
+
+                if (OperatingSystem.IsWindows())
+                    return LockSharedWindows(stream, position, length, failImmediately);
+
+                if (OperatingSystem.IsLinux())
+                    return LockSharedLinux(stream, position, length, failImmediately);
+
+                throw new PlatformNotSupportedException("Shared byte-range locks are only supported on Windows and Linux.");
+            }
+
+            /// <summary>
+            /// Releases a previously acquired shared lock.
+            /// The range must match exactly what was locked.
+            /// </summary>
+            public static bool Unlock(FileStream stream, long position, long length)
+            {
+                if (stream is null) throw new ArgumentNullException(nameof(stream));
+
+                if (OperatingSystem.IsWindows())
+                    return UnlockWindows(stream, position, length);
+
+                if (OperatingSystem.IsLinux())
+                    return UnlockLinux(stream, position, length);
+
+                throw new PlatformNotSupportedException();
+            }
+        }
+
 
         public void Dispose()
         {

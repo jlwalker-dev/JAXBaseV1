@@ -1,42 +1,35 @@
 ﻿/* 
- * GridClass 2026 - 03 - 08
+ * GridClass 2026-03- 08
  * 
- * I started testing on 3/1 and for the first 6 days, I could not get the grid to display
+ * I started testing on 3/1 and for the first 6 days I could not get the grid to display.
  * Finally got it to show and sometimes, even though co-pilot and grok both say it's
  * legal and correct, the form fails to render and shows up as a very wide form
  * with a black background and nothing appears.
  * 
- * An exaple is in PostInit with the setters.  If I uncomment any of the commented
- * setters, the window fails to render.
- * 
- * Three days later, I'm still not showing data and I know the problem.  When
- * the recordsourcetype is set, that's when data is attached to the grid.
+ * Three more days later and I'm still not showing data and I know the problem.  
+ * When the recordsourcetype is set, that's when data is attached to the grid.
  * However, at that time, the columns don't have the correct bindings (they're null).
- * When the code, which seems to be what is needed is executed, again, the black
- * form of death.
+ * I fear I've got something fundamentally wrong in the way I'm creating the columns
+ * and binding them to the data source.
  * 
- * At this point, I'm stopping with grids (with great disspointment) and moving on
- * to try to get the final visual classes done.
  * 
  * 2026-07-14 - JLW
  *      Have sucessfully created the ROBrowser class with a readonly grid.  I'm going
- *      to take what I've learned and apply those lessons here.  I'll be pretty much
- *      wiping out what I've got and starting fresh.
+ *      to take what I've learned and apply those lessons here.  I'm wiping out what 
+ *      I've got and starting fresh.
  * 
  *      Phase 1 will once again be a read-only grid that fills everything into a simple 
- *      data table.  Record source will be table based.  
+ *      data table.  Record source will be table based.  - COMPLETED
  * 
- *      Phase 2 will be tying in lists and arrays. This will require data source columns 
- *      to be consistent in typing.
+ *      Phase 2 will be tying in arrays with different data types in a read-only grid. - COMPLETED
  * 
- *      Phase 3 will be allowing updates to the grid but not to the underlying data structure.
+ *      Phase 3 will be allowing updates to the grid but not to the underlying data structure. - Pending
  * 
  *      Phase 4 will be updating the underlying data structure
  * 
- *      Phase 5 will involve refreshing the grid with new data or added/subtracted rows
+ *      Phase 5 will involve refreshing the grid with new data or added/subtracted rows  
  *      
- *      Phase 6 will be trying to support a column of objects
- * 
+ *      Phase 6 will be trying to support a column of objects  
  * 
  */
 using JAXBase.Core;
@@ -44,6 +37,7 @@ using JAXBase.Data;
 using JAXBase.UI.Dialogs;
 using JAXBase.Utilities;
 using System.Data;
+
 namespace JAXBase.XBase
 {
     public class XBase_Class_Visual_Grid : XBase_Class_Avalonia
@@ -86,7 +80,7 @@ namespace JAXBase.XBase
             currentWA = Program.CurrentApp.CurrentDS.CurrentWorkArea();
             thisWA = 0;
 
-            AppIO.DebugLog("Initializing grid", false);
+            AppIO.DebugLog("---- Initializing grid", false);
             SetVisualObject(new Avalonia.Controls.DataGrid(), "Grid", "grid", true, UserObject.URW);
         }
 
@@ -116,16 +110,104 @@ namespace JAXBase.XBase
             return result;
         }
 
+        /*
+         * Add a new row to the grid and underlying table.  This is a VFP-style append of a blank row.
+         */
+        private async Task AddNewRowAsync()
+        {
+            if (thisWorkArea is null || _jaxTable is null || grid.ItemsSource is not System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rowList)
+            {
+                Toast.Show("No record source bound");
+                return;
+            }
+
+            if (!UserProperties["allowaddnew"].AsBool())
+            {
+                Toast.Show("Adding new records is not allowed");
+                return;
+            }
+
+            // End any in-progress edit
+            try
+            {
+                grid.CommitEdit(Avalonia.Controls.DataGridEditingUnit.Cell, true);
+                grid.CommitEdit(Avalonia.Controls.DataGridEditingUnit.Row, true);
+            }
+            catch { /* ignore if not editing */ }
+
+            // Create blank DataRow with type-appropriate defaults
+            var newDataRow = _jaxTable.NewRow();
+            foreach (System.Data.DataColumn col in _jaxTable.Columns)
+            {
+                if (col.DataType == typeof(string))
+                    newDataRow[col] = string.Empty;
+                else if (col.DataType == typeof(bool))
+                    newDataRow[col] = false;
+                else if (col.DataType == typeof(DateTime) || col.DataType == typeof(DateOnly))
+                    newDataRow[col] = DBNull.Value;
+                else if (col.DataType.IsValueType)
+                    newDataRow[col] = Activator.CreateInstance(col.DataType) ?? DBNull.Value;
+                else
+                    newDataRow[col] = DBNull.Value;
+            }
+            _jaxTable.Rows.Add(newDataRow);
+            _rowRef.Add(0);
+
+            var simpleRow = new SimpleDataRow
+            {
+                RowNumber = rowList.Count + 1,
+                Deleted = false
+            };
+            foreach (System.Data.DataColumn col in _jaxTable.Columns)
+                simpleRow.Values[col.ColumnName] = newDataRow[col] ?? DBNull.Value;
+
+            rowList.Add(simpleRow);
+
+            // TODO Phase 4: append a real blank record to the DBF/work area here
+            // so later CellEditEnding writes hit the new record instead of the previous CurrentRow.
+            await thisWorkArea.DBFAppendRecord(null);
+
+            grid.CurrentColumn = grid.Columns[1];
+            grid.ScrollIntoView(simpleRow, grid.Columns[1]);
+
+            await Task.Delay(1);
+            if (grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol && !boundCol.IsReadOnly)
+                grid.BeginEdit();
+
+            AppIO.DebugLog($"Added new row");
+            UpdateCurrentMarker();
+        }
+
+        /// <summary>
+        /// Puts the ">" marker on the currently selected row and clears it from all others.
+        /// </summary>
+        private void UpdateCurrentMarker()
+        {
+            if (grid.ItemsSource is not System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rows)
+                return;
+
+            for (int i = 0; i < rows.Count; i++)
+                rows[i].IsCurrent = (i == grid.SelectedIndex);
+        }
 
         /* ------------------------------------------------------------------------------------------*
          * Handle key presses
          * ------------------------------------------------------------------------------------------*/
-        private void Grid_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+        private async void Grid_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
         {
+            AppIO.DebugLog($"---- Grid_KeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}, Handled={e.Handled}");
+
+            // Ctrl+Y (accept either Key.Y or the physical key)
+            if ((e.Key == Avalonia.Input.Key.Y || e.PhysicalKey == Avalonia.Input.PhysicalKey.Y)
+                && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control))
+            {
+                e.Handled = true;
+                await AddNewRowAsync();
+                return;
+            }
+
             if (grid.CurrentColumn is null || grid.SelectedIndex < 0)
                 return;
-
-            AppIO.DebugLog($"Grid_KeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}");
 
             int colIndex = grid.Columns.IndexOf(grid.CurrentColumn);
             int rowIndex = grid.SelectedIndex;
@@ -170,15 +252,10 @@ namespace JAXBase.XBase
         }
 
 
-        /* ------------------------------------------------------------------------------------------*
-         * ------------------------------------------------------------------------------------------*/
-        /// <summary>
-        /// Fires just before a cell exits edit mode (Enter, Tab, click-away, or Cancel).
-        /// Cancelable – set e.Cancel = true to keep the cell in edit mode.
-        /// </summary>
+
         private async void Grid_CellEditEnding(object? sender, Avalonia.Controls.DataGridCellEditEndingEventArgs e)
         {
-            AppIO.DebugLog("Grid_CellEditEnding");
+            AppIO.DebugLog("---- ---- Grid_CellEditEnding");
 
             if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
                 return;
@@ -188,8 +265,31 @@ namespace JAXBase.XBase
 
             if (colIdx < 0 || rowIdx < 0) return;
 
+            // ------------------------------------------------------------------
+            // Prefer the value the user actually typed / chose
+            // ------------------------------------------------------------------
+            object? value = null;
 
-            // Find the matching column by looking at order
+            if (e.EditingElement is Avalonia.Controls.TextBox tb)
+                value = tb.Text;
+            else if (e.EditingElement is Avalonia.Controls.CheckBox cb)
+                value = cb.IsChecked;
+            // Add other editor types here as you introduce them (ComboBox, etc.)
+
+            // Fallback only if we couldn't read the editor
+            if (value is null)
+                value = await Grid_GetCurrentCellValue(colIdx);
+
+            if (value is null)
+            {
+                Toast.Show("Invalid Entry");
+                e.Cancel = true;
+                return;
+            }
+
+            // ------------------------------------------------------------------
+            // Find the matching XBase column (same logic as before)
+            // ------------------------------------------------------------------
             JAXObjects.Token colCount = await me.GetProperty("columncount");
 
             JAXObjectWrapper? col = null;
@@ -203,139 +303,178 @@ namespace JAXBase.XBase
                 {
                     colNum = await col.GetProperty("columnnumber");
                     if (colNum.AsInt() == colIdx - 1)
-                        break;  // We've got the column!
+                        break;
                 }
             }
 
-            if (col is not null)
+            if (col is null)
             {
-                object? value = Grid_GetCurrentCellValue(colIdx);
+                AppIO.DebugLog($"Could not find column {colIdx}");
+                Toast.Show($"Could not find column {colIdx}");
+                return;
+            }
 
-                if (value is not null)
+            // ------------------------------------------------------------------
+            // Convert / validate the value
+            // ------------------------------------------------------------------
+            JAXObjects.Token tk = new(value);
+            string strValue = tk.AsString();
+
+            string type = "";
+
+            if (thisWorkArea is not null)
+                type = thisDBF!.Fields[colNum.AsInt()].FieldType;
+            else if (arrayRS is not null)
+            {
+                if (rowIdx + 1 > arrayRS.Row || colIdx + 1 > arrayRS.Col)
                 {
-                    // Convert the value, if possible
-                    JAXObjects.Token tk = new(value);
-                    string strValue = tk.AsString();
+                    Toast.Show($"Invalid array dimension {rowIdx + 1},{colIdx + 1}");
+                    e.Cancel = true;
+                    return;
+                }
+                arrayRS.SetElement(rowIdx + 1, colIdx + 1);
+                type = arrayRS.Element.Type;
 
-                    // Check the field type
-                    string type = "";
+                // Logical array cells accept T/F in the editor
+                if (type == "L")
+                {
+                    string s = strValue.Trim().TrimStart('.').TrimEnd('.').ToUpperInvariant();
+                    if (s == "T" || s == "TRUE" || s == "Y" || s == "1")
+                        strValue = ".T.";
+                    else if (s == "F" || s == "FALSE" || s == "N" || s == "0")
+                        strValue = ".F.";
+                }
+            }
+            else
+            {
+                // TODO - Error
+                Toast.Show("No record source available");
+                e.Cancel = true;
+                return;
+            }
 
-                    if (thisWorkArea is not null)
-                        type = thisDBF!.Fields[colNum.AsInt()].FieldType;   // Get column data type
+            if (!JAXLib.CheckStringValueType(strValue, type))
+            {
+                Toast.Show("Invalid Entry");
+                e.Cancel = true;
+                return;
+            }
+
+            // Convert to the proper CLR type
+            switch (type)
+            {
+                case "B":
+                case "F":
+                case "I":
+                case "N":
+                case "Y":
+                    if (double.TryParse(strValue, out double d))
+                        value = d;
                     else
                     {
-                        // Get the data type from the array elemeent
-                        if (arrayRS is not null)
-                        {
-                            if (rowIdx + 1 > arrayRS.Row || colIdx + 1 > arrayRS.Col)
-                            {
-                                Toast.Show($"Invalid array dimension {rowIdx + 1},{colIdx + 1}");
-                                type = "XX";
-                            }
-                            else
-                            {
-                                arrayRS.SetElement(rowIdx + 1, colIdx + 1);
-                                type = arrayRS.Element.Type;
-                            }
-                        }
-                        else
-                        {
-                            // TODO - Error
-                        }
-                    }
-
-                    // Now check the input value against the expected type
-                    if (JAXLib.CheckStringValueType(strValue, type))
-                    {
-                        // We can convert the value
-                        switch (type)
-                        {
-                            case "B":
-                            case "F":
-                            case "I":
-                            case "N":
-                            case "Y":
-                                if (double.TryParse(strValue, out double d)) d = 0;
-                                value = d;
-                                break;
-
-                            case "D":
-                                value = DateOnly.FromDateTime(JAXLib.CtoT(strValue));
-                                break;
-
-                            case "T":
-                                value = JAXLib.CtoT(strValue);
-                                break;
-
-                            default:
-                                // String accepts anything
-                                value = strValue;
-                                break;
-                        }
-
-                        // Check to make sure it's a valid data type for the cell
-                        if (_jaxTable is not null)
-                        {
-                            if (thisWorkArea is not null && thisDBF is not null && thisDBF.DBFStream is not null)
-                            {
-                                // Save to column in table
-                                thisDBF.CurrentRow.Rows[0][colIdx + 1] = value;
-                                await thisWorkArea.DBFWriteRecord(thisDBF.CurrentRow.Rows[0], false);
-                            }
-                            else
-                            {
-                                Toast.Show("Record source table is not open");
-                                e.Cancel = true;
-
-                            }
-                        }
-                        else
-                        {
-                            // Save to array position
-                            if (arrayRS is not null)
-                            {
-                                if (rowIdx + 1 > arrayRS.Row || colIdx + 1 > arrayRS.Col)
-                                {
-                                    Toast.Show($"Invalid array dimension {rowIdx + 1},{colIdx + 1}");
-                                    e.Cancel = true;
-                                }
-                                else
-                                {
-                                    arrayRS.SetElement(rowIdx + 1, colIdx + 1);
-                                    arrayRS.Element.Value = value;
-                                }
-                            }
-                            else
-                            {
-                                Toast.Show("Record source array is not available");
-                                e.Cancel = true;
-                            }
-
-                        }
-
-                        //if (e.Cancel == false)
-                        // Save the value to the indicated field
-                        //Grid_SetSelectedCellValue(grid, value);
-                    }
-                    else
-                    {
-                        // Invalid data type
                         Toast.Show("Invalid Entry");
+                        e.Cancel = true;
+                        return;
+                    }
+                    break;
+
+                case "D":
+                    value = DateOnly.FromDateTime(JAXLib.CtoT(strValue));
+                    break;
+
+                case "T":
+                    value = JAXLib.CtoT(strValue);
+                    break;
+
+                default:
+                    value = strValue;
+                    break;
+            }
+
+            // ------------------------------------------------------------------
+            // Write the value by field name (avoids all marker/visual index issues)
+            // ------------------------------------------------------------------
+            string fieldName = (await col.GetProperty("recordsource")).AsString();
+
+            if (_jaxTable is not null)
+            {
+                if (thisWorkArea is not null && thisDBF is not null && thisDBF.DBFStream is not null)
+                {
+                    if (!string.IsNullOrWhiteSpace(fieldName))
+                    {
+                        // Keep the grid’s in-memory row in sync so the binding stops failing
+                        if (grid.SelectedItem is SimpleDataRow simpleRow && !string.IsNullOrWhiteSpace(fieldName))
+                        {
+                            simpleRow.Values[fieldName] = value ?? DBNull.Value;
+
+                            // Force the DataGrid to re-evaluate the binding for this row
+                            var current = grid.SelectedItem;
+                            grid.SelectedItem = null;
+                            grid.SelectedItem = current;
+                        }
+
+                        thisDBF.CurrentRow.Rows[0][fieldName] = value;
+                        await thisWorkArea.DBFWriteRecord(thisDBF.CurrentRow.Rows[0], false);
+                    }
+                    else
+                    {
+                        Toast.Show("Could not determine field name");
                         e.Cancel = true;
                     }
                 }
                 else
                 {
-                    // Cancel if invalid type
-                    Toast.Show("Invalid Entry");
+                    Toast.Show("Record source table is not open");
                     e.Cancel = true;
+                }
+            }
+            else if (arrayRS is not null)
+            {
+                if (rowIdx + 1 > arrayRS.Row || colIdx + 1 > arrayRS.Col)
+                {
+                    Toast.Show($"Invalid array dimension {rowIdx + 1},{colIdx + 1}");
+                    e.Cancel = true;
+                }
+                else
+                {
+                    arrayRS.SetElement(rowIdx + 1, colIdx + 1);
+
+                    // Logical: accept T/F (also .T./.F., true/false, 1/0)
+                    if (type == "L")
+                    {
+                        string s = strValue.Trim().TrimStart('.').TrimEnd('.').ToUpperInvariant();
+                        if (s == "T" || s == "TRUE" || s == "Y" || s == "1")
+                            value = true;
+                        else if (s == "F" || s == "FALSE" || s == "N" || s == "0")
+                            value = false;
+                        else
+                        {
+                            Toast.Show("Enter T or F");
+                            e.Cancel = true;
+                            return;
+                        }
+                    }
+
+                    // Write back to the array immediately
+                    arrayRS.Element.Value = value;
+
+                    // Keep the in-memory row in sync so the display refreshes as T/F
+                    if (grid.SelectedItem is SimpleDataRow simpleRow && !string.IsNullOrWhiteSpace(fieldName))
+                    {
+                        simpleRow.Values[fieldName] = value ?? DBNull.Value;
+                        var current = grid.SelectedItem;
+                        grid.SelectedItem = null;
+                        grid.SelectedItem = current;
+                    }
                 }
             }
             else
             {
-                AppIO.DebugLog($"Could not find column {colIdx}");
-                Toast.Show($"Could not find column {colIdx}");
+                Toast.Show("Record source array is not available");
+                e.Cancel = true;
             }
+
+            AppIO.DebugLog($"END CellEditEnding");
         }
 
 
@@ -346,7 +485,7 @@ namespace JAXBase.XBase
         /// </summary>
         private async void Grid_CellEditEnded(object? sender, Avalonia.Controls.DataGridCellEditEndedEventArgs e)
         {
-            AppIO.DebugLog("Grid_CellEditEnded", false);
+            AppIO.DebugLog("---- Grid_CellEditEnded");
 
             if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
                 return;
@@ -358,7 +497,7 @@ namespace JAXBase.XBase
             if (colIdx < 1 || rowIdx < 0)
                 return;
 
-            object? newValue = Grid_GetCurrentCellValue(colIdx - 1); // We have one extra column in the grid
+            object? newValue = await Grid_GetCurrentCellValue(colIdx - 1); // We have one extra column in the grid
 
             AppIO.DebugLog($"Cell changed – Row: {rowIdx + 1}, Col: {colIdx + 1}, Value: {newValue}");
 
@@ -369,7 +508,9 @@ namespace JAXBase.XBase
 
             AppIO.DebugLog($"Calling afterrowcolchange with parameters: Row={rowIdx + 1}, Col={colIdx + 1}, Value={newValue}");
 
-            await _CallMethod("Grid afterrowcolchange");
+            await _CallMethod("afterrowcolchange");
+
+            AppIO.DebugLog("---- END Grid_CellEditEnded");
         }
 
 
@@ -378,7 +519,7 @@ namespace JAXBase.XBase
          * ------------------------------------------------------------------------------------------*/
         private async void Grid_CurrentCellChanged(object? sender, EventArgs e)
         {
-            AppIO.DebugLog($"Grid_CurrentCellChanged current column: {grid.CurrentColumn?.Tag}");
+            AppIO.DebugLog($"---- Grid_CurrentCellChanged current column: {grid.CurrentColumn?.Tag}");
 
             // Ignore the marker column
             if (grid.CurrentColumn?.Tag is string tag && tag == "__MARKER__")
@@ -416,6 +557,9 @@ namespace JAXBase.XBase
                 AppIO.DebugLog($"Error in Grid Tracking section {track} : {ex.Message}");
             }
 
+            // Move the ">" current-row marker
+            UpdateCurrentMarker();
+
             // Set to editing visual state
             try
             {
@@ -423,18 +567,23 @@ namespace JAXBase.XBase
                 // (same appearance you already get with Tab / Shift+Tab)
                 if (grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.IsReadOnly == false)
                 {
+                    AppIO.DebugLog($"Grid_CurrentCellChanged: BeginEdit on row {grid.SelectedIndex}, column {GridCurrentColumn}");
                     grid.BeginEdit();
                 }
                 else
                 {
                     // Read-only column – just make sure it has focus so the focus border appears
+                    AppIO.DebugLog($"Grid_CurrentCellChanged: Read-only column, setting focus to grid");
                     grid.Focus();
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // Some templates do not support BeginEdit – ignore
+                AppIO.DebugLog($"Grid_CurrentCellChanged: CATCH failed begin edit on row {grid.SelectedIndex}, column {GridCurrentColumn} - {ex.Message}");
             }
+
+            AppIO.DebugLog($"---- END Grid_CurrentCellChanged");
         }
 
 
@@ -452,7 +601,7 @@ namespace JAXBase.XBase
         /// </summary>
         public async Task<object?> Grid_GetCurrentCellValue(int colIdx = -1)
         {
-            AppIO.DebugLog($"Grid_GetCurrentCellValue: colIdx={colIdx}, selectedIndex={grid.SelectedIndex}");
+            AppIO.DebugLog($"---- Grid_GetCurrentCellValue: colIdx={colIdx}, selectedIndex={grid.SelectedIndex}");
 
             colIdx = colIdx < 0 ? grid.SelectedIndex : colIdx;
 
@@ -531,6 +680,7 @@ namespace JAXBase.XBase
                 }
             }
 
+            AppIO.DebugLog($"END GetCurrentCellValue");
             return null;
         }
 
@@ -543,7 +693,7 @@ namespace JAXBase.XBase
         /// </summary>
         public static (int RowIndex, int ColumnIndex, object? CellValue) Grid_GetSelectedCellInfo(Avalonia.Controls.DataGrid grid)
         {
-            AppIO.DebugLog($"Grid_GetSelectedCellInfo: selectedIndex={grid.SelectedIndex}, currentColumn={(grid.CurrentColumn != null ? grid.CurrentColumn.Header?.ToString() : "null")}");
+            AppIO.DebugLog($"---- Grid_GetSelectedCellInfo: selectedIndex={grid.SelectedIndex}, currentColumn={(grid.CurrentColumn != null ? grid.CurrentColumn.Header?.ToString() : "null")}");
 
             if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
             {
@@ -560,64 +710,14 @@ namespace JAXBase.XBase
                 object? value = rowDict.ContainsKey(key) ? rowDict[key] : null;
                 return (rowIndex, columnIndex, value);
             }
+
+            AppIO.DebugLog($"END Grid_GetSelectedCellInfo");
+
             // Fallback for strongly-typed objects (e.g. Person class)
             return (rowIndex, columnIndex, "Strongly-typed value");
         }
 
-        ///* ------------------------------------------------------------------------------------------*
-        // * ------------------------------------------------------------------------------------------*/
-        ///// <summary>
-        ///// Gets the value from any specific cell by row and column index
-        ///// (Avalonia equivalent of grid.Rows[rowIndex].Cells[colIndex].Value)
-        ///// Works with your Dictionary-based ItemsSource from LoadArrayIntoGrid()
-        ///// </summary>
-        //public static object? Grid_GetCellValue(Avalonia.Controls.DataGrid grid, int rowIndex, int columnIndex)
-        //{
-        //    if (grid == null ||
-        //    rowIndex < 0 ||
-        //    columnIndex < 0 ||
-        //    grid.ItemsSource is not System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rows)
-        //    {
-        //        return null;
-        //    }
 
-        //    if (rowIndex >= rows.Count)
-        //        return null;
-
-        //    var col = 
-
-        //    var rowDict = rows[rowIndex];
-        //    string key = columnIndex.ToString();
-        //    return rowDict.TryGetValue(key, out var value) ? value : null;
-        //}
-
-
-        ///* ------------------------------------------------------------------------------------------*
-        // * ------------------------------------------------------------------------------------------*/
-        ///// <summary>
-        ///// Sets a value into the currently selected cell
-        ///// (Avalonia equivalent of grid.CurrentCell.Value = newValue)
-        ///// Works with the Dictionary-based ItemsSource from your LoadArrayIntoGrid()
-        ///// </summary>
-        //public static void Grid_SetSelectedCellValue(Avalonia.Controls.DataGrid grid, object? newValue)
-        //{
-        //    if (grid == null || grid.SelectedIndex < 0 || grid.CurrentColumn == null)
-        //        return;
-        //    int rowIndex = grid.SelectedIndex;
-        //    int colIndex = grid.Columns.IndexOf(grid.CurrentColumn);
-        //    if (colIndex < 0)
-        //        return;
-        //    if (grid.ItemsSource is System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rows &&
-        //    rowIndex >= 0 && rowIndex < rows.Count)
-        //    {
-        //        var rowDict = rows[rowIndex];
-        //        string key = colIndex.ToString();
-        //        rowDict[key] = newValue ?? string.Empty;
-        //        // IMPORTANT: re-assign the row to trigger ObservableCollection update
-        //        // (Dictionary itself does not raise property changed events)
-        //        rows[rowIndex] = rowDict;
-        //    }
-        //}
 
         /* ------------------------------------------------------------------------------------------*
          * ------------------------------------------------------------------------------------------*/
@@ -627,7 +727,7 @@ namespace JAXBase.XBase
 
             if (e.GetCurrentPoint(grid).Properties.IsLeftButtonPressed)
             {
-                AppIO.DebugLog("Grid_PointerPressed - Left button pressed");
+                AppIO.DebugLog("---- Grid_PointerPressed - Left button pressed");
 
                 // If the click was on the marker column, force the current column away from it
                 if (grid.CurrentColumn?.Tag is string tag && tag == "__MARKER__")
@@ -646,6 +746,8 @@ namespace JAXBase.XBase
                     // TODO - Need to call the click method of the current column
                     await _CallMethod("click");
                 }
+
+                AppIO.DebugLog($"END Grid_PointerPressed");
             }
         }
 
@@ -659,7 +761,7 @@ namespace JAXBase.XBase
          ** ------------------------------------------------------------------------------------------*/
         public async Task<int> AddColumn(int type, string header, string binding)
         {
-            AppIO.DebugLog($"Grid AddColumn: type={type}, header={header}, binding={binding}");
+            AppIO.DebugLog($"---- Grid AddColumn: type={type}, header={header}, binding={binding}");
 
             // Set the columntype parameter
             List<ParameterClass> p = new List<ParameterClass>();
@@ -723,7 +825,7 @@ namespace JAXBase.XBase
         {
             int err = 1903;
 
-            AppIO.DebugLog($"Grid AddObject: {value.JOWName}, type={value.BaseClass}");
+            AppIO.DebugLog($"---- Grid AddObject: {value.JOWName}, type={value.BaseClass}");
 
             // You can only add columns to a grid's objects list
             if (value.nvObject is not null && value.nvObject is Avalonia.Controls.DataGridColumn)
@@ -759,6 +861,8 @@ namespace JAXBase.XBase
                     AppErrorHandling.SetError(err, $"{err}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
             }
 
+            AppIO.DebugLog($"END Grid_AddObject");
+
             return err > 0 ? -1 : grid.Columns.Count;
         }
 
@@ -772,7 +876,7 @@ namespace JAXBase.XBase
             methodName = methodName.ToLower();
             Program.CurrentApp.ReturnValue.Element.Value = true;
 
-            AppIO.DebugLog($"Grid _CallMethod: {methodName}");
+            //AppIO.DebugLog($"Grid _CallMethod: {methodName}");
 
             try
             {
@@ -856,7 +960,7 @@ namespace JAXBase.XBase
             string msg = string.Empty;
             methodName = methodName.ToLower();
 
-            AppIO.DebugLog($"Grid DoDefault: {methodName} for {GridCurrentColumn}");
+            //AppIO.DebugLog($"Grid DoDefault: {methodName} for {GridCurrentColumn}");
 
             try
             {
@@ -969,6 +1073,8 @@ namespace JAXBase.XBase
             else
                 result = 0;
 
+            AppIO.DebugLog($"END GetProperty");
+
             return returnToken;
         }
 
@@ -986,18 +1092,37 @@ namespace JAXBase.XBase
          * ------------------------------------------------------------------------------------------*/
         public void SetGridEvents()
         {
-            AppIO.DebugLog("Grid Setting events");
+            AppIO.DebugLog("---- Grid Setting events");
             SetEvents();
 
             // Added: Subscribe to grid events for bubbling from columns
             // Cell edit completion (fires when user leaves the cell or presses Enter)
+            grid.CellEditEnding -= Grid_CellEditEnding;
             grid.CellEditEnding += Grid_CellEditEnding;
+
+            grid.CellEditEnded -= Grid_CellEditEnded;
             grid.CellEditEnded += Grid_CellEditEnded;
 
+            grid.CurrentCellChanged -= Grid_CurrentCellChanged;
             grid.CurrentCellChanged += Grid_CurrentCellChanged;
-            grid.KeyDown += Grid_KeyDown;
+
+            //grid.KeyDown -= Grid_KeyDown;
+            //grid.KeyDown += Grid_KeyDown;
+
+            // Clean any previous tunnel subscription so we don't stack handlers
+            grid.RemoveHandler(
+                Avalonia.Input.InputElement.KeyDownEvent,
+                Grid_KeyDown);
+
+            // Add this (tunnel = see it before DataGrid / editor consumes it)
+            grid.AddHandler(
+                Avalonia.Input.InputElement.KeyDownEvent,
+                Grid_KeyDown,
+                Avalonia.Interactivity.RoutingStrategies.Tunnel,
+                handledEventsToo: true);
 
             // Added: General click handler for bubbled events (e.g., from button/link columns)
+            grid.PointerPressed -= Grid_PointerPressed;
             grid.PointerPressed += Grid_PointerPressed;
             doPostInitSetup = false;
 
@@ -1024,6 +1149,8 @@ namespace JAXBase.XBase
 
             Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsInt());
             Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsInt());
+
+            AppIO.DebugLog($"END SetGridEvents");
         }
 
 
@@ -1034,7 +1161,7 @@ namespace JAXBase.XBase
             if (grid == null || grid.Columns.Count == 0)
                 return;
 
-            AppIO.DebugLog($"Grid ApplyAutoSizeMode: {mode} while on parent '{me.Parent?.JOWName}'");
+            AppIO.DebugLog($"---- Grid ApplyAutoSizeMode: {mode} while on parent '{me.Parent?.JOWName}'");
 
             switch (mode)
             {
@@ -1104,7 +1231,7 @@ namespace JAXBase.XBase
             JAXObjects.Token tk = new();
             tk.Element.Value = objValue;
 
-            AppIO.DebugLog($"Grid SetProperty: {propertyName}, value={objValue}, idx={objIdx}");
+            AppIO.DebugLog($"---- Grid SetProperty: {propertyName}, value={objValue}, idx={objIdx}");
 
             if (UserProperties.ContainsKey(propertyName))
             {
@@ -1409,60 +1536,29 @@ namespace JAXBase.XBase
                                         {
                                             AppIO.DebugLog($"Setting recordsourcetype to {tk.AsInt()}");
 
-                                            switch (tk.AsInt())
+                                            string alias = UserProperties["recordsource"].AsString();
+
+                                            if (alias.Contains("&"))
                                             {
-                                                case 0:
-                                                    // Open a table and bind it
-                                                    string tableName = UserProperties["recordsource"].AsString().Trim();
-                                                    if (tableName.Contains('&'))
-                                                    {
-                                                        // Macro expansion needed
-                                                    }
-                                                    if (result == 0 && tableName.Contains("("))
-                                                    {
-                                                        // It's definitely a function or variable
-                                                        // so math the answer
-                                                    }
-                                                    if (result == 0)
-                                                    {
-                                                        // Look for the table in the current folder list
-                                                        // If not found, then check for it if there is a current database
-                                                    }
-                                                    if (result == 0)
-                                                    {
-                                                        if (Program.CurrentApp.CurrentDS.IsWorkArea(tableName))
-                                                        {
-                                                            Program.CurrentApp.CurrentDS.SelectWorkArea(tableName);
-                                                            result = await SetTableBinding();
-                                                            await AutoFitColumns();
-                                                        }
-                                                        else
-                                                        {
-                                                            result = 13;
-                                                            msg = tableName;
-                                                        }
+                                                // Macro expansion needed
+                                            }
 
-                                                    }
-                                                    break;
+                                            if (alias.Contains('('))
+                                            {
+                                                // Expression, so math it out
+                                            }
 
-                                                case 1:
-                                                    // Look for the alias and bind it
-                                                    string alias = UserProperties["recordsource"].AsString();
-                                                    if (alias.Contains("&"))
-                                                    {
-                                                    }
-                                                    if (alias.Contains('('))
-                                                    {
-                                                        // Expression, so math it out
-                                                    }
+                                            if (result == 0 && string.IsNullOrWhiteSpace(alias))
+                                                result = 11;
 
-                                                    if (result == 0 && string.IsNullOrWhiteSpace(alias))
-                                                        result = 11;
+                                            if (result == 0)
+                                            {
+                                                switch (tk.AsInt())
+                                                {
+                                                    case 0:
+                                                        // Look for the table in the current folder list
+                                                        // If not found, then check for it if there is a current database
 
-                                                    if (result == 0)
-                                                    {
-
-                                                        // We may have an alias so try to open it up
                                                         if (result == 0)
                                                         {
                                                             if (Program.CurrentApp.CurrentDS.IsWorkArea(alias))
@@ -1476,78 +1572,94 @@ namespace JAXBase.XBase
                                                                 result = 13;
                                                                 msg = alias;
                                                             }
+
                                                         }
-                                                    }
-                                                    break;
+                                                        break;
 
-                                                case 2:
-                                                    // Prompt for a record source (great for a generic browse window)
-                                                    break;
+                                                    case 1:
+                                                        // Look for the alias and bind it
+                                                        // We may have an alias so try to open it up
+                                                        if (Program.CurrentApp.CurrentDS.IsWorkArea(alias))
+                                                        {
+                                                            Program.CurrentApp.CurrentDS.SelectWorkArea(alias);
+                                                            result = await SetTableBinding();
+                                                            await AutoFitColumns();
+                                                        }
+                                                        else
+                                                        {
+                                                            result = 13;
+                                                            msg = alias;
+                                                        }
+                                                        break;
 
-                                                case 3:
-                                                    // Load the Query file and execute it then
-                                                    // bind the data to the grid
-                                                    break;
+                                                    case 2:
+                                                        // Prompt for a record source (great for a generic browse window)
+                                                        break;
 
-                                                case 4:
-                                                    // We should have a SQL statement
-                                                    string SQLSelect = UserProperties["recordsource"].AsString().Trim();
-                                                    if (SQLSelect.Contains('&'))
-                                                    {
-                                                        // Handle a macro expansion
-                                                    }
-                                                    if (result == 0 && SQLSelect.Contains(" ") == false)
-                                                    {
-                                                        // look for a sql statement in a variable
-                                                        JAXObjects.Token sql = await AppVars.GetVarFromExpression(SQLSelect, null);
-                                                        if (sql.Element.Type.Equals("C"))
-                                                            SQLSelect = sql.AsString();
+                                                    case 3:
+                                                        // Load the Query file and execute it then
+                                                        // bind the data to the grid
+                                                        break;
+
+                                                    case 4:
+                                                        // We should have a SQL statement
+                                                        string SQLSelect = alias;
+                                                        if (SQLSelect.Contains(" ") == false)
+                                                        {
+                                                            // look for a sql statement in a variable
+                                                            JAXObjects.Token sql = await AppVars.GetVarFromExpression(SQLSelect, null);
+                                                            if (sql.Element.Type.Equals("C"))
+                                                                SQLSelect = sql.AsString();
+                                                            else
+                                                                result = 11;
+                                                        }
+
+                                                        if (result == 0 && SQLSelect[..7].Equals("SELECT ", StringComparison.OrdinalIgnoreCase))
+                                                        {
+                                                            // Execute the sql select and bind that data
+                                                        }
                                                         else
                                                             result = 11;
-                                                    }
-                                                    if (result == 0 && SQLSelect[..7].Equals("SELECT ", StringComparison.OrdinalIgnoreCase))
-                                                    {
-                                                        // Execute the sql select and bind that data
-                                                    }
-                                                    else
-                                                        result = 11;
-                                                    break;
+                                                        break;
 
-                                                case 5:
-                                                    // Try to bind the record source to an array name
-                                                    arrayRS = await AppVars.GetVarToken(UserProperties["recordsource"].AsString());
+                                                    case 5:
+                                                        // Try to bind the record source to an array
+                                                        arrayRS = await AppVars.GetVarToken(alias);
 
-                                                    // Is it an array variable name?
-                                                    if (arrayRS.TType.Equals("A") == false)
-                                                    {
-                                                        // No, so reset and give error
-                                                        result = 234;
-                                                        arrayRS = null;
-                                                    }
-                                                    else
-                                                    {
-                                                        // Load the grid from the array
-                                                        await SetArrayBinding(arrayRS);
-                                                    }
-                                                    break;
+                                                        // Did it return an array?
+                                                        if (arrayRS.TType.Equals("A"))
+                                                        {
+                                                            // Load the grid from the array
+                                                            await SetArrayBinding(arrayRS);
+                                                        }
+                                                        else
+                                                        {
+                                                            // No, so reset and give error
+                                                            result = 234;
+                                                            arrayRS = null;
+                                                        }
+                                                        break;
+                                                }
+
+                                                if (result == 0)
+                                                    grid.InvalidateVisual();
                                             }
-
-                                            grid.InvalidateVisual();
                                         }
                                     }
                                     else
                                     {
-                                        if (tk.AsInt() < 0)
+                                        if (tk.AsInt() == -1 && (InInit || UserProperties["recordsource"].AsInt() == -1))
                                         {
                                             //ResetGridToBlank();
                                             UserProperties["recordsource"].Element.Value = string.Empty;
                                         }
                                         else
-                                            result = 3003; // Value or index out of range
+                                            result = 41; // Illegal value
                                     }
                                 }
                                 else
                                     result = 11;
+
                                 if (result == 0)
                                     grid.UpdateLayout();
                                 break;
@@ -1590,6 +1702,7 @@ namespace JAXBase.XBase
                                             grid.VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Visible;
                                             break;
                                     }
+
                                     objValue = sb;
                                     grid.InvalidateVisual();
                                 }
@@ -1629,17 +1742,22 @@ namespace JAXBase.XBase
                             default:
                                 // Process standard properties
                                 result = await base.SetProperty(propertyName, objValue, objIdx);
+
                                 if (propertyName.Equals("visible"))
                                 {
                                     grid.UpdateLayout();
                                     grid.InvalidateVisual();
                                 }
+
+                                if (result == 0)
+                                    result = 9;
                                 break;
                         }
 
-                        // Did we process it?
+                        // Do we process it?
                         if (JAXLib.Between(result, 0, 10))
                         {
+                            // 9 == it already processed
                             if (result < 9)
                                 UserProperties[propertyName].Element.Value = objValue;
 
@@ -1660,6 +1778,9 @@ namespace JAXBase.XBase
                     AppErrorHandling.SetError(result, $"{result}|", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
                 result = -1;
             }
+
+            AppIO.DebugLog($"END SetProperty");
+
             return result;
         }
 
@@ -1671,7 +1792,7 @@ namespace JAXBase.XBase
         {
             int result = 0;
 
-            AppIO.DebugLog($"Grid SetGridBinding");
+            AppIO.DebugLog($"---- Grid SetGridBinding");
 
             // Prep the table
             _jaxTable = new();
@@ -1686,6 +1807,8 @@ namespace JAXBase.XBase
 
             }
 
+            AppIO.DebugLog($"END SetGridBinding");
+
             return result;
         }
 
@@ -1698,7 +1821,7 @@ namespace JAXBase.XBase
         {
             int result = 0;
 
-            AppIO.DebugLog($"Grid SetArrayBinding: {aGrid.AsString()}");
+            AppIO.DebugLog($"---- Grid SetArrayBinding: {aGrid.AsString()}");
 
             if (false) SetGridBinding().Wait();
 
@@ -1706,33 +1829,45 @@ namespace JAXBase.XBase
             _jaxTable = new();
             _rowRef = [];
 
-            // Set up the columns
+            // Reset existing columns so we rebuild from the array dimensions
+            await SetProperty("columncount", 0, 0);
+
+            // Set up the columns in _jaxTable and create the matching grid columns
+            // Use object so mixed types in a column are preserved
             for (int i = 1; i <= aGrid.Col; i++)
             {
-                _jaxTable.Columns.Add(JAXLib.Proper($"Column{i}"), typeof(string));
+                string colName = JAXLib.Proper($"Column{i}");
+                _jaxTable.Columns.Add(colName, typeof(object));
+
+                // Add the JAXBase column object (type 0) with header and binding name
+                await AddColumn(0, colName, colName);
             }
 
+            // Populate rows from the array – keep the real typed value
             for (int row = 1; row <= aGrid.Row; row++)
             {
                 // Add a new row
                 _jaxTable.Rows.Add();
                 _rowRef.Add(row);
 
-                // Populate it from the source table
+                // Populate it from the source array
                 for (int col = 1; col <= aGrid.Col; col++)
                 {
-                    // Copy each column in _jaxTable over
                     string name = _jaxTable.Columns[col - 1].ColumnName;
                     aGrid.SetElement(row, col);
-                    _jaxTable.Rows[^1][name] = aGrid.AsString().Trim();
+                    object? raw = aGrid.Element.Value;
+                    _jaxTable.Rows[^1][name] = raw ?? DBNull.Value;
                 }
             }
 
-            // Now call the grid setup
-            SetGridFinal();
+            // Now call the grid setup (binds via DictionaryValueConverter, inserts marker, sets ItemsSource, etc.)
+            await SetGridFinal();
+
+            AppIO.DebugLog($"END SetArrayBinding");
 
             return result;
         }
+
 
 
         /* ------------------------------------------------------------------------------------------*
@@ -1749,7 +1884,7 @@ namespace JAXBase.XBase
             // Populate JAXTABLE with sample columns and rows
             string alias = UserProperties["recordsource"].AsString();
 
-            AppIO.DebugLog($"Grid SetTableBinding: {alias}");
+            AppIO.DebugLog($"---- Grid SetTableBinding: {alias}");
 
             // We may need the original DS/WA later
             int currentDS = Program.CurrentApp.CurrentDataSession;
@@ -1831,17 +1966,19 @@ namespace JAXBase.XBase
                 await thisWorkArea.DBFSkipRecord(1);
             }
 
-            SetGridFinal();
+            await SetGridFinal();
+
+            AppIO.DebugLog($"END SetTableBinding");
 
             return result;
         }
 
 
-        /* ------------------------------------------------------------------------------------------*
-         * ------------------------------------------------------------------------------------------*/
-        private void SetGridFinal()
+
+
+        private async Task SetGridFinal()
         {
-            AppIO.DebugLog($"Grid SetGridFinal: {_jaxTable?.Rows.Count} rows, {_jaxTable?.Columns.Count} columns");
+            AppIO.DebugLog($"---- Grid SetGridFinal: {_jaxTable?.Rows.Count} rows, {_jaxTable?.Columns.Count} columns");
 
             // Build the row list
             var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
@@ -1862,22 +1999,49 @@ namespace JAXBase.XBase
 
             // ------------------------------------------------------------------
             // VFP-style record-mark column – ensure it exists exactly once
+            // Shows ">" on the current row. Black background if the record is deleted.
             // ------------------------------------------------------------------
-            Avalonia.Controls.DataGridTextColumn? markerCol = null;
+            Avalonia.Controls.DataGridColumn? markerCol = null;
 
-            // Look for an existing marker column (we tagged it with a special Header)
             foreach (var c in grid.Columns)
             {
-                if (c is Avalonia.Controls.DataGridTextColumn tc && tc.Tag is string tag && tag == "__MARKER__")
+                if (c.Tag is string tag && tag == "__MARKER__")
                 {
-                    markerCol = tc;
+                    markerCol = c;
                     break;
                 }
             }
 
             if (markerCol is null)
             {
-                markerCol = new Avalonia.Controls.DataGridTextColumn
+                var markerTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<SimpleDataRow>((row, _) =>
+                {
+                    var border = new Avalonia.Controls.Border
+                    {
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+                        [!Avalonia.Controls.Border.BackgroundProperty] = new Avalonia.Data.Binding(nameof(SimpleDataRow.Deleted))
+                        {
+                            Converter = new DeletedToBrushConverter()
+                        }
+                    };
+
+                    var text = new Avalonia.Controls.TextBlock
+                    {
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                        FontWeight = Avalonia.Media.FontWeight.Bold,
+                        [!Avalonia.Controls.TextBlock.TextProperty] = new Avalonia.Data.Binding(nameof(SimpleDataRow.IsCurrent))
+                        {
+                            Converter = new BoolToMarkerConverter()
+                        }
+                    };
+
+                    border.Child = text;
+                    return border;
+                });
+
+                markerCol = new Avalonia.Controls.DataGridTemplateColumn
                 {
                     Header = "",
                     Tag = "__MARKER__",
@@ -1886,13 +2050,8 @@ namespace JAXBase.XBase
                     CanUserResize = false,
                     CanUserReorder = false,
                     CanUserSort = false,
-                    // Prevent the column from ever becoming the current cell
                     IsVisible = true,
-                    Binding = new Avalonia.Data.Binding("Values")
-                    {
-                        Converter = new DictionaryValueConverter(),
-                        ConverterParameter = "__marker__"
-                    }
+                    CellTemplate = markerTemplate
                 };
                 grid.Columns.Insert(0, markerCol);
             }
@@ -1923,7 +2082,8 @@ namespace JAXBase.XBase
                     boundCol.Binding = new Avalonia.Data.Binding("Values")
                     {
                         Converter = converter,
-                        ConverterParameter = fieldName
+                        ConverterParameter = fieldName,
+                        Mode = Avalonia.Data.BindingMode.OneWay
                     };
                 }
                 colIdx++;
@@ -1948,155 +2108,26 @@ namespace JAXBase.XBase
             grid.ItemsSource = null;
             grid.ItemsSource = rowList;
 
+            // Show the current-row marker on whatever is selected (or the first row)
+            if (rowList.Count > 0 && grid.SelectedIndex < 0)
+                grid.SelectedIndex = 0;
+            UpdateCurrentMarker();
+
             grid.InvalidateVisual();
             grid.InvalidateMeasure();
             grid.InvalidateArrange();
 
             // Debug
-
-            // debug block …
             AppIO.DebugLog("========= DataGrid Debug =========");
             AppIO.DebugLog($"ItemsSource Type: {grid.ItemsSource?.GetType().FullName}");
             AppIO.DebugLog($"Row Count in Table: {_jaxTable.Rows.Count}");
             AppIO.DebugLog($"Column Count: {_jaxTable.Columns.Count}");
             foreach (System.Data.DataColumn c in _jaxTable.Columns)
                 AppIO.DebugLog($"Column: {c.ColumnName} ({c.DataType.Name})");
+
+            AppIO.DebugLog($"END SetGridFinal");
         }
 
-        private void SetGridFinal2()
-        {
-            // Create simple POCO rows for reliable binding
-            var rowList = new System.Collections.ObjectModel.ObservableCollection<SimpleDataRow>();
-
-            foreach (System.Data.DataRow row in _jaxTable!.Rows)
-            {
-                var simpleRow = new SimpleDataRow();
-                foreach (System.Data.DataColumn col in _jaxTable.Columns)
-                {
-                    simpleRow.Values[col.ColumnName] = row[col] ?? DBNull.Value;
-                }
-                rowList.Add(simpleRow);
-            }
-
-
-
-            // 1. Capture the current parent (if any) and the old visual
-            Avalonia.Controls.Control? oldVisual = me.avaloniaObject;
-            Avalonia.Controls.Canvas? parentCanvas = null;
-
-            if (oldVisual?.Parent is Avalonia.Controls.Canvas canvas)
-            {
-                parentCanvas = canvas;
-                parentCanvas.Children.Remove(oldVisual);
-            }
-
-            // 2. Create the new DataGrid
-            Avalonia.Controls.DataGrid newGrid = new Avalonia.Controls.DataGrid
-            {
-                Name = "JAXDataGrid",
-                GridLinesVisibility = Avalonia.Controls.DataGridGridLinesVisibility.All,
-                BorderThickness = new Avalonia.Thickness(1),
-                BorderBrush = Avalonia.Media.Brushes.Gray,
-                AutoGenerateColumns = false,
-                CanUserResizeColumns = true,
-                CanUserReorderColumns = true,
-                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top
-            };
-
-            // 3. Point the JAX object at the new visual
-            me.avaloniaObject = newGrid;
-
-            // Explicit columns using dictionary lookup
-            grid.Columns.Clear();
-            var testColumn = new Avalonia.Controls.DataGridTextColumn
-            {
-                Header = "All Data",
-                Binding = new Avalonia.Data.Binding(".")   // binds to ToString()
-            };
-
-            grid.Columns.Add(testColumn);
-            grid.ItemsSource = rowList;
-            grid.LoadingRow += (sender, e) =>
-            {
-                // This can help force rendering
-            };
-
-            AppIO.DebugLog($"RowList Count: {rowList.Count}");
-
-            // Force column regeneration and refresh
-            grid.AutoGenerateColumns = false;
-
-            // Bind the list
-            grid.ItemsSource = rowList;
-
-            AppIO.DebugLog($"RowList Count: {rowList.Count}");
-
-            // Explicit columns using DictionaryValueConverter (add the converter class first)
-            grid.Columns.Clear();
-            var converter = new DictionaryValueConverter();
-
-            foreach (System.Data.DataColumn dataCol in _jaxTable.Columns)
-            {
-                var textColumn = new Avalonia.Controls.DataGridTextColumn
-                {
-                    Header = dataCol.ColumnName,
-                    Binding = new Avalonia.Data.Binding("Values")
-                    {
-                        Converter = converter,
-                        ConverterParameter = dataCol.ColumnName
-                    }
-                };
-                grid.Columns.Add(textColumn);
-            }
-
-            // 4. Restore the absolute position and size that the rest of the system expects
-            Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsDouble());
-            Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsDouble());
-            grid.Width = UserProperties["width"].AsDouble();
-            grid.Height = UserProperties["height"].AsDouble();
-
-            // 5. Put the new control back into the same parent canvas
-            if (parentCanvas is not null)
-            {
-                parentCanvas.Children.Add(newGrid);
-            }
-            else
-            {
-                // Fallback – should rarely happen after the form has been shown
-                // (you can also walk me.Parent to locate the correct canvas)
-                AppIO.DebugLog("No parent canvas found when recreating grid");
-            }
-
-            // 6. Re-wire any events that were attached to the old instance
-            SetGridEvents();
-
-            grid.InvalidateVisual();
-            grid.InvalidateMeasure();
-            grid.InvalidateArrange();
-
-            if (parentCanvas is not null)
-            {
-                parentCanvas.InvalidateVisual();
-                parentCanvas.InvalidateMeasure();
-                parentCanvas.InvalidateArrange();
-            }
-
-            // === Debug block ===
-            AppIO.DebugLog($"========= DataGrid Debug =========");
-            AppIO.DebugLog($"ItemsSource Type: {grid.ItemsSource?.GetType().FullName}");
-            AppIO.DebugLog($"Row Count in Table: {_jaxTable.Rows.Count}");
-            AppIO.DebugLog($"Column Count: {_jaxTable.Columns.Count}");
-
-            foreach (System.Data.DataColumn col in _jaxTable.Columns)
-            {
-                AppIO.DebugLog($"Column: {col.ColumnName} ({col.DataType.Name})");
-            }
-
-            SuspendEvents();
-        }
 
 
         /* ------------------------------------------------------------------------------------------*
@@ -2142,7 +2173,7 @@ namespace JAXBase.XBase
         {
             return
             [
-            "activecolumn,n!,0","activerow,n!,0","allowaddnew,l,","allowautocolumnfit,n,0","allowcellselection,l,.T.",
+            "activecolumn,n!,0","activerow,n!,0","allowaddnew,l,.T.","allowautocolumnfit,n,0","allowcellselection,l,.T.",
             "allowheadersizing,l,.T.","allowrowsizing,l,.T.","anchor,n,0",
             "backcolor,R,255|255|255","baseclass,c!,grid",
             "caption,c,","class,c!,grid","classlibrary,c!,","columncount,n,0","controlcount,n,0","comment,c,",
@@ -2159,7 +2190,7 @@ namespace JAXBase.XBase
             "name,c,grid",
             "objects,*,",
             "parent,o!,","parentclass,c!,","partition,n,0",
-            "readonly,l,","recordmark,l,.T.","recordsource,c,","recordsourcetype,n,1","righttoleft,l,",
+            "readonly,l,","recordmark,l,.T.","recordsource,c,","recordsourcetype,n,-1","righttoleft,l,",
             "rowcolchange,n!,0","rowheight,n,18",
             "scrollbars,n,3","selecteditembackcolor,R,0|120|215","selecteditemforecolor,R,255|255|255","splitbar,l,.T.",
             "tabindex,n,1","tabstop,l,.T.","tag,c,","top,n,0","tooltiptext,c,",
@@ -2172,14 +2203,39 @@ namespace JAXBase.XBase
         /* ------------------------------------------------------------------------------------------*
          * Classes used to make the grid work
          * ------------------------------------------------------------------------------------------*/
-        private class SimpleDataRow
+        public class SimpleDataRow : System.ComponentModel.INotifyPropertyChanged
         {
-            public System.Collections.Generic.Dictionary<string, object> Values { get; } = [];
+            public System.Collections.Generic.Dictionary<string, object> Values { get; } = new(System.StringComparer.OrdinalIgnoreCase);
 
             // Extra data that the grid never sees
             public string Tag { get; set; } = string.Empty;
             public int RowNumber { get; set; } = 0;
-            public bool Deleted { get; set; } = false;
+
+            private bool _deleted;
+            public bool Deleted
+            {
+                get => _deleted;
+                set
+                {
+                    if (_deleted == value) return;
+                    _deleted = value;
+                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Deleted)));
+                }
+            }
+
+            private bool _isCurrent;
+            public bool IsCurrent
+            {
+                get => _isCurrent;
+                set
+                {
+                    if (_isCurrent == value) return;
+                    _isCurrent = value;
+                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsCurrent)));
+                }
+            }
+
+            public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
             public override string ToString()
             {
@@ -2187,21 +2243,57 @@ namespace JAXBase.XBase
             }
         }
 
+        /// <summary>true → ">" else empty (current-row marker)</summary>
+        public class BoolToMarkerConverter : Avalonia.Data.Converters.IValueConverter
+        {
+            public object? Convert(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+                => value is true ? ">" : "";
 
-        private class DictionaryValueConverter : Avalonia.Data.Converters.IValueConverter
+            public object? ConvertBack(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+                => throw new System.NotSupportedException();
+        }
+
+        /// <summary>true → black brush, false → null (normal background)</summary>
+        public class DeletedToBrushConverter : Avalonia.Data.Converters.IValueConverter
+        {
+            public object? Convert(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+                => value is true ? Avalonia.Media.Brushes.Black : null;
+
+            public object? ConvertBack(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+                => throw new System.NotSupportedException();
+        }
+
+
+        public class DictionaryValueConverter : Avalonia.Data.Converters.IValueConverter
         {
             public object? Convert(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
             {
                 if (value is System.Collections.Generic.Dictionary<string, object> dict && parameter is string key)
                 {
-                    return dict.TryGetValue(key, out var val) ? val : null;
+                    if (dict.TryGetValue(key, out var val))
+                        return FormatForDisplay(val);
+                    return null;
                 }
-                return value?.ToString();
+                return FormatForDisplay(value);
             }
 
             public object? ConvertBack(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
             {
-                return value;  // Simple passthrough for read-only grid
+                return value;
+            }
+
+            /// <summary>Display format. Booleans become T/F; everything else uses ToString.</summary>
+            private static object? FormatForDisplay(object? val)
+            {
+                if (val is null || val == DBNull.Value)
+                    return ".NULL.";
+                if (val is bool b)
+                    return b ? "T" : "F";
+                if (val is DateOnly d)
+                    return d.ToString("MM/dd/yyyy");
+                if (val is DateTime t)
+                    return t.ToString("MM/dd/yyyy HH:mm:ss");
+                return val.ToString();
             }
         }
     }
