@@ -8,6 +8,11 @@
  * 
  * Errors are logged through the parent XBase_Class_SQL.AddError() method.
  * 
+ * 2026-10-14 - Added some extra code to round out support and now this
+ *              and MySQL should be pretty close in feature support.
+ *              
+ *                  
+ *              
  * ================================================================================================= */
 using JAXBase.Core;
 using JAXBase.Data;
@@ -16,8 +21,6 @@ using JAXBase.Utilities;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Text;
-using System.Windows.Documents;
-using System.Windows.Interop;
 
 namespace JAXBase.XBase
 {
@@ -665,7 +668,11 @@ namespace JAXBase.XBase
             sql = sql.Trim();
             object? returnObject = null;
 
+            AppIO.DebugLog($"EXECUTE: SQL -> {sql}");
+
             SQLBase.CurrentCursorName = string.IsNullOrEmpty(cursorName) ? SQLBase.CurrentCursorName : cursorName;
+
+            AppIO.DebugLog($"EXECUTE: To Cursor -> {cursorName}");
 
             using var cmd = new SqlCommand(sql, SQLCon) { CommandType = CommandType.Text };
             var kind = XBase_Class_SQL.DetectCommandKind(sql);
@@ -711,8 +718,8 @@ namespace JAXBase.XBase
                     {
                         // Data Table
                         case 1:
-                            if (Program.CurrentApp.CurrentDS.IsWorkArea(SQLBase.CurrentCursorName))
-                                Program.CurrentApp.CurrentDS.SelectWorkArea(SQLBase.CurrentCursorName); // Overwrite existing alias
+                            if (Program.CurrentApp.CurrentDS.IsWorkArea(cursorName))
+                                Program.CurrentApp.CurrentDS.SelectWorkArea(cursorName); // Overwrite existing alias
                             else
                                 Program.CurrentApp.CurrentDS.SelectWorkArea(0);         // Select an unused work area
 
@@ -720,13 +727,13 @@ namespace JAXBase.XBase
 
                             // Create a cursor for the datatable
                             Program.CurrentApp.ReturnValue.Element.Value = dt.Rows.Count;
-                            TableHelper.MakeCursorForDataTable(dt, SQLBase.CurrentCursorName).Wait();
+                            TableHelper.MakeCursorForDataTable(dt, cursorName).Wait();
                             break;
 
                         // Scalar
                         case 2:
-                            if (Program.CurrentApp.CurrentDS.IsWorkArea(SQLBase.CurrentCursorName))
-                                Program.CurrentApp.CurrentDS.SelectWorkArea(SQLBase.CurrentCursorName); // Overwrite existing alias
+                            if (Program.CurrentApp.CurrentDS.IsWorkArea(cursorName))
+                                Program.CurrentApp.CurrentDS.SelectWorkArea(cursorName); // Overwrite existing alias
                             else
                                 Program.CurrentApp.CurrentDS.SelectWorkArea(0);         // Select an unused work area
 
@@ -734,7 +741,7 @@ namespace JAXBase.XBase
 
                             // Create a cursor for the datatable
                             Program.CurrentApp.ReturnValue.Element.Value = dt.Rows.Count;
-                            TableHelper.MakeCursorForDataTable(dt, SQLBase.CurrentCursorName).Wait();
+                            TableHelper.MakeCursorForDataTable(dt, cursorName).Wait();
                             break;
 
                         // NonQuery

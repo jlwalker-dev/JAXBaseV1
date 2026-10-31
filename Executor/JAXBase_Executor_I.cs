@@ -318,7 +318,7 @@ namespace JAXBase.Executor
                     throw new Exception(string.Format("2088|{0}", dbfInfo.TableName));           // File is read only
 
                 // Is this a buffered table?
-                bool buffered = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.Buffered;
+                bool buffered = Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.IsRowBuffered || Program.CurrentApp.CurrentDS.CurrentWA.DbfInfo.IsTableBuffered;
 
                 // For each valueList row, add a new record to the table
                 for (int v = 0; v < valueList.Count; v++)

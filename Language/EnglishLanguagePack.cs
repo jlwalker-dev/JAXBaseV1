@@ -1,5 +1,10 @@
-﻿using JAXBase.Core;
+﻿using Avalonia.Markup.Xaml.MarkupExtensions;
+using HarfBuzzSharp;
+using JAXBase.Core;
 using JAXBase.Core.Extensions;
+using Newtonsoft.Json;
+using System.Windows.Documents;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JAXBase.Language
 {
@@ -1342,22 +1347,27 @@ namespace JAXBase.Language
             { 96, "Must specify {0} parameter(s)" },
             { 97, "Invalid parameter {!}" },
             { 98, "Too many parameters recieved" },
+
             // 100
             { 107, "Operator/operand type mismatch {0}" },
             { 112, "Invalid key length" },
+
             // 200
             { 202, "Invalid path or file name {0}" },
             { 232, "{*} is not an array" },
             { 233, "{*} is already an array" },
             { 234, "Property does not specify an array" },
             { 235, "Array has zero elements" },
+
             // 300
             { 333, "Not supported error" },
             { 334, "IO Exception occured" },
+
             // 400
             { 401, "IO Exception" },
             { 402, "Empty file name error" },
             { 499, "Out of memory" },
+
             // 500 Images
             { 501, "Image {0} already exits in registry" },
             { 502, "Image {0} not found in registry" },
@@ -1366,14 +1376,17 @@ namespace JAXBase.Language
             { 519, "Invalid Image Name {0}" },
             { 520, "Invalid media or type" },
             { 599, "Internal image registry error" },
+
             // 1100
             { 1111, "Invalid file descriptor" },
             { 1112, "Error closing the file" },
             { 1113, "File is not open" },
             { 1115, "Invalid operation for a cursor" },
+            { 1149, "Not enough memory for buffer" }, // new ----
             { 1195, "Object file {*} was compiled in a previous version of JAXBase" },
             { 1196, "{*} is not a JAXBase .EXE file." },
             { 1197, "IO disk or network error" },
+
             // 1200
             { 1203, "Mismatched SCAN/ENDSCAN command structure" },
             { 1207, "Mismatched FOR/ENDFOR command structure" },
@@ -1388,16 +1401,19 @@ namespace JAXBase.Language
             { 1232, "Missing expression" },
             { 1233, "Only one argument allowed" },
             { 1234, "Subscript is outside defined range" },
+
             // 1300
             { 1300, "Value must be greater than 0" },
             { 1301, "Value must be less than {0}" },
             { 1307, "Divide by 0 error" },
+
             // 1400
             { 1400, "Invalid or unknown SQL statement" },
             { 1466, "Connection handle is invalid" },
             { 1497, "Invalid DSN connection information" },
             { 1498, "SQL SELECT statement is invalid" },
             { 1499, "SQL DSN parameter is invalid" },
+
             // 1500
             { 1524, "Printer Error: {0}" },
             { 1525, "Barcode Error: {0}" },
@@ -1405,6 +1421,7 @@ namespace JAXBase.Language
             { 1527, "ODBC Error: {0}" },
             { 1533, "The property {0} is read only" },
             { 1541, "Connection already established" },
+            { 1545, "Table buffer for \"name\" contains uncommitted changes" }, // new ----
             { 1552, "File {*} is not a database" },
             { 1553, "File {*} is a database" },
             { 1554, "Error instantiating cursor" },
@@ -1412,17 +1429,22 @@ namespace JAXBase.Language
             { 1563, "Cannot find view {!} in the current database" },
             { 1564, "Table {*} already exists" },
             { 1575, "Object name is invalid: {0}" },
+            { 1586, "Function requires row or table buffering mode" },  // new ----
+            { 1589, "Table or row buffering requires that SET MULTILOCKS is set to ON" }, // new ----
             { 1590, "Already in a transaction" },
             { 1591, "Mismatched Begin/End Transaction structure" },
             { 1592, "Rollback: not in a transaction" },
+            { 1596, "Table buffering is not enabled" }, // new ----
+
             // 1600 - Indexes
             { 1601, "Registered index {*} is not found" },
             { 1602, "Registered index {*} does not belong to this table" },
             { 1603, "Registered index {*} could not be opened" },
-            { 1604, "Registered index {*}' does not match the table" },
+            { 1604, "Registered index {*} does not match the table" },
             { 1605, "Registered index {*} is invalid or corrupted" },
             { 1662, "Unknown data type {*}" },
             { 1683, "Index is not found" },
+
             // 1700
             { 1705, "File access is denied" },
             { 1712, "Field {*} is duplicate or invalid" },
@@ -1436,6 +1458,7 @@ namespace JAXBase.Language
             { 1773, "Class definition {!} not found" },
             { 1777, "Function is not supported on remote tables or views" },
             { 1778, "Illegal assignment to table" },
+
             // 1800 - SQL
             { 1800, "SQL: Internal error" },
             { 1801, "SQL: Connection not established" },
@@ -1452,6 +1475,7 @@ namespace JAXBase.Language
             { 1822, "Trigger or contraint error, could not delete record" },
             { 1866, "SQL: Invalid {0} specification" },
             { 1879, "Missing Primary key" },
+
             // 1900 - objects
             { 1901, "Object not initialized" },
             { 1902, "Class {0} failed to initialize" },
@@ -1472,6 +1496,7 @@ namespace JAXBase.Language
             { 1880, "Object {0} could not be attached to parent" },
             { 1992, "{!} is not a function, procedure, or program" },
             { 1999, "Feature not implemented {0}" },
+
             // 2000
             { 2020, "File save error {*}" },
             { 2021, "Unauthorized access to path or file {0}" },
@@ -1484,6 +1509,7 @@ namespace JAXBase.Language
             { 2084, "Could not write to file {!}" },
             { 2088, "File {!} is read only" },
             { 2091, "Table {!} has become corrupted. The table will need to be repaired before using again" },
+
             // 2200
             { 2202, "Names must start with a underscore and/or letter and then only contain letters and numbers" },
             { 2203, "Name is too long ({0} characters maximum)" },
@@ -1503,15 +1529,18 @@ namespace JAXBase.Language
             { 2404, "Cannot make {!} a private variable" },
             { 2405, "{!} cannot be overwritten" },
             { 2450, "Failed to create table or cursor" },
+
             // 2500 - JSON
             { 2500, "Invalid JSON expression {0}" },
             { 2501, "Invalid JSON file {0}" },
             { 2502, "JSON parsing error {0}" },
+
             // 2600 - JAXEdit
             { 2600, "Editor program is not set" },
             { 2601, "Editor program {0} not found" },
             { 2602, "Append program is not set" },
             { 2603, "Append program {0} not found" },
+
             // 3000 - Object related
             { 3001, "A Form or Browser named {!} already exists" },
             { 3002, "The variable {*} is already defined as an object" },
@@ -1548,6 +1577,7 @@ namespace JAXBase.Language
             { 3301, "A visual class cannot have a non-visual class as a parent: {!}" },
             { 3400, "Color value conversion error {0}" },
             { 3401, "Data conversion error" },
+
             // 4000
             { 4001, "Cannot initialize a field object with a null value" },
             { 4002, "Unsupported field type {!}" },
@@ -1557,6 +1587,7 @@ namespace JAXBase.Language
             { 4015, "Unknown scope reference" },
             { 4016, "Data session must be a positive numeric value" },
             { 4017, "Work area must be a positive numeric value" },
+
             // 6000 SQL/ODBC
             { 6000, "Invalid connection string" },
             { 6001, "SQL Disconnected" },
@@ -1580,21 +1611,26 @@ namespace JAXBase.Language
             { 6301, "SQL data update error: {0}" },
             { 6302, "SQL data insertion error: {0}" },
             { 6303, "SQL data deletion error: {0}" },
+            
             // 6500 Method/Event
             { 6500, "Method {!} requires a parameter" },
             { 6501, "Method {!} does not exist" },
             { 6598, "This class does not support methods/events" },
             { 6599, "Error in event or method" },
+            
             // 6600 AI
             { 6600, "Setting for AIAGENT is OFF" },
+            
             // 6700 User
             { 6700, "User canceled the operation" },
-            // 7000+
+            
+            // 7000
             { 7000, "Array must be {0} dimensional" },
             { 7001, "Array must have {0} columns" },
             { 7002, "Array must have at least {0} columns" },
             { 7003, "Array must have {0} rows" },
             { 7004, "Array must have at least {0} rows" },
+
             // 8000
             { 8000, "Invalid Form Table definition - {0}" },
             { 8001, "Compiled code is corrupted in {!}" },
@@ -1625,6 +1661,7 @@ namespace JAXBase.Language
             { 8032, "Copy exception" },
             { 8090, "Work area overflow" },
             { 8091, "Session overflow" },
+
             // 8100 Dictionary/List
             { 8100, "Dictionary is not initialized" },
             { 8101, "Dictionary does not contain key {0}" },
@@ -1632,6 +1669,7 @@ namespace JAXBase.Language
             { 8110, "List requires dictionary reference during initialization" },
             { 8111, "A lists is a read only reference to a dictionary" },
             { 8112, "List is not initalized" },
+
             // 8200 Web
             { 8200, "Web request error: {0}" },
             { 8201, "Web response error: {0}" },
@@ -1661,10 +1699,12 @@ namespace JAXBase.Language
             { 8226, "Invalid key" },
             { 8227, "Invalid or emtpy content" },
             { 8230, "Invalid TCP client" },
+
             // 9000
             { 9000, "ERROR: {0}" },
             { 9001, "User/Password combination does not match" },
             { 9002, "The four character registration code is missing for key generation" },
+
             // 9100
             { 9100, "Invalid or unknown command {0}" },
             { 9101, "Invalid command parameter(s)" },
@@ -1673,32 +1713,42 @@ namespace JAXBase.Language
             { 9104, "Invalid parse data" },
             { 9105, "Attempting to set name property to an invalid value {*}" },
             { 9107, "Name already exists" },
+
             // 9300
             { 9300, "System Error - expresions cannot be sent by reference" },
+
             // 9500
             { 9500, "Class disposal problem" },
+
             // 9600
             { 9600, "Could not retrieve AError" },
             { 9666, "xBase language function or command not implemented: {0}" },
+
             // 9700 Form
             { 9700, "Form definition failure" },
             { 9701, "Child form {!} is not attached to a parent" },
             { 9702, "Cannot alter SHOWWINDOW once form is rendered" },
+
             // 9720 CommandButton
             { 9810, "Caption property cannot be set to empty string" },
             { 9811, "Must have at least one button in a CommandGroup object" },
+
             // 9760 Grid
             { 9760, "Grid definition failure" },
             { 9761, "Grid column setup is invalid for field {*}" },
             { 9762, "Grid colum {0} setup is invalid" },
+
             // 9780 Monitor
             { 9780, "Invalid monitor reference" },
+
             // 9850 Media
             { 9850, "Media {!} not found" },
             { 9851, "No media loaded" },
             { 9852, "Invalid status command {0}" },
+
             // 9860 Menu
             { 9860, "Invalid hotkey expression" },
+
             // 9900 JAXBase
             { 9900, "JAXBase Class error - check the class AError array for more information" },
             { 9901, "Private property system error" },
@@ -1706,12 +1756,15 @@ namespace JAXBase.Language
             { 9903, "Compiler exception" },
             { 9904, "Process exception" },
             { 9905, "Loading exceptiong" },
+
             // 9960
             { 9960, "StorageProvider exception" },
+
             // 9980 Math
             { 9987, "Macro expansion error" },
             { 9988, "System Math: Stack overflow" },
             { 9989, "System Math: Stack underflow" },
+
             // 9990
             { 9990, "System error - check system debug log for more information" },
             { 9992, "Bad or corrupted object code" },
