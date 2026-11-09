@@ -85,7 +85,7 @@ namespace JAXBase.Data
 
         readonly AppClass App;
         public JAXSettings JaxSettings = new();
-        public Dictionary<int,XBase_Class_SQL> SQLConnections = [];
+        public Dictionary<int, XBase_Class_SQL> SQLConnections = [];
         private int SQLHandle = 0;
 
         /*---------------------------------------------------------------------------------*
@@ -326,16 +326,49 @@ namespace JAXBase.Data
         }
 
         /*---------------------------------------------------------------------------------*
-         * Check all workareas in the current datasession, looking for an alias that 
-         * equals the tablename Return work area if found
+         * Check all workareas in the current datasession, looking for a table match.
+         * Return work area if found.
          *---------------------------------------------------------------------------------*/
         public int TableUsed(string tablename)
         {
             int isUsed = -1;
 
+            string path = JAXLib.JustPath(tablename);
+            if (string.IsNullOrEmpty(path))
+                path = JaxSettings.Default;
+
+            if (string.IsNullOrEmpty(path) == false)
+                path = JAXLib.Addbs(path);
+
+            string ext = JAXLib.JustExt(tablename);
+            if (string.IsNullOrEmpty(ext))
+                ext = ".dbf";
+
+            string fullName = path + JAXLib.JustStem(tablename) + "." + ext;
+
             foreach (KeyValuePair<int, JAXDirectDBF> dbf in WorkAreas)
             {
                 if (dbf.Value.DbfInfo.Alias.Equals(tablename, StringComparison.OrdinalIgnoreCase))
+                {
+                    isUsed = dbf.Key;
+                    break;
+                }
+            }
+
+            return isUsed;
+        }
+
+        /*---------------------------------------------------------------------------------*
+         * Check all workareas in the current datasession, looking for an alias match.
+         * Return work area if found.
+         *---------------------------------------------------------------------------------*/
+        public int AliasUsed(string aliasName)
+        {
+            int isUsed = -1;
+
+            foreach (KeyValuePair<int, JAXDirectDBF> dbf in WorkAreas)
+            {
+                if (dbf.Value.DbfInfo.Alias.Equals(aliasName, StringComparison.OrdinalIgnoreCase))
                 {
                     isUsed = dbf.Key;
                     break;

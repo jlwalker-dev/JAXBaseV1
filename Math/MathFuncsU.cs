@@ -52,8 +52,10 @@ namespace JAXBase.Math
                     tAnswer._avalue[0].Value = string1.ToUpper();
                     break;
 
-                case "`USED":                               // Check current datasession for name/alias
-                    tAnswer._avalue[0].Value = thisDS.TableUsed(string1) > 0;
+                case "`USED":                               // Check current datasession for table/alias
+                    // if string1 has a slash, backslash, or colon then don't look for the alias
+                    tAnswer._avalue[0].Value = thisDS.TableUsed(string1) > 0 ||
+                        (string1.Contains('/') == false && string1.Contains('\\') == false && string1.Contains(':') == false && thisDS.AliasUsed(string1) > 0);
                     break;
 
                 case "`VAL":  // Convert from string to number
@@ -90,7 +92,7 @@ namespace JAXBase.Math
                             if (stype3.Equals("N") || string.IsNullOrWhiteSpace(stype3))
                             {
                                 string2 = string.IsNullOrWhiteSpace(string2) ? "XMLCursor" : string2;
-                                tAnswer._avalue[0].Value=VFPUtilities.MakeCursorFromXML(string1, string2, intval3);
+                                tAnswer._avalue[0].Value = VFPUtilities.MakeCursorFromXML(string1, string2, intval3);
                             }
                             else
                                 errNo = 11;

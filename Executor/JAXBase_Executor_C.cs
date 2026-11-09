@@ -4,6 +4,8 @@ using JAXBase.Language;
 using JAXBase.UI.Dialogs;
 using JAXBase.Utilities;
 using JAXBase.XBase;
+using System.Security.Permissions;
+using System.Windows.Documents;
 using static JAXBase.Core.AppClass;
 
 namespace JAXBase.Executor
@@ -292,7 +294,7 @@ namespace JAXBase.Executor
          * 
          * CATCH [TO VarName] [WHEN lExpression]
          */
-        public static async Task<string> Catch( ExecutorCodes eCodes)
+        public static async Task<string> Catch(ExecutorCodes eCodes)
         {
             string result = string.Empty;
             bool tryDone = false;
@@ -457,7 +459,7 @@ namespace JAXBase.Executor
                         if (Directory.Exists(path))
                         {
                             Program.CurrentApp.CurrentDS.JaxSettings.Default = path;
-                            result = JAXLanguageLists.GetPhrase(7)+" " + path;
+                            result = JAXLanguageLists.GetPhrase(7) + " " + path;
                         }
                     }
                     else
@@ -485,12 +487,12 @@ namespace JAXBase.Executor
                         if (string.IsNullOrWhiteSpace(path))
                         {
                             // Nothing to do, so just return the default
-                            AppIO.Talk(JAXLanguageLists.GetPhrase(8)+" " + Program.CurrentApp.CurrentDS.JaxSettings.Default);
+                            AppIO.Talk(JAXLanguageLists.GetPhrase(8) + " " + Program.CurrentApp.CurrentDS.JaxSettings.Default);
                         }
                         else if (Directory.Exists(path))
                         {
                             Program.CurrentApp.CurrentDS.JaxSettings.Default = path;
-                            AppIO.Talk(JAXLanguageLists.GetPhrase(7) +" " + path);
+                            AppIO.Talk(JAXLanguageLists.GetPhrase(7) + " " + path);
                         }
                         else
                             throw new Exception("202|" + path);
@@ -959,19 +961,107 @@ namespace JAXBase.Executor
 
         /* TODO 
          * 
+         * COPY FILE cFileName [TO FileName] [DATABASE DatabaseName]
+         * 
+         * COPY STRUCTURE EXTENDED cFileName [TO FileName] [DATABASE DatabaseName]
+         * 
          * COPY TO FileName [DATABASE DatabaseName]
          *      [FIELDS FieldList | FIELDS LIKE Skeleton | FIELDS EXCEPT Skeleton]
          *      [Scope] [FOR lExpression1] [WHILE lExpression2] 
          *      [ [TYPE] [ FOXPLUS | FOX2X | DIF | MOD | SDF | CSV | XLS | XLSX | 
          *      DELIMITED [ WITH Delimiter | WITH BLANK  | WITH TAB | WITH CHARACTER <delimiter> ] ] ] 
          *      [AS nCodePage]
+         *      
+         * COPY [ALL] TO ARRAY VarName [FIELDS FieldList | FIELDS LIKE Skeleton | FIELDS EXCEPT Skeleton]
+         * 
          */
-        public static string Copy(string cmdRest)
+        public static async Task<string> Copy(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 
             try
             {
+                switch (eCodes.SUBCMD)
+                {
+                    case "A":
+                        JAXDirectDBF Table = Program.CurrentApp.CurrentDS.CurrentWA;
+                        JAXScope jaxScope = new();
+                        await jaxScope.Setup(eCodes.Scope, Table, true);
+
+                        // Are there rows to process?
+                        if (Table.DbfInfo.RecCount > 0)
+                        {
+                            // If deleted is set on, go to first non-deleted record.
+                            if (Program.CurrentApp.CurrentDS.JaxSettings.Deleted)
+                            {
+                                // Skip through the table until EOF or a non-deleted record is found
+                                while (Table.DbfInfo.DBFEOF == false && Table.DbfInfo.currentRowIsDeleted)
+                                    await Table.DBFSkipRecord(1);
+                            }
+
+                            // Create the array variable if there are records to process
+                            if (Table.DbfInfo.DBFEOF == false)
+                            {
+                                JAXObjects.Token varToken = new();
+                                string arrayName = eCodes.To[0].Name;
+
+                                try
+                                {
+                                    // Create the array variable and get the reference to it
+                                    AppVars.SetVarOrMakePrivate(arrayName, 1, 1, true);
+                                    varToken = await AppVars.GetVarToken(arrayName, false);
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Something failed, go past bottom of table to get EOF set to true
+                                    AppErrorHandling.HandleException(System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex.Message);
+                                    await Table.DBFGotoRecord("bottom");
+                                    await Table.DBFSkipRecord(1);
+                                }
+
+                                // Step through the remaining rows until scope is done or EOF is reached
+                                int rowCount = 0;
+
+                                while (Table.DbfInfo.DBFEOF == false)
+                                {
+                                    // Process this row if not deleted or SET DELETED is off
+                                    if (Program.CurrentApp.CurrentDS.JaxSettings.Deleted == false || Table.DbfInfo.currentRowIsDeleted == false)
+                                    {
+                                        // Set the number of rows and columns thus far
+                                        AppVars.SetVarOrMakePrivate(arrayName, ++rowCount, Table.DbfInfo.VisibleFields, true);
+
+                                        // Fill in the array's row with the current record's field values
+                                        // Start at field 1 because field 0 is the delete marker and is not part of the visible fields
+                                        for (int j = 1; j < Table.DbfInfo.VisibleFields; j++)
+                                        {
+                                            // Set the correct array element and fill it in
+                                            varToken.SetElement(rowCount, j);
+                                            varToken.Element.Value = Table.DbfInfo.CurrentRow.Rows[0][j];
+                                        }
+
+                                        // Have we reached the end of the scope?
+                                        if (jaxScope.IsDone()) break;
+                                    }
+
+                                    // Try to read in the next record
+                                    await Table.DBFSkipRecord(1);
+                                }
+                            }
+                        }
+                        break;
+
+                    case "F":
+                        break;
+
+                    case "S":
+                        break;
+
+                    case "T":
+                        break;
+
+                    default:
+                        break;
+                }
             }
             catch (Exception ex)
             {
@@ -986,7 +1076,7 @@ namespace JAXBase.Executor
          * COUNT   [Scope] [FOR lExpression1] [WHILE lExpression2] [TO VarName] [NOOPTIMIZE]
          * 
          */
-        public static string Count(string cmdRest)
+        public static async Task<string> Count(ExecutorCodes eCodes)
         {
             string result = string.Empty;
 

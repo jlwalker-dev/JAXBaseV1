@@ -110,11 +110,11 @@ namespace JAXBase.Executor
         public static async Task<string> Use(ExecutorCodes eCodes)
         {
             string result = string.Empty;
-
             AppErrorHandling.ClearErrors();
 
             try
             {
+                // Get current DS & WA
                 int ds = Program.CurrentApp.CurrentDataSession;
                 int wa = Program.CurrentApp.CurrentDS.CurrentWorkArea();
 
@@ -146,8 +146,10 @@ namespace JAXBase.Executor
                     throw new Exception("1||Cannot open a blank table name with a database specification");
 
                 bool again = Array.IndexOf(eCodes.Flags, "again") >= 0;
-                bool exclusive = Array.IndexOf(eCodes.Flags, "exclusive") >= 0 || Program.CurrentApp.CurrentDS.JaxSettings.Exclusive;
                 bool noupdate = Array.IndexOf(eCodes.Flags, "noupdate") >= 0;
+
+                bool exclusive = Array.IndexOf(eCodes.Flags, "exclusive") >= 0 || Program.CurrentApp.CurrentDS.JaxSettings.Exclusive;
+                exclusive = exclusive && Array.IndexOf(eCodes.Flags, "shared") == 0;
 
                 // Are we using a different datasession?
                 if (eCodes.SESSION > 0)
@@ -167,7 +169,6 @@ namespace JAXBase.Executor
                 // the OPEN routine to get the long field names for the table
                 // and then closed again.  JAXBase doesn't support any other
                 // legacy features of the Visual FoxPro DBC.
-
                 if (dbc.Length > 0)
                 {
                     // Open a table in a SQL connection
@@ -193,7 +194,33 @@ namespace JAXBase.Executor
                     // Got this far, so we must be good to go
                     dbf = path + stem + "." + ext;
 
-                    // TODO - add AGAIN flag to call for Version 0.8
+                    // -------------------------------------------------------------------------
+                    // TODO - Clean this up
+                    // Check to see if this file is already open
+                    int tableWA = Program.CurrentApp.CurrentDS.TableUsed(dbf);
+
+                    if (tableWA > 0)
+                    {
+                        // Table is in use, was AGAIN included or are we in the workarea of that table?
+                        if (tableWA!=Program.CurrentApp.CurrentDS.CurrentWorkArea())
+                        {
+                            // Is the AGAIN flag present?
+                            throw new Exception("AGAIN flag not present");
+                        }
+                    }
+                    else
+                    {
+                        // Is the alias in use or are we in the work area of that alias?
+                        tableWA = Program.CurrentApp.CurrentDS.AliasUsed(alias);
+                        if (tableWA >0 && tableWA != Program.CurrentApp.CurrentDS.CurrentWorkArea())
+                        {
+                            throw new Exception("Alias in use");
+                        }
+                    }
+                    // -------------------------------------------------------------------------
+
+
+                    // Open the table
                     if (await Program.CurrentApp.CurrentDS.CurrentWA.DBFUse(dbf, alias, exclusive, noupdate, string.Empty) == 0)
                     {
                         // successful open - are there any index?

@@ -410,9 +410,6 @@ namespace JAXBase.Executor
 
             try
             {
-                if (ContainsSource == false)
-                    Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].CurrentLineOfCode = cmdString + " ...";
-
                 // Chop off the excess statement delimiters
                 cmdRest = cmdRest.Trim(AppClass.stmtDelimiter);
                 string[] mProc = cmdRest.Split(AppClass.stmtDelimiter);
@@ -495,6 +492,11 @@ namespace JAXBase.Executor
                             break;
 
                         default:
+                            if (cmdString.ToLower().Equals("copy"))
+                            {
+                                int iii = 0;
+                            }
+
                             result = cmdString.ToLower() switch
                             {
                                 "activate" => JAXBase_Executor_A.Activate(this, eCodes),
@@ -516,7 +518,8 @@ namespace JAXBase.Executor
                                 "close" => await JAXBase_Executor_C.Close(eCodes),
                                 "compile" => await JAXBase_Executor_C.Compile(eCodes),
                                 "continue" => JAXBase_Executor_C.Continue(eCodes),        //Version 0.6
-                                "copy" => JAXBase_Executor_C.Copy(cmdRest),                // Version 1
+                                "copy" => await JAXBase_Executor_C.Copy(eCodes),                // Version 1
+                                "count" => await JAXBase_Executor_C.Count(eCodes),              // Version 1
                                 "create" => await JAXBase_Executor_C.Create(eCodes),      // Version 1
                                 "debug" => JAXBase_Executor_D.Debug(cmdRest),              // Version 1
                                 "debugout" => JAXBase_Executor_D.DebugOut(cmdRest),        // Version 1

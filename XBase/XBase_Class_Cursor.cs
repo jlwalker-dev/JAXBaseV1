@@ -2,6 +2,10 @@
  * 2026.06.09 - JLW
  *      Used to provide information on the header of the current cursor, table, or (in the future) a database.
  *      
+ * 2026.11.01 - JLW
+ *      Considering altering this code so GetProperties interogates every time it's accessed.  The current code 
+ *      is sneak and peek and doesn't stay up to date with the current cursor, table, or database.
+ *      
  */
 using JAXBase.Core;
 using JAXBase.Data;
@@ -10,8 +14,8 @@ namespace JAXBase.XBase
 {
     public class XBase_Class_Cursor : XBase_Avalonia
     {
-        public new string MyBaseClass = "Header";
-        public new string MyDefaultName = "header";
+        public new string MyBaseClass = "Cursor";
+        public new string MyDefaultName = "cursor";
 
         public XBase_Class_Cursor(JAXObjectWrapper jow, string name) : base(jow, name)
         {
