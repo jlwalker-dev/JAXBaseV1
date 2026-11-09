@@ -21,15 +21,16 @@
  *      Phase 1 will once again be a read-only grid that fills everything into a simple 
  *      data table.  Record source will be table based.  - COMPLETED
  * 
- *      Phase 2 will be tying in arrays with different data types in a read-only grid. - COMPLETED
+ *      Phase 2 will be tying in arrays with different data types in a read-only grid. - COMPLETED - 2026-10-25
  * 
- *      Phase 3 will be allowing updates to the grid but not to the underlying data structure. - Pending
+ *      Phase 3 will be allowing updates to the grid but not to the underlying data structure. - COMPLETED - 2026-10-30
  * 
- *      Phase 4 will be updating the underlying data structure
- * 
- *      Phase 5 will involve refreshing the grid with new data or added/subtracted rows  
+ *      Phase 4 will be updating the underlying data table - COMPLETED - 2026-11-02
  *      
- *      Phase 6 will be trying to support a column of objects  
+ *      Phase 5 will be using an array with different data types in each column
+ * 
+ *      Phase 6 will involve detecting DBF/Cursor changes and refreshing the grid
+ *      
  * 
  */
 using JAXBase.Core;
@@ -67,6 +68,9 @@ namespace JAXBase.XBase
         bool GridCellInEdit = false;
         int GridCurrentRow = -1;
         int GridCurrentColumn = -1;
+
+        // Which rows are visible?  TODO - GOOD START!
+        private readonly HashSet<Avalonia.Controls.DataGridRow> _visibleRows = new();
 
 
         // Define grid reference
@@ -967,6 +971,7 @@ namespace JAXBase.XBase
                 if (Methods.ContainsKey(methodName))
                 {
                     string cCode = Methods[methodName].CompiledCode;
+
                     // Create a new App.Levels and execute the code
                     if (cCode.Length > 0)
                         results = await base._CallMethod(methodName);
@@ -1106,20 +1111,21 @@ namespace JAXBase.XBase
             grid.CurrentCellChanged -= Grid_CurrentCellChanged;
             grid.CurrentCellChanged += Grid_CurrentCellChanged;
 
-            //grid.KeyDown -= Grid_KeyDown;
-            //grid.KeyDown += Grid_KeyDown;
+            // Track what rows are visible in grid
+            grid.LoadingRow -= OnLoadingRow;
+            grid.LoadingRow += OnLoadingRow;
 
+            grid.UnloadingRow -= OnUnloadingRow;
+            grid.UnloadingRow += OnUnloadingRow;
+
+
+            // Key Down handler (tunneling lets you see the key before the grid)
             // Clean any previous tunnel subscription so we don't stack handlers
-            grid.RemoveHandler(
-                Avalonia.Input.InputElement.KeyDownEvent,
-                Grid_KeyDown);
+            grid.RemoveHandler(Avalonia.Input.InputElement.KeyDownEvent, Grid_KeyDown);
 
             // Add this (tunnel = see it before DataGrid / editor consumes it)
-            grid.AddHandler(
-                Avalonia.Input.InputElement.KeyDownEvent,
-                Grid_KeyDown,
-                Avalonia.Interactivity.RoutingStrategies.Tunnel,
-                handledEventsToo: true);
+            grid.AddHandler(Avalonia.Input.InputElement.KeyDownEvent, Grid_KeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+
 
             // Added: General click handler for bubbled events (e.g., from button/link columns)
             grid.PointerPressed -= Grid_PointerPressed;
@@ -2295,6 +2301,45 @@ namespace JAXBase.XBase
                     return t.ToString("MM/dd/yyyy HH:mm:ss");
                 return val.ToString();
             }
+        }
+
+
+        private void OnLoadingRow(object? sender, Avalonia.Controls.DataGridRowEventArgs e)
+        {
+            if (e.Row is Avalonia.Controls.DataGridRow row)
+            {
+                _visibleRows.Add(row);
+                // row.Index and row.DataContext are available
+            }
+        }
+
+        private void OnUnloadingRow(object? sender, Avalonia.Controls.DataGridRowEventArgs e)
+        {
+            if (e.Row is Avalonia.Controls.DataGridRow row)
+            {
+                _visibleRows.Remove(row);
+            }
+        }
+
+        // Call this when you need the current set
+        public IReadOnlyCollection<Avalonia.Controls.DataGridRow> GetCurrentlyVisibleRows()
+        {
+            return _visibleRows;
+        }
+
+        // Call this to get a specific visible row by index (zero indexed)
+        public Avalonia.Controls.DataGridRow? GetVisibleRows(int index)
+        {
+            if (index >= 0 && index < _visibleRows.Count)
+                return _visibleRows.ElementAt(index);
+
+            return null;
+        }
+
+        // Call this to get the count of currently visible rows
+        public int CurrentlyVisibleRowsCount()
+        {
+            return _visibleRows.Count;
         }
     }
 }

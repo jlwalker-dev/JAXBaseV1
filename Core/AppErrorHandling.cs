@@ -30,15 +30,18 @@ namespace JAXBase.Core
          * Records all errors and reports errors in an xBase manner.  
          * Current error handler will be called from here.
          * 
-         * ErrMessage Parameter handling
-         *      If just a message, record to system log
-         *      If pipe delimited, expected format is:
-         *          JAXErr|MsgParameter|System message
-         *          JaxErr will expand and use the MsgParameter
-         *          and report to System log along with the 
-         *          System message if present
-         *          
-         * TODO - tie in error handling
+         * SetError Parameter handling
+         *      ErrNo - System error code
+         *      ErrMessage - System data or JAX Error
+         *          If pipe delimited, expected format is:
+         *              JAXErr|MsgParameter|System message
+         *              JaxErr will expand and use the MsgParameter
+         *              and report to System log along with the 
+         *              System message if present
+         *      ErrProcedure - System procedure where it occured
+         *      
+         * A JAX Error will include the current procedure, class, method, event name
+         * 
          * ------------------------------------------------------------------------------------------*/
         public static void SetError(int ErrNo, string ErrMessage, string ErrProcedure)
         {

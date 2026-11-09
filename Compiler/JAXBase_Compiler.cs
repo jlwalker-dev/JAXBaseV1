@@ -16,6 +16,7 @@ using JAXBase.Utilities;
 using JAXBase.XBase;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Media.Imaging;
 
 namespace JAXBase.Compiler
 {
@@ -33,6 +34,8 @@ namespace JAXBase.Compiler
         private string toCmd = "";
         private string endtextCMD = "";
         private string textCmd = "";
+
+
 
         /* -----------------------------------------------------------------------------------------*
          * Instantiate the compiler class
@@ -373,7 +376,7 @@ namespace JAXBase.Compiler
                         ln = blockLine;
 
                     // Have we run into a TEXT command?
-                    if ((ln[..4].Equals(textCmd, StringComparison.OrdinalIgnoreCase) && ln.Length == 4) || (ln.Length > 4 && ln[..5].Equals("text ", StringComparison.OrdinalIgnoreCase)))
+                    if (ln.Length>3 && (ln[..4].Equals(textCmd, StringComparison.OrdinalIgnoreCase) && ln.Length == 4) || (ln.Length > 4 && ln[..5].Equals("text ", StringComparison.OrdinalIgnoreCase)))
                     {
                         cmpLine = new(ln + Environment.NewLine);
 
@@ -2571,7 +2574,7 @@ namespace JAXBase.Compiler
             // break out one or more variables to where you are storing the results
             string cmdPrefix = string.Empty;
 
-            if (allowed.Contains("T02"))
+            if (allowed.Contains("TO2"))
             {
                 GetNextToken(cmdRest, ", ", out cmdOut);
                 if (cmdOut.ToLower().Equals("array"))

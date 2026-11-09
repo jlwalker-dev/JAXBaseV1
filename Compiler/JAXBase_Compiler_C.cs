@@ -91,10 +91,6 @@ namespace JAXBase.Compiler
          * 
          * COPY INDEXES IndexFileList | ALL 
          * 
-         * COPY MEMO MemoFieldName TO FileName [ADDITIVE] [AS nCodePage]
-         * 
-         * COPY PROCEDURES TO FileName [AS nCodePage] [ADDITIVE]
-         * 
          * COPY STRUCTURE TO TableName [FIELDS FieldList] 
          * 
          * COPY STRUCTURE EXTENDED TO FileName [DATABASE DatabaseName [NAME LongTableName]] [FIELDS FieldList]
@@ -115,7 +111,7 @@ namespace JAXBase.Compiler
 
             try
             {
-                cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out string token);
+                jbc.GetNextToken(cmdRest, string.Empty, out string token);
 
                 if (jbc.lang!.Abreviations.TryGetValue(token.ToLower(), out string? abbr))
                     token = abbr;
@@ -128,41 +124,40 @@ namespace JAXBase.Compiler
                 switch (token)
                 {
                     case "file":
-                        result = jbc.Key_Parser(cmdRest, [token], "XX0,TO3,FG1", []);
-                        break;
-
-                    case "indexes":
-                        result = jbc.Key_Parser(cmdRest, [token], "XX0,FG1", ["all"]);
-                        break;
-
-                    case "procedures":
-                        result = jbc.Key_Parser(cmdRest, [token], "XX0,TO3,AS0,FG1", []);
+                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "F" + AppClass.stmtDelimiter + jbc.Key_Parser(cmdRest, [token], "XX0,TO3,FG1", []);
                         break;
 
                     case "structure":
-                        result = jbc.Key_Parser(cmdRest, [token], "TO3,AS0,FG1", []);
-                        break;
-
-                    case "to":
-                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token); // Eat TO
-
-                        jbc.GetNextToken(cmdRest, string.Empty, out token); // Get next token
-
-                        if (token.Equals("array", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // TO ARRAY
-                            cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out _); // Eat ARRAY
-                            result = "to" + AppClass.expDelimiter + "A" + AppClass.expParam + jbc.Generic_Parser(cmdRest, "XX0,FV3,SC0,FR0,WH0", ["nooptimize"]);
-                        }
-                        else
-                        {
-                            // TO File
-                            result = "F" + AppClass.expParam + jbc.Generic_Parser(cmdRest, "XX0,FV3,SC0,FR0,WH0,TY2", ["nooptimize"]);
-                        }
+                        cmdRest = jbc.GetNextToken(cmdRest, string.Empty, out token);
+                        result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "S" + AppClass.stmtDelimiter + jbc.Key_Parser(cmdRest, [token], "TO3,AS0,FG1", []);
                         break;
 
                     default:
-                        throw new Exception("10||Unkown copy command " + token.ToUpper());
+                        if ((" " + cmdRest).Contains(" to ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Remove all double spaces after TO 
+                            // TODO - Don't we have a routine that does this without affecting literals?
+                            while (cmdRest.Contains("to  "))
+                                cmdRest = JAXLib.StrTran(cmdRest, "to  ", "to ", 0, 1000, 0);
+
+                            if ((" " + cmdRest).Contains(" to array ", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // COPY TO ARRAY
+                                result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "A" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "TO2,FV3,SC0,FR0,WH0", ["nooptimize"]);
+                            }
+                            else if ((" " + cmdRest).Contains(" to file ", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // COPY TO <SQL/File>
+                                result = Program.CurrentApp.CompilerXRef["CS"].ToString() + "T" + AppClass.stmtDelimiter + jbc.Generic_Parser(cmdRest, "TO8,FV3,SC0,FR0,WH0,TY2", ["nooptimize"]);
+                            }
+                            else
+                                throw new Exception("10||Unkown copy command " + token.ToUpper());
+                        }
+                        else
+                            throw new Exception("10||Unkown copy command " + token.ToUpper());
+
+                        break;
                 }
             }
             catch (Exception ex)

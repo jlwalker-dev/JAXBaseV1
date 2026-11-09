@@ -294,15 +294,20 @@ namespace JAXBase.Executor
                     case "scope":
                         rpnSplit = rpn.Split(AppClass.expDelimiter);
 
-                        if (rpnSplit.Length != 2) throw new Exception("11|");
+                        //if (rpnSplit.Length != 2) throw new Exception("11|");
 
                         eCodes.Scope.Type = rpnSplit[0];
-                        answer = await Program.CurrentApp.SolveFromRPNString(rpnSplit[1]);
 
-                        if (answer.Element.Type.Equals("N"))
-                            eCodes.Scope.Count = answer.AsInt();
-                        else
-                            throw new Exception("11|");
+                        if (rpnSplit.Length > 1)
+                        {
+                            answer = await Program.CurrentApp.SolveFromRPNString(rpnSplit[1]);
+
+                            if (answer.Element.Type.Equals("N"))
+                                eCodes.Scope.Count = answer.AsInt();
+                            else
+                                throw new Exception("11|");
+                        }
+
                         break;
 
                     case "sheet":
@@ -368,7 +373,7 @@ namespace JAXBase.Executor
                         // TO expr/lit expr/lit
                         rpns = rpn.Split(AppClass.expDelimiter);
 
-                        for (int j = 0; j < rpns.Length; j++)
+                        for (int j = 0; j < rpns.Length; j += 2)
                         {
                             ExCodeName fld = new()
                             {

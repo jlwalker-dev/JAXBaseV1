@@ -86,7 +86,7 @@
  *      Looking back at those original indexes I tore apart, I suddenly figured out 
  *      how the index information is being saved for numeric, date, integer, and datetime.
  *      It's done just like in the DBF except backwards and upside down (LOL).
- *      Fortunately, I'm not always and idiot and can sometimes see the obvious.  Also 
+ *      Fortunately, I'm not always an idiot and can sometimes see the obvious.  Also 
  *      read that varchars can be put into an IDX so I threw in a global that is set 
  *      when you want to make an IDX expression that is for a char or varchar field, it 
  *      returns a space filled string equal of the field's full width.  The other data 
@@ -150,7 +150,7 @@
  *      dropping the bottom half of the current node into the new node and updating the
  *      key for the old node in the node above.  WHY????  If I drop the top half of
  *      the current node into the new node, then I only need to add a new reference
- *      and not have to change anything else!  stupid, Stupid, STUPID!
+ *      and not have to change anything else!  Stupid, Stupid, STUPID!
  *      
  *  2025-04-17 - JLW
  *      Added final resting point to the IDXCommand so that I know what leaf and leaf record
@@ -216,22 +216,23 @@
  *      if I want to just deal with optimistic buffering right now or include record locking so that
  *      I can include pessimistic buffering.
  *      
- *      I believe I will need to alter the following methods to support buffering:
- *          DBFAppendForeignRecord, DBFAppendRecord, DBFClose, DBFDeleteRecord, 
- *          DBFInsertRecord, DBFUpdateRecord, DBFUse, DBFPack, DBFReadRecord, 
- *          DBFReplaceField, DBFUse, DBFWriteRecord, DBFZap
- *          
- *      I will also likely need to create these new methods:
- *          DBFCommitChanges, DBFDiscardChanges, DBFRowStatus, DBFGetOriginalValue
- *          
  *      Also need to intercept the alter table command if there are changes in the buffer and 
- *      return an error.  
+ *      return an error #1545.  
  *
+ *          Errors to add to the system:
+ *           108 - File is in use by another user.
+ *           109 - Record is in use by another user.
  *          1149 - Not enough memory for buffer.  
+ *          1502 - Cannot write record because it is in use.
  *          1545 - Table buffer for "name" contains uncommitted changes. 
  *          1586 - Function requires row or table buffering mode. 
  *          1589 - Table or row buffering requires that SET MULTILOCKS is set to ON. 
  *          1596 - Table buffering is not enabled. 
+ *          2191 - File is in use in another data session.
+ *          
+ *      I'm going to let things sit for a while until I've had time to play around with what I have
+ *      and think about buffering and sharing.  Also need to consider my ideas on making SQL tables
+ *      work with DBF commands so that a SQL table can act more like a DBF table (a bridge to far?).
  *      
  * ------------------------------------------------------------------------------------------------------
  *  Big things yet to be done
@@ -832,6 +833,22 @@ namespace JAXBase.Data
                     }
                 }
             }
+
+
+            public void SetBlockSize(int bsize)
+            {
+                if (bsize >= 0)
+                {
+                    Memo.BlockSize = bsize switch
+                    {
+                        0 => 1,
+                        1 - 32 => (ushort)(bsize * 512),
+                        _ => (ushort)bsize
+                    };
+                }
+                else
+                    Memo.BlockSize = 1;
+            }
         }
 
 
@@ -840,7 +857,7 @@ namespace JAXBase.Data
          *-----------------------------------------------------------------------------------*/
         public class MemoInfo
         {
-            public ushort BlockSize = 0;
+            public ushort BlockSize = 1;
             public int BlockType = 0;
             public int TextStart = 0;
             public int TextLen = 0;
@@ -889,25 +906,6 @@ namespace JAXBase.Data
         {
             // Just open up a blank DBF workarea
             App = app;
-
-            // Make sure we capture the current settings that will alter how things work
-            SetBlockSize(app.jaxDataSession[app.CurrentDataSession].JaxSettings.BlockSize);
-        }
-
-
-        public void SetBlockSize(int bsize)
-        {
-            if (bsize >= 0)
-            {
-                DbfInfo.Memo.BlockSize = bsize switch
-                {
-                    0 => 1,
-                    1 - 32 => (ushort)(bsize * 512),
-                    _ => (ushort)bsize
-                };
-            }
-            else
-                DbfInfo.Memo.BlockSize = 1;
         }
 
 
@@ -938,6 +936,8 @@ namespace JAXBase.Data
             {
                 case "buffering":
                     // Is multilocks on?
+                    if (Program.CurrentApp.CurrentDS.JaxSettings.MultiLocks == false)
+                        throw new Exception("1589||CursorSetProp(buffering)");
 
                     // Set the buffereing type
                     if (info.Element.Type.Equals("N"))
@@ -1252,7 +1252,8 @@ namespace JAXBase.Data
 
                     try
                     {
-                        DbfInfo.DBFStream = new FileStream(FileName, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                        FileShare exclusiveSetting = DbfInfo.Exclusive ? FileShare.None : FileShare.ReadWrite;
+                        DbfInfo.DBFStream = new FileStream(FileName, FileMode.Open, FileAccess.ReadWrite, exclusiveSetting);
                         fileLen = (int)DbfInfo.DBFStream.Length;
 
                         DbfInfo.DBFStream.ReadExactly(buffer, 0, 32);
@@ -1260,7 +1261,7 @@ namespace JAXBase.Data
                     catch (Exception ex)
                     {
                         // If IO error then we could not open the file
-                        AppErrorHandling.SetError(101, string.Format("Cannot open file \"{0}\" - ", FileName) + ex.Message, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                        AppErrorHandling.SetError(1705, $"1705|{fullFileName}|{ex.Message}", "DBFUse");
                     }
 
                     if (AppErrorHandling.ErrorCount() == 0)
@@ -1312,8 +1313,8 @@ namespace JAXBase.Data
                         // Check header length against calculated
                         if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.FileLen < DbfInfo.FieldCount * 32 + 32)
                         {
-                            // Error 3
-                            AppErrorHandling.SetError(15, "Not a table - " + DbfInfo.FQFN, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            // Error 15 - not a table
+                            AppErrorHandling.SetError(15, $"15|{fullFileName}|", "DBFUse");
                             tableErr = true;
                         }
 
@@ -1322,7 +1323,7 @@ namespace JAXBase.Data
                         if (AppErrorHandling.ErrorCount() == 0 && DbfInfo.FileLen < DbfInfo.HeaderLen + DbfInfo.RecordLen * DbfInfo.RecCount)
                         {
                             // Error 4
-                            AppErrorHandling.SetError(2091, string.Format("Table \"{0}\" has become corrupted.  The table will need to be repaired before using again.", DbfInfo.FQFN), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(2091, $"2091|{fullFileName}|", "DBFUse");
                             tableErr = true;
                         }
 
@@ -1439,7 +1440,7 @@ namespace JAXBase.Data
                             if (buffer[headerEnd] != 13)
                             {
                                 // Missing Terminator mark
-                                AppErrorHandling.SetError(2091, string.Format("Table \"{0}\" has become corrupted.  The table will need to be repaired before using again. Missing header terminator.", DbfInfo.FQFN), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(2091, $"2091|{fullFileName}|", "DBFUse");
                                 tableErr = true;
                             }
                         }
@@ -1538,7 +1539,7 @@ namespace JAXBase.Data
                             catch (Exception ex)
                             {
                                 // Execution Error (likely I/O)
-                                AppErrorHandling.SetError(8006, ex.Message + string.Format(" - Opening memo file \"{0}\"", memoName), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                                AppErrorHandling.SetError(8006, $"101|{memoName}|{ex.Message}", "DBFUse");
                             }
 
                             DbfInfo.Memo = dbfMemo;
@@ -1572,7 +1573,7 @@ namespace JAXBase.Data
                         catch (Exception ex)
                         {
                             // Execution Error (likely I/O)
-                            AppErrorHandling.SetError(8007, ex.Message + string.Format(" - Opening structural index file \"{0}\"", cdxName), System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                            AppErrorHandling.SetError(8007, $"101|{cdxName}|{ex.Message}", "DBFUse");
                         }
 
                         DbfInfo.CDX = dbfCDX;
@@ -1624,13 +1625,13 @@ namespace JAXBase.Data
                 else
                 {
                     // Did not find the table
-                    AppErrorHandling.SetError(1, "File \"{0}\" does not exists: " + FileName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                    AppErrorHandling.SetError(1, $"1|{FileName}|", "DBFUse");
                 }
             }
             catch (Exception ex)
             {
                 // Execution error
-                AppErrorHandling.SetError(8008, ex.Message + "- Opening table " + FileName, System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+                AppErrorHandling.SetError(8008, $"1705|{fullFileName}|{ex.Message}", "DBFUse");
             }
 
             // If we failed to open, clean things up
@@ -2070,7 +2071,7 @@ namespace JAXBase.Data
                 }
 
                 // Now open it up and populate the DbfInfo
-                llSuccess = await DBFUse(FileName, DbfInfo.Alias, false, false, string.Empty, DbfInfo.TableType) == 0;
+                llSuccess = await DBFUse(FileName, DbfInfo.Alias, true, false, string.Empty, DbfInfo.TableType) == 0;
             }
             catch (Exception ex)
             {
