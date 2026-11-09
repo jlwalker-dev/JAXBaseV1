@@ -33,6 +33,7 @@
  *      
  * 
  */
+using Avalonia.Styling;
 using JAXBase.Core;
 using JAXBase.Data;
 using JAXBase.UI.Dialogs;
@@ -197,6 +198,79 @@ namespace JAXBase.XBase
         /* ------------------------------------------------------------------------------------------*
          * Handle key presses
          * ------------------------------------------------------------------------------------------*/
+        //private async void Grid_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+        //{
+        //    AppIO.DebugLog($"---- Grid_KeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}, Handled={e.Handled}");
+
+        //    // Ctrl+Y (accept either Key.Y or the physical key)
+        //    if ((e.Key == Avalonia.Input.Key.Y || e.PhysicalKey == Avalonia.Input.PhysicalKey.Y)
+        //        && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control))
+        //    {
+        //        e.Handled = true;
+        //        await AddNewRowAsync();
+        //        return;
+        //    }
+
+        //    if (grid.CurrentColumn is null || grid.SelectedIndex < 0)
+        //        return;
+
+        //    int colIndex = grid.Columns.IndexOf(grid.CurrentColumn);
+        //    int rowIndex = grid.SelectedIndex;
+
+        //    // Skip the marker column (index 0)
+        //    const int firstDataCol = 1;
+        //    int lastDataCol = grid.Columns.Count - 1;
+
+        //    if (e.Key == Avalonia.Input.Key.Tab)
+        //    {
+        //        e.Handled = true;
+
+        //        if (e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift))
+        //        {
+        //            // Shift+Tab → move left
+        //            if (colIndex > firstDataCol)
+        //            {
+        //                grid.CurrentColumn = grid.Columns[colIndex - 1];
+        //            }
+        //            else if (rowIndex > 0)
+        //            {
+        //                // wrap to previous row, last data column
+        //                grid.SelectedIndex = rowIndex - 1;
+        //                grid.CurrentColumn = grid.Columns[lastDataCol];
+        //            }
+        //        }
+        //        else
+        //        {
+        //            // Tab → move right
+        //            if (colIndex < lastDataCol)
+        //            {
+        //                grid.CurrentColumn = grid.Columns[colIndex + 1];
+        //            }
+        //            else if (rowIndex < grid.Columns.Count - 1)
+        //            {
+        //                // wrap to next row, first data column
+        //                grid.SelectedIndex = rowIndex + 1;
+        //                grid.CurrentColumn = grid.Columns[firstDataCol];
+        //            }
+        //        }
+        //    }
+
+        //    // After the Tab block, before the final return or any other logic:
+
+        //    // Start edit when the user begins typing (printable character, no modifiers)
+        //    if (e.KeyModifiers == Avalonia.Input.KeyModifiers.None
+        //        && grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol
+        //        && boundCol.IsReadOnly == false
+        //        && grid.SelectedIndex >= 0
+        //        && IsPrintableKey(e.Key))
+        //    {
+        //        e.Handled = true;
+        //        grid.BeginEdit();
+        //        // Optional: if you need the first character injected into the editor,
+        //        // handle it in PreparingCellForEdit by examining the original KeyEventArgs.
+        //    }
+        //}
+
         private async void Grid_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
         {
             AppIO.DebugLog($"---- Grid_KeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}, Handled={e.Handled}");
@@ -220,6 +294,49 @@ namespace JAXBase.XBase
             const int firstDataCol = 1;
             int lastDataCol = grid.Columns.Count - 1;
 
+            int rowCount = (grid.ItemsSource as System.Collections.ICollection)?.Count ?? 0;
+
+            // If editing, end the edit on Up, Down, Enter, or Shift+Tab so navigation can occur
+            bool endEditAndNavigate = GridCellInEdit &&
+                (e.Key == Avalonia.Input.Key.Up ||
+                 e.Key == Avalonia.Input.Key.Down ||
+                 e.Key == Avalonia.Input.Key.Enter ||
+                 (e.Key == Avalonia.Input.Key.Tab && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift)));
+
+            if (endEditAndNavigate)
+            {
+                try
+                {
+                    grid.CommitEdit(Avalonia.Controls.DataGridEditingUnit.Cell, true);
+                    grid.CommitEdit(Avalonia.Controls.DataGridEditingUnit.Row, true);
+                }
+                catch { /* ignore if not editing */ }
+
+                GridCellInEdit = false;
+                AppIO.DebugLog("---- Grid_KeyDown: ended edit for navigation");
+                // Do not return; fall through so the navigation below runs
+            }
+
+            // Right arrow (when not editing) moves right and wraps like Tab/Enter
+            if (!GridCellInEdit && e.Key == Avalonia.Input.Key.Right)
+            {
+                e.Handled = true;
+
+                if (colIndex < lastDataCol)
+                {
+                    grid.CurrentColumn = grid.Columns[colIndex + 1];
+                    grid.ScrollIntoView(grid.SelectedItem, grid.CurrentColumn);
+                }
+                else
+                {
+                    // wrap to next row, first data column
+                    grid.CurrentColumn = grid.Columns[firstDataCol];
+                    grid.ScrollIntoView(grid.SelectedItem, grid.Columns[firstDataCol]);
+                }
+
+                return;
+            }
+
             if (e.Key == Avalonia.Input.Key.Tab)
             {
                 e.Handled = true;
@@ -228,33 +345,96 @@ namespace JAXBase.XBase
                 {
                     // Shift+Tab → move left
                     if (colIndex > firstDataCol)
-                    {
                         grid.CurrentColumn = grid.Columns[colIndex - 1];
-                    }
-                    else if (rowIndex > 0)
-                    {
-                        // wrap to previous row, last data column
-                        grid.SelectedIndex = rowIndex - 1;
+                    else
                         grid.CurrentColumn = grid.Columns[lastDataCol];
-                    }
                 }
                 else
                 {
                     // Tab → move right
                     if (colIndex < lastDataCol)
-                    {
                         grid.CurrentColumn = grid.Columns[colIndex + 1];
-                    }
-                    else if (rowIndex < grid.Columns.Count - 1)
+                    else
                     {
                         // wrap to next row, first data column
-                        grid.SelectedIndex = rowIndex + 1;
                         grid.CurrentColumn = grid.Columns[firstDataCol];
+                        grid.ScrollIntoView(grid.SelectedItem, grid.Columns[firstDataCol]);
                     }
                 }
+                return;
+            }
+
+            // ENTER KEY handling: move right (like Tab) and wrap to next row first column
+            if (e.Key == Avalonia.Input.Key.Enter)
+            {
+                e.Handled = true;
+
+                if (colIndex < lastDataCol)
+                {
+                    grid.CurrentColumn = grid.Columns[colIndex + 1];
+                    grid.ScrollIntoView(grid.SelectedItem, grid.CurrentColumn);
+                }
+                else
+                {
+                    // wrap to next row, first data column
+                    grid.CurrentColumn = grid.Columns[firstDataCol];
+                    grid.ScrollIntoView(grid.SelectedItem, grid.Columns[firstDataCol]);
+                }
+
+                return;
+            }
+
+            // Up / Down navigation (also used after ending an edit)
+            if (e.Key == Avalonia.Input.Key.Up)
+            {
+                e.Handled = true;
+                if (rowIndex > 0)
+                    grid.SelectedIndex = rowIndex - 1;
+                return;
+            }
+
+            if (e.Key == Avalonia.Input.Key.Down)
+            {
+                e.Handled = true;
+                if (rowIndex < rowCount - 1)
+                    grid.SelectedIndex = rowIndex + 1;
+                return;
+            }
+
+            // Start edit when the user begins typing (printable character; Shift allowed for uppercase)
+            if (!GridCellInEdit
+                && !e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control)
+                && !e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Alt)
+                && grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol
+                && boundCol.IsReadOnly == false
+                && IsPrintableKey(e.Key))
+            {
+                e.Handled = true;
+                grid.BeginEdit();
+                return;
             }
         }
 
+        private static bool IsPrintableKey(Avalonia.Input.Key key)
+        {
+            // Letters, digits, punctuation, space, etc. Adjust the range if you need more keys.
+            return key >= Avalonia.Input.Key.A && key <= Avalonia.Input.Key.Z
+                || key >= Avalonia.Input.Key.D0 && key <= Avalonia.Input.Key.D9
+                || key >= Avalonia.Input.Key.NumPad0 && key <= Avalonia.Input.Key.NumPad9
+                || key == Avalonia.Input.Key.Space
+                || key == Avalonia.Input.Key.OemMinus
+                || key == Avalonia.Input.Key.OemPlus
+                || key == Avalonia.Input.Key.OemPeriod
+                || key == Avalonia.Input.Key.OemComma
+                || key == Avalonia.Input.Key.OemQuestion
+                || key == Avalonia.Input.Key.OemTilde
+                || key == Avalonia.Input.Key.OemOpenBrackets
+                || key == Avalonia.Input.Key.OemCloseBrackets
+                || key == Avalonia.Input.Key.OemPipe
+                || key == Avalonia.Input.Key.OemQuotes
+                || key == Avalonia.Input.Key.OemSemicolon
+                || key == Avalonia.Input.Key.OemBackslash;
+        }
 
 
         private async void Grid_CellEditEnding(object? sender, Avalonia.Controls.DataGridCellEditEndingEventArgs e)
@@ -396,44 +576,53 @@ namespace JAXBase.XBase
             }
 
             // ------------------------------------------------------------------
+            // Call the column/grid valid method before committing
+            // ------------------------------------------------------------------
+            Program.CurrentApp.ParameterClassList.Clear();
+            AppHelper.LoadTokenValToParameters(new(rowIdx + 1));   // nRow
+            AppHelper.LoadTokenValToParameters(new(colIdx));       // nCol (adjust if your valid expects 1-based data column)
+            AppHelper.LoadTokenValToParameters(new(value));        // uValue
+
+            await _CallMethod("valid");
+
+            if (Program.CurrentApp.ReturnValue.Element.Value is false)
+            {
+                AppIO.DebugLog("---- Grid_CellEditEnding: valid returned false – staying in edit");
+                e.Cancel = true;
+                return;
+            }
+
+            // ------------------------------------------------------------------
             // Write the value by field name (avoids all marker/visual index issues)
             // ------------------------------------------------------------------
             string fieldName = (await col.GetProperty("recordsource")).AsString();
 
-            if (_jaxTable is not null)
+            if (thisWorkArea is not null && thisDBF is not null && thisDBF.DBFStream is not null)
             {
-                if (thisWorkArea is not null && thisDBF is not null && thisDBF.DBFStream is not null)
+                // Table / DBF source
+                if (!string.IsNullOrWhiteSpace(fieldName))
                 {
-                    if (!string.IsNullOrWhiteSpace(fieldName))
+                    if (grid.SelectedItem is SimpleDataRow simpleRow)
                     {
-                        // Keep the grid’s in-memory row in sync so the binding stops failing
-                        if (grid.SelectedItem is SimpleDataRow simpleRow && !string.IsNullOrWhiteSpace(fieldName))
-                        {
-                            simpleRow.Values[fieldName] = value ?? DBNull.Value;
+                        simpleRow.Values[fieldName] = value ?? DBNull.Value;
 
-                            // Force the DataGrid to re-evaluate the binding for this row
-                            var current = grid.SelectedItem;
-                            grid.SelectedItem = null;
-                            grid.SelectedItem = current;
-                        }
+                        var current = grid.SelectedItem;
+                        grid.SelectedItem = null;
+                        grid.SelectedItem = current;
+                    }
 
-                        thisDBF.CurrentRow.Rows[0][fieldName] = value;
-                        await thisWorkArea.DBFWriteRecord(thisDBF.CurrentRow.Rows[0], false);
-                    }
-                    else
-                    {
-                        Toast.Show("Could not determine field name");
-                        e.Cancel = true;
-                    }
+                    thisDBF.CurrentRow.Rows[0][fieldName] = value;
+                    await thisWorkArea.DBFWriteRecord(thisDBF.CurrentRow.Rows[0], false);
                 }
                 else
                 {
-                    Toast.Show("Record source table is not open");
+                    Toast.Show("Could not determine field name");
                     e.Cancel = true;
                 }
             }
             else if (arrayRS is not null)
             {
+                // Array source
                 if (rowIdx + 1 > arrayRS.Row || colIdx + 1 > arrayRS.Col)
                 {
                     Toast.Show($"Invalid array dimension {rowIdx + 1},{colIdx + 1}");
@@ -443,7 +632,6 @@ namespace JAXBase.XBase
                 {
                     arrayRS.SetElement(rowIdx + 1, colIdx + 1);
 
-                    // Logical: accept T/F (also .T./.F., true/false, 1/0)
                     if (type == "L")
                     {
                         string s = strValue.Trim().TrimStart('.').TrimEnd('.').ToUpperInvariant();
@@ -459,10 +647,8 @@ namespace JAXBase.XBase
                         }
                     }
 
-                    // Write back to the array immediately
                     arrayRS.Element.Value = value;
 
-                    // Keep the in-memory row in sync so the display refreshes as T/F
                     if (grid.SelectedItem is SimpleDataRow simpleRow && !string.IsNullOrWhiteSpace(fieldName))
                     {
                         simpleRow.Values[fieldName] = value ?? DBNull.Value;
@@ -474,7 +660,7 @@ namespace JAXBase.XBase
             }
             else
             {
-                Toast.Show("Record source array is not available");
+                Toast.Show("No record source available");
                 e.Cancel = true;
             }
 
@@ -487,19 +673,57 @@ namespace JAXBase.XBase
         /// <summary>
         /// Fires after a cell has exited edit mode. This is the event that tells you which cell just changed.
         /// </summary>
+        //private async void Grid_CellEditEnded(object? sender, Avalonia.Controls.DataGridCellEditEndedEventArgs e)
+        //{
+        //    AppIO.DebugLog("---- Grid_CellEditEnded");
+
+        //    if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
+        //        return;
+
+        //    int colIdx = grid.Columns.IndexOf(e.Column);
+        //    int rowIdx = e.Row != null ? e.Row.Index : -1;
+
+        //    // The first column (0) is the row marker and always exists (but may not be visible)
+        //    if (colIdx < 1 || rowIdx < 0)
+        //        return;
+
+        //    object? newValue = await Grid_GetCurrentCellValue(colIdx - 1); // We have one extra column in the grid
+
+        //    AppIO.DebugLog($"Cell changed – Row: {rowIdx + 1}, Col: {colIdx + 1}, Value: {newValue}");
+
+        //    Program.CurrentApp.ParameterClassList.Clear();
+        //    AppHelper.LoadTokenValToParameters(new(rowIdx + 1));   // nRow
+        //    AppHelper.LoadTokenValToParameters(new(colIdx + 1));   // nCol
+        //    AppHelper.LoadTokenValToParameters(new(newValue));     // uValue
+
+        //    AppIO.DebugLog($"Calling afterrowcolchange with parameters: Row={rowIdx + 1}, Col={colIdx + 1}, Value={newValue}");
+
+        //    await _CallMethod("afterrowcolchange");
+
+        //    AppIO.DebugLog("---- END Grid_CellEditEnded");
+        //}
+
         private async void Grid_CellEditEnded(object? sender, Avalonia.Controls.DataGridCellEditEndedEventArgs e)
         {
             AppIO.DebugLog("---- Grid_CellEditEnded");
 
+            GridCellInEdit = false;
+
             if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
+            {
+                AppIO.DebugLog("---- END Grid_CellEditEnded (not commit)");
                 return;
+            }
 
             int colIdx = grid.Columns.IndexOf(e.Column);
             int rowIdx = e.Row != null ? e.Row.Index : -1;
 
             // The first column (0) is the row marker and always exists (but may not be visible)
             if (colIdx < 1 || rowIdx < 0)
+            {
+                AppIO.DebugLog("---- END Grid_CellEditEnded (invalid index)");
                 return;
+            }
 
             object? newValue = await Grid_GetCurrentCellValue(colIdx - 1); // We have one extra column in the grid
 
@@ -516,7 +740,6 @@ namespace JAXBase.XBase
 
             AppIO.DebugLog("---- END Grid_CellEditEnded");
         }
-
 
         /* ------------------------------------------------------------------------------------------*
          * Cell movement causes an update to the grid and underlying table
@@ -563,29 +786,6 @@ namespace JAXBase.XBase
 
             // Move the ">" current-row marker
             UpdateCurrentMarker();
-
-            // Set to editing visual state
-            try
-            {
-                // Force the cell into the editing visual state
-                // (same appearance you already get with Tab / Shift+Tab)
-                if (grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.IsReadOnly == false)
-                {
-                    AppIO.DebugLog($"Grid_CurrentCellChanged: BeginEdit on row {grid.SelectedIndex}, column {GridCurrentColumn}");
-                    grid.BeginEdit();
-                }
-                else
-                {
-                    // Read-only column – just make sure it has focus so the focus border appears
-                    AppIO.DebugLog($"Grid_CurrentCellChanged: Read-only column, setting focus to grid");
-                    grid.Focus();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Some templates do not support BeginEdit – ignore
-                AppIO.DebugLog($"Grid_CurrentCellChanged: CATCH failed begin edit on row {grid.SelectedIndex}, column {GridCurrentColumn} - {ex.Message}");
-            }
 
             AppIO.DebugLog($"---- END Grid_CurrentCellChanged");
         }
@@ -1130,6 +1330,11 @@ namespace JAXBase.XBase
             // Added: General click handler for bubbled events (e.g., from button/link columns)
             grid.PointerPressed -= Grid_PointerPressed;
             grid.PointerPressed += Grid_PointerPressed;
+
+            // Only edit when cell is clicked (not when row is clicked)
+            grid.CellPointerPressed -= Grid_CellPointerPressed;
+            grid.CellPointerPressed += Grid_CellPointerPressed;
+
             doPostInitSetup = false;
 
             // Prevent the marker column from ever becoming CurrentColumn
@@ -1146,17 +1351,65 @@ namespace JAXBase.XBase
             };
 
             // Block beginning an edit on the marker column
-            grid.BeginningEdit += (s, e) =>
-            {
-                if (e.Column?.Tag is string tag && tag == "__MARKER__")
-                    e.Cancel = true;
-            };
-
+            //grid.BeginningEdit += (s, e) =>
+            //{
+            //    if (e.Column?.Tag is string tag && tag == "__MARKER__")
+            //        e.Cancel = true;
+            //};
+            grid.BeginningEdit -= Grid_BeginningEdit;
+            grid.BeginningEdit += Grid_BeginningEdit;
 
             Avalonia.Controls.Canvas.SetLeft(grid, UserProperties["left"].AsInt());
             Avalonia.Controls.Canvas.SetTop(grid, UserProperties["top"].AsInt());
 
+            var currentCellStyle = new Avalonia.Styling.Style(
+                x => x.OfType<Avalonia.Controls.DataGridCell>().Class(":current"));
+
+            currentCellStyle.Setters.Add(
+                new Avalonia.Styling.Setter(
+                    Avalonia.Controls.Primitives.TemplatedControl.BackgroundProperty,
+                    new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(173, 216, 230)))); // LightBlue
+
+            grid.Styles.Add(currentCellStyle);
+
             AppIO.DebugLog($"END SetGridEvents");
+        }
+
+
+        private void Grid_BeginningEdit(object? sender, Avalonia.Controls.DataGridBeginningEditEventArgs e)
+        {
+            if (e.Column?.Tag is string tag && tag == "__MARKER__")
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            GridCellInEdit = true;
+            AppIO.DebugLog("---- Grid_BeginningEdit: edit started");
+        }
+
+        private void Grid_CellPointerPressed(object? sender, Avalonia.Controls.DataGridCellPointerPressedEventArgs e)
+        {
+            AppIO.DebugLog("---- Grid_CellPointerPressed");
+
+            if (e.PointerPressedEventArgs.GetCurrentPoint(grid).Properties.IsLeftButtonPressed == false)
+                return;
+
+            if (e.Column?.Tag is string tag && tag == "__MARKER__")
+                return;
+
+            if (e.Column is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.IsReadOnly)
+                return;
+
+            if (e.Row?.DataContext is not null)
+                grid.SelectedItem = e.Row.DataContext;
+
+            grid.CurrentColumn = e.Column;
+            e.Cell?.Focus();
+
+            grid.BeginEdit();
+
+            AppIO.DebugLog("---- END Grid_CellPointerPressed");
         }
 
 
