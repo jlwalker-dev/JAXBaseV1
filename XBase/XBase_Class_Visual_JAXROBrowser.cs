@@ -538,7 +538,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "move", "readexpression", "readmethod", "refresh", "show", "writemethod"
+                "move",  "readmethod", "refresh", "show"
                 ];
         }
 
@@ -546,7 +546,7 @@ namespace JAXBase.XBase
         {
             return
             [
-                "activate","click","dblclick","deactivate","destroy","error","gotfocus","init","keypress","load","lostfocus",
+                "activate","click","dblclick","deactivate","gotfocus","keypress","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "moved","queryunload","resize","rightclick","scrolled","unload","visiblechanged"
             ];

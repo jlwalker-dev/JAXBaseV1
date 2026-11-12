@@ -142,12 +142,11 @@ namespace JAXBase.XBase
 
         public override string[] JAXMethods() =>
             [
-            "addobject", "addproperty", "readexpression","readmethod","removeobject","resettodefault",
-            "saveasclass","writeexpression", "writemethod"
+            "addobject","removeobject","resettodefault"             
             ];
 
 
-        public override string[] JAXEvents() => ["destroy", "error", "init", "load"];
+        public override string[] JAXEvents() => [   "load"];
 
 
         /*

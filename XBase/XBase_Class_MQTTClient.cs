@@ -43,7 +43,7 @@ namespace JAXBase.XBase
         }
 
         public override string[] JAXEvents() =>
-            ["connected", "disconnected", "messagereceived", "error", "statuschanged"];
+            ["connected", "disconnected", "messagereceived",  "statuschanged"];
 
         public override string[] JAXMethods() =>
             ["connect", "disconnect", "publish", "subscribe", "unsubscribe", "clearmessages"];

@@ -199,8 +199,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addobject","addproperty","readexpression","readmethod","refresh","release",
-                    "removeobject","saveas","saveasclass","setall","setfocus","show","writeexpression", "writemethod"
+                "addobject","refresh","release","removeobject","saveas","setfocus","show", 
                 ];
         }
 
@@ -208,7 +207,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "activate","deactivate","destroy","error","init","load","unload"
+                "activate","deactivate","unload"
                 ];
         }
 

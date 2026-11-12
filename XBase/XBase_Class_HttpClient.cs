@@ -680,10 +680,13 @@ namespace JAXBase.XBase
         // ===================================================================
         public override string[] JAXMethods() =>
             [
-            "addproperty", "command", "get", "post", "put", "patch", "delete", "head", "send", "sendrequest", "resettodefault", "saveasclass"
+            "command", "get", "post", "put", "patch", "delete", "head", "send", "sendrequest", "resettodefault", 
             ];
 
-        public override string[] JAXEvents() => ["destroy", "error", "init", "load", "statuschanged"];
+        public override string[] JAXEvents() => 
+            [
+            "statuschanged"
+            ];
 
         public override string[] JAXProperties() =>
             [

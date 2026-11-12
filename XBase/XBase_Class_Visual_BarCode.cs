@@ -373,8 +373,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addproperty","move","readexpression","readmethod","refresh","resettodefault",
-                "saveasclass","setfocus","writeexpression","writemethod","zorder"
+                "move","refresh","resettodefault","setfocus","zorder"
                 ];
         }
 
@@ -385,7 +384,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","doubleclick","destroy","error","gotfocus","init","keypress","load","lostfocus",
+                "click","doubleclick","gotfocus","keypress","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "rightclick","valid","visiblechanged","when"
                 ];

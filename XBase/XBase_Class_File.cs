@@ -198,11 +198,11 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public override string[] JAXMethods() => ["addproperty","close", "goto", "open", "read", "write", "writeexpression", "writemethod"];
+        public override string[] JAXMethods() => ["close", "goto", "open", "read", "write"];
 
         public override string[] JAXEvents()
         {
-            return ["closed", "destroy", "error", "init", "opened"];
+            return ["closed",    "opened"];
         }
 
         /*

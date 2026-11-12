@@ -86,6 +86,8 @@ namespace JAXBase.UI.Dialogs
                 return;
             }
 
+            _topLevel!.PointerMoved += OnPointerMovedTrack;
+
             // Build the visual content entirely in code
             var textBlock = new Avalonia.Controls.TextBlock
             {
@@ -193,26 +195,29 @@ namespace JAXBase.UI.Dialogs
             var current = e.GetPosition(_topLevel);
 
             // Close only when the pointer has actually moved a few pixels
-            if (System.Math.Abs(current.X - _lastPointerPos.X) > 4 || System.Math.Abs(current.Y - _lastPointerPos.Y) > 4)
+            if (System.Math.Abs(current.X - _lastPointerPos.X) > 10 || System.Math.Abs(current.Y - _lastPointerPos.Y) > 10)
             {
                 Close();
             }
         }
 
+        private static Avalonia.Point _lastKnownPointerPos = new Avalonia.Point(0, 0);
+
+        private static void OnPointerMovedTrack(object? sender, Avalonia.Input.PointerEventArgs e)
+        {
+            if (sender is not Avalonia.Controls.TopLevel topLevel)
+                return;
+
+            _lastKnownPointerPos = e.GetPosition(topLevel);
+        }
+
+        // Attach once (for example inside Show before opening the popup):
+        // _topLevel.PointerMoved += OnPointerMovedTrack;
+
+        // Then GetCurrentPointerPosition becomes:
         private static Avalonia.Point GetCurrentPointerPosition(Avalonia.Controls.TopLevel topLevel)
         {
-            // Fallback when no explicit position is given
-            try
-            {
-                // Avalonia does not expose a global “current mouse position” API
-                // in every version; returning (0,0) is safe – PlacementMode.Pointer
-                // will still place near the real cursor when possible.
-                return new Avalonia.Point(0, 0);
-            }
-            catch
-            {
-                return new Avalonia.Point(0, 0);
-            }
+            return _lastKnownPointerPos;
         }
     }
 }

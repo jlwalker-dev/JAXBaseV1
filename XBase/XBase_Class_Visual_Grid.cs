@@ -1,4 +1,4 @@
-﻿/* 
+﻿/* ------------------------------------------------------------------------------------------------*
  * GridClass 2026-03- 08
  * 
  * I started testing on 3/1 and for the first 6 days I could not get the grid to display.
@@ -27,12 +27,17 @@
  * 
  *      Phase 4 will be updating the underlying data table - COMPLETED - 2026-11-02
  *      
- *      Phase 5 will be using an array with different data types in each column
- * 
- *      Phase 6 will involve detecting DBF/Cursor changes and refreshing the grid
+ *      Phase 5 will be using an array  - COMPLETED - 2026-11-05
  *      
- * 
- */
+ *      Phase 6 will use different data types in column 2 of an array and update it
+ *      
+ * 2026-11-09 - JLW
+ *      Tested out the array updates.  Fixed edit/navigation issues so it acts more like VFP.
+ *      
+ * 2026-11-11 - JLW
+ *      Remember the Vets.  Added readonly support for column and grid.
+ *      
+ * ------------------------------------------------------------------------------------------------*/
 using Avalonia.Styling;
 using JAXBase.Core;
 using JAXBase.Data;
@@ -90,6 +95,9 @@ namespace JAXBase.XBase
         }
 
 
+        /* ------------------------------------------------------------------------------------------*
+         * PostInit is called after the object has been created and all properties have been set
+         * ------------------------------------------------------------------------------------------*/
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
 
@@ -115,9 +123,9 @@ namespace JAXBase.XBase
             return result;
         }
 
-        /*
+        /* ------------------------------------------------------------------------------------------------*
          * Add a new row to the grid and underlying table.  This is a VFP-style append of a blank row.
-         */
+         * ------------------------------------------------------------------------------------------------*/
         private async Task AddNewRowAsync()
         {
             if (thisWorkArea is null || _jaxTable is null || grid.ItemsSource is not System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rowList)
@@ -183,94 +191,22 @@ namespace JAXBase.XBase
             UpdateCurrentMarker();
         }
 
-        /// <summary>
-        /// Puts the ">" marker on the currently selected row and clears it from all others.
-        /// </summary>
+        /* ------------------------------------------------------------------------------------------------*
+         * Puts the ">" marker on the currently selected row and clears it from all others.
+         * ------------------------------------------------------------------------------------------------*/
         private void UpdateCurrentMarker()
         {
-            if (grid.ItemsSource is not System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rows)
+            if (UserProperties["recordmark"].AsBool() == false || grid.ItemsSource is not System.Collections.ObjectModel.ObservableCollection<SimpleDataRow> rows)
                 return;
 
             for (int i = 0; i < rows.Count; i++)
                 rows[i].IsCurrent = (i == grid.SelectedIndex);
         }
 
-        /* ------------------------------------------------------------------------------------------*
-         * Handle key presses
-         * ------------------------------------------------------------------------------------------*/
-        //private async void Grid_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
-        //{
-        //    AppIO.DebugLog($"---- Grid_KeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}, Handled={e.Handled}");
 
-        //    // Ctrl+Y (accept either Key.Y or the physical key)
-        //    if ((e.Key == Avalonia.Input.Key.Y || e.PhysicalKey == Avalonia.Input.PhysicalKey.Y)
-        //        && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control))
-        //    {
-        //        e.Handled = true;
-        //        await AddNewRowAsync();
-        //        return;
-        //    }
-
-        //    if (grid.CurrentColumn is null || grid.SelectedIndex < 0)
-        //        return;
-
-        //    int colIndex = grid.Columns.IndexOf(grid.CurrentColumn);
-        //    int rowIndex = grid.SelectedIndex;
-
-        //    // Skip the marker column (index 0)
-        //    const int firstDataCol = 1;
-        //    int lastDataCol = grid.Columns.Count - 1;
-
-        //    if (e.Key == Avalonia.Input.Key.Tab)
-        //    {
-        //        e.Handled = true;
-
-        //        if (e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift))
-        //        {
-        //            // Shift+Tab → move left
-        //            if (colIndex > firstDataCol)
-        //            {
-        //                grid.CurrentColumn = grid.Columns[colIndex - 1];
-        //            }
-        //            else if (rowIndex > 0)
-        //            {
-        //                // wrap to previous row, last data column
-        //                grid.SelectedIndex = rowIndex - 1;
-        //                grid.CurrentColumn = grid.Columns[lastDataCol];
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // Tab → move right
-        //            if (colIndex < lastDataCol)
-        //            {
-        //                grid.CurrentColumn = grid.Columns[colIndex + 1];
-        //            }
-        //            else if (rowIndex < grid.Columns.Count - 1)
-        //            {
-        //                // wrap to next row, first data column
-        //                grid.SelectedIndex = rowIndex + 1;
-        //                grid.CurrentColumn = grid.Columns[firstDataCol];
-        //            }
-        //        }
-        //    }
-
-        //    // After the Tab block, before the final return or any other logic:
-
-        //    // Start edit when the user begins typing (printable character, no modifiers)
-        //    if (e.KeyModifiers == Avalonia.Input.KeyModifiers.None
-        //        && grid.CurrentColumn is Avalonia.Controls.DataGridBoundColumn boundCol
-        //        && boundCol.IsReadOnly == false
-        //        && grid.SelectedIndex >= 0
-        //        && IsPrintableKey(e.Key))
-        //    {
-        //        e.Handled = true;
-        //        grid.BeginEdit();
-        //        // Optional: if you need the first character injected into the editor,
-        //        // handle it in PreparingCellForEdit by examining the original KeyEventArgs.
-        //    }
-        //}
-
+        /* ------------------------------------------------------------------------------------------------*
+         * Handle key presses for navigation, editing, and adding new rows.
+         * ------------------------------------------------------------------------------------------------*/
         private async void Grid_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
         {
             AppIO.DebugLog($"---- Grid_KeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}, Handled={e.Handled}");
@@ -310,7 +246,9 @@ namespace JAXBase.XBase
                     grid.CommitEdit(Avalonia.Controls.DataGridEditingUnit.Cell, true);
                     grid.CommitEdit(Avalonia.Controls.DataGridEditingUnit.Row, true);
                 }
-                catch { /* ignore if not editing */ }
+                catch
+                { /* ignore if not editing */
+                }
 
                 GridCellInEdit = false;
                 AppIO.DebugLog("---- Grid_KeyDown: ended edit for navigation");
@@ -415,6 +353,9 @@ namespace JAXBase.XBase
             }
         }
 
+        /* ------------------------------------------------------------------------------------------------*
+         * Determines if a key is a printable character (letters, digits, punctuation, space, etc.).
+         * ------------------------------------------------------------------------------------------------*/
         private static bool IsPrintableKey(Avalonia.Input.Key key)
         {
             // Letters, digits, punctuation, space, etc. Adjust the range if you need more keys.
@@ -437,6 +378,10 @@ namespace JAXBase.XBase
         }
 
 
+        /* ------------------------------------------------------------------------------------------------*
+         * Fires when a cell is about to exit edit mode. This is the event that allows you to validate
+         * the new value and cancel the edit if necessary.
+         * ------------------------------------------------------------------------------------------------*/
         private async void Grid_CellEditEnding(object? sender, Avalonia.Controls.DataGridCellEditEndingEventArgs e)
         {
             AppIO.DebugLog("---- ---- Grid_CellEditEnding");
@@ -578,11 +523,26 @@ namespace JAXBase.XBase
             // ------------------------------------------------------------------
             // Call the column/grid valid method before committing
             // ------------------------------------------------------------------
+            // After value conversion, before writing to the record source
+            if (col is not null)
+            {
+                JAXObjectWrapper colObj = (JAXObjectWrapper)UserProperties["objects"]._avalue[GridCurrentColumn - 1].Value;
+                await colObj.MethodCall("valid");   // column's textbox Valid
+
+                if (Program.CurrentApp.ReturnValue.Element.Value is false)
+                {
+                    AppIO.DebugLog("---- column Valid returned false – staying in edit");
+                    e.Cancel = true;
+                    return;
+                }
+            }
+
             Program.CurrentApp.ParameterClassList.Clear();
             AppHelper.LoadTokenValToParameters(new(rowIdx + 1));   // nRow
-            AppHelper.LoadTokenValToParameters(new(colIdx));       // nCol (adjust if your valid expects 1-based data column)
+            AppHelper.LoadTokenValToParameters(new(colIdx + 1));   // nCol (adjust if your valid expects 1-based data column)
             AppHelper.LoadTokenValToParameters(new(value));        // uValue
 
+            // Call Grid Valid
             await _CallMethod("valid");
 
             if (Program.CurrentApp.ReturnValue.Element.Value is false)
@@ -670,39 +630,7 @@ namespace JAXBase.XBase
 
         /* ------------------------------------------------------------------------------------------*
          * ------------------------------------------------------------------------------------------*/
-        /// <summary>
-        /// Fires after a cell has exited edit mode. This is the event that tells you which cell just changed.
-        /// </summary>
-        //private async void Grid_CellEditEnded(object? sender, Avalonia.Controls.DataGridCellEditEndedEventArgs e)
-        //{
-        //    AppIO.DebugLog("---- Grid_CellEditEnded");
-
-        //    if (e.EditAction != Avalonia.Controls.DataGridEditAction.Commit)
-        //        return;
-
-        //    int colIdx = grid.Columns.IndexOf(e.Column);
-        //    int rowIdx = e.Row != null ? e.Row.Index : -1;
-
-        //    // The first column (0) is the row marker and always exists (but may not be visible)
-        //    if (colIdx < 1 || rowIdx < 0)
-        //        return;
-
-        //    object? newValue = await Grid_GetCurrentCellValue(colIdx - 1); // We have one extra column in the grid
-
-        //    AppIO.DebugLog($"Cell changed – Row: {rowIdx + 1}, Col: {colIdx + 1}, Value: {newValue}");
-
-        //    Program.CurrentApp.ParameterClassList.Clear();
-        //    AppHelper.LoadTokenValToParameters(new(rowIdx + 1));   // nRow
-        //    AppHelper.LoadTokenValToParameters(new(colIdx + 1));   // nCol
-        //    AppHelper.LoadTokenValToParameters(new(newValue));     // uValue
-
-        //    AppIO.DebugLog($"Calling afterrowcolchange with parameters: Row={rowIdx + 1}, Col={colIdx + 1}, Value={newValue}");
-
-        //    await _CallMethod("afterrowcolchange");
-
-        //    AppIO.DebugLog("---- END Grid_CellEditEnded");
-        //}
-
+        // Fires after a cell has exited edit mode. This is the event that tells you which cell just changed.
         private async void Grid_CellEditEnded(object? sender, Avalonia.Controls.DataGridCellEditEndedEventArgs e)
         {
             AppIO.DebugLog("---- Grid_CellEditEnded");
@@ -962,7 +890,7 @@ namespace JAXBase.XBase
          * to add. If columncount is 0 then it becomes Column1. Setting column 
          * count to a higher number will simply add columns after.
          *
-         ** ------------------------------------------------------------------------------------------*/
+         * ------------------------------------------------------------------------------------------*/
         public async Task<int> AddColumn(int type, string header, string binding)
         {
             AppIO.DebugLog($"---- Grid AddColumn: type={type}, header={header}, binding={binding}");
@@ -1022,8 +950,7 @@ namespace JAXBase.XBase
 
 
         /* ------------------------------------------------------------------------------------------*
-         * Manually add a new column to the formj - grid does not change
-         * until the RowSource changes or it's already rendered
+         * Manually add a new column - grid does not actually change until the RowSource has been set
          * ------------------------------------------------------------------------------------------*/
         public override async Task<int> AddObject(JAXObjectWrapper value)
         {
@@ -1267,6 +1194,7 @@ namespace JAXBase.XBase
             }
             else
                 result = 1559;
+
             if (result > 10)
             {
                 _AddError(result, 0, string.Empty, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
@@ -1375,7 +1303,8 @@ namespace JAXBase.XBase
             AppIO.DebugLog($"END SetGridEvents");
         }
 
-
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         private void Grid_BeginningEdit(object? sender, Avalonia.Controls.DataGridBeginningEditEventArgs e)
         {
             if (e.Column?.Tag is string tag && tag == "__MARKER__")
@@ -1384,10 +1313,27 @@ namespace JAXBase.XBase
                 return;
             }
 
+            if (e.Column is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.IsReadOnly)
+            {
+                Toast.Show("This column is read-only.");
+                e.Cancel = true;
+                return;
+            }
+
+            if (UserProperties["readonly"].AsBool())
+            {
+                Toast.Show("Grid is read-only.");
+                e.Cancel = true;
+                return;
+            }
+
             GridCellInEdit = true;
             AppIO.DebugLog("---- Grid_BeginningEdit: edit started");
         }
 
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         private void Grid_CellPointerPressed(object? sender, Avalonia.Controls.DataGridCellPointerPressedEventArgs e)
         {
             AppIO.DebugLog("---- Grid_CellPointerPressed");
@@ -1399,7 +1345,16 @@ namespace JAXBase.XBase
                 return;
 
             if (e.Column is Avalonia.Controls.DataGridBoundColumn boundCol && boundCol.IsReadOnly)
+            {
+                Toast.Show("This column is read-only.");
                 return;
+            }
+
+            if (UserProperties["readonly"].AsBool())
+            {
+                Toast.Show("Grid is read-only.");
+                return;
+            }
 
             if (e.Row?.DataContext is not null)
                 grid.SelectedItem = e.Row.DataContext;
@@ -1450,6 +1405,7 @@ namespace JAXBase.XBase
             grid.InvalidateMeasure();
             grid.InvalidateArrange();
         }
+
 
         /* ------------------------------------------------------------------------------------------*
          * ------------------------------------------------------------------------------------------*/
@@ -2044,32 +2000,6 @@ namespace JAXBase.XBase
         }
 
 
-        /* ------------------------------------------------------------------------------------------*
-         * ------------------------------------------------------------------------------------------*/
-        // Build a grid based on the current Objects[]
-        private async Task<int> SetGridBinding()
-        {
-            int result = 0;
-
-            AppIO.DebugLog($"---- Grid SetGridBinding");
-
-            // Prep the table
-            _jaxTable = new();
-            _rowRef = [];
-
-            int ColCount = UserProperties["columncount"].AsInt();
-
-            for (int i = 1; i <= ColCount; i++)
-            {
-                JAXObjects.Token col = await GetProperty("userobjects", i - 1);
-
-
-            }
-
-            AppIO.DebugLog($"END SetGridBinding");
-
-            return result;
-        }
 
 
         /* ------------------------------------------------------------------------------------------*
@@ -2081,8 +2011,6 @@ namespace JAXBase.XBase
             int result = 0;
 
             AppIO.DebugLog($"---- Grid SetArrayBinding: {aGrid.AsString()}");
-
-            if (false) SetGridBinding().Wait();
 
             // Prep the table
             _jaxTable = new();
@@ -2234,6 +2162,8 @@ namespace JAXBase.XBase
 
 
 
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
 
         private async Task SetGridFinal()
         {
@@ -2396,11 +2326,11 @@ namespace JAXBase.XBase
         {
             return
             [
-            "activatecell","addcolumn","addobject","autofit","addproperty","deletecolumn","doscroll",
-            "gridhittest","move", "readexpression", "readmethod","refresh","removeobject","resettodefault",
-            "saveasclass","setall","setfocus","writeexpression","writemethod","zorder"
+            "activatecell","addcolumn","addobject","autofit","deletecolumn","doscroll",
+            "gridhittest","move","refresh","removeobject","resettodefault","setfocus","zorder"
             ];
         }
+
 
         /* ------------------------------------------------------------------------------------------*
          *
@@ -2409,11 +2339,12 @@ namespace JAXBase.XBase
         {
             return
             [
-            "afterrowcolchange","beforerowcolchange","click","dblclick","deleted","destroy","error","errormessage","gotfocus",
-            "init","keypress","load","lostfocus","middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove",
+            "afterrowcolchange","beforerowcolchange","click","dblclick","deleted","errormessage","gotfocus",
+            "keypress","lostfocus","middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove",
             "mouseup","mousewheel","moved","resize","rightclick","scrolled","valid","visiblechanged"
             ];
         }
+
 
         /* ------------------------------------------------------------------------------------------*
          * property data types
@@ -2502,6 +2433,9 @@ namespace JAXBase.XBase
             }
         }
 
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
+
         /// <summary>true → ">" else empty (current-row marker)</summary>
         public class BoolToMarkerConverter : Avalonia.Data.Converters.IValueConverter
         {
@@ -2511,6 +2445,11 @@ namespace JAXBase.XBase
             public object? ConvertBack(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
                 => throw new System.NotSupportedException();
         }
+
+
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
 
         /// <summary>true → black brush, false → null (normal background)</summary>
         public class DeletedToBrushConverter : Avalonia.Data.Converters.IValueConverter
@@ -2523,6 +2462,9 @@ namespace JAXBase.XBase
         }
 
 
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         public class DictionaryValueConverter : Avalonia.Data.Converters.IValueConverter
         {
             public object? Convert(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
@@ -2536,10 +2478,18 @@ namespace JAXBase.XBase
                 return FormatForDisplay(value);
             }
 
+
+
+            /* ------------------------------------------------------------------------------------------*
+             * ------------------------------------------------------------------------------------------*/
             public object? ConvertBack(object? value, System.Type targetType, object? parameter, System.Globalization.CultureInfo culture)
             {
                 return value;
             }
+
+
+            /* ------------------------------------------------------------------------------------------*
+             * ------------------------------------------------------------------------------------------*/
 
             /// <summary>Display format. Booleans become T/F; everything else uses ToString.</summary>
             private static object? FormatForDisplay(object? val)
@@ -2557,6 +2507,9 @@ namespace JAXBase.XBase
         }
 
 
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         private void OnLoadingRow(object? sender, Avalonia.Controls.DataGridRowEventArgs e)
         {
             if (e.Row is Avalonia.Controls.DataGridRow row)
@@ -2566,21 +2519,39 @@ namespace JAXBase.XBase
             }
         }
 
+
+        /* ------------------------------------------------------------------------------------------*
+         * ------------------------------------------------------------------------------------------*/
         private void OnUnloadingRow(object? sender, Avalonia.Controls.DataGridRowEventArgs e)
         {
             if (e.Row is Avalonia.Controls.DataGridRow row)
             {
-                _visibleRows.Remove(row);
+                _visibleRows.RemoveWhere(r => row.Index == r.Index);
             }
         }
 
-        // Call this when you need the current set
+        /* ------------------------------------------------------------------------------------------*
+         * Allows manual removal of a row using its index
+         * ------------------------------------------------------------------------------------------*/
+        public void RemoveRow(int index)
+        {
+            _visibleRows.RemoveWhere(r => r.Index == index);
+        }
+
+
+        /* ------------------------------------------------------------------------------------------*
+         * Return the current set of visible rows.
+         * ------------------------------------------------------------------------------------------*/
         public IReadOnlyCollection<Avalonia.Controls.DataGridRow> GetCurrentlyVisibleRows()
         {
             return _visibleRows;
         }
 
-        // Call this to get a specific visible row by index (zero indexed)
+
+
+        /* ------------------------------------------------------------------------------------------*
+         * Call this to get a specific visible row by index (zero indexed)
+         * ------------------------------------------------------------------------------------------*/
         public Avalonia.Controls.DataGridRow? GetVisibleRows(int index)
         {
             if (index >= 0 && index < _visibleRows.Count)
@@ -2589,7 +2560,11 @@ namespace JAXBase.XBase
             return null;
         }
 
-        // Call this to get the count of currently visible rows
+
+
+        /* ------------------------------------------------------------------------------------------*
+         * Return the count of currently visible rows
+         * ------------------------------------------------------------------------------------------*/
         public int CurrentlyVisibleRowsCount()
         {
             return _visibleRows.Count;

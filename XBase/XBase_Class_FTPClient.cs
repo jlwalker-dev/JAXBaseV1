@@ -714,16 +714,13 @@ namespace JAXBase.XBase
         // JAXBase Integration
         // ===================================================================
         public override string[] JAXMethods() =>
-            ["addproperty", "command", "connect", "disconnect", "listdirectory",
-             "downloadfile", "uploadfile", "deletefile", "createdirectory",
-             "readexpression", "readmethod", "resettodefault", "saveasclass",
-             "writeexpression", "writemethod"
+            [ "command","connect","disconnect","listdirectory","downloadfile","uploadfile","deletefile","createdirectory","resettodefault"
+              
             ];
 
         public override string[] JAXEvents() =>
             [
-            "connected", "destroy", "disconnected", "error", "ftpresponse",
-             "init", "load", "progress", "statuschanged"
+            "connected",  "disconnected",  "ftpresponse", "progress", "statuschanged"
             ];
 
         public override string[] JAXProperties()

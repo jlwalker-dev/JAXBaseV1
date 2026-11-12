@@ -175,7 +175,7 @@ namespace JAXBase.XBase
                         case "fontsize":
                             if (tk.Element.Type.Equals("N") == false)
                                 result = 11;
-                            else if (JAXLib.Between(tk.AsInt(), 1, 5000)==false)
+                            else if (JAXLib.Between(tk.AsInt(), 1, 5000) == false)
                                 result = 41;
                             else
                             {
@@ -363,16 +363,14 @@ namespace JAXBase.XBase
         /*------------------------------------------------------------------------------------------*
          * Methods list
          *------------------------------------------------------------------------------------------*/
-        public override string[] JAXMethods() => ["init", "load", "destroy"];
+        public override string[] JAXMethods() => [];
 
         /*------------------------------------------------------------------------------------------*
          * Events list
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXEvents() =>
                 [
-                "click", "doubleclick", "error", "errormessage",
-                "mouseenter", "mousehover", "mouseleave",
-                "visiblechanged", "when"
+                "click", "doubleclick",  "errormessage", "mouseenter", "mousehover", "mouseleave", "visiblechanged", "when"
                 ];
 
         public override string[] JAXProperties() =>

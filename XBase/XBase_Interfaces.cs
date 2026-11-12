@@ -56,6 +56,10 @@ namespace JAXBase.XBase
         public int GetPrivateProperty(string propertyName, out JAXObjects.Token value);
         public int SetPrivateProperty(string propertyName, object? value);
         public void ApplyVFPAnchor(double DeltaX, double DeltaY);
+        public Task<int> SaveAsClass(string ClassLibName, string ClassName, string Description);
+        public Task<int> SaveJSON(string propertyList);
+        public Task<int> SetAll(string property, string value, string className);
+        public Task<int> SetUsing(string JSONString, bool ignoreUserProperties);
         public string[] JAXMethods();
         public string[] JAXEvents();
         public string[] JAXProperties();

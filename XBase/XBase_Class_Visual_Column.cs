@@ -26,11 +26,16 @@
  *     };
  * });
  * 
+ * 
+ * 2026-11-09 - JLW
+ *      Adding support for custom methods on column and textbox, including Valid
+ *      
  ****************************************************************************************************/
 
 using Avalonia.Controls.Templates;
 using Avalonia.Styling;
 using JAXBase.Core;
+using JAXBase.UI.Dialogs;
 using JAXBase.Utilities;
 
 namespace JAXBase.XBase
@@ -51,6 +56,9 @@ namespace JAXBase.XBase
             me.nvObject = new EmptyFactory();
         }
 
+        /* ------------------------------------------------------------------------------------------*
+         * PostInit is called after the object has been created and all properties have been set
+         * ------------------------------------------------------------------------------------------*/
         public override async Task<bool> PostInit(JAXObjectWrapper? callBack, List<ParameterClass> parameterList)
         {
             UserProperties["name"].Element.Value = temp;
@@ -90,9 +98,9 @@ namespace JAXBase.XBase
             return result;
         }
 
-        /*
+        /* ------------------------------------------------------------------------------------------*
          * Add a header to the column
-         */
+         * ------------------------------------------------------------------------------------------*/
         public override async Task<int> AddObject(JAXObjectWrapper value)
         {
             int err = 0;
@@ -111,8 +119,9 @@ namespace JAXBase.XBase
         }
 
 
-
-        // Helper to apply common properties (font, colors, etc.) to per-cell controls
+        /* ------------------------------------------------------------------------------------------*
+         * Helper to apply common properties (font, colors, etc.) to per-cell controls
+         * ------------------------------------------------------------------------------------------*/
         private void ApplyCommonProperties(Avalonia.Controls.Control control, bool isLink = false)
         {
             // Get common values once
@@ -212,7 +221,70 @@ namespace JAXBase.XBase
         }
 
 
-        // New helper method to create CellTemplate based on type
+        /* ------------------------------------------------------------------------------------------*
+         * Method call handler for column
+         * ------------------------------------------------------------------------------------------*/
+        public override async Task<int> _CallMethod(string methodName)
+        {
+            int results = 0;
+            string msg = string.Empty;
+            methodName = methodName.ToLower();
+            Program.CurrentApp.ReturnValue.Element.Value = true;
+
+            AppIO.DebugLog($"Column _CallMethod: {methodName}");
+
+            try
+            {
+                if (Methods.ContainsKey(methodName))
+                {
+                    string cCode = Methods[methodName].CompiledCode;
+
+                    // Create a new App.Levels and execute the code
+                    if (cCode.Length > 0)
+                    {
+                        results = await base._CallMethod(methodName);
+                    }
+                    else
+                    {
+                        switch (methodName)
+                        {
+                            default:
+                                results = await base._CallMethod(methodName);
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    msg = methodName;
+                    results = 6501;
+                }
+            }
+            catch (Exception ex)
+            {
+                results = 9999;
+                msg = ex.Message;
+            }
+
+            if (results > 0)
+            {
+                _AddError(results, 0, msg, Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure);
+                if (string.IsNullOrWhiteSpace(Program.CurrentApp.AppLevels[Program.CurrentApp.CurrentAppLevel].Procedure))
+                    AppErrorHandling.SetError(results, $"{results}|{msg}|{methodName}", System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+
+                Program.CurrentApp.ReturnValue.Element.Value = false;
+                results = -1;
+
+                // For now, just show a toast for validation errors
+                if (methodName.Equals("valid"))
+                    Toast.Show("Invalid entry");
+            }
+            return results;
+        }
+
+        /* ------------------------------------------------------------------------------------------*
+         * New helper method to create CellTemplate based on type
+         * ------------------------------------------------------------------------------------------*/
         private async Task<Avalonia.Controls.Templates.IDataTemplate?> CreateCellTemplate(int colTypeInt, string bindingPath)
         {
             // Implement based on type, similar to PostInit, but using the new bindingPath
@@ -296,7 +368,9 @@ namespace JAXBase.XBase
             }
         }
 
-        // New helper method to create CellEditingTemplate based on type
+        /* ------------------------------------------------------------------------------------------*
+         * New helper method to create CellEditingTemplate based on type
+         * ------------------------------------------------------------------------------------------*/
         private async Task<Avalonia.Controls.Templates.IDataTemplate?> CreateCellEditingTemplate(int colTypeInt, string bindingPath)
         {
             // Implement based on type, similar to PostInit
@@ -650,8 +724,7 @@ namespace JAXBase.XBase
         public override string[] JAXMethods()
         {
             return
-                [
-                ];
+                [ "valid" ];
         }
 
         /*------------------------------------------------------------------------------------------*
@@ -661,7 +734,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","doubleclick","error","errormessage","mouseenter","mousehover","mouseleave","visiblechanged","when"
+                "click","doubleclick","errormessage","mouseenter","mousehover","mouseleave","visiblechanged","when"
                 ];
         }
 

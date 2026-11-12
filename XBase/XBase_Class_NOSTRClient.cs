@@ -260,15 +260,14 @@ namespace JAXBase.XBase
         // ===================================================================
         public override string[] JAXMethods() =>
             [
-            "addproperty", "addmention", "addhashtag", "addrelay", "addreply", "connect", "disconnect",
+             "addmention", "addhashtag", "addrelay", "addreply", "connect", "disconnect",
             "generateprivatekey", "getavailablerelays", "removerelay", "sendnostrevent"
             ];
 
 
         public override string[] JAXEvents() =>
             [
-            "sendsuccessful", "sendfailed", "receivesuccessful", "relaystatuschanged",
-            "validationerror", "init", "destroy", "statuschanged"
+            "sendsuccessful", "sendfailed", "receivesuccessful", "relaystatuschanged", "validationerror", "statuschanged"
             ];
 
 

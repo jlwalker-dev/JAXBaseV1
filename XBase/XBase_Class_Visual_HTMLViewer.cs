@@ -478,7 +478,7 @@ namespace JAXBase.XBase
             return result;
         }
 
-        public override string[] JAXMethods() => ["addproperty", "command", "loadhtml", "navigate", "resettodefault", "saveasclass", "savetopdf"];
+        public override string[] JAXMethods() => [ "command", "loadhtml", "navigate", "resettodefault",  "savetopdf"];
 
         public override string[] JAXEvents() => ["loadcompleted", "error"];
 

@@ -694,14 +694,12 @@ namespace JAXBase.XBase
 
         public override string[] JAXMethods() =>
             [
-            "addproperty", "command", "connect", "disconnect",
-             "readexpression", "readbytes", "readline", "readmethod", "resettodefault", "saveasclass", "sendline", "sendbinary",
-             "writeexpression", "writemethod"
+             "command", "connect", "disconnect","readbytes","readline","resettodefault","sendline","sendbinary"
             ];
 
         public override string[] JAXEvents() =>
             [
-            "bytesreceived", "connected", "destroy", "disconnected", "error", "init", "linereceived", "load", "statuschanged"
+            "bytesreceived", "connected", "disconnected", "linereceived", "statuschanged"
             ];
 
         public override string[] JAXProperties() =>

@@ -587,18 +587,18 @@ namespace JAXBase.XBase
 
     //    public override string[] JAXMethods()
     //    {
-    //        return ["addobject", "addproperty", "box", "circle", "cls", "dock", "draw", "getdockstate", "hide", "line",
-    //        "move", "newobject", "pset", "point", "print", "readexpression", "readmethod", "refresh", "release",
-    //        "resettodefault", "saveas", "saveasclass", "setall","setfocus","setmousepointer","setviewport", "show", "showwhatsthis",
-    //        "textheight", "textwidth","whatsthismode", "writeexpression", "writemethod", "zorder"];
+    //        return ["addobject",  "box", "circle", "cls", "dock", "draw", "getdockstate", "hide", "line",
+    //        "move", "newobject", "pset", "point", "print",   "refresh", "release",
+    //        "resettodefault", "saveas",  "setfocus","setmousepointer","setviewport", "show", "showwhatsthis",
+    //        "textheight", "textwidth","whatsthismode",   "zorder"];
     //    }
 
     //    public override string[] JAXEvents()
     //    {
     //        return
     //            [
-    //            "activate","afterdock","beforedock","click","dblclick","dblrightclick","deactivate","destroy","dragdrop","dragover","error",
-    //            "gotfocus","init","keypress","load","lostfocus",
+    //            "activate","afterdock","beforedock","click","dblclick","dblrightclick","deactivate","dragdrop","dragover",
+    //            "gotfocus","keypress","lostfocus",
     //            "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
     //            "moved","paint","queryunload","resize","rightclick","scrolled","undock","unload","visiblechanged"
     //            ];

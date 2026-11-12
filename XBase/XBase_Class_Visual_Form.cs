@@ -646,16 +646,14 @@ namespace JAXBase.XBase
 
         public override string[] JAXMethods()
         {
-            return ["addobject", "addproperty", "move", "readexpression", "readmethod", "refresh", "release",
-                    "removeobject", "resettodefault", "saveas", "saveasclass", "setall", "setfocus", "setmousepointer",
-                    "show", "writeexpression", "writemethod", "zorder"];
+            return ["addobject","move","refresh","release","removeobject","resettodefault","saveas","setfocus","setmousepointer","show","zorder"];
         }
 
         public override string[] JAXEvents()
         {
             return
             [
-                "activate","click","dblclick","deactivate","destroy","error","gotfocus","init","keypress","load","lostfocus",
+                "activate","click","dblclick","deactivate","gotfocus","keypress","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "moved","queryunload","resize","rightclick","scrolled","unload","visiblechanged"
             ];

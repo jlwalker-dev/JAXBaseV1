@@ -1577,9 +1577,9 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "additem","addlistitem","addproperty","clear", "indextoitemid","itemidtoindex","move", "readexpression", "readmethod",
-                "refresh", "removeitem","removelistitem","requery","resettodefault","saveasclass",
-                "setfocus", "setviewport", "writeexpression", "writemethod", "zorder"
+                "additem","addlistitem","clear", "indextoitemid","itemidtoindex","move",  
+                "refresh", "removeitem","removelistitem","requery","resettodefault",
+                "setfocus", "setviewport",   "zorder"
                 ];
         }
 
@@ -1590,8 +1590,8 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","dblclick","destroy","downclick","error","gotfocus",
-                "init","interactivechange","keypress","lostfocus",
+                "click","dblclick","downclick","gotfocus",
+                "interactivechange","keypress","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "programmaticchange","rangehigh","rangelow","rightclick","upclick","valid","visiblechanged","when"
                 ];

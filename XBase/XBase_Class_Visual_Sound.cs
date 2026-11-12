@@ -316,8 +316,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addproperty","readexpression","readmethod","resettodefault",
-                "saveasclass","saveaudio","writeexpression","writemethod"
+                "resettodefault","saveaudio",
                 ];
         }
 
@@ -328,7 +327,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "destroy","error","init","load","statuschanged"
+                "statuschanged"
                 ];
         }
 

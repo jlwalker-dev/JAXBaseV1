@@ -1002,6 +1002,12 @@ namespace JAXBase.XBase
         }
 
 
+        public virtual async Task<int> SaveAsClass(string ClassLibName, string ClassName, string Description) { return 0; }
+        public virtual async Task<int> SaveJSON(string propertyList) { return 0; }
+        public virtual async Task<int> SetAll(string property, string value, string className) { return 0; }
+        public virtual async Task<int> SetUsing(string JSONString, bool ignoreUserProperties) { return 0; }
+
+
         /*------------------------------------------------------------------------------------------*
          *------------------------------------------------------------------------------------------*/
         public virtual string DefaultName() { return MyDefaultName; }

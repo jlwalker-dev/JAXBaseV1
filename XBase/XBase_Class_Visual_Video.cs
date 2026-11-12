@@ -377,8 +377,7 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXMethods()=>
                 [
-                "addproperty","move","readexpression","readmethod","refresh","resettodefault",
-                "saveasclass","settooriginalvalue","setfocus","writeexpression","writemethod","zorder"
+                "move","readmethod","refresh","resettodefault","settooriginalvalue","setfocus","zorder"
                 ];
 
         /*------------------------------------------------------------------------------------------*
@@ -386,7 +385,7 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXEvents()=>
                 [
-                "click","destroy","error","gotfocus","init","load","lostfocus",
+                "click","gotfocus","lostfocus",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "paused","rightclick","playing","saveaudio","savevideo","stopped","visiblechanged","when"
                 ];

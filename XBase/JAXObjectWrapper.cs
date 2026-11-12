@@ -208,7 +208,7 @@ namespace JAXBase.XBase
 
             cPropBackColor = JAXLanguageLists.GetWord("backcolor", "REVPEMS"); ;
             cPropForeColor = JAXLanguageLists.GetWord("forecolor", "REVPEMS"); ;
-            cPropLanguage = JAXLanguageLists.GetWord("language", "REVPEMS"); 
+            cPropLanguage = JAXLanguageLists.GetWord("language", "REVPEMS");
             cPropName = JAXLanguageLists.GetWord("name", "REVPEMS");
             cPropClass = JAXLanguageLists.GetWord("class", "REVPEMS");
             cPropBaseClass = JAXLanguageLists.GetWord("baseclass", "REVPEMS");
@@ -510,7 +510,7 @@ namespace JAXBase.XBase
 
                         try
                         {
-                            // Load the methods
+                            // Load the methods from the class
                             string[] JAXMethods = thisObject!.JAXMethods();
                             for (int i = 0; i < JAXMethods.Length; i++)
                             {
@@ -525,6 +525,29 @@ namespace JAXBase.XBase
                             {
                                 meName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue(JAXEvents[i], out string? m) ? m : JAXEvents[i];
                                 thisObject._SetMethod(meName, "", true, "E!");
+                                thisObject.Methods[meName].Tag = "N";
+                            }
+
+                            // ----------------------------------------------------------------------
+                            // Load common methods for all classes except EMPTY
+                            // ----------------------------------------------------------------------
+                            string[] commonMethods = [
+                                "addproperty","readexpression","readmethod","saveasclass","savejson","setall","setusing","writeexpression","writemethod"
+                                ];
+
+                            for (int i = 0; i < commonMethods.Length; i++)
+                            {
+                                meName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue(commonMethods[i], out string? m) ? m : commonMethods[i];
+                                thisObject._SetMethod(meName, "", true, "M!");
+                                thisObject.Methods[meName].Tag = "N";
+                            }
+
+                            string[] commonEvents = ["destroy", "error", "init", "load"];
+
+                            for (int i = 0; i < commonEvents.Length; i++)
+                            {
+                                meName = Program.CurrentApp.ActiveLanguagePack.RevPEMs.TryGetValue(commonEvents[i], out string? m) ? m : commonEvents[i];
+                                thisObject._SetMethod(meName, "", true, "M!");
                                 thisObject.Methods[meName].Tag = "N";
                             }
                         }

@@ -811,8 +811,8 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "addproperty","move","readexpression","readmethod","refresh","resettodefault",
-                "saveasclass","settooriginalvalue","setfocus","saveaudio","savevideo","writeexpression","writemethod","zorder"
+                "move","refresh","resettodefault",
+                "settooriginalvalue","setfocus","saveaudio","savevideo","zorder"
                 ];
         }
 
@@ -823,8 +823,7 @@ namespace JAXBase.XBase
         {
             return
                 [
-                "click","dblclick","destroy","error",
-                "init","keypress","load",
+                "click","dblclick","keypress",
                 "middleclick","mousedown","mouseenter","mousehover","mouseleave","mousemove","mouseup","mousewheel",
                 "rightclick","visiblechanged","when"
                 ];

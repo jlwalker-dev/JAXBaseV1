@@ -140,8 +140,8 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXMethods() =>
                 [
-                "add", "addproperty", "getkey", "item", "readexpression", "readmethod", "remove", "resettodefault",
-                "saveasclass", "writeexpression", "writemethod"
+                "add","getkey","item","remove","resettodefault",
+                 
                 ];
 
 
@@ -150,7 +150,7 @@ namespace JAXBase.XBase
          *------------------------------------------------------------------------------------------*/
         public override string[] JAXEvents() =>
                 [
-                "destroy","error","init"
+                "init"
                 ];
 
         /*------------------------------------------------------------------------------------------*

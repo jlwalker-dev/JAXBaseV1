@@ -240,9 +240,9 @@ namespace JAXBase.XBase
         }
 
 
-        public override string[] JAXMethods() => ["addproperty", "readexpression", "readmethod", "writeexpression", "writemethod"];
+        public override string[] JAXMethods() => [];
 
-        public override string[] JAXEvents() => ["destroy", "error", "init", "load"];
+        public override string[] JAXEvents() => ["load"];
 
         public override string[] JAXProperties() =>
             [

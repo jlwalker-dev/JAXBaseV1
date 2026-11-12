@@ -497,14 +497,13 @@ namespace JAXBase.XBase
 
         public override string[] JAXMethods() =>
             [
-            "addproperty", "closeallclients", "closeclient", "command", "readexpression", "readmethod", "resettodefault", 
-            "saveasclass", "sendbinary", "sendline", "start", "stop", "writeexpression", "writemethod"
+            "closeallclients","closeclient","command","resettodefault","sendbinary","sendline","start","stop",  
             ];
 
         public override string[] JAXEvents() =>
             [
             "clientconnected", "clientdisconnected", "clientlinereceived", "clientbinaryreceived", "clienterror",
-            "destroy", "error", "init", "load", "started", "stopped", "statuschanged"
+            "started", "stopped", "statuschanged"
             ];
 
         public override string[] JAXProperties() =>

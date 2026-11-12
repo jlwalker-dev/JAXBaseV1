@@ -1111,13 +1111,12 @@ namespace JAXBase.XBase
 
         public override string[] JAXMethods() =>
             [
-            "addproperty", "connect", "create", "drop", "disconnect", "exec", "getobjects",
-            "truncate", "update", "writeexpression", "writemethod"
+             "connect","create","drop","disconnect","exec","getobjects","truncate","update"
             ];
 
         public override string[] JAXEvents() =>
             [
-            "afterquery", "connected", "disconnected", "destroy", "error", "fail", "init", "load", "success"
+            "afterquery", "connected", "disconnected", "fail", "success"
             ];
 
         /*
